@@ -135,10 +135,10 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Keyboard accessible with proper focus management
   - Location: `packages/web/components/ui/Header.tsx`
 
-- [ ] **2.5** Create Footer component
+- [x] **2.5** Create Footer component
   - "Progress stored locally · No account needed · Open source"
   - Minimal styling, `--color-text-muted`
-  - Location: `packages/web/src/components/ui/Footer.tsx`
+  - Location: `packages/web/components/ui/Footer.tsx`
 
 ---
 
