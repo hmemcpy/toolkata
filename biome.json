@@ -49,15 +49,6 @@
     }
   },
   "files": {
-    "ignore": [
-      "node_modules",
-      ".next",
-      "dist",
-      "build",
-      "out",
-      "coverage",
-      "*.lock",
-      "bun.lock"
-    ]
+    "ignore": ["node_modules", ".next", "dist", "build", "out", "coverage", "*.lock", "bun.lock"]
   }
 }

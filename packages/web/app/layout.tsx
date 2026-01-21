@@ -13,7 +13,8 @@ export const metadata: Metadata = {
     template: "%s | toolkata",
     default: "toolkata",
   },
-  description: "Hands-on tutorials for developers switching tools. No fluff. Just the commands you need.",
+  description:
+    "Hands-on tutorials for developers switching tools. No fluff. Just the commands you need.",
 }
 
 export const viewport: Viewport = {
@@ -28,9 +29,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={jetbrainsMono.variable}>
-      <body
-        className="bg-[var(--color-bg)] text-[var(--color-text)] font-mono antialiased"
-      >
+      <body className="bg-[var(--color-bg)] text-[var(--color-text)] font-mono antialiased">
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-[var(--color-surface)] focus:px-4 focus:py-2 focus:text-[var(--color-accent)]"

@@ -152,11 +152,12 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Location: `packages/web/lib/content/schemas.ts`
   - Note: Using app/ directory structure (not src/)
 
-- [ ] **3.2** Create tool pairing registry
+- [x] **3.2** Create tool pairing registry
   - `jj-git` as first (and only MVP) pairing
   - Interface: `{ slug, from: { name, description }, to: { name, description }, category, steps, status }`
   - Status: "published" | "coming_soon"
-  - Location: `packages/web/src/content/pairings.ts`
+  - Location: `packages/web/content/pairings.ts`
+  - Helper functions: `getPairing()`, `getPublishedPairings()`, `getPairingsByCategory()`, `isValidPairingSlug()`
 
 - [ ] **3.3** Create ContentService with Effect-TS
   - `loadStep(toolPair, step)` → `Effect<StepContent, ContentError>`
@@ -730,6 +731,12 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 **Bun Workspace Warning:**
 - Next.js warns about multiple lockfiles (package-lock.json from parent dir)
 - Can be ignored or suppressed with turbopack.root config
+
+**Project Structure (no src/ directory):**
+- Next.js project uses `app/` directory at root (not `src/app/`)
+- Content lives at `packages/web/content/` (not `src/content/`)
+- Components at `packages/web/components/` (not `src/components/`)
+- This is the standard Next.js App Router structure
 
 ### Out of Scope (MVP)
 
