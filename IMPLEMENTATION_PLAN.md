@@ -116,12 +116,12 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Focus ring: `--focus-ring: 0 0 0 2px var(--color-accent)`
   - Transitions: `--transition-fast: 100ms ease`, `--transition-normal: 200ms ease`
 
-- [ ] **2.2** Configure JetBrains Mono font via next/font
+- [x] **2.2** Configure JetBrains Mono font via next/font
   - Import from `next/font/google`
   - Apply to `<html>` element as primary font
   - Location: `packages/web/src/app/layout.tsx`
 
-- [ ] **2.3** Create root layout `packages/web/src/app/layout.tsx`
+- [x] **2.3** Create root layout `packages/web/src/app/layout.tsx`
   - Dark theme (`bg-[var(--color-bg)]`)
   - Skip link for accessibility ("Skip to main content")
   - Meta viewport, lang="en"
@@ -716,6 +716,11 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 - Next.js uses `noEmit: true` which conflicts with `composite: true`
 - Solution: Removed project references, use simple `extends` pattern
 - Each package runs its own `tsc --noEmit` for type checking
+
+**TypeScript JSX Setting:**
+- Root tsconfig needs `"jsx": "preserve"` for React/Next.js packages
+- Without it, `tsc --build` fails with "Cannot use JSX unless the '--jsx' flag is provided"
+- Added to root tsconfig.json since all packages extend it
 
 **Tailwind CSS 4 PostCSS:**
 - Requires `@tailwindcss/postcss` plugin (not `tailwindcss` directly)
