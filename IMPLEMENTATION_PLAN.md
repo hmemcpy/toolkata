@@ -105,7 +105,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 
 > **WHY**: All components depend on design tokens. Layout is required for every page. Must complete before building any UI.
 
-- [ ] **2.1** Create CSS custom properties in `packages/web/src/app/globals.css`
+- [x] **2.1** Create CSS custom properties in `packages/web/src/app/globals.css`
   - Colors (from UX-DESIGN.md):
     - `--color-bg: #0a0a0a`, `--color-surface: #141414`, `--color-border: #262626`
     - `--color-text: #fafafa`, `--color-text-muted: #a1a1a1`, `--color-text-dim: #525252`
