@@ -183,12 +183,12 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 
 > **WHY**: Pages are composed of these components. Build in dependency order (simple → complex).
 
-- [ ] **4.1** Build CodeBlock component
+- [x] **4.1** Build CodeBlock component
   - Syntax highlighting with shiki (SSR-safe)
   - Copy button with clipboard API + success feedback (checkmark)
   - Language label in header bar
   - Line numbers optional via prop
-  - Location: `packages/web/src/components/ui/CodeBlock.tsx`
+  - Location: `packages/web/components/ui/CodeBlock.tsx`
 
 - [ ] **4.2** Build SideBySide comparison component
   - Two-column layout (git left, jj right)
