@@ -9,10 +9,6 @@
     "isolatedModules": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "declaration": true,
-    "declarationMap": true,
-    "composite": true,
-    "incremental": true,
 
     "strict": true,
     "noImplicitAny": true,
@@ -34,9 +30,5 @@
     "verbatimModuleSyntax": true,
     "noEmit": true
   },
-  "references": [
-    { "path": "./packages/web" },
-    { "path": "./packages/sandbox-api" }
-  ],
-  "exclude": ["node_modules", ".next", "dist", "build", "out"]
+  "exclude": ["node_modules", ".next", "dist", "build", "out", "packages/*/node_modules"]
 }

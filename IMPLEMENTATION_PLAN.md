@@ -25,9 +25,9 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Monorepo setup | **Not started** | No package.json, no packages/ directory |
-| Web frontend | **Not started** | No Next.js app |
-| Sandbox API | **Not started** | No Effect-TS services |
+| Monorepo setup | **Complete** | Root package.json, workspace config |
+| Web frontend | **Partial** | Next.js 16 + React 19 basic app running |
+| Sandbox API | **Partial** | Basic package structure, no Effect-TS yet |
 | Design system | **Not started** | Design tokens specified in UX-DESIGN.md |
 | Content infrastructure | **Not started** | MDX schema specified in PLAN.md |
 | UI components | **Not started** | 12 components specified in UX-DESIGN.md |
@@ -59,13 +59,13 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Add shared dev scripts: `dev`, `build`, `lint`, `typecheck`, `format`
   - Location: `/package.json`
 
-- [ ] **1.2** Create `packages/web` with Next.js 16 + React 19
+- [x] **1.2** Create `packages/web` with Next.js 16 + React 19
   - `bun create next-app packages/web --typescript --tailwind --app`
   - Configure for App Router (no pages/ directory)
   - Remove default boilerplate content (globals.css, page.tsx content)
   - Location: `packages/web/`
 
-- [ ] **1.3** Create `packages/sandbox-api` with Effect-TS
+- [x] **1.3** Create `packages/sandbox-api` with Effect-TS
   - Initialize with `bun init`
   - Add `effect@3` dependency
   - Create basic entry point `src/index.ts` with health check
@@ -88,7 +88,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Optional chaining enforced
   - Location: `/biome.json`
 
-- [ ] **1.6** Configure Tailwind CSS 4 in packages/web
+- [x] **1.6** Configure Tailwind CSS 4 in packages/web
   - Use CSS-first configuration (Tailwind 4 style)
   - Prepare for design tokens integration
   - Location: `packages/web/tailwind.config.ts`, `packages/web/src/app/globals.css`
@@ -708,6 +708,22 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 - Network disconnect → WebSocket reconnection attempt, then error state
 - Invalid MDX content → Fail fast with validation errors in development
 - localStorage unavailable → Graceful degradation, no progress tracking
+
+### Implementation Discoveries
+
+**TypeScript Project References Issue:**
+- Root tsconfig originally had `composite: true` with project references
+- Next.js uses `noEmit: true` which conflicts with `composite: true`
+- Solution: Removed project references, use simple `extends` pattern
+- Each package runs its own `tsc --noEmit` for type checking
+
+**Tailwind CSS 4 PostCSS:**
+- Requires `@tailwindcss/postcss` plugin (not `tailwindcss` directly)
+- CSS-first config with `@import "tailwindcss"` in globals.css
+
+**Bun Workspace Warning:**
+- Next.js warns about multiple lockfiles (package-lock.json from parent dir)
+- Can be ignored or suppressed with turbopack.root config
 
 ### Out of Scope (MVP)
 

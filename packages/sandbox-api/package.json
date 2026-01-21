@@ -1,0 +1,13 @@
+{
+  "name": "sandbox-api",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/next": "^9.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
