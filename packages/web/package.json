@@ -10,6 +10,7 @@
     "format": "biome format --write ."
   },
   "dependencies": {
+    "effect": "^3.19.14",
     "gray-matter": "^4.0.3",
     "next": "16.1.4",
     "react": "19.2.3",

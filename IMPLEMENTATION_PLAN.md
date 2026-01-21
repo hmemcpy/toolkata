@@ -159,11 +159,12 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Location: `packages/web/content/pairings.ts`
   - Helper functions: `getPairing()`, `getPublishedPairings()`, `getPairingsByCategory()`, `isValidPairingSlug()`
 
-- [ ] **3.3** Create ContentService with Effect-TS
+- [x] **3.3** Create ContentService with Effect-TS
   - `loadStep(toolPair, step)` → `Effect<StepContent, ContentError>`
   - `listSteps(toolPair)` → `Effect<StepMeta[], ContentError>`
   - Error types using `Data.TaggedClass`: `NotFound`, `ParseError`, `ValidationError`
-  - Location: `packages/web/src/services/content.ts`
+  - Location: `packages/web/services/content.ts`
+  - Note: Using `app/` directory structure (not `src/`)
 
 - [ ] **3.4** Configure MDX with gray-matter for Next.js
   - Install: `gray-matter`, `@next/mdx`, `@mdx-js/react`
@@ -736,7 +737,13 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 - Next.js project uses `app/` directory at root (not `src/app/`)
 - Content lives at `packages/web/content/` (not `src/content/`)
 - Components at `packages/web/components/` (not `src/components/`)
+- Services at `packages/web/services/` (not `src/services/`)
 - This is the standard Next.js App Router structure
+
+**Effect-TS Installation for ContentService:**
+- Added `effect@3` as a dependency to `packages/web`
+- Required for ContentService with proper typed error handling
+- Using `Data.TaggedClass` for error types and `Layer.effect` for service composition
 
 ### Out of Scope (MVP)
 
