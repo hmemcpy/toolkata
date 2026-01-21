@@ -128,12 +128,12 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Descriptive title template: `%s | toolkata`
   - Location: `packages/web/src/app/layout.tsx`
 
-- [ ] **2.4** Create Header component
+- [x] **2.4** Create Header component
   - Logo "toolkata_" (monospace, underscore as cursor effect)
   - Navigation: [GitHub] [?Help]
   - Mobile: hamburger menu (collapsible)
   - Keyboard accessible with proper focus management
-  - Location: `packages/web/src/components/ui/Header.tsx`
+  - Location: `packages/web/components/ui/Header.tsx`
 
 - [ ] **2.5** Create Footer component
   - "Progress stored locally · No account needed · Open source"
