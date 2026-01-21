@@ -146,10 +146,11 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 
 > **WHY**: Pages cannot render without MDX loading. Schema validation prevents runtime errors. Must be ready before any content pages.
 
-- [ ] **3.1** Define MDX frontmatter schema with Zod
+- [x] **3.1** Define MDX frontmatter schema with Zod
   - Fields: `title` (string, required), `step` (number, required), `description` (string), `gitCommands` (string[]), `jjCommands` (string[])
   - Strict validation - fail fast on invalid content
-  - Location: `packages/web/src/lib/content/schemas.ts`
+  - Location: `packages/web/lib/content/schemas.ts`
+  - Note: Using app/ directory structure (not src/)
 
 - [ ] **3.2** Create tool pairing registry
   - `jj-git` as first (and only MVP) pairing
