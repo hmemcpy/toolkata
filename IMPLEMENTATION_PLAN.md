@@ -71,7 +71,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Create basic entry point `src/index.ts` with health check
   - Location: `packages/sandbox-api/`
 
-- [ ] **1.4** Configure shared TypeScript
+- [x] **1.4** Configure shared TypeScript
   - Root `tsconfig.json` with strict settings:
     - `"strict": true`
     - `"exactOptionalPropertyTypes": true`
@@ -80,7 +80,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Extend in each package's tsconfig.json
   - Location: `/tsconfig.json`, `packages/*/tsconfig.json`
 
-- [ ] **1.5** Set up Biome for linting/formatting
+- [x] **1.5** Set up Biome for linting/formatting
   - Create `biome.json` at root
   - 2-space indent, no semicolons, double quotes
   - 100-char line width, trailing commas
