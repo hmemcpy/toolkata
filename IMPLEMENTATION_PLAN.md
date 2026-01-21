@@ -54,7 +54,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 
 > **WHY**: Cannot proceed with any development without project structure. This is the foundation for all subsequent work.
 
-- [ ] **1.1** Initialize monorepo root with Bun workspaces
+- [x] **1.1** Initialize monorepo root with Bun workspaces
   - Create root `package.json` with `"workspaces": ["packages/*"]`
   - Add shared dev scripts: `dev`, `build`, `lint`, `typecheck`, `format`
   - Location: `/package.json`
@@ -93,7 +93,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Prepare for design tokens integration
   - Location: `packages/web/tailwind.config.ts`, `packages/web/src/app/globals.css`
 
-- [ ] **1.7** Create comprehensive `.gitignore`
+- [x] **1.7** Create comprehensive `.gitignore`
   - Node, Bun, Next.js, .env patterns
   - Build artifacts (`.next/`, `dist/`, `node_modules/`)
   - IDE files (`.idea/`, `.vscode/`)
