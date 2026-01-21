@@ -166,16 +166,17 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Location: `packages/web/services/content.ts`
   - Note: Using `app/` directory structure (not `src/`)
 
-- [ ] **3.4** Configure MDX with gray-matter for Next.js
+- [x] **3.4** Configure MDX with gray-matter for Next.js
   - Install: `gray-matter`, `@next/mdx`, `@mdx-js/react`
   - Configure `next.config.ts` for MDX support
   - Set up MDX compilation pipeline
   - Location: `packages/web/next.config.ts`
 
-- [ ] **3.5** Create MDX component mapping
+- [x] **3.5** Create MDX component mapping
   - Map `code` → CodeBlock, `pre` → CodeBlock
   - Map custom components: `SideBySide`, `Callout`, `Terminal`
-  - Location: `packages/web/src/components/mdx/MDXComponents.tsx`
+  - Location: `packages/web/components/mdx/MDXComponents.tsx`
+  - Note: Location uses `components/` not `src/components/` (project uses `app/` not `src/app/`)
 
 ---
 
