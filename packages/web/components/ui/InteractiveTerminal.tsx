@@ -23,7 +23,7 @@
 
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { forwardRef, useImperativeHandle, useCallback, useEffect, useRef, useState } from "react"
 import type { TerminalMessage } from "../../services/sandbox-client"
 
 /**
@@ -36,6 +36,31 @@ type TerminalState =
   | "TIMEOUT_WARNING"
   | "EXPIRED"
   | "ERROR"
+
+/**
+ * Imperative handle for InteractiveTerminal.
+ *
+ * Exposed via ref to allow external command insertion.
+ */
+export interface InteractiveTerminalRef {
+  /**
+   * Insert a command into the terminal.
+   *
+   * Writes the command to the terminal display and sends it via WebSocket.
+   * Does NOT auto-focus the terminal - caller should manage focus if needed.
+   *
+   * @param command - The command string to insert (e.g., "jj status")
+   */
+  insertCommand: (command: string) => void
+
+  /**
+   * Focus the terminal input.
+   *
+   * Attempts to focus the terminal for keyboard input.
+   * Note: xterm.js terminal focus is handled by the browser.
+   */
+  focus: () => void
+}
 
 /**
  * Props for InteractiveTerminal component.
@@ -58,6 +83,9 @@ export interface InteractiveTerminalProps {
 
   /**
    * Optional preloaded commands to display as suggestions.
+   *
+   * If provided, commands are shown as buttons below the terminal.
+   * If not provided, use CommandSuggestions component separately.
    */
   readonly preloadCommands?: readonly string[]
 }
@@ -141,12 +169,10 @@ function StatusIndicator({ state }: { readonly state: TerminalState }) {
 /**
  * InteractiveTerminal component with xterm.js and WebSocket.
  */
-export function InteractiveTerminal({
-  toolPair,
-  stepId: _stepId,
-  onCommandInsert,
-  preloadCommands = [],
-}: InteractiveTerminalProps) {
+export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, InteractiveTerminalProps>(function InteractiveTerminal(
+  { toolPair, stepId: _stepId, onCommandInsert, preloadCommands = [] }: InteractiveTerminalProps,
+  ref,
+) {
   const terminalRef = useRef<HTMLDivElement>(null)
   const terminalInstanceRef = useRef<ITerminal | null>(null)
   const fitAddonRef = useRef<IFitAddon | null>(null)
@@ -156,6 +182,60 @@ export function InteractiveTerminal({
   const [state, setState] = useState<TerminalState>("IDLE")
   const [error, setError] = useState<string | null>(null)
   const [timeRemaining, setTimeRemaining] = useState<number>(300) // 5 minutes in seconds
+
+  /**
+   * Insert a command into the terminal programmatically.
+   *
+   * This is exposed via useImperativeHandle for external components
+   * (like CommandSuggestions) to insert commands.
+   */
+  const insertCommand = useCallback(
+    (command: string) => {
+      const terminal = terminalInstanceRef.current
+      if (!terminal) {
+        return
+      }
+
+      // Write the command to the terminal display
+      terminal.write(`\r${command}`)
+
+      // Send the command via WebSocket
+      const ws = wsRef.current
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(`${command}\r`)
+      }
+
+      // Notify parent callback
+      onCommandInsert?.(command)
+    },
+    [onCommandInsert],
+  )
+
+  /**
+   * Focus the terminal.
+   *
+   * xterm.js terminals receive keyboard input when the container element is focused.
+   */
+  const focus = useCallback(() => {
+    const container = terminalRef.current
+    if (container) {
+      container.focus()
+    }
+  }, [])
+
+  /**
+   * Expose imperative handle for external command insertion.
+   *
+   * Allows CommandSuggestions component to insert commands into the terminal.
+   */
+  useImperativeHandle(
+    ref,
+    () => ({
+      insertCommand,
+      focus,
+    }),
+    [insertCommand, focus],
+  )
 
   // Clean up WebSocket connection
   const cleanup = useCallback(() => {
@@ -430,7 +510,9 @@ export function InteractiveTerminal({
         ) : (
           <div
             ref={terminalRef}
-            className="min-h-[200px] max-h-[400px] overflow-hidden"
+            // biome-ignore lint/a11y/noNoninteractiveTabindex: Terminal container needs focus for keyboard input
+            tabIndex={0}
+            className="min-h-[200px] max-h-[400px] overflow-hidden outline-none"
             aria-label="Interactive terminal sandbox"
             role="application"
           />
@@ -465,19 +547,7 @@ export function InteractiveTerminal({
                 // biome-ignore lint/suspicious/noArrayIndexKey: Commands are static and order matters
                 key={index}
                 type="button"
-                onClick={() => {
-                  const terminal = terminalInstanceRef.current
-                  if (terminal) {
-                    terminal.write(`\r${command}`)
-                    const ws = wsRef.current
-                    if (ws && ws.readyState === WebSocket.OPEN) {
-                      ws.send(`${command}\r`)
-                    }
-                  }
-                  if (onCommandInsert) {
-                    onCommandInsert(command)
-                  }
-                }}
+                onClick={() => insertCommand(command)}
                 className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-left text-sm font-mono text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
               >
                 {command}
@@ -488,4 +558,4 @@ export function InteractiveTerminal({
       ) : null}
     </div>
   )
-}
+})

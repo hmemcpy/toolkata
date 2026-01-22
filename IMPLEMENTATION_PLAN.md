@@ -447,10 +447,11 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - EXPIRED: "Session expired" + [Restart] button
   - ERROR: Error message + [Retry] [Use static mode] buttons
 
-- [ ] **8.5** Wire CommandSuggestions to terminal
+- [x] **8.5** Wire CommandSuggestions to terminal
   - Click handler inserts command text into terminal
   - Auto-focus terminal after insertion
   - Update `CommandSuggestions` component from Phase 4.9
+  - Note: Created `TerminalWithSuggestions` component that wires `CommandSuggestions` to `InteractiveTerminal` via `forwardRef` and `useImperativeHandle`
 
 - [x] **8.6** Add session timer display
   - Countdown showing remaining time (Session: 4:32 / 5:00)

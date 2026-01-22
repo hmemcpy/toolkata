@@ -6,6 +6,7 @@ import { MDXRemote } from "next-mdx-remote/rsc"
 import { Callout } from "../../../components/ui/Callout"
 import { CodeBlock } from "../../../components/ui/CodeBlock"
 import { SideBySide } from "../../../components/ui/SideBySide"
+import { TerminalWithSuggestions } from "../../../components/ui/TerminalWithSuggestions"
 import { getPairing, isValidPairingSlug } from "../../../content/pairings"
 import { notFound } from "next/navigation"
 import fs from "node:fs/promises"
@@ -112,9 +113,8 @@ const mdxComponents = {
  * Displays:
  * - StepProgress header (back link, step indicator, next link)
  * - MDX content rendering with custom components
- * - CommandSuggestions section (shows commands from frontmatter)
+ * - Interactive terminal with CommandSuggestions (wired together)
  * - Navigation footer (Previous/Next step buttons, Mark Complete button)
- * - Placeholder for terminal (Phase 8): "Interactive sandbox coming soon"
  */
 export default async function StepPage(props: {
   readonly params: Promise<{ readonly toolPair: string; readonly step: string }>
@@ -170,40 +170,19 @@ export default async function StepPage(props: {
           <MDXRemote source={content} components={mdxComponents} />
         </article>
 
-        {/* Interactive Terminal Placeholder */}
-        <section className="my-12 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
-          <h2 className="mb-4 text-xl font-mono font-medium text-[var(--color-text)]">
-            Try It Yourself
-          </h2>
-          <p className="mb-6 text-sm text-[var(--color-text-muted)]">
-            Interactive sandbox coming soon. Practice these commands in a safe, isolated
-            environment.
-          </p>
-          <div className="rounded border border-dashed border-[var(--color-border)] bg-[var(--color-bg)] p-6 font-mono text-sm text-[var(--color-text-dim)]">
-            <span className="text-[var(--color-text-muted)]">$</span> Terminal sandbox will appear
-            here
-          </div>
-        </section>
-
-        {/* Command Suggestions - Static Display */}
-        {showCommandSuggestions && (
-          <section className="my-8">
-            <h3 className="mb-4 text-sm font-mono font-medium text-[var(--color-text-muted)]">
-              Suggested Commands
-            </h3>
-            <div className="flex flex-col gap-2">
-              {allCommands.map((command, index) => (
-                <div
-                  // biome-ignore lint/suspicious/noArrayIndexKey: Commands are static and order won't change
-                  key={index}
-                  className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 font-mono text-sm text-[var(--color-text)]"
-                >
-                  <code>{command}</code>
-                </div>
-              ))}
-            </div>
+        {/* Interactive Terminal with Command Suggestions */}
+        {showCommandSuggestions ? (
+          <section className="my-12">
+            <h2 className="mb-6 text-xl font-mono font-medium text-[var(--color-text)]">
+              Try It Yourself
+            </h2>
+            <TerminalWithSuggestions
+              toolPair={toolPair}
+              stepId={stepNum.toString()}
+              suggestedCommands={allCommands}
+            />
           </section>
-        )}
+        ) : null}
 
         {/* Navigation Footer */}
         <NavigationWrapper
