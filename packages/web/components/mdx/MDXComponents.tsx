@@ -17,7 +17,7 @@
 import type { BundledLanguage } from "shiki"
 import { Callout } from "../ui/Callout"
 import { CodeBlock } from "../ui/CodeBlock"
-import { SideBySide } from "../ui/SideBySide"
+import { SideBySideWithDirection } from "../ui/SideBySideWithDirection"
 
 /**
  * Props for code elements in MDX.
@@ -78,11 +78,15 @@ export function Code({ children, className }: CodeProps) {
  * MDX component mappings.
  *
  * These components are available for use in MDX content.
+ *
+ * Note: SideBySideWithDirection is used instead of SideBySide to support
+ * bidirectional comparison (git→jj OR jj→git). The wrapper consumes
+ * direction context and handles SSR hydration safety.
  */
 export const mdxComponents = {
   pre: Pre,
   code: Code,
-  SideBySide,
+  SideBySide: SideBySideWithDirection,
   Callout,
   // TODO: Implement InteractiveTerminal component (task 8.2)
   // Terminal: InteractiveTerminal,

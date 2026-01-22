@@ -991,7 +991,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Handles `isLoading` state (render default during hydration)
   - Location: `packages/web/components/ui/SideBySideWithDirection.tsx`
 
-- [ ] **13.3.3** Update MDX component mapping
+- [x] **13.3.3** Update MDX component mapping
   - Location: `packages/web/components/mdx/MDXComponents.tsx`
   - Replace `SideBySide` with `SideBySideWithDirection`
   - **Critical**: MDX renders server-side, wrapper handles client state
