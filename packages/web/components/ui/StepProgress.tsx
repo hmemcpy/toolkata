@@ -7,7 +7,6 @@ export interface StepProgressProps {
   readonly title: string
   readonly toolPair: string
   readonly overviewHref?: string
-  readonly nextHref?: string | null
   readonly showKeyboardHints?: boolean
   readonly isCompleted?: boolean
   readonly className?: string
@@ -19,7 +18,6 @@ export function StepProgress({
   title,
   toolPair,
   overviewHref = `/${toolPair}`,
-  nextHref = currentStep < totalSteps ? `/${toolPair}/${currentStep + 1}` : null,
   showKeyboardHints = true,
   isCompleted = false,
   className = "",
@@ -53,22 +51,8 @@ export function StepProgress({
           </h1>
         </div>
 
-        {/* Next link or placeholder */}
-        <div className="flex items-center">
-          {nextHref ? (
-            <Link
-              href={nextHref}
-              className="text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] flex items-center gap-1"
-              aria-label={`Go to step ${currentStep + 1}`}
-            >
-              <span className="hidden sm:inline">Step {currentStep + 1}</span>
-              <span className="sm:hidden">{currentStep + 1}</span>
-              <span aria-hidden="true">→</span>
-            </Link>
-          ) : (
-            <span className="w-16 sm:w-24" aria-hidden="true" />
-          )}
-        </div>
+        {/* Placeholder for layout balance */}
+        <div className="w-16 sm:w-24" aria-hidden="true" />
       </nav>
 
       {/* Keyboard hints - only show when enabled */}

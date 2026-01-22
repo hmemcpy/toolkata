@@ -126,7 +126,6 @@ export function StepPageClientWrapper({
         currentStep={currentStep}
         totalSteps={totalSteps}
         title={title}
-        nextHref={nextHref}
       />
 
       {/* MDX Content */}
