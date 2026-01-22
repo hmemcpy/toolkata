@@ -378,12 +378,14 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Location: `packages/sandbox-api/src/services/session.ts`
   - Note: Uses MutableHashMap for thread-safe session storage, Ref for state management
 
-- [ ] **7.5** Create WebSocketService for terminal proxy
+- [x] **7.5** Create WebSocketService for terminal proxy
   - Bidirectional terminal I/O (stdin/stdout/stderr)
   - Handle resize events from client
   - Proxy container output to WebSocket
   - Handle connection cleanup on close
   - Location: `packages/sandbox-api/src/services/websocket.ts`
+  - Note: Added ws package dependency (@types/ws for types)
+  - Note: Created ContainerExec service for Docker exec operations (requires Docker client access in future)
 
 - [ ] **7.6** Create RateLimitService
   - Per-IP limits: 10 sessions/hour, 2 concurrent max
