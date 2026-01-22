@@ -239,11 +239,12 @@ Two related efforts:
 > **WHY**: Wire sidebar and toggle into the layout structure.
 > **Spec**: `specs/terminal-sidebar.md` section R4 (persistence)
 
-- [ ] **3.1** Update `app/[toolPair]/layout.tsx` to render sidebar
+- [x] **3.1** Update `app/[toolPair]/layout.tsx` to render sidebar
   - Add `<TerminalSidebar />` at layout level (after children, in Providers)
   - Add `<TerminalToggle />` at layout level
   - Sidebar renders as fixed overlay (no grid changes needed)
   - Content maintains full width (sidebar overlays)
+  - **Completed 2026-01-22** - Rendered sidebar and toggle in Providers.tsx (inside TerminalProvider)
 
 - [ ] **3.2** Update `InteractiveTerminal.tsx` with state change callback
   - Add `onStateChange?: (state: TerminalState) => void` prop

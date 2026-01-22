@@ -2,6 +2,8 @@
 
 import { DirectionProvider } from "../contexts/DirectionContext"
 import { TerminalProvider } from "../contexts/TerminalContext"
+import { TerminalSidebar } from "./ui/TerminalSidebar"
+import { TerminalToggle } from "./ui/TerminalToggle"
 import type { ReactNode } from "react"
 
 /**
@@ -31,6 +33,15 @@ export interface ProvidersProps {
  * - DirectionProvider: For bidirectional comparison direction state
  * - TerminalProvider: For terminal sidebar state and command execution
  *
+ * Also renders:
+ * - TerminalSidebar: Desktop sidebar component (fixed overlay)
+ * - TerminalToggle: FAB button to toggle terminal
+ *
+ * Why render sidebar/toggle here?
+ * - Both need access to TerminalContext (must be inside TerminalProvider)
+ * - Layout-level rendering ensures persistence across navigation
+ * - Sidebar overlays content (no grid changes needed to main layout)
+ *
  * Why a separate file?
  * - Keeps layout.tsx as a server component (better performance, SEO)
  * - Isolates the client boundary to this wrapper only
@@ -54,7 +65,11 @@ export interface ProvidersProps {
 export function Providers({ toolPair, children }: ProvidersProps): ReactNode {
   return (
     <DirectionProvider toolPair={toolPair}>
-      <TerminalProvider toolPair={toolPair}>{children}</TerminalProvider>
+      <TerminalProvider toolPair={toolPair}>
+        {children}
+        <TerminalSidebar toolPair={toolPair} />
+        <TerminalToggle />
+      </TerminalProvider>
     </DirectionProvider>
   )
 }
