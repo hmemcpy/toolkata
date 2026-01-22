@@ -209,7 +209,7 @@ Edit `/opt/sandbox-api/.env`:
 ```env
 PORT=3001
 HOST=0.0.0.0
-FRONTEND_ORIGIN=https://toolkata.dev
+FRONTEND_ORIGIN=https://toolkata.com
 DOCKER_HOST=/var/run/docker.sock
 ```
 
@@ -263,13 +263,13 @@ sudo systemctl reload caddy
 
 ### 7. Configure DNS
 
-Point `sandbox.toolkata.dev` to your VPS's IPv4 address.
+Point `sandbox.toolkata.com` to your VPS's IPv4 address.
 
 ### 8. Verify deployment
 
 ```bash
 # Check health endpoint
-curl https://sandbox.toolkata.dev/health
+curl https://sandbox.toolkata.com/health
 
 # Expected output:
 # {"status":"ok","containers":0,"uptime":"..."}
@@ -379,7 +379,7 @@ sudo iptables -L -n | grep 3001
 docker stats --no-stream
 
 # Check active sessions
-curl https://sandbox.toolkata.dev/health
+curl https://sandbox.toolkata.com/health
 
 # Kill orphaned containers
 docker ps -a | grep "sandbox-" | awk '{print $1}' | xargs -r docker rm -f

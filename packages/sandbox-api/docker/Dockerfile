@@ -43,13 +43,13 @@ RUN mkdir -p /home/sandbox/workspace && \
 
 # Configure git for sandbox user (default config)
 RUN git config --global user.name "Sandbox User" && \
-    git config --global user.email "sandbox@toolkata.dev" && \
+    git config --global user.email "sandbox@toolkata.com" && \
     git config --global init.defaultBranch main && \
     git config --global core.editor "vim"
 
 # Configure jj for sandbox user (default config)
 RUN mkdir -p /home/sandbox/.config/jj && \
-    printf '[user]\nname = "Sandbox User"\nemail = "sandbox@toolkata.dev"\n' > /home/sandbox/.config/jj/config.toml && \
+    printf '[user]\nname = "Sandbox User"\nemail = "sandbox@toolkata.com"\n' > /home/sandbox/.config/jj/config.toml && \
     chown -R sandbox:sandbox /home/sandbox/.config
 
 # Set working directory

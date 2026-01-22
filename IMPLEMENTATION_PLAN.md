@@ -350,14 +350,14 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 - [x] **7.1** Create sandbox-api entry point
   - HTTP server with Bun.serve or Hono
   - Health check endpoint: `GET /health` → `{ status: "ok", timestamp }`
-  - CORS configuration for frontend origin (toolkata.dev, localhost:3000)
+  - CORS configuration for frontend origin (toolkata.com, localhost:3000)
   - Location: `packages/sandbox-api/src/index.ts`
 
 - [x] **7.2** Create Docker base image
   - Base: `debian:bookworm-slim`
   - Install: git, curl, jj (via cargo/rustup due to Rust 2024 edition requirement)
   - Non-root user "sandbox" with home directory
-  - Pre-configure git/jj user settings (name: "Sandbox User", email: sandbox@toolkata.dev)
+  - Pre-configure git/jj user settings (name: "Sandbox User", email: sandbox@toolkata.com)
   - Working directory: `/home/sandbox/workspace`
   - Location: `packages/sandbox-api/docker/Dockerfile`
   - Note: jj 0.37.0 requires Rust 2024 edition, which isn't supported by Debian's cargo. Using rustup for modern toolchain.
@@ -600,7 +600,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Note: Added SessionService.getStats() method and updated health endpoint to include active container count
 
 - [x] **10.6** Configure environment variables
-  - Frontend: `NEXT_PUBLIC_SANDBOX_API_URL=https://sandbox.toolkata.dev`
+  - Frontend: `NEXT_PUBLIC_SANDBOX_API_URL=https://sandbox.toolkata.com`
   - Sandbox API: `DOCKER_HOST`, `PORT`, `FRONTEND_ORIGIN`
   - Document in `.env.example` files
   - Note: Created .env.example files for both packages/web and packages/sandbox-api

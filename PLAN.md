@@ -324,7 +324,7 @@ Each tutorial step includes an interactive terminal where users can execute real
          ▼                                    ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │              SANDBOX API (Hetzner/OVH/Oracle VPS)               │
-│                     sandbox.toolkata.dev                        │
+│                     sandbox.toolkata.com                        │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │  API Server (Effect-TS + Bun/Node)                       │   │
 │  │                                                          │   │
@@ -382,9 +382,9 @@ WORKDIR /home/sandbox/workspace
 
 # Pre-configure git/jj for sandbox user
 RUN git config --global user.name "Sandbox User" && \
-    git config --global user.email "sandbox@toolkata.dev" && \
+    git config --global user.email "sandbox@toolkata.com" && \
     jj config set --user user.name "Sandbox User" && \
-    jj config set --user user.email "sandbox@toolkata.dev"
+    jj config set --user user.email "sandbox@toolkata.com"
 ```
 
 ### Security Hardening
@@ -580,7 +580,7 @@ const RATE_LIMITS = {
 ```
 POST   /sessions
        Body: { toolPair: "jj-git", stepId: "03" }
-       Response: { sessionId: "abc123", wsUrl: "wss://sandbox.toolkata.dev/sessions/abc123/ws" }
+       Response: { sessionId: "abc123", wsUrl: "wss://sandbox.toolkata.com/sessions/abc123/ws" }
 
        Creates ephemeral container on demand.
        Returns WebSocket URL for terminal connection.

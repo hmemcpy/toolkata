@@ -18,14 +18,14 @@ echo ""
 if [ ! -f "/home/sandbox/.gitconfig" ]; then
   echo "Initializing git config..."
   git config --global user.name "Sandbox User"
-  git config --global user.email "sandbox@toolkata.dev"
+  git config --global user.email "sandbox@toolkata.com"
   git config --global init.defaultBranch main
 fi
 
 # Create jj config directory if not exists
 if [ ! -d "/home/sandbox/.config/jj" ]; then
   mkdir -p /home/sandbox/.config/jj
-  printf '[user]\nname = "Sandbox User"\nemail = "sandbox@toolkata.dev"\n' > /home/sandbox/.config/jj/config.toml
+  printf '[user]\nname = "Sandbox User"\nemail = "sandbox@toolkata.com"\n' > /home/sandbox/.config/jj/config.toml
 fi
 
 # If command provided, execute it; otherwise keep alive
