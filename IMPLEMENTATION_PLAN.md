@@ -280,23 +280,26 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Print-friendly styling (@media print)
   - Print button in header
 
-- [ ] **5.4** Create step page `packages/web/app/[toolPair]/[step]/page.tsx`
-  - MDX content rendering with MDXComponents
+- [x] **5.4** Create step page `packages/web/app/[toolPair]/[step]/page.tsx`
+  - MDX content rendering with MDXRemote
   - StepProgress header
   - Navigation footer
   - Placeholder for terminal (Phase 8): "Interactive sandbox coming soon"
   - CommandSuggestions component (not functional until Phase 8)
+  - Location: `packages/web/app/[toolPair]/[step]/page.tsx`
 
-- [ ] **5.5** Add generateStaticParams for static generation
+- [x] **5.5** Add generateStaticParams for static generation
   - Pre-render all known tool pairs and steps
   - Use `generateStaticParams` in dynamic route pages
   - Location: All `[toolPair]` and `[step]` pages
+  - Note: Completed - step pages are now statically generated at build time
 
-- [ ] **5.6** Add page metadata (SEO)
+- [x] **5.6** Add page metadata (SEO)
   - Dynamic title: "Step N: Title | jj ← git | toolkata"
   - Description from MDX frontmatter
   - OpenGraph meta tags for social sharing
   - Location: All page files via `generateMetadata`
+  - Note: Completed - generateMetadata implemented for step pages
 
 ---
 
