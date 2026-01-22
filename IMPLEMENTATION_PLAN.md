@@ -387,7 +387,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Note: Added ws package dependency (@types/ws for types)
   - Note: Created ContainerExec service for Docker exec operations (requires Docker client access in future)
 
-- [ ] **7.6** Create RateLimitService
+- [x] **7.6** Create RateLimitService
   - Per-IP limits: 10 sessions/hour, 2 concurrent max
   - 60 commands/minute throttle (optional)
   - In-memory store (Map with IP keys)
