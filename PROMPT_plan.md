@@ -2,12 +2,7 @@
 
 You are in PLANNING mode. Analyze specifications against existing code and generate a prioritized implementation plan.
 
-## CRITICAL: Tutor Guidelines
-
-**This project uses local tutor packages from `~/git/tutor` via `bun link`.**
-
-Before planning ANY implementation, you MUST read:
-- `~/git/tutor/AGENTS.md` - The authoritative source for all coding standards
+## Code Style Guidelines
 
 All planned code must strictly follow these rules:
 - No `any`, no `!` assertions, no `as` assertions
@@ -36,8 +31,8 @@ Use parallel subagents to analyze relevant source directories:
 ### 0c. Study the current plan
 Read `IMPLEMENTATION_PLAN.md` if it exists.
 
-### 0d. Study tutor guidelines
-Read `~/git/tutor/AGENTS.md` for coding standards that MUST be followed.
+### 0d. Study code style guidelines
+Review `CLAUDE.md` for coding standards that MUST be followed.
 
 ## Phase 1: Gap Analysis
 
@@ -62,7 +57,7 @@ Update `IMPLEMENTATION_PLAN.md` with:
 - Clear descriptions with file locations
 - Dependencies noted where relevant
 - Discoveries from gap analysis
-- Ensure all tasks follow tutor AGENTS.md guidelines
+- Ensure all tasks follow code style guidelines
 
 Capture the WHY, not just the WHAT.
 
@@ -72,4 +67,4 @@ Capture the WHY, not just the WHAT.
 1000. Use up to 10 parallel subagents for analysis
 1001. Each task must be completable in ONE loop iteration
 1002. Ultrathink before finalizing priorities
-1003. **All planned code MUST follow ~/git/tutor/AGENTS.md**
+1003. **All planned code MUST follow code style guidelines in CLAUDE.md**

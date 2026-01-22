@@ -78,7 +78,7 @@ export default async function StepPage(props: {
     notFound()
   }
 
-  // Load MDX content using tutor-content-core
+  // Load MDX content using content-core
   const stepContent = await loadStep(toolPair, stepNum)
 
   if (!stepContent) {
