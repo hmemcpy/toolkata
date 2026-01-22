@@ -1,13 +1,13 @@
 # Implementation Plan: toolkata
 
-> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1-13.3.2 complete
+> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1-13.3.3, 13.4.1 complete
 > **Validation**: `bun run typecheck`, `bun run lint`, `bun run build`, Playwright tests
 > **Priority Legend**: P0 = Blocking, P1 = Core MVP, P2 = Polish/Enhancement
-> **Last Updated**: 2026-01-22 (13.3.2 SideBySideWithDirection wrapper complete. Next: 13.3.3 MDX component mapping)
+> **Last Updated**: 2026-01-22 (13.4.1 Glossary data module complete. Next: 13.4.2 Update cheatsheet to use shared data)
 
 ### Current Priority: Phase 13 (Bidirectional Comparison)
 
-**Recommended starting point**: Task 13.3.1 (SideBySide isReversed prop) - depends on completed 13.2.3 StepProgressWithDirection wrapper
+**Recommended starting point**: Task 13.4.2 (Update cheatsheet page) - depends on completed 13.4.1 glossary data module
 
 ### Phase 12 Remaining Items
 
@@ -18,14 +18,11 @@ Phase 12 Playwright tests are written but some need manual verification:
 
 ### Immediate Next Tasks (in order)
 
-1. **13.3.3** Update MDX component mapping
-   - Replace SideBySide with SideBySideWithDirection in MDXComponents.tsx
-   - ~2 lines
-
-2. **13.4.1** Extract glossary data to `packages/web/content/glossary/jj-git.ts`
-   - Move 42 entries from cheatsheet/page.tsx lines 33-252
-   - Add search/filter helpers
-   - ~300 lines (mostly data)
+1. **13.4.2** Update cheatsheet page to use shared glossary data
+   - Location: `packages/web/app/[toolPair]/cheatsheet/page.tsx`
+   - Import `jjGitGlossary`, `getCategories` from `content/glossary/jj-git`
+   - Remove inline `jjGitCheatSheet` array (lines 33-252)
+   - ~30 lines net change (remove ~220, add ~30)
 
 ---
 
@@ -1000,7 +997,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 
 > Shared data source for cheatsheet and glossary pages. Can run parallel to 13.2-13.3.
 
-- [ ] **13.4.1** Create glossary data module at `packages/web/content/glossary/jj-git.ts`
+- [x] **13.4.1** Create glossary data module at `packages/web/content/glossary/jj-git.ts`
   - Extract from `app/[toolPair]/cheatsheet/page.tsx` lines 33-252 (42 entries)
   - Define interfaces:
     ```typescript
