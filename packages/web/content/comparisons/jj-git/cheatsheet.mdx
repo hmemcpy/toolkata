@@ -1,0 +1,159 @@
+---
+title: "jj vs Git Command Cheat Sheet"
+description: "Quick reference for git users learning jj (Jujutsu)"
+---
+
+# jj vs Git Command Cheat Sheet
+
+Quick reference for common git commands and their jj equivalents.
+
+## Daily Workflow
+
+| Git | jj | Description |
+|-----|----|-------------|
+| `git status` | `jj status` | Show repository status |
+| `git log` | `jj log` | Show commit history |
+| `git diff` | `jj diff` | Show working copy changes |
+| `git add` + `git commit` | `jj describe` + `jj new` | Create a commit |
+| `git commit --amend` | `jj describe` | Edit current commit message |
+| `git branch` | `jj branch` | List branches |
+| `git checkout` | `jj checkout` | Switch branches |
+
+## Commits
+
+| Git | jj | Description |
+|-----|----|-------------|
+| `git commit` | `jj new` | Create new commit |
+| `git commit --amend` | `jj describe` | Edit current commit message |
+| `git show` | `jj show` | Show commit details |
+| `git reset HEAD~1` | `jj abandon` | Abandon last commit |
+| `git rebase -i` | `jj rebase` | Rebase commits |
+
+## Branches
+
+| Git | jj | Description |
+|-----|----|-------------|
+| `git branch` | `jj branch list` | List branches |
+| `git branch name` | `jj branch create name` | Create branch |
+| `git checkout -b name` | `jj branch create name` | Create and checkout |
+| `git branch -d name` | `jj branch delete name` | Delete branch |
+| `git checkout name` | `jj checkout name` | Switch to branch |
+
+## Stashing
+
+| Git | jj | Description |
+|-----|----|-------------|
+| `git stash` | `jj new` | Create new commit (auto-stash) |
+| `git stash list` | `jj log` | View commits (including stashed) |
+| `git stash pop` | `jj edit` | Edit a previous commit |
+
+## Remote Operations
+
+| Git | jj | Description |
+|-----|----|-------------|
+| `git fetch` | `jj git fetch` | Fetch from remote |
+| `git pull` | `jj git fetch` + `jj rebase` | Pull and rebase |
+| `git push` | `jj git push` | Push to remote |
+| `git clone` | `jj git clone` | Clone repository |
+| `git remote -v` | `jj git remote list` | List remotes |
+
+## Viewing Differences
+
+| Git | jj | Description |
+|-----|----|-------------|
+| `git diff` | `jj diff` | Show working copy changes |
+| `git diff HEAD~1` | `jj diff --from @-` | Compare with parent |
+| `git diff branch1 branch2` | `jj diff --from branch1 --to branch2` | Compare branches |
+| `git show HEAD` | `jj show @` | Show current commit |
+
+## History Navigation
+
+| Git | jj | Description |
+|-----|----|-------------|
+| `git log --oneline` | `jj log -l 10` | Show recent commits |
+| `git reflog` | `jj op log` | Show operation log |
+| `git reset --hard` | `jj op undo` | Undo last operation |
+| `git revert` | `jj abandon` | Abandon a commit |
+
+## Conflicts
+
+| Git | jj | Description |
+|-----|----|-------------|
+| `git status` | `jj status` | Show conflicts |
+| `git add` | `jj resolve` | Mark conflict as resolved |
+| `git checkout --ours` | `jj resolve --ours` | Use our version |
+| `git checkout --theirs` | `jj resolve --theirs` | Use their version |
+| `git mergetool` | `jj resolve` | Resolve interactively |
+
+## Key Concepts
+
+### The `@` Commit
+
+In jj, your working copy is represented by the `@` commit. It's always the latest commit in your working tree.
+
+```bash
+# Show current working copy commit
+jj show @
+
+# Compare working copy with parent
+jj diff --from @-
+
+# Edit current commit message
+jj describe -m "New message"
+```
+
+### Change IDs
+
+Every commit in jj has a stable change ID that survives rebases. Use it to track commits across history rewrites.
+
+```bash
+# Show change ID in log
+jj log
+
+# Use change ID in operations
+jj rebase -d <change-id>
+```
+
+### Automatic Rebasing
+
+When you edit an old commit, jj automatically rebases all descendants. No manual intervention needed.
+
+```bash
+# Edit a commit from 3 steps ago
+jj edit --change <change-id>
+# All later commits automatically rebased!
+```
+
+## Common Gotchas
+
+| Situation | Git | jj |
+|-----------|-----|----|
+| Undo last operation | `git reset --hard HEAD@{1}` | `jj op undo` |
+| Discard working copy | `git checkout -- .` | `jj restore` |
+| Unstage file | `git reset HEAD file` | N/A (no staging) |
+| Stage file | `git add file` | N/A (auto-tracked) |
+| Amend commit | `git commit --amend` | `jj describe` |
+| See all branches | `git branch -a` | `jj branch list` |
+
+## Quick Start
+
+```bash
+# Initialize jj in git repo
+jj git init
+
+# Make your first commit
+jj describe -m "Initial commit"
+jj new
+
+# View history
+jj log
+
+# Push to git remote
+jj git push
+```
+
+## Further Reading
+
+- [jj documentation](https://martinvonz.github.io/jj/)
+- [Revset syntax](https://martinvonz.github.io/jj/revsets.html)
+- [Conflict resolution](https://martinvonz.github.io/jj/conflicts.html)
