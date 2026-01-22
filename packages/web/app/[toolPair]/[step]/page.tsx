@@ -50,9 +50,11 @@ export async function generateMetadata(props: {
  *
  * Displays:
  * - StepProgress header (back link, step indicator, next link)
- * - MDX content rendering with custom components
- * - Interactive terminal with CommandSuggestions (wired together)
+ * - MDX content rendering with custom components (including TryIt for terminal commands)
  * - Navigation footer (Previous/Next step buttons, Mark Complete button)
+ *
+ * The terminal is available as a collapsible sidebar via TerminalProvider,
+ * accessible via the FAB toggle button or TryIt components in MDX content.
  */
 export default async function StepPage(props: {
   readonly params: Promise<{ readonly toolPair: string; readonly step: string }>

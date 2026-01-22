@@ -314,22 +314,26 @@ Two related efforts:
 
 > **WHY**: Remove deprecated components and simplify code.
 
-- [ ] **6.1** Update `app/[toolPair]/[step]/page.tsx`
-  - Remove `suggestedCommands` extraction from frontmatter (lines 99-101)
-  - Remove passing `suggestedCommands` to StepPageClientWrapper (line 115)
-  - Simplify step page props
+- [x] **6.1** Update `app/[toolPair]/[step]/page.tsx`
+  - Already clean - no `suggestedCommands` extraction or passing existed
+  - Updated outdated comment to reference TryIt instead of CommandSuggestions
+  - **Completed 2026-01-22**
 
-- [ ] **6.2** Remove `TerminalWithSuggestionsWrapper.tsx`
-  - Delete file: `packages/web/components/ui/TerminalWithSuggestionsWrapper.tsx`
-  - Remove exports from any index files
+- [x] **6.2** Remove `TerminalWithSuggestionsWrapper.tsx`
+  - Deleted file: `packages/web/components/ui/TerminalWithSuggestionsWrapper.tsx`
+  - No exports in index files to remove
+  - **Completed 2026-01-22**
 
-- [ ] **6.3** Remove `TerminalWithSuggestions.tsx`
-  - Delete file: `packages/web/components/ui/TerminalWithSuggestions.tsx`
-  - Remove exports from any index files
+- [x] **6.3** Remove `TerminalWithSuggestions.tsx`
+  - Deleted file: `packages/web/components/ui/TerminalWithSuggestions.tsx`
+  - No exports in index files to remove
+  - **Completed 2026-01-22**
 
-- [ ] **6.4** Remove `CommandSuggestions.tsx`
-  - Delete file: `packages/web/components/ui/CommandSuggestions.tsx`
+- [x] **6.4** Remove `CommandSuggestions.tsx`
+  - Deleted file: `packages/web/components/ui/CommandSuggestions.tsx`
   - Functionality replaced by TryIt component
+  - Also updated outdated comments in InteractiveTerminal.tsx that referenced CommandSuggestions
+  - **Completed 2026-01-22**
 
 ---
 
@@ -337,12 +341,13 @@ Two related efforts:
 
 > **WHY**: Ensure all implementation compiles and builds before running potentially-blocking Playwright tests.
 
-- [ ] **7.1** Run full build validation
+- [x] **7.1** Run full build validation
   ```bash
   bun run typecheck  # Zero errors in both packages
-  bun run lint       # Zero errors
+  bun run lint       # Zero errors (only 1 suppression warning)
   bun run build      # All pages generate successfully
   ```
+  - **Completed 2026-01-22** - All validation passes
 
 ---
 

@@ -88,7 +88,7 @@ export interface InteractiveTerminalProps {
    * Optional preloaded commands to display as suggestions.
    *
    * If provided, commands are shown as buttons below the terminal.
-   * If not provided, use CommandSuggestions component separately.
+   * This is used by the sidebar TryIt functionality.
    */
   readonly preloadCommands?: readonly string[]
 
@@ -386,7 +386,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
      * Insert a command into the terminal programmatically.
      *
      * This is exposed via useImperativeHandle for external components
-     * (like CommandSuggestions) to insert commands.
+     * (like TryIt) to insert commands.
      */
     const insertCommand = useCallback(
       (command: string) => {
@@ -425,7 +425,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
     /**
      * Expose imperative handle for external command insertion.
      *
-     * Allows CommandSuggestions component to insert commands into the terminal.
+     * Allows TryIt component (via TerminalContext) to insert commands into the terminal.
      */
     useImperativeHandle(
       ref,
