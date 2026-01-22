@@ -17,7 +17,11 @@ import {
   type RateLimitServiceShape,
 } from "./services/rate-limit.js"
 import { SessionService, SessionServiceLive, type SessionServiceShape } from "./services/session.js"
-import { WebSocketServiceLive } from "./services/websocket.js"
+import {
+  WebSocketService,
+  WebSocketServiceLive,
+  type WebSocketServiceShape,
+} from "./services/websocket.js"
 
 // Module-level reference to SessionService for health checks
 // This is set when the server starts and allows the health endpoint to access session stats
@@ -110,6 +114,7 @@ const make = Effect.gen(function* () {
   const config = yield* ServerConfig
   const sessionService = yield* SessionService
   const rateLimitService = yield* RateLimitService
+  const webSocketService = yield* WebSocketService
 
   let httpServer: NodeHttpServer | null = null
   const app = createApp(config, sessionService, rateLimitService)
@@ -137,7 +142,7 @@ const make = Effect.gen(function* () {
         headers,
       }
       if (req.method !== "GET" && req.method !== "HEAD") {
-        requestInit.body = req as unknown as BodyInit
+        requestInit.body = req as unknown as RequestInit["body"]
       }
 
       const request = new Request(url.toString(), requestInit)
@@ -157,8 +162,8 @@ const make = Effect.gen(function* () {
       }
     })
 
-    // Attach WebSocket server to HTTP server
-    createWebSocketServer(httpServer)
+    // Attach WebSocket server to HTTP server with services for connection handling
+    createWebSocketServer(httpServer, sessionService, webSocketService)
 
     // Start listening
     httpServer.listen(config.port, config.host, () => {
@@ -206,10 +211,9 @@ export const ServerLayer = Layer.mergeAll(
 
 // Default config from environment
 const defaultConfig = Effect.sync(() => {
-  const env = process.env as Record<string, string | undefined>
-  const port = Number(env.PORT ?? "3001")
-  const host = env.HOST ?? "0.0.0.0"
-  const frontendOrigin = env.FRONTEND_ORIGIN ?? "http://localhost:3000"
+  const port = Number(process.env["PORT"] ?? "3001")
+  const host = process.env["HOST"] ?? "0.0.0.0"
+  const frontendOrigin = process.env["FRONTEND_ORIGIN"] ?? "http://localhost:3000"
 
   return {
     port,
@@ -235,17 +239,28 @@ const mainProgram = Effect.gen(function* () {
 
 // Run main when file is executed directly
 if (import.meta.main) {
-  // Build the complete application layer
-  // Order matters: provide dependencies first
-  const appLayer = Layer.mergeAll(
-    ServerConfigLive,
-    DockerClientLive,
-    RateLimitServiceLive,
-    ContainerServiceLive,
-    SessionServiceLive,
-    WebSocketServiceLive,
-    HttpServerLive,
+  // Build the complete application layer with proper dependency resolution
+  // Base layers (no dependencies)
+  const baseLayer = Layer.mergeAll(ServerConfigLive, DockerClientLive, RateLimitServiceLive)
+
+  // Container service depends on DockerClient
+  const containerLayer = ContainerServiceLive.pipe(Layer.provide(DockerClientLive))
+
+  // Session service depends on ContainerService
+  const sessionLayer = SessionServiceLive.pipe(Layer.provide(containerLayer))
+
+  // WebSocket service depends on ContainerService and DockerClient
+  const wsLayer = WebSocketServiceLive.pipe(
+    Layer.provide(Layer.merge(containerLayer, DockerClientLive)),
   )
+
+  // HTTP server depends on ServerConfig, SessionService, RateLimitService, WebSocketService
+  const httpLayer = HttpServerLive.pipe(
+    Layer.provide(Layer.mergeAll(ServerConfigLive, sessionLayer, RateLimitServiceLive, wsLayer)),
+  )
+
+  // Merge all layers for the final app
+  const appLayer = Layer.mergeAll(baseLayer, containerLayer, sessionLayer, wsLayer, httpLayer)
 
   const program = mainProgram.pipe(
     Effect.provide(appLayer),

@@ -232,6 +232,6 @@ export const ContainerServiceLive = Layer.effect(ContainerService, make)
 export const DockerClientLive = Layer.effect(
   DockerClient,
   Effect.sync(() => ({
-    docker: new Docker({ socketPath: process.env.DOCKER_HOST ?? "/var/run/docker.sock" }),
+    docker: new Docker({ socketPath: process.env["DOCKER_HOST"] ?? "/var/run/docker.sock" }),
   })),
 )

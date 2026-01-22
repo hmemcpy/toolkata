@@ -1,8 +1,8 @@
 import type { Server as HttpServer } from "node:http"
 import { Data, Effect } from "effect"
 import { WebSocketServer } from "ws"
-import { SessionService } from "../services/session.js"
-import { WebSocketError, WebSocketService, parseMessage } from "../services/websocket.js"
+import type { SessionServiceShape } from "../services/session.js"
+import { WebSocketError, type WebSocketServiceShape, parseMessage } from "../services/websocket.js"
 
 // Error types for WebSocket route
 export class WsRouteError extends Data.TaggedClass("WsRouteError")<{
@@ -28,7 +28,11 @@ const getSessionId = (url: string): string | null => {
 }
 
 // Create a WebSocket server attached to an HTTP server
-export const createWebSocketServer = (httpServer: HttpServer) => {
+export const createWebSocketServer = (
+  httpServer: HttpServer,
+  sessionService: SessionServiceShape,
+  webSocketService: WebSocketServiceShape,
+) => {
   const wss = new WebSocketServer({ noServer: true })
 
   // Handle WebSocket upgrade requests
@@ -63,11 +67,8 @@ export const createWebSocketServer = (httpServer: HttpServer) => {
     ) => {
       console.log(`[WebSocket] Connection attempt for session: ${sessionId}`)
 
-      // Run the connection handler within Effect context
+      // Run the connection handler using passed-in services
       const program = Effect.gen(function* () {
-        const sessionService = yield* SessionService
-        const webSocketService = yield* WebSocketService
-
         // Verify session exists and is running
         const session = yield* sessionService.get(sessionId)
 
@@ -87,11 +88,11 @@ export const createWebSocketServer = (httpServer: HttpServer) => {
           ws,
         )
 
-        // Store connection for cleanup
-        const closeEffect = Effect.gen(function* () {
-          yield* webSocketService.close(connection)
-          yield* sessionService.updateActivity(sessionId)
-        })
+        // Store connection for cleanup - use captured service values
+        const closeEffect = Effect.all([
+          webSocketService.close(connection),
+          sessionService.updateActivity(sessionId),
+        ]).pipe(Effect.asVoid, Effect.catchAll(() => Effect.void))
 
         connections.set(sessionId, {
           sessionId,
@@ -101,33 +102,35 @@ export const createWebSocketServer = (httpServer: HttpServer) => {
 
         console.log(`[WebSocket] Connected for session: ${sessionId}`)
 
-        // Set up message handler from client
+        // Set up message handler from client - use captured service values
         ws.on("message", async (data: Buffer) => {
-          const messageProgram = Effect.gen(function* () {
-            const wsSvc = yield* WebSocketService
-            const sessSvc = yield* SessionService
+          // Update activity on each message
+          const updateResult = await Effect.runPromise(
+            Effect.either(sessionService.updateActivity(sessionId)),
+          )
+          if (updateResult._tag === "Left") {
+            console.error("[WebSocket] Failed to update activity:", updateResult.left.message)
+          }
 
-            // Update activity on each message
-            yield* sessSvc.updateActivity(sessionId)
+          // Parse the message
+          const message = parseMessage(data)
 
-            // Parse the message
-            const message = parseMessage(data)
-
-            if (message.type === "input") {
-              // Write input to container
-              yield* wsSvc.writeInput(connection, Buffer.from(message.data, "utf-8"))
-            } else if (message.type === "resize") {
-              // Resize terminal
-              yield* wsSvc.resize(connection, message.rows, message.cols)
+          if (message.type === "input") {
+            // Write input to container
+            const writeResult = await Effect.runPromise(
+              Effect.either(webSocketService.writeInput(connection, Buffer.from(message.data, "utf-8"))),
+            )
+            if (writeResult._tag === "Left") {
+              console.error("[WebSocket] Write error:", writeResult.left.message)
+              ws.close(1011, writeResult.left.message)
             }
-          })
-
-          // Run the message handler (log errors, don't crash)
-          const result = await Effect.runPromise(Effect.either(messageProgram))
-          if (result._tag === "Left") {
-            console.error("[WebSocket] Error handling message:", result.left.message)
-            if (result.left instanceof WsRouteError || result.left instanceof WebSocketError) {
-              ws.close(1011, result.left.message)
+          } else if (message.type === "resize") {
+            // Resize terminal
+            const resizeResult = await Effect.runPromise(
+              Effect.either(webSocketService.resize(connection, message.rows, message.cols)),
+            )
+            if (resizeResult._tag === "Left") {
+              console.error("[WebSocket] Resize error:", resizeResult.left.message)
             }
           }
         })

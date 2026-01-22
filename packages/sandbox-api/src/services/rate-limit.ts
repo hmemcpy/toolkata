@@ -52,9 +52,8 @@ interface RateLimitStore {
 
 // Helper: Get current tracking state for IP, creating if needed
 const getOrCreateTracking = (store: RateLimitStore, ipAddress: string, now: number): IpTracking => {
-  // Since MutableHashMap.get returns an Effect, we need to run it
-  // This function is used in a context where we can't yield*, so we use runSync
-  const existingOption = Effect.runSync(MutableHashMap.get(store.ipTracking, ipAddress))
+  // MutableHashMap.get is synchronous in Effect 3.x
+  const existingOption = MutableHashMap.get(store.ipTracking, ipAddress)
 
   if (Option.isNone(existingOption)) {
     // First request from this IP
@@ -159,20 +158,15 @@ const make = Effect.gen(function* () {
         minuteWindowStart: tracking.minuteWindowStart,
       }
 
-      const updatedIpTracking = yield* MutableHashMap.set(
-        store.ipTracking,
-        ipAddress,
-        updatedTracking,
-      )
-
-      yield* Ref.set(storeRef, { ipTracking: updatedIpTracking })
+      // MutableHashMap.set is synchronous and mutates in place
+      MutableHashMap.set(store.ipTracking, ipAddress, updatedTracking)
     })
 
   // Remove a session from active tracking
   const removeSession = (ipAddress: string, sessionId: string) =>
     Effect.gen(function* () {
       const store = yield* Ref.get(storeRef)
-      const trackingOption = yield* MutableHashMap.get(store.ipTracking, ipAddress)
+      const trackingOption = MutableHashMap.get(store.ipTracking, ipAddress)
 
       if (Option.isNone(trackingOption)) {
         // IP not tracked, nothing to do
@@ -190,13 +184,8 @@ const make = Effect.gen(function* () {
         activeSessions: updatedActiveSessions,
       }
 
-      const updatedIpTracking = yield* MutableHashMap.set(
-        store.ipTracking,
-        ipAddress,
-        updatedTracking,
-      )
-
-      yield* Ref.set(storeRef, { ipTracking: updatedIpTracking })
+      // MutableHashMap.set is synchronous and mutates in place
+      MutableHashMap.set(store.ipTracking, ipAddress, updatedTracking)
     })
 
   // Check if IP can execute a command
@@ -230,27 +219,20 @@ const make = Effect.gen(function* () {
         minuteWindowStart: tracking.minuteWindowStart,
       }
 
-      const updatedIpTracking = yield* MutableHashMap.set(
-        store.ipTracking,
-        ipAddress,
-        updatedTracking,
-      )
-
-      yield* Ref.set(storeRef, { ipTracking: updatedIpTracking })
+      // MutableHashMap.set is synchronous and mutates in place
+      MutableHashMap.set(store.ipTracking, ipAddress, updatedTracking)
     })
 
   // Get active session count for an IP
   const getActiveSessionCount = (ipAddress: string) =>
     Ref.get(storeRef).pipe(
-      Effect.flatMap((store) =>
-        Effect.gen(function* () {
-          const trackingOption = yield* MutableHashMap.get(store.ipTracking, ipAddress)
-          if (Option.isNone(trackingOption)) {
-            return 0
-          }
-          return trackingOption.value.activeSessions.length
-        }),
-      ),
+      Effect.map((store) => {
+        const trackingOption = MutableHashMap.get(store.ipTracking, ipAddress)
+        if (Option.isNone(trackingOption)) {
+          return 0
+        }
+        return trackingOption.value.activeSessions.length
+      }),
     )
 
   return {
