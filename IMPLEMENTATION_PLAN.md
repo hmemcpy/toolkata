@@ -199,11 +199,12 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Location: `packages/web/components/ui/SideBySide.tsx`
   - Note: Location uses `components/` not `src/components/` (project uses `app/` not `src/app/`)
 
-- [ ] **4.3** Build Callout component
+- [x] **4.3** Build Callout component
   - Variants: TIP (green), WARNING (yellow), NOTE (gray)
   - Left border accent (3px), transparent background
   - `role="note"` for accessibility
-  - Location: `packages/web/src/components/ui/Callout.tsx`
+  - Location: `packages/web/components/ui/Callout.tsx`
+  - Note: Location uses `components/` not `src/components/` (project uses `app/` not `src/app/`)
 
 - [ ] **4.4** Build ProgressBar component
   - Visual progress indicator (filled blocks, green accent)

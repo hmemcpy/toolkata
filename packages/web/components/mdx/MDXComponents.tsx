@@ -14,7 +14,9 @@
  * ```
  */
 
+import { Callout } from "../ui/Callout"
 import { CodeBlock } from "../ui/CodeBlock"
+import { SideBySide } from "../ui/SideBySide"
 import type { BundledLanguage } from "shiki"
 
 /**
@@ -84,10 +86,8 @@ export function Code({ children, className }: CodeProps) {
 export const mdxComponents = {
   pre: Pre,
   code: Code,
-  // TODO: Implement SideBySide component (task 4.2)
-  // SideBySide,
-  // TODO: Implement Callout component (task 4.3)
-  // Callout,
+  SideBySide,
+  Callout,
   // TODO: Implement InteractiveTerminal component (task 8.2)
   // Terminal: InteractiveTerminal,
 }
