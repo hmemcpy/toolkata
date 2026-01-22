@@ -198,7 +198,7 @@ Two related efforts:
 > **WHY**: Core UI for terminal sidebar feature.
 > **Spec**: `specs/terminal-sidebar.md` sections R1, R2, R6
 
-- [ ] **2.1** Create `TerminalSidebar.tsx` at `packages/web/components/ui/TerminalSidebar.tsx`
+- [x] **2.1** Create `TerminalSidebar.tsx` at `packages/web/components/ui/TerminalSidebar.tsx`
   - Fixed right sidebar (desktop lg+)
   - 400px width, full height, overlay mode (no content push)
   - Header: "Terminal" title, status indicator, close button (X)
@@ -209,8 +209,9 @@ Two related efforts:
   - Slide-in animation from right (transform + opacity)
   - Uses `useTerminalContext()` for state
   - **MUST** have explicit return type on component function
+  - **Completed 2026-01-22**
 
-- [ ] **2.2** Create `MobileBottomSheet.tsx` at `packages/web/components/ui/MobileBottomSheet.tsx`
+- [x] **2.2** Create `MobileBottomSheet.tsx` at `packages/web/components/ui/MobileBottomSheet.tsx`
   - Bottom sheet for viewports < lg (1024px)
   - ~60% viewport height, max 600px
   - Drag handle at top (24px, visual affordance)
@@ -219,8 +220,9 @@ Two related efforts:
   - Accessibility: `role="dialog"`, `aria-modal="true"`, `aria-label`
   - Focus trap when open
   - Uses touch events for swipe detection
+  - **Completed 2026-01-22**
 
-- [ ] **2.3** Create `TerminalToggle.tsx` at `packages/web/components/ui/TerminalToggle.tsx`
+- [x] **2.3** Create `TerminalToggle.tsx` at `packages/web/components/ui/TerminalToggle.tsx`
   - FAB button in bottom-right corner
   - 56px touch target (≥44px requirement)
   - Connection indicator dot (green when CONNECTED, gray otherwise)
@@ -228,6 +230,7 @@ Two related efforts:
   - Visible on all viewports
   - Accessibility: `aria-label`, `aria-expanded`, `aria-controls="terminal-sidebar"`
   - Keyboard: Enter/Space to toggle
+  - **Completed 2026-01-22**
 
 ---
 
@@ -401,9 +404,9 @@ Two related efforts:
 | `tests/content.test.ts` | Content loading unit tests (Bun) |
 | `contexts/TerminalContext.tsx` | Context for terminal state |
 | `components/TerminalProvider.tsx` | Provider managing terminal lifecycle |
-| `components/ui/TerminalSidebar.tsx` | Desktop sidebar component |
-| `components/ui/MobileBottomSheet.tsx` | Mobile bottom sheet component |
-| `components/ui/TerminalToggle.tsx` | FAB toggle button |
+| `components/ui/TerminalSidebar.tsx` | Desktop sidebar component **(CREATED 2026-01-22)** |
+| `components/ui/MobileBottomSheet.tsx` | Mobile bottom sheet component **(CREATED 2026-01-22)** |
+| `components/ui/TerminalToggle.tsx` | FAB toggle button **(CREATED 2026-01-22)** |
 | `components/ui/TryIt.tsx` | MDX command execution component |
 | `tests/terminal-sidebar.spec.ts` | Playwright tests (Phase 8) |
 
@@ -424,6 +427,7 @@ Two related efforts:
 | `packages/web/app/[toolPair]/[step]/page.tsx` | Import centralized mdxComponents, remove local definition and unused imports |
 | `packages/web/hooks/useKeyboardNavigation.ts` | Add `t` shortcut for terminal toggle |
 | `packages/web/components/mdx/MDXComponents.tsx` | Register TryIt component |
+| `biome.json` | Disabled `useSemanticElements` a11y rule for div with dialog role (custom animations needed) |
 
 ### Deleted Files (3)
 

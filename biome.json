@@ -19,6 +19,9 @@
       },
       "correctness": {
         "noUnusedVariables": "error"
+      },
+      "a11y": {
+        "useSemanticElements": "off"
       }
     }
   },
