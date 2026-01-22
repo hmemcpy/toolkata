@@ -482,80 +482,80 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 
 > **WHY**: Content is the product. Structure established in Phase 3. Can start once content infrastructure is ready.
 
-- [ ] **9.1** Create content directory structure
-  - `packages/web/src/content/comparisons/jj-git/`
+- [x] **9.1** Create content directory structure
+  - `packages/web/content/comparisons/jj-git/`
   - Ensure directory exists before adding MDX files
 
-- [ ] **9.2** Write landing page content `index.mdx`
+- [x] **9.2** Write landing page content `index.mdx`
   - Why jj? Key differences from git (5 bullet points from PLAN.md)
   - Target audience description
   - Prerequisites (git familiarity)
   - Estimated total time (~40 min)
 
-- [ ] **9.3** Write cheat sheet `cheatsheet.mdx`
+- [x] **9.3** Write cheat sheet `cheatsheet.mdx`
   - Complete command mapping table (from UX-DESIGN.md section 3.6)
   - Sections: Basics, Commits, History, Branches, Remotes, Undo
   - Include notes for commands with different semantics
 
-- [ ] **9.4** Write Step 1: Installation & Setup `01-installation.mdx`
+- [x] **9.4** Write Step 1: Installation & Setup `01-step.mdx`
   - Installing jj on macOS (`brew install jj`), Linux, Windows
   - Colocated repo setup (`jj git init --colocate` in existing git repo)
   - Verify installation with `jj --version`
 
-- [ ] **9.5** Write Step 2: Mental Model `02-mental-model.mdx`
+- [x] **9.5** Write Step 2: Mental Model `02-step.mdx`
   - Working copy IS a commit (the @ commit)
   - No staging area - all changes auto-tracked
   - SideBySide diagram: git (working copy → staging → commit) vs jj (working copy = commit)
 
-- [ ] **9.6** Write Step 3: Creating Commits `03-creating-commits.mdx`
+- [x] **9.6** Write Step 3: Creating Commits `03-step.mdx`
   - `jj describe -m "message"` vs `git commit -m "message"`
   - `jj new` to start next commit
   - Demo: create file, describe, new
 
-- [ ] **9.7** Write Step 4: Viewing History `04-viewing-history.mdx`
+- [x] **9.7** Write Step 4: Viewing History `04-step.mdx`
   - `jj log` vs `git log`
   - Understanding the log output (@ marker, change IDs)
   - Revset basics: `@`, `@-`, `root()`
 
-- [ ] **9.8** Write Step 5: Navigating Commits `05-navigating-commits.mdx`
+- [x] **9.8** Write Step 5: Navigating Commits `05-step.mdx`
   - `jj edit <commit>` vs `git checkout <commit>`
   - `jj new <parent>` to create commit at specific parent
   - Demo: edit old commit, make changes, auto-rebase descendants
 
-- [ ] **9.9** Write Step 6: Amending & Squashing `06-amending-squashing.mdx`
+- [x] **9.9** Write Step 6: Amending & Squashing `06-step.mdx`
   - `jj squash` - squash into parent
   - `jj split` - split a commit
   - No interactive rebase needed - just edit commits directly
 
-- [ ] **9.10** Write Step 7: Bookmarks `07-bookmarks.mdx`
+- [x] **9.10** Write Step 7: Bookmarks `07-step.mdx`
   - Bookmarks replace branches
   - No "current branch" concept
   - `jj bookmark create/delete/list`
   - Push requires bookmark: `jj git push -b <bookmark>`
 
-- [ ] **9.11** Write Step 8: Handling Conflicts `08-conflicts.mdx`
+- [x] **9.11** Write Step 8: Handling Conflicts `08-step.mdx`
   - Conflicts stored in commits (not blocking!)
   - Conflict markers in files
   - Resolution workflow with `jj resolve`
 
-- [ ] **9.12** Write Step 9: Rebasing `09-rebasing.mdx`
+- [x] **9.12** Write Step 9: Rebasing `09-step.mdx`
   - Automatic descendant rebasing
   - `jj rebase -d <destination>`
   - No need for `--update-refs`
   - Demo: edit old commit, watch descendants rebase
 
-- [ ] **9.13** Write Step 10: Undo & Recovery `10-undo-recovery.mdx`
+- [x] **9.13** Write Step 10: Undo & Recovery `10-step.mdx`
   - `jj undo` - undo last operation
   - `jj op log` - see all operations
   - `jj op restore` - restore to any operation
   - Key insight: jj never loses data!
 
-- [ ] **9.14** Write Step 11: Working with Remotes `11-remotes.mdx`
+- [x] **9.14** Write Step 11: Working with Remotes `11-step.mdx`
   - `jj git fetch` vs `git fetch`
   - `jj git push` vs `git push`
   - No `git pull` - fetch then rebase pattern
 
-- [ ] **9.15** Write Step 12: Revsets `12-revsets.mdx`
+- [x] **9.15** Write Step 12: Revsets `12-step.mdx`
   - Advanced commit selection expressions
   - Common patterns: `@`, `@-`, `main..@`, `ancestors(@)`
   - Revset algebra: `|`, `&`, `-`
@@ -611,18 +611,18 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 
 > **WHY**: Required for WCAG 2.1 AA compliance and professional UX. After core functionality works.
 
-- [ ] **11.1** Add keyboard navigation (arrow keys)
+- [x] **11.1** Add keyboard navigation (arrow keys)
   - `←` for previous step, `→` for next step
   - `?` to show keyboard shortcuts modal
   - Implement with event listeners on step pages
   - `Esc` to close modals, exit terminal focus
 
-- [ ] **11.2** Verify focus indicators
+- [x] **11.2** Verify focus indicators
   - All interactive elements have visible focus ring
   - Focus ring uses `--focus-ring` token (2px green outline)
   - Test with Tab navigation through entire site
 
-- [ ] **11.3** Implement skip link properly
+- [x] **11.3** Implement skip link properly
   - "Skip to main content" link visible on focus
   - Targets `<main id="main">` element
   - Styled to appear on focus only (sr-only until focused)
@@ -637,12 +637,12 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - UI components >= 3:1 contrast
   - Use Chrome DevTools contrast checker or axe
 
-- [ ] **11.6** Add reduced motion support
+- [x] **11.6** Add reduced motion support
   - `@media (prefers-reduced-motion: reduce)` disables animations
   - Terminal cursor blink respects this
   - Loading spinners become static indicators
 
-- [ ] **11.7** Add ARIA labels
+- [x] **11.7** Add ARIA labels
   - Terminal: `role="application"` with descriptive aria-label
   - Progress: `aria-live="polite"` for completion announcements
   - Steps: proper heading hierarchy (h1 → h2 → h3)
@@ -665,11 +665,11 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 
 > **WHY**: Confidence before launch. Catches integration issues. Final quality gate.
 
-- [ ] **12.1** Run `bun run typecheck` - zero errors
+- [x] **12.1** Run `bun run typecheck` - zero errors
 
-- [ ] **12.2** Run `bun run lint` - zero errors
+- [x] **12.2** Run `bun run lint` - zero errors
 
-- [ ] **12.3** Run `bun run build` in packages/web - successful
+- [x] **12.3** Run `bun run build` in packages/web - successful
 
 - [ ] **12.4** Manual test all routes
   - Home page loads with cards
