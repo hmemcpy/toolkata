@@ -28,6 +28,7 @@ import { useKeyboardNavigation, useKeyboardShortcutsModal } from "../../hooks/us
 import { KeyboardShortcutsModal } from "./KeyboardShortcutsModal"
 import { NavigationWrapper } from "./NavigationWrapper"
 import { StepProgressWrapper } from "./StepProgressWrapper"
+import { useTerminalContext } from "../../contexts/TerminalContext"
 
 export interface StepPageClientWrapperProps {
   /**
@@ -89,6 +90,7 @@ export function StepPageClientWrapper({
 }: StepPageClientWrapperProps) {
   const router = useRouter()
   const { isOpen, onClose, showModal } = useKeyboardShortcutsModal()
+  const { toggleSidebar } = useTerminalContext()
 
   const handleNextStep = () => {
     if (nextHref) {
@@ -110,6 +112,7 @@ export function StepPageClientWrapper({
     onNextStep: handleNextStep,
     onPreviousStep: handlePreviousStep,
     onShowHelp: showModal,
+    onToggleTerminal: toggleSidebar,
   })
 
   return (

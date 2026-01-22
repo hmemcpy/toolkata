@@ -294,16 +294,19 @@ Two related efforts:
 > **WHY**: Keyboard shortcuts for power users.
 > **Spec**: `specs/terminal-sidebar.md` Accessibility section
 
-- [ ] **5.1** Add terminal keyboard shortcuts to `useKeyboardNavigation.ts`
+- [x] **5.1** Add terminal keyboard shortcuts to `useKeyboardNavigation.ts`
   - Add `t` shortcut to toggle terminal
   - Ensure shortcuts don't fire when terminal input is focused (check for role="textbox")
   - Location: `packages/web/hooks/useKeyboardNavigation.ts`
   - Update shortcut documentation
+  - **Completed 2026-01-22**
 
-- [ ] **5.2** Add Esc handler to TerminalSidebar
+- [x] **5.2** Add Esc handler to TerminalSidebar
   - Close sidebar on Escape key
   - Only when sidebar is open and focused
   - Return focus to toggle button or last TryIt clicked (track trigger element)
+  - **Already implemented** - TerminalSidebar.tsx lines 166-178 have Escape handler
+  - **Verified 2026-01-22**
 
 ---
 

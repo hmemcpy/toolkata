@@ -128,6 +128,7 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
           <div>
             <h3 className="mb-2 text-sm font-semibold text-[var(--color-text-muted)]">Terminal</h3>
             <div className="space-y-2">
+              <Shortcut keyName="Toggle terminal" shortcut="t" description="Open/close terminal sidebar" />
               <Shortcut
                 keyName="Exit terminal"
                 shortcut="Esc"
