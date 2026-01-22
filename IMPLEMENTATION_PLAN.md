@@ -226,12 +226,12 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Responsive: condense on mobile
   - Location: `packages/web/components/ui/StepProgress.tsx`
 
-- [ ] **4.7** Build Navigation footer component
+- [x] **4.7** Build Navigation footer component
   - Previous/Next step buttons
   - "Mark Complete" button (primary action, green accent)
   - Touch targets >= 44px
   - Justify-between layout
-  - Location: `packages/web/src/components/ui/Navigation.tsx`
+  - Location: `packages/web/components/ui/Navigation.tsx`
 
 - [ ] **4.8** Build StepList component
   - Checklist of all steps with completion state
