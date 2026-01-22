@@ -12,28 +12,17 @@ Revsets (revision sets) are jj's query language for selecting commits—much mor
 
 ## Basic Revset Syntax
 
-<SideBySide>
-**Git:**
-```bash
-# Show last 10 commits
-git log -n 10
-
-# Show specific commit
-git log abc123
-```
-
-**jj:**
-```bash
-# Show last 10 commits
-jj log -l 10
-
-# Show specific commit
-jj log -r abc123
-
-# Revset syntax for "current commit"
-jj log -r @
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git log -n 10",
+    "git log abc123",
+  ]}
+  toCommands={[
+    "jj log -l 10",
+    "jj log -r abc123",
+    "jj log -r @",
+  ]}
+/>
 
 ## Common Revsets
 
@@ -62,49 +51,40 @@ jj log -r abc:def       # Range abc to def (inclusive)
 
 ## Filtering by Description
 
-<SideBySide>
-**Git:**
-```bash
-git log --grep="fix"
-```
-
-**jj:**
-```bash
-jj log -r 'description("fix")'
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git log --grep=\"fix\"",
+  ]}
+  toCommands={[
+    "jj log -r 'description(\"fix\")'",
+  ]}
+/>
 
 ## Filtering by Author
 
-<SideBySide>
-**Git:**
-```bash
-git log --author="alice"
-```
-
-**jj:**
-```bash
-jj log -r 'author("alice")'
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git log --author=\"alice\"",
+  ]}
+  toCommands={[
+    "jj log -r 'author(\"alice\")'",
+  ]}
+/>
 
 ## Filtering by Time
 
-<SideBySide>
-**Git:**
-```bash
-git log --since="2024-01-01"
-git log --until="2024-02-01"
-```
-
-**jj:**
-```bash
-jj log -r 'today()'
-jj log -r 'yesterday()'
-jj log -r 'after("2024-01-01")'
-jj log -r 'before("2024-02-01")'
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git log --since=\"2024-01-01\"",
+    "git log --until=\"2024-02-01\"",
+  ]}
+  toCommands={[
+    "jj log -r 'today()'",
+    "jj log -r 'yesterday()'",
+    "jj log -r 'after(\"2024-01-01\")'",
+    "jj log -r 'before(\"2024-02-01\")'",
+  ]}
+/>
 
 ## Combining Filters
 

@@ -29,127 +29,80 @@ When you edit an old commit in jj, all descendants automatically rebase. No manu
 
 ## Editing Old Commits
 
-<SideBySide>
-**Git:**
-```bash
-# Interactive rebase to edit old commit
-git rebase -i HEAD~3
-# Mark commit as 'edit'
-# Make changes
-git add .
-git commit --amend
-git rebase --continue
-# Repeat for each conflict
-```
-
-**jj:**
-```bash
-# Edit old commit directly
-jj edit --change abc123
-
-# Make changes
-vim file.js
-
-# Commit the edit
-jj new
-
-# All descendants auto-rebased!
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git rebase -i HEAD~3",
+    "git add .",
+    "git commit --amend",
+    "git rebase --continue",
+  ]}
+  toCommands={[
+    "jj edit --change abc123",
+    "vim file.js",
+    "jj new",
+  ]}
+/>
 
 ## Squashing Commits
 
-<SideBySide>
-**Git:**
-```bash
-git rebase -i HEAD~3
-# Mark commits as 'squash'
-# Edit commit messages
-# Resolve conflicts
-```
-
-**jj:**
-```bash
-# Squash previous commit into @
-jj squash @- -m "Combined message"
-
-# Or squash multiple
-jj squash -r 'descendants(@, 2)' -m "One commit"
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git rebase -i HEAD~3",
+  ]}
+  toCommands={[
+    "jj squash @- -m \"Combined message\"",
+    "jj squash -r 'descendants(@, 2)' -m \"One commit\"",
+  ]}
+/>
 
 ## Reordering Commits
 
-<SideBySide>
-**Git:**
-```bash
-git rebase -i HEAD~3
-# Reorder commits in editor
-# Save and hope for no conflicts
-```
-
-**jj:**
-```bash
-# Rebase with custom order
-jj rebase -s abc -d def
-# abc is now after def, descendants auto-rebased
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git rebase -i HEAD~3",
+  ]}
+  toCommands={[
+    "jj rebase -s abc -d def",
+  ]}
+/>
 
 ## Moving Commits (Rebase)
 
-<SideBySide>
-**Git:**
-```bash
-# Move branch to different base
-git rebase --onto new-base old-base branch
-```
-
-**jj:**
-```bash
-# Rebase @ onto different commit
-jj rebase -d new-base
-
-# Rebase multiple commits
-jj rebase -s 'descendants(abc, 5)' -d new-base
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git rebase --onto new-base old-base branch",
+  ]}
+  toCommands={[
+    "jj rebase -d new-base",
+    "jj rebase -s 'descendants(abc, 5)' -d new-base",
+  ]}
+/>
 
 ## Abandoning Commits
 
-<SideBySide>
-**Git:**
-```bash
-git reset --hard HEAD~1
-# Dangerous—loses work
-```
-
-**jj:**
-```bash
-jj abandon @-
-# Safe—can undo with jj op undo
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git reset --hard HEAD~1",
+  ]}
+  toCommands={[
+    "jj abandon @-",
+  ]}
+/>
 
 ## Undo Any Operation
 
 jj keeps an operation log—nothing is ever truly lost:
 
-<SideBySide>
-**Git:**
-```bash
-git reflog
-git reset --hard HEAD@{1}
-# If reflog expires, data is gone
-```
-
-**jj:**
-```bash
-jj op log
-jj op undo
-# Can undo any operation, anytime
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git reflog",
+    "git reset --hard HEAD@{1}",
+  ]}
+  toCommands={[
+    "jj op log",
+    "jj op undo",
+  ]}
+/>
 
 ## Practical Example
 
@@ -193,35 +146,23 @@ This automatic rebasing is one of jj's killer features. No more manual conflict 
 
 ## Splitting Commits
 
-<SideBySide>
-**Git:**
-```bash
-git reset HEAD~1
-# Stage part of changes
-git add file1
-git commit -m "Part 1"
-# Stage rest
-git add file2
-git commit -m "Part 2"
-```
-
-**jj:**
-```bash
-# Edit commit to split
-jj edit @-
-
-# Unstage some files
-jj restore file2
-
-# Commit first part
-jj describe -m "Part 1"
-jj new
-
-# Commit second part
-jj describe -m "Part 2"
-jj new
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git reset HEAD~1",
+    "git add file1",
+    "git commit -m \"Part 1\"",
+    "git add file2",
+    "git commit -m \"Part 2\"",
+  ]}
+  toCommands={[
+    "jj edit @-",
+    "jj restore file2",
+    "jj describe -m \"Part 1\"",
+    "jj new",
+    "jj describe -m \"Part 2\"",
+    "jj new",
+  ]}
+/>
 
 ## Safe History Editing
 

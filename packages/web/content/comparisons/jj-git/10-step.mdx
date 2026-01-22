@@ -24,41 +24,25 @@ a2b5c8d9e0f1a  8 minutes ago  checkout
 
 Compare to git's reflog:
 
-<SideBySide>
-**Git:**
-```bash
-$ git reflog
-abc123 HEAD@{0}: commit: Add feature
-def456 HEAD@{1}: checkout: moving from main to feature
-# Expires after 90 days by default
-```
-
-**jj:**
-```bash
-$ jj op log
-xyz@ 2 minutes ago: checkout
-abc@ 4 minutes ago: new
-# Never expires, full history
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git reflog",
+  ]}
+  toCommands={[
+    "jj op log",
+  ]}
+/>
 
 ## Undoing Operations
 
-<SideBySide>
-**Git:**
-```bash
-# Oops, committed to wrong branch
-git reset --hard HEAD@{1}
-# Hope reflog hasn't expired
-```
-
-**jj:**
-```bash
-# Oops, committed to wrong place
-jj op undo
-# Instant, safe, always works
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git reset --hard HEAD@{1}",
+  ]}
+  toCommands={[
+    "jj op undo",
+  ]}
+/>
 
 ## Multiple Undos
 
@@ -69,19 +53,14 @@ jj op undo --count 3
 
 ## Restoring Specific States
 
-<SideBySide>
-**Git:**
-```bash
-# Reset to specific reflog entry
-git reset --hard HEAD@{5}
-```
-
-**jj:**
-```bash
-# Restore to specific operation
-jj op restore abc123
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git reset --hard HEAD@{5}",
+  ]}
+  toCommands={[
+    "jj op restore abc123",
+  ]}
+/>
 
 ## Viewing Past States
 

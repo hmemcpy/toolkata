@@ -50,64 +50,30 @@ jj resolve
 
 ## Viewing Conflicts
 
-<SideBySide>
-**Git:**
-```bash
-$ git status
-On branch main
-You have unmerged paths:
-  both modified: app.js
-
-$ git diff
-<<<<<<< HEAD
-console.log('mine');
-=======
-console.log('theirs');
->>>>>>> feature
-```
-
-**jj:**
-```bash
-$ jj status
-Working copy : @
-Parent commit: xyz
-  app.js (conflict)
-
-  Conflict:
-    Left:  abc
-    Right: def
-    Base:  123
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git status",
+  ]}
+  toCommands={[
+    "jj status",
+  ]}
+/>
 
 ## Resolving Conflicts
 
-<SideBySide>
-**Git:**
-```bash
-# Edit conflicted file
-vim app.js
-# Remove markers, choose content
-
-# Mark as resolved
-git add app.js
-git commit
-```
-
-**jj:**
-```bash
-# Edit conflicted file
-vim app.js
-# Remove markers, choose content
-
-# Mark as resolved
-jj resolve app.js
-
-# Or use shortcuts
-jj resolve --ours app.js
-jj resolve --theirs app.js
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "vim app.js",
+    "git add app.js",
+    "git commit",
+  ]}
+  toCommands={[
+    "vim app.js",
+    "jj resolve app.js",
+    "jj resolve --ours app.js",
+    "jj resolve --theirs app.js",
+  ]}
+/>
 
 ## Continuing with Conflicts
 
@@ -161,52 +127,30 @@ Conflict in app.js:
 
 ## Multiple Conflicts
 
-<SideBySide>
-**Git:**
-```bash
-git merge feature
-# CONFLICT in file1
-# CONFLICT in file2
-# CONFLICT in file3
-
-# Must resolve all before committing
-```
-
-**jj:**
-```bash
-jj merge feature
-
-# Resolve one at a time
-jj resolve file1
-jj status  # Still shows file2, file3 conflicts
-
-# Or resolve all
-jj resolve
-
-# Or commit with conflicts
-jj describe -m "Partial merge"
-jj new
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git merge feature",
+  ]}
+  toCommands={[
+    "jj merge feature",
+    "jj resolve file1",
+    "jj resolve",
+    "jj describe -m \"Partial merge\"",
+    "jj new",
+  ]}
+/>
 
 ## Abandoning Merges
 
-<SideBySide>
-**Git:**
-```bash
-git merge --abort
-# Returns to pre-merge state
-```
-
-**jj:**
-```bash
-# Just abandon the merge commit
-jj abandon @
-
-# Or undo the merge operation
-jj op undo
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git merge --abort",
+  ]}
+  toCommands={[
+    "jj abandon @",
+    "jj op undo",
+  ]}
+/>
 
 ## Rebase Conflicts
 
@@ -223,51 +167,30 @@ jj rebase --continue
 
 But since jj auto-rebases descendants, you only resolve once:
 
-<SideBySide>
-**Git:**
-```bash
-git rebase -i HEAD~5
-# Edit commit, conflict
-
-# Resolve conflict
-git add .
-git rebase --continue
-
-# Next commit, SAME CONFLICT again
-# Repeat 5 times
-```
-
-**jj:**
-```bash
-jj edit old-commit
-# Make changes, conflict
-
-# Resolve once
-jj resolve
-
-# All descendants auto-rebase with resolution
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git rebase -i HEAD~5",
+    "git add .",
+    "git rebase --continue",
+  ]}
+  toCommands={[
+    "jj edit old-commit",
+    "jj resolve",
+  ]}
+/>
 
 ## Conflict Resolution Tools
 
-<SideBySide>
-**Git:**
-```bash
-git mergetool
-# Opens configured merge tool
-```
-
-**jj:**
-```bash
-jj resolve --tool
-# Opens configured merge tool
-
-# Or use shortcuts
-jj resolve --ours file.js
-jj resolve --theirs file.js
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git mergetool",
+  ]}
+  toCommands={[
+    "jj resolve --tool",
+    "jj resolve --ours file.js",
+    "jj resolve --theirs file.js",
+  ]}
+/>
 
 ## Visualizing Conflicts
 

@@ -12,59 +12,29 @@ jj provides powerful tools for exploring history and comparing changes.
 
 ## Viewing History
 
-<SideBySide>
-**Git:**
-```bash
-git log
-commit abc123 (HEAD -> main)
-Author: user <email>
-Date: Mon Jan 22 10:00:00 2024
-
-    Add feature
-
-commit def456
-Author: user <email>
-Date: Sun Jan 21 15:30:00 2024
-
-    Initial commit
-```
-
-**jj:**
-```bash
-jj log
-@  pqrs feature-auth
-◉  mnop Add feature
-◉  ijkl Initial commit
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git log",
+  ]}
+  toCommands={[
+    "jj log",
+  ]}
+/>
 
 ## Log Options
 
-<SideBySide>
-**Git:**
-```bash
-# Compact view
-git log --oneline
-
-# Limit entries
-git log -n 10
-
-# Show graph
-git log --graph --oneline
-```
-
-**jj:**
-```bash
-# Limit entries
-jj log -l 10
-
-# Show with graph
-jj log --graph
-
-# Show all revisions
-jj log --all
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git log --oneline",
+    "git log -n 10",
+    "git log --graph --oneline",
+  ]}
+  toCommands={[
+    "jj log -l 10",
+    "jj log --graph",
+    "jj log --all",
+  ]}
+/>
 
 ## Understanding the Log Output
 
@@ -84,69 +54,29 @@ $ jj log
 
 ## Viewing Commit Details
 
-<SideBySide>
-**Git:**
-```bash
-git show HEAD
-commit abc123...
-Author: user <email>
-Date: Mon Jan 22 10:00:00
-
-    Add feature
-
-diff --git a/app.js b/app.js
-new file mode 100644
-index 0000000..abc123
---- /dev/null
-+++ b/app.js
-@@ -0,0 +1 @@
-+console.log('hello');
-```
-
-**jj:**
-```bash
-jj show @
-commit xyzkpznx
-parents: prklqyso
-test 123
-
-Added files:
-  app.js
-
-Modified files:
-  index.js
-
-Diff:
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git show HEAD",
+  ]}
+  toCommands={[
+    "jj show @",
+  ]}
+/>
 
 ## Viewing Diffs
 
-<SideBySide>
-**Git:**
-```bash
-# Working copy vs HEAD
-git diff
-
-# File vs HEAD
-git diff app.js
-
-# Between commits
-git diff HEAD~1 HEAD
-```
-
-**jj:**
-```bash
-# @ vs parent
-jj diff
-
-# Specific file
-jj diff app.js
-
-# Between commits
-jj diff --from @- --to @
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git diff",
+    "git diff app.js",
+    "git diff HEAD~1 HEAD",
+  ]}
+  toCommands={[
+    "jj diff",
+    "jj diff app.js",
+    "jj diff --from @- --to @",
+  ]}
+/>
 
 ## Diff Syntax
 
@@ -192,36 +122,14 @@ jj status
 
 ## The Status Command
 
-<SideBySide>
-**Git:**
-```bash
-$ git status
-On branch main
-Changes not staged for commit:
-  modified:   app.js
-  modified:   lib.js
-
-Untracked files:
-  new.js
-```
-
-**jj:**
-```bash
-$ jj status
-Working copy : @
-Parent commit: pqrsmnop
-
-Committing a will create the following commit:
-  M app.js
-  M lib.js
-  A new.js
-
-Working copy changes:
-  M app.js
-  M lib.js
-  A new.js
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git status",
+  ]}
+  toCommands={[
+    "jj status",
+  ]}
+/>
 
 ## Interactive History
 
@@ -240,19 +148,16 @@ jj log --timestamps
 
 ## Comparing Files
 
-<SideBySide>
-**Git:**
-```bash
-git diff HEAD app.js
-git diff branch1 branch2 app.js
-```
-
-**jj:**
-```bash
-jj diff app.js
-jj diff --from branch1 --to branch2 app.js
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git diff HEAD app.js",
+    "git diff branch1 branch2 app.js",
+  ]}
+  toCommands={[
+    "jj diff app.js",
+    "jj diff --from branch1 --to branch2 app.js",
+  ]}
+/>
 
 ## Operations Log
 

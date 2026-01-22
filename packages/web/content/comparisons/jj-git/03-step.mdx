@@ -17,27 +17,18 @@ In jj, commits are created in two steps:
 1. **`jj describe`** - Name/edit the current `@` commit
 2. **`jj new`** - Finalize `@` and create a new empty commit
 
-<SideBySide>
-**Git:**
-```bash
-# Make changes
-echo "hello" > file.txt
-
-# Stage and commit
-git add file.txt
-git commit -m "Add file"
-```
-
-**jj:**
-```bash
-# Make changes
-echo "hello" > file.txt
-
-# Name and finalize
-jj describe -m "Add file"
-jj new
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "echo \"hello\" > file.txt",
+    "git add file.txt",
+    "git commit -m \"Add file\"",
+  ]}
+  toCommands={[
+    "echo \"hello\" > file.txt",
+    "jj describe -m \"Add file\"",
+    "jj new",
+  ]}
+/>
 
 ## Understanding `jj describe`
 
@@ -98,19 +89,14 @@ jj new
 
 Need to change the last commit message?
 
-<SideBySide>
-**Git:**
-```bash
-git commit --amend -m "New message"
-```
-
-**jj:**
-```bash
-# Current @ is the "last" commit
-jj describe -m "New message"
-# No need to amend - just edit @
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git commit --amend -m \"New message\"",
+  ]}
+  toCommands={[
+    "jj describe -m \"New message\"",
+  ]}
+/>
 
 If you've already run `jj new` and want to edit the previous commit:
 
@@ -142,41 +128,23 @@ jj show @-
 
 In jj, there's no `jj add` command. All file changes are automatically part of the `@` commit.
 
-<SideBySide>
-**Git:**
-```bash
-# Edit files
-vim a.js
-vim b.js
-vim c.js
-
-# Stage selectively
-git add a.js
-git add b.js
-# c.js not staged
-
-# Commit only staged files
-git commit -m "Partial commit"
-```
-
-**jj:**
-```bash
-# Edit files
-vim a.js
-vim b.js
-vim c.js
-
-# All changes are in @
-jj status
-# M a.js
-# M b.js
-# M c.js
-
-# Partial commits?
-# Use jj new for separate commits
-# or jj squash/jj abandon to reorganize
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "vim a.js",
+    "vim b.js",
+    "vim c.js",
+    "git add a.js",
+    "git add b.js",
+    "git commit -m \"Partial commit\"",
+  ]}
+  toCommands={[
+    "vim a.js",
+    "vim b.js",
+    "vim c.js",
+    "jj status",
+    "# Use jj new for separate commits or jj squash/jj abandon to reorganize",
+  ]}
+/>
 
 <Callout type="note">
 jj's philosophy is that it's better to create separate commits for different changes, then use `jj squash` or `jj rebase` to reorganize. This avoids the complexity of selective staging.

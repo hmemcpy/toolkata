@@ -144,7 +144,10 @@ export default async function StepPage(props: {
   }
 
   const { frontmatter, content } = stepContent
-  const allCommands = [...(frontmatter.gitCommands ?? []), ...(frontmatter.jjCommands ?? [])]
+  // Ensure arrays, handling both undefined and non-array values
+  const gitCmds = Array.isArray(frontmatter.gitCommands) ? frontmatter.gitCommands : []
+  const jjCmds = Array.isArray(frontmatter.jjCommands) ? frontmatter.jjCommands : []
+  const allCommands = [...gitCmds, ...jjCmds]
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">

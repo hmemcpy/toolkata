@@ -43,56 +43,32 @@ jj new         # Create a new @ commit
 
 In jj, your uncommitted changes are represented by the `@` commit. It's a real commit that exists in the repository.
 
-<SideBySide>
-**Git:**
-```bash
-$ git status
-On branch main
-Changes not staged for commit:
-  modified:   src/app.ts
-
-$ git diff src/app.ts
-diff --git a/src/app.ts...
-```
-
-**jj:**
-```bash
-$ jj status
-Working copy : @
-Parent commit: pqrs
-  src/app.ts
-
-$ jj show @
-commit: xyz
-changes:
-  M src/app.ts
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git status",
+    "git diff src/app.ts",
+  ]}
+  toCommands={[
+    "jj status",
+    "jj show @",
+  ]}
+/>
 
 ## No Staging Area
 
 Since your working copy is already a commit, there's no staging area.
 
-<SideBySide>
-**Git:**
-```bash
-# Stage files
-git add app.ts
-git add test.ts
-
-# Commit staged files
-git commit -m "Fix bug"
-```
-
-**jj:**
-```bash
-# Name current commit
-jj describe -m "Fix bug"
-
-# Create new commit
-jj new
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git add app.ts",
+    "git add test.ts",
+    "git commit -m \"Fix bug\"",
+  ]}
+  toCommands={[
+    "jj describe -m \"Fix bug\"",
+    "jj new",
+  ]}
+/>
 
 <Callout type="tip">
 In jj, all file changes are automatically tracked. There's no need to `jj add` files—your changes are already part of the `@` commit.
@@ -102,39 +78,22 @@ In jj, all file changes are automatically tracked. There's no need to `jj add` f
 
 Let's say you're working on a feature and want to commit your changes.
 
-<SideBySide>
-**Git workflow:**
-```bash
-# Edit files
-vim src/app.ts
-
-# Check status
-git status
-# Changes not staged...
-
-# Stage changes
-git add src/app.ts
-
-# Commit
-git commit -m "Add feature"
-```
-
-**jj workflow:**
-```bash
-# Edit files
-vim src/app.ts
-
-# Check status
-jj status
-# Working copy changes...
-
-# Name the commit
-jj describe -m "Add feature"
-
-# Finalize (create next commit)
-jj new
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "vim src/app.ts",
+    "git status",
+    "git add src/app.ts",
+    "git commit -m \"Add feature\"",
+  ]}
+  toCommands={[
+    "vim src/app.ts",
+    "jj status",
+    "jj describe -m \"Add feature\"",
+    "jj new",
+  ]}
+  fromLabel="Git workflow"
+  toLabel="jj workflow"
+/>
 
 ## Why This Matters
 
@@ -147,21 +106,16 @@ The `@` commit model enables several jj features:
 
 ## Visualization
 
-<SideBySide>
-**Git state:**
-```
-[Working Copy] → [Staging] → [Repository]
-      ↓              ↓            ↓
-   (files)       (index)      (commits)
-```
-
-**jj state:**
-```
-[@ Commit] → [Repository]
-     ↓            ↓
-  (files)    (commits)
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "[Working Copy] → [Staging] → [Repository]",
+  ]}
+  toCommands={[
+    "[@ Commit] → [Repository]",
+  ]}
+  fromLabel="Git state"
+  toLabel="jj state"
+/>
 
 ## Try It Yourself
 

@@ -33,43 +33,26 @@ jj status
 
 ## Creating Branches
 
-<SideBySide>
-**Git:**
-```bash
-# Create branch (don't switch)
-git branch feature
-
-# Create and switch
-git checkout -b feature
-```
-
-**jj:**
-```bash
-# Create branch pointing to @
-jj branch create feature
-
-# @ still points to working copy
-# branch is just a name
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git branch feature",
+    "git checkout -b feature",
+  ]}
+  toCommands={[
+    "jj branch create feature",
+  ]}
+/>
 
 ## Switching Branches
 
-<SideBySide>
-**Git:**
-```bash
-git checkout main
-# Switches working copy to main
-# HEAD moves to main
-```
-
-**jj:**
-```bash
-jj checkout main
-# Creates new @ from main's commit
-# Old @ is still there (with branch name if you had one)
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git checkout main",
+  ]}
+  toCommands={[
+    "jj checkout main",
+  ]}
+/>
 
 <Callout type="note">
 In jj, `jj checkout` creates a new working copy (`@`) from the target commit. It doesn't "move" anything—commits are immutable.
@@ -77,26 +60,16 @@ In jj, `jj checkout` creates a new working copy (`@`) from the target commit. It
 
 ## Listing Branches
 
-<SideBySide>
-**Git:**
-```bash
-git branch
-  main
-* feature
-  develop
-```
-
-**jj:**
-```bash
-jj branch list
-main: pqrs
-feature: xyzk
-develop: abcd
-
-# Or abbreviated
-jj branch
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git branch",
+  ]}
+  toCommands={[
+    "jj branch list",
+    "# Or abbreviated",
+    "jj branch",
+  ]}
+/>
 
 ## The `@` vs Branches
 
@@ -160,17 +133,14 @@ my-branch: xyzk  # Now points to @
 
 ## Deleting Branches
 
-<SideBySide>
-**Git:**
-```bash
-git branch -d old-feature
-```
-
-**jj:**
-```bash
-jj branch delete old-feature
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git branch -d old-feature",
+  ]}
+  toCommands={[
+    "jj branch delete old-feature",
+  ]}
+/>
 
 ## Branch vs Commit
 
@@ -198,30 +168,27 @@ In jj, **change IDs** are more stable than branch names. They survive rebases an
 
 **Feature branch workflow:**
 
-<SideBySide>
-**Git:**
-```bash
-git checkout main
-git checkout -b feature
-vim app.js
-git add app.js
-git commit -m "Add feature"
-git checkout main
-git merge feature
-```
-
-**jj:**
-```bash
-jj checkout main
-jj new
-vim app.js
-jj describe -m "Add feature"
-jj branch create feature
-jj checkout main
-jj new
-jj merge feature
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git checkout main",
+    "git checkout -b feature",
+    "vim app.js",
+    "git add app.js",
+    "git commit -m \"Add feature\"",
+    "git checkout main",
+    "git merge feature",
+  ]}
+  toCommands={[
+    "jj checkout main",
+    "jj new",
+    "vim app.js",
+    "jj describe -m \"Add feature\"",
+    "jj branch create feature",
+    "jj checkout main",
+    "jj new",
+    "jj merge feature",
+  ]}
+/>
 
 ## Abandoning Work
 

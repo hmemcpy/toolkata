@@ -12,45 +12,32 @@ jj works with git remotes but handles them differently.
 
 ## Fetching Changes
 
-<SideBySide>
-**Git:**
-```bash
-git fetch origin
-# Downloads remote changes to origin/main
-
-git log origin/main
-# View remote history
-```
-
-**jj:**
-```bash
-jj git fetch
-# Downloads remote changes, creates remote branches
-
-jj log
-# Remote branches appear in log
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git fetch origin",
+    "git log origin/main",
+  ]}
+  toCommands={[
+    "jj git fetch",
+    "jj log",
+  ]}
+/>
 
 ## Pulling and Rebasing
 
 jj doesn't have `jj git pull`. Instead, you fetch then rebase:
 
-<SideBySide>
-**Git:**
-```bash
-git pull origin main
-# or
-git fetch origin
-git rebase origin/main
-```
-
-**jj:**
-```bash
-jj git fetch
-jj rebase -d main@origin
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git pull origin main",
+    "git fetch origin",
+    "git rebase origin/main",
+  ]}
+  toCommands={[
+    "jj git fetch",
+    "jj rebase -d main@origin",
+  ]}
+/>
 
 <Callout type="note">
 The `@origin` suffix denotes the remote-tracking branch. `main@origin` is the remote's version of `main`.
@@ -58,50 +45,40 @@ The `@origin` suffix denotes the remote-tracking branch. `main@origin` is the re
 
 ## Pushing Changes
 
-<SideBySide>
-**Git:**
-```bash
-git push origin main
-```
-
-**jj:**
-```bash
-jj git push
-# Pushes current branch to configured remote
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git push origin main",
+  ]}
+  toCommands={[
+    "jj git push",
+  ]}
+/>
 
 ## Setting Up Remotes
 
-<SideBySide>
-**Git:**
-```bash
-git remote add origin https://github.com/user/repo.git
-git remote -v
-```
-
-**jj:**
-```bash
-jj git remote add origin https://github.com/user/repo.git
-jj git remote list
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git remote add origin https://github.com/user/repo.git",
+    "git remote -v",
+  ]}
+  toCommands={[
+    "jj git remote add origin https://github.com/user/repo.git",
+    "jj git remote list",
+  ]}
+/>
 
 ## Cloning Repositories
 
-<SideBySide>
-**Git:**
-```bash
-git clone https://github.com/user/repo.git
-cd repo
-```
-
-**jj:**
-```bash
-jj git clone https://github.com/user/repo.git
-cd repo
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git clone https://github.com/user/repo.git",
+    "cd repo",
+  ]}
+  toCommands={[
+    "jj git clone https://github.com/user/repo.git",
+    "cd repo",
+  ]}
+/>
 
 Both create a git repository. To use jj:
 
@@ -154,36 +131,28 @@ jj git push
 
 If your local and remote have diverged:
 
-<SideBySide>
-**Git:**
-```bash
-git pull --rebase
-# or resolve conflicts
-```
-
-**jj:**
-```bash
-jj git fetch
-jj rebase -d main@origin
-# Conflicts? We'll cover that later
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git pull --rebase",
+  ]}
+  toCommands={[
+    "jj git fetch",
+    "jj rebase -d main@origin",
+  ]}
+/>
 
 ## Multiple Remotes
 
-<SideBySide>
-**Git:**
-```bash
-git remote add upstream https://github.com/original/repo.git
-git fetch upstream
-```
-
-**jj:**
-```bash
-jj git remote add upstream https://github.com/original/repo.git
-jj git fetch --remote upstream
-```
-</SideBySide>
+<SideBySide
+  fromCommands={[
+    "git remote add upstream https://github.com/original/repo.git",
+    "git fetch upstream",
+  ]}
+  toCommands={[
+    "jj git remote add upstream https://github.com/original/repo.git",
+    "jj git fetch --remote upstream",
+  ]}
+/>
 
 ## Git Compatibility
 

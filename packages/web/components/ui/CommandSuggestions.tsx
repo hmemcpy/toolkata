@@ -144,9 +144,12 @@ export function CommandSuggestions({
   label = "Suggested commands",
   showCopyFeedback = true,
 }: CommandSuggestionsProps) {
+  // Defensive: ensure commands is always an array
+  const safeCommands = Array.isArray(commands) ? commands : []
+
   // Track copy state per command index
   const [copyStates, setCopyStates] = useState<Readonly<CopyState[]>>(
-    new Array(commands.length).fill("idle"),
+    new Array(safeCommands.length).fill("idle"),
   )
   const timeoutsRef = useRef<ReadonlyMap<number, NodeJS.Timeout>>(new Map())
 
@@ -216,7 +219,7 @@ export function CommandSuggestions({
   }, [])
 
   // Don't render if no commands
-  if (commands.length === 0) {
+  if (safeCommands.length === 0) {
     return null
   }
 
@@ -224,7 +227,7 @@ export function CommandSuggestions({
     <div className="my-6">
       <h3 className="mb-3 text-sm font-semibold text-[var(--color-text-muted)]">{label}</h3>
       <div className="flex flex-col gap-2">
-        {commands.map((command, index) => (
+        {safeCommands.map((command, index) => (
           <CommandButton
             // biome-ignore lint/suspicious/noArrayIndexKey: Commands are static and order won't change
             key={index}
