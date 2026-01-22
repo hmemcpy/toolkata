@@ -3,11 +3,11 @@
 > **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1-13.3.3, 13.4.1-13.4.2 complete
 > **Validation**: `bun run typecheck`, `bun run lint`, `bun run build`, Playwright tests
 > **Priority Legend**: P0 = Blocking, P1 = Core MVP, P2 = Polish/Enhancement
-> **Last Updated**: 2026-01-22 (13.5.1-13.5.3 Glossary page, client, and hook created. Next: 13.5.4 Add glossary link to overview page)
+> **Last Updated**: 2026-01-22 (13.5.1-13.5.4 Glossary page, client, hook, and overview/cheatsheet links complete. Next: 13.6.1 Create Providers.tsx wrapper)
 
 ### Current Priority: Phase 13 (Bidirectional Comparison)
 
-**Recommended starting point**: Task 13.5.4 (Add glossary link to overview page) - glossary page now exists
+**Recommended starting point**: Task 13.6.1 (Create Providers.tsx wrapper) - direction infrastructure needs app-wide provider
 
 ### Phase 12 Remaining Items
 
@@ -1066,7 +1066,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Debounced search (300ms) for performance
   - Filter by category first, then search query
 
-- [ ] **13.5.4** Add glossary link to overview page
+- [x] **13.5.4** Add glossary link to overview page
   - Location: `packages/web/app/[toolPair]/page.tsx`
   - Add alongside existing cheatsheet link
   - Button style: `[Glossary →]` or similar

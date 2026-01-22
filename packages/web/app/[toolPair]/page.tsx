@@ -156,12 +156,20 @@ export default async function ComparisonOverviewPage(props: {
               </a>
             )}
           </div>
-          <Link
-            href={`/${toolPair}/cheatsheet`}
-            className="inline-flex items-center px-4 py-2 text-sm font-mono text-[var(--color-text)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md hover:bg-[var(--color-surface-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-all duration-[var(--transition-fast)]"
-          >
-            [Cheat Sheet]
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href={`/${toolPair}/glossary`}
+              className="inline-flex items-center px-4 py-2 text-sm font-mono text-[var(--color-text)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md hover:bg-[var(--color-surface-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-all duration-[var(--transition-fast)]"
+            >
+              [Glossary →]
+            </Link>
+            <Link
+              href={`/${toolPair}/cheatsheet`}
+              className="inline-flex items-center px-4 py-2 text-sm font-mono text-[var(--color-text)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md hover:bg-[var(--color-surface-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-all duration-[var(--transition-fast)]"
+            >
+              [Cheat Sheet]
+            </Link>
+          </div>
         </div>
 
         {/* Main content with progress sidebar */}

@@ -93,6 +93,12 @@ function CheatsheetContent({
           </div>
           <div className="flex flex-wrap items-center gap-4">
             <DirectionToggle />
+            <Link
+              href={`/${toolPair}/glossary`}
+              className="inline-flex items-center px-4 py-2 text-sm font-mono text-[var(--color-text)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md hover:bg-[var(--color-surface-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-all duration-[var(--transition-fast)]"
+            >
+              [Glossary →]
+            </Link>
             <h1 className="text-2xl font-bold font-mono text-[var(--color-text)]">
               Cheat Sheet
             </h1>
