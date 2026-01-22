@@ -321,10 +321,11 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Location: `packages/web/hooks/useStepProgress.ts`
   - Note: Also includes `useStepProgressWithPercent` convenience hook
 
-- [ ] **6.3** Integrate progress into step pages
+- [x] **6.3** Integrate progress into step pages
   - Auto-mark step complete when user clicks "Next" or "Mark Complete"
   - Show completion state in StepProgress header (✓ icon)
   - Visual indicator for current step
+  - Location: `packages/web/components/ui/StepProgressWrapper.tsx`, `packages/web/components/ui/NavigationWrapper.tsx`
 
 - [ ] **6.4** Add progress display to ComparisonCard
   - Show ProgressBar on home page cards

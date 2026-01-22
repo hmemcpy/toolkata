@@ -1,7 +1,7 @@
 import { Header } from "../../../components/ui/Header"
 import { Footer } from "../../../components/ui/Footer"
-import { StepProgress } from "../../../components/ui/StepProgress"
-import { Navigation } from "../../../components/ui/Navigation"
+import { StepProgressWrapper } from "../../../components/ui/StepProgressWrapper"
+import { NavigationWrapper } from "../../../components/ui/NavigationWrapper"
 import { MDXRemote } from "next-mdx-remote/rsc"
 import { Callout } from "../../../components/ui/Callout"
 import { CodeBlock } from "../../../components/ui/CodeBlock"
@@ -157,7 +157,7 @@ export default async function StepPage(
 
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Step Progress Header */}
-        <StepProgress
+        <StepProgressWrapper
           toolPair={toolPair}
           currentStep={stepNum}
           totalSteps={pairing.steps}
@@ -206,7 +206,7 @@ export default async function StepPage(
         )}
 
         {/* Navigation Footer */}
-        <Navigation
+        <NavigationWrapper
           toolPair={toolPair}
           currentStep={stepNum}
           totalSteps={pairing.steps}

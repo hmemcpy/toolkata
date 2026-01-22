@@ -9,6 +9,7 @@ export interface StepProgressProps {
   readonly overviewHref?: string
   readonly nextHref?: string | null
   readonly showKeyboardHints?: boolean
+  readonly isCompleted?: boolean
   readonly className?: string
 }
 
@@ -20,6 +21,7 @@ export function StepProgress({
   overviewHref = `/${toolPair}`,
   nextHref = currentStep < totalSteps ? `/${toolPair}/${currentStep + 1}` : null,
   showKeyboardHints = true,
+  isCompleted = false,
   className = "",
 }: StepProgressProps): JSX.Element {
   return (
@@ -42,7 +44,8 @@ export function StepProgress({
 
         {/* Step indicator */}
         <div className="flex flex-col items-center gap-1">
-          <span className="text-sm font-mono text-[var(--color-text)] text-center">
+          <span className="text-sm font-mono text-[var(--color-text)] text-center flex items-center gap-2">
+            {isCompleted && <span aria-label="Step completed">✓</span>}
             Step {currentStep} of {totalSteps}
           </span>
           <h1 className="text-sm font-mono text-[var(--color-text-muted)] text-center hidden sm:block">
