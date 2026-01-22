@@ -1,13 +1,13 @@
 # Implementation Plan: toolkata
 
-> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1-13.3.3, 13.4.1-13.4.2, 13.5.1-13.5.4, 13.6.1-13.6.3 complete
+> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1-13.6.3 complete, 13.7.1-13.7.2 tests written
 > **Validation**: `bun run typecheck`, `bun run lint`, `bun run build`, Playwright tests
 > **Priority Legend**: P0 = Blocking, P1 = Core MVP, P2 = Polish/Enhancement
-> **Last Updated**: 2026-01-22 (12.4.1 Fixed Playwright test selectors - 40 tests passing. Next: 13.7.1 Add direction toggle tests)
+> **Last Updated**: 2026-01-22 (13.7.1-13.7.2 Playwright tests written - direction.spec.ts and glossary.spec.ts. Next: 13.7.3 Run full test suite)
 
 ### Current Priority: Phase 13 (Bidirectional Comparison)
 
-**Recommended starting point**: Task 13.6.1 (Create Providers.tsx wrapper) - direction infrastructure needs app-wide provider
+**Recommended starting point**: Task 13.7.3 (Run full test suite) - tests need to be executed to verify no regressions
 
 ### Phase 12 Remaining Items
 
@@ -1104,7 +1104,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 
 > Ensure feature works correctly and doesn't break existing functionality. Run after 13.1-13.6.
 
-- [ ] **13.7.1** Add Playwright tests for direction toggle at `packages/web/tests/direction.spec.ts`
+- [x] **13.7.1** Add Playwright tests for direction toggle at `packages/web/tests/direction.spec.ts`
   - Test: Toggle click changes visual state (columns swap)
   - Test: Toggle click persists to localStorage
   - Test: Preference survives page refresh (no flash of default)
@@ -1113,7 +1113,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Test: ARIA attributes update (`aria-checked`)
   - Test: Default direction is git→jj when localStorage empty
 
-- [ ] **13.7.2** Add Playwright tests for glossary page at `packages/web/tests/glossary.spec.ts`
+- [x] **13.7.2** Add Playwright tests for glossary page at `packages/web/tests/glossary.spec.ts`
   - Test: Page loads at `/jj-git/glossary` (route exists)
   - Test: All 42 entries render by default (category: All)
   - Test: Search filters results (query "commit" reduces count)
@@ -1128,7 +1128,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   ```bash
   bun run typecheck  # Zero errors
   bun run lint       # Zero errors
-  bun run build      # 17 static pages (home, overview, 12 steps, cheatsheet, glossary)
+  bun run build      # 18 static pages (home, overview, 12 steps, cheatsheet, glossary)
   bun run test       # All Playwright tests pass
   ```
 
