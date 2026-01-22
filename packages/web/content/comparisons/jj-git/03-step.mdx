@@ -1,0 +1,258 @@
+---
+title: "Your First Commits"
+step: 3
+description: "Creating commits in jj without a staging area"
+gitCommands: ["git add", "git commit", "git commit --amend"]
+jjCommands: ["jj describe", "jj new", "jj status"]
+---
+
+# Your First Commits
+
+Making commits in jj is different from git—there's no staging area to manage.
+
+## The jj Commit Workflow
+
+In jj, commits are created in two steps:
+
+1. **`jj describe`** - Name/edit the current `@` commit
+2. **`jj new`** - Finalize `@` and create a new empty commit
+
+<SideBySide>
+**Git:**
+```bash
+# Make changes
+echo "hello" > file.txt
+
+# Stage and commit
+git add file.txt
+git commit -m "Add file"
+```
+
+**jj:**
+```bash
+# Make changes
+echo "hello" > file.txt
+
+# Name and finalize
+jj describe -m "Add file"
+jj new
+```
+</SideBySide>
+
+## Understanding `jj describe`
+
+`jj describe` edits the **current** `@` commit's message. It doesn't create a new commit.
+
+```bash
+# Edit the @ commit message
+jj describe -m "Initial implementation"
+
+# Or open editor
+jj describe
+
+# See the updated message
+jj show @
+```
+
+## Understanding `jj new`
+
+`jj new` finalizes the current `@` commit and creates a new `@` commit on top of it.
+
+```bash
+# Current @ commit has changes
+jj status
+
+# Finalize it, create new @
+jj new
+
+# Now @ is empty (no changes yet)
+jj status
+```
+
+## Step-by-Step Example
+
+Let's create three commits:
+
+```bash
+# 1. Start with a clean slate
+jj new
+# Working copy now at @
+
+# 2. Create first file and commit
+echo "console.log('hello')" > app.js
+jj describe -m "Add hello world"
+jj new
+
+# 3. Create second file and commit
+echo "export const x = 42" > config.js
+jj describe -m "Add config"
+jj new
+
+# 4. Modify existing file
+echo "console.log('hello world')" >> app.js
+jj describe -m "Update greeting"
+jj new
+```
+
+## Editing the Last Commit
+
+Need to change the last commit message?
+
+<SideBySide>
+**Git:**
+```bash
+git commit --amend -m "New message"
+```
+
+**jj:**
+```bash
+# Current @ is the "last" commit
+jj describe -m "New message"
+# No need to amend - just edit @
+```
+</SideBySide>
+
+If you've already run `jj new` and want to edit the previous commit:
+
+```bash
+# Edit the parent of @
+jj edit @-
+
+# Now @ is that commit
+jj describe -m "Corrected message"
+
+# Create new @ to finalize
+jj new
+```
+
+## Viewing Your Commits
+
+```bash
+# Show current @ commit
+jj show @
+
+# Show commit history
+jj log
+
+# Show parent commit
+jj show @-
+```
+
+## What About `git add`?
+
+In jj, there's no `jj add` command. All file changes are automatically part of the `@` commit.
+
+<SideBySide>
+**Git:**
+```bash
+# Edit files
+vim a.js
+vim b.js
+vim c.js
+
+# Stage selectively
+git add a.js
+git add b.js
+# c.js not staged
+
+# Commit only staged files
+git commit -m "Partial commit"
+```
+
+**jj:**
+```bash
+# Edit files
+vim a.js
+vim b.js
+vim c.js
+
+# All changes are in @
+jj status
+# M a.js
+# M b.js
+# M c.js
+
+# Partial commits?
+# Use jj new for separate commits
+# or jj squash/jj abandon to reorganize
+```
+</SideBySide>
+
+<Callout type="note">
+jj's philosophy is that it's better to create separate commits for different changes, then use `jj squash` or `jj rebase` to reorganize. This avoids the complexity of selective staging.
+</Callout>
+
+## Common Patterns
+
+**Quick commit cycle:**
+```bash
+# Make changes
+vim file.js
+
+# Commit
+jj describe -m "Fix bug"
+jj new
+```
+
+**Forget to describe before `jj new`:**
+```bash
+# Made changes, ran jj new too soon
+jj new
+# Oops, commit message is empty
+
+# Fix it
+jj edit @-
+jj describe -m "The message I meant"
+jj new
+```
+
+**Multiple edits before finalizing:**
+```bash
+# Make changes
+vim app.js
+
+# Describe
+jj describe -m "Add feature"
+
+# Make more changes
+vim config.js
+
+# Update description
+jj describe -m "Add feature and config"
+
+# Finally commit
+jj new
+```
+
+## Try It Yourself
+
+```bash
+# Create a new working copy
+jj new
+
+# Make some changes
+echo "test" > demo.txt
+
+# Name your commit
+jj describe -m "Add demo file"
+
+# Check it
+jj show @
+
+# Finalize it
+jj new
+
+# Verify in history
+jj log
+```
+
+## Key Takeaways
+
+- `jj describe` edits the current `@` commit message
+- `jj new` finalizes `@` and creates a new empty commit
+- No staging area—all changes are auto-tracked
+- Edit previous commits with `jj edit @-`
+
+## Next Steps
+
+Now that you can create commits, let's explore how jj handles branching differently from git.
