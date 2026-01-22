@@ -23,7 +23,9 @@ export function generateStaticParams() {
  * @param props - Props containing the dynamic route params.
  * @returns Metadata object for SEO.
  */
-export async function generateMetadata(props: { readonly params: Promise<{ readonly toolPair: string }> }) {
+export async function generateMetadata(props: {
+  readonly params: Promise<{ readonly toolPair: string }>
+}) {
   const params = await props.params
   const pairing = getPairing(params.toolPair)
 
@@ -57,9 +59,9 @@ export async function generateMetadata(props: { readonly params: Promise<{ reado
  *
  * @param props - Props containing the dynamic route params.
  */
-export default async function ComparisonOverviewPage(
-  props: { readonly params: Promise<{ readonly toolPair: string }> },
-) {
+export default async function ComparisonOverviewPage(props: {
+  readonly params: Promise<{ readonly toolPair: string }>
+}) {
   const params = await props.params
   const { toolPair } = params
 
@@ -76,11 +78,26 @@ export default async function ComparisonOverviewPage(
   // TODO: Load steps from ContentService when MDX content exists
   // For now, use static metadata based on the plan
   const steps: readonly StepMeta[] = [
-    { step: 1, title: "Installation & Setup", description: "Installing jj, colocated repos", slug: "01-step" },
-    { step: 2, title: "Mental Model", description: "Working copy as commit, no staging", slug: "02-step" },
+    {
+      step: 1,
+      title: "Installation & Setup",
+      description: "Installing jj, colocated repos",
+      slug: "01-step",
+    },
+    {
+      step: 2,
+      title: "Mental Model",
+      description: "Working copy as commit, no staging",
+      slug: "02-step",
+    },
     { step: 3, title: "Creating Commits", description: "jj describe, jj new", slug: "03-step" },
     { step: 4, title: "Viewing History", description: "jj log, revsets basics", slug: "04-step" },
-    { step: 5, title: "Navigating Commits", description: "jj edit, jj new <parent>", slug: "05-step" },
+    {
+      step: 5,
+      title: "Navigating Commits",
+      description: "jj edit, jj new <parent>",
+      slug: "05-step",
+    },
     { step: 6, title: "Amending & Squashing", description: "jj squash, jj split", slug: "06-step" },
     { step: 7, title: "Bookmarks", description: "Bookmarks replace branches", slug: "07-step" },
     { step: 8, title: "Handling Conflicts", description: "First-class conflicts", slug: "08-step" },

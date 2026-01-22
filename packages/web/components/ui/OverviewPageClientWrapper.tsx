@@ -56,17 +56,14 @@ export function OverviewPageClientWrapper({
   steps,
   estimatedTimes,
 }: OverviewPageClientWrapperProps) {
-  const {
-    currentStep,
-    completedCount,
-    isStepComplete,
-    resetProgress,
-    isLoading,
-  } = useStepProgress(toolPair, totalSteps)
+  const { currentStep, completedCount, isStepComplete, resetProgress, isLoading } = useStepProgress(
+    toolPair,
+    totalSteps,
+  )
 
   // Create Set of completed steps for StepList
   const completedSteps = new Set<number>(
-    steps.filter((step) => isStepComplete(step.step)).map((step) => step.step)
+    steps.filter((step) => isStepComplete(step.step)).map((step) => step.step),
   )
 
   // Calculate time remaining (average 3 min per step)
@@ -112,9 +109,7 @@ export function OverviewPageClientWrapper({
               <span>
                 {completedCount} / {totalSteps} steps
               </span>
-              <span>
-                {totalSteps > 0 ? Math.round((completedCount / totalSteps) * 100) : 0}%
-              </span>
+              <span>{totalSteps > 0 ? Math.round((completedCount / totalSteps) * 100) : 0}%</span>
             </div>
             <div className="h-2 w-full bg-[var(--color-bg)] rounded-full overflow-hidden">
               <div

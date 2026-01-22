@@ -32,10 +32,7 @@ export function ProgressBar({
             className="h-3 w-1.5 rounded-sm"
             style={
               {
-                "--block-color":
-                  i < filledBlocks
-                    ? "var(--color-accent)"
-                    : "var(--color-border)",
+                "--block-color": i < filledBlocks ? "var(--color-accent)" : "var(--color-border)",
               } as CSSProperties
             }
           />

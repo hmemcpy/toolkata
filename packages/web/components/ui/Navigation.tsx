@@ -45,7 +45,10 @@ export function Navigation({
               "
               aria-label={`Go to previous step: ${previousTitle}`}
             >
-              <span aria-hidden="true" className="text-[var(--color-text-muted)] group-hover:text-[var(--color-text)]">
+              <span
+                aria-hidden="true"
+                className="text-[var(--color-text-muted)] group-hover:text-[var(--color-text)]"
+              >
                 ←
               </span>
               <span className="hidden sm:inline">Step {currentStep - 1}:</span>

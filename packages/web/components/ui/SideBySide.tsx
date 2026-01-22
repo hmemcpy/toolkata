@@ -70,7 +70,9 @@ export function SideBySide({
         {/* Left column (from tool - git) */}
         <div className="overflow-hidden rounded border border-[var(--color-border)] bg-[rgba(249, 115, 22, 0.05)]">
           <div className="border-b border-[var(--color-border)] px-4 py-2">
-            <span className="text-xs font-semibold text-[var(--color-text-muted)]">{fromLabel}</span>
+            <span className="text-xs font-semibold text-[var(--color-text-muted)]">
+              {fromLabel}
+            </span>
           </div>
           <div className="p-4">
             {fromCommands.map((cmd, i) => (
@@ -78,7 +80,9 @@ export function SideBySide({
               <div key={i} className="mb-3 last:mb-0">
                 <code className="block text-sm text-[var(--color-text)]">{cmd}</code>
                 {fromComments[i] && (
-                  <span className="mt-1 block text-xs text-[var(--color-text-dim)]">{fromComments[i]}</span>
+                  <span className="mt-1 block text-xs text-[var(--color-text-dim)]">
+                    {fromComments[i]}
+                  </span>
                 )}
               </div>
             ))}
@@ -114,7 +118,9 @@ export function SideBySide({
               <div key={i} className="mb-3 last:mb-0">
                 <code className="block text-sm text-[var(--color-text)]">{cmd}</code>
                 {toComments[i] && (
-                  <span className="mt-1 block text-xs text-[var(--color-text-dim)]">{toComments[i]}</span>
+                  <span className="mt-1 block text-xs text-[var(--color-text-dim)]">
+                    {toComments[i]}
+                  </span>
                 )}
               </div>
             ))}

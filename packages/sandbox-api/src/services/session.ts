@@ -2,11 +2,7 @@ import { Context, Data, Effect, Layer, MutableHashMap, Ref } from "effect"
 import { ContainerService, ContainerError } from "./container.js"
 
 // Session states
-export type SessionState =
-  | "IDLE"
-  | "STARTING"
-  | "RUNNING"
-  | "DESTROYING"
+export type SessionState = "IDLE" | "STARTING" | "RUNNING" | "DESTROYING"
 
 // Session info
 export interface Session {
@@ -97,10 +93,7 @@ const make = Effect.gen(function* () {
 
   // Create a new session
   const create = Effect.gen(function* () {
-    return yield* Effect.all([
-      containerService.create,
-      Ref.get(storeRef),
-    ]).pipe(
+    return yield* Effect.all([containerService.create, Ref.get(storeRef)]).pipe(
       Effect.flatMap(([container, store]) =>
         Effect.gen(function* () {
           const sessionId = generateSessionId()
@@ -129,11 +122,7 @@ const make = Effect.gen(function* () {
           }
 
           // Store session
-          const updatedSessions = yield* MutableHashMap.set(
-            store.sessions,
-            sessionId,
-            session,
-          )
+          const updatedSessions = yield* MutableHashMap.set(store.sessions, sessionId, session)
 
           yield* Ref.set(storeRef, { sessions: updatedSessions })
 
@@ -216,17 +205,11 @@ const make = Effect.gen(function* () {
         ...session,
         state: "DESTROYING",
       }
-      let updatedSessions = yield* MutableHashMap.set(
-        store.sessions,
-        sessionId,
-        updatedSession,
-      )
+      let updatedSessions = yield* MutableHashMap.set(store.sessions, sessionId, updatedSession)
       yield* Ref.set(storeRef, { sessions: updatedSessions })
 
       // Destroy the container
-      const destroyResult = yield* Effect.either(
-        containerService.destroy(session.containerId),
-      )
+      const destroyResult = yield* Effect.either(containerService.destroy(session.containerId))
 
       // Remove from store regardless of destroy result
       updatedSessions = yield* Ref.get(storeRef).pipe(
@@ -280,11 +263,7 @@ const make = Effect.gen(function* () {
         lastActivityAt: now,
       }
 
-      const updatedSessions = yield* MutableHashMap.set(
-        store.sessions,
-        sessionId,
-        updatedSession,
-      )
+      const updatedSessions = yield* MutableHashMap.set(store.sessions, sessionId, updatedSession)
 
       yield* Ref.set(storeRef, { sessions: updatedSessions })
     })
@@ -322,9 +301,7 @@ const make = Effect.gen(function* () {
           const expiredSessions = sessions.filter(isSessionExpired)
 
           if (expiredSessions.length > 0) {
-            console.log(
-              `[SessionService] Cleaning up ${expiredSessions.length} expired session(s)`,
-            )
+            console.log(`[SessionService] Cleaning up ${expiredSessions.length} expired session(s)`)
 
             // Destroy each expired session
             for (const session of expiredSessions) {

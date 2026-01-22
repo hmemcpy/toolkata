@@ -400,11 +400,13 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - `DELETE /sessions/:id` → Destroy session immediately
   - Location: `packages/sandbox-api/src/routes/sessions.ts`
 
-- [ ] **7.8** Create WebSocket route
+- [x] **7.8** Create WebSocket route
   - `WS /sessions/:id/ws` → Terminal bidirectional stream
   - Authenticate session ID before accepting connection
-  - Forward I/O between client and container via dockerode attach
-  - Location: `packages/sandbox-api/src/routes/sessions.ts`
+  - Forward I/O between client and container via Docker exec
+  - Location: `packages/sandbox-api/src/routes/websocket.ts`
+  - Note: Created separate WebSocket route file for proper ws library integration
+  - Note: Updated main server to use Node.js HTTP server for WebSocket upgrade support
 
 - [x] **7.9** Create server layer composition
   - Wire ContainerService, SessionService, RateLimitService, WebSocketService

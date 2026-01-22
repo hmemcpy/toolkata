@@ -37,9 +37,7 @@ interface PreProps {
 /**
  * Extract language from className (e.g., "language-bash" -> "bash").
  */
-function extractLanguage(
-  className: string | undefined,
-): BundledLanguage | "plaintext" {
+function extractLanguage(className: string | undefined): BundledLanguage | "plaintext" {
   if (!className) return "plaintext"
   const match = className.match(/language-(\w+)/)
   return (match?.[1] as BundledLanguage) ?? "plaintext"
@@ -70,9 +68,7 @@ export function Code({ children, className }: CodeProps) {
   }
 
   return (
-    <code
-      className="rounded bg-[var(--color-surface)] px-1.5 py-0.5 text-sm text-[var(--color-text)]"
-    >
+    <code className="rounded bg-[var(--color-surface)] px-1.5 py-0.5 text-sm text-[var(--color-text)]">
       {children}
     </code>
   )

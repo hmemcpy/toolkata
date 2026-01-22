@@ -116,9 +116,9 @@ const mdxComponents = {
  * - Navigation footer (Previous/Next step buttons, Mark Complete button)
  * - Placeholder for terminal (Phase 8): "Interactive sandbox coming soon"
  */
-export default async function StepPage(
-  props: { readonly params: Promise<{ readonly toolPair: string; readonly step: string }> },
-) {
+export default async function StepPage(props: {
+  readonly params: Promise<{ readonly toolPair: string; readonly step: string }>
+}) {
   const params = await props.params
   const { toolPair, step: stepParam } = params
   const stepNum = Number.parseInt(stepParam, 10)
@@ -176,12 +176,12 @@ export default async function StepPage(
             Try It Yourself
           </h2>
           <p className="mb-6 text-sm text-[var(--color-text-muted)]">
-            Interactive sandbox coming soon. Practice these commands in a safe, isolated environment.
+            Interactive sandbox coming soon. Practice these commands in a safe, isolated
+            environment.
           </p>
-          <div
-            className="rounded border border-dashed border-[var(--color-border)] bg-[var(--color-bg)] p-6 font-mono text-sm text-[var(--color-text-dim)]"
-          >
-            <span className="text-[var(--color-text-muted)]">$</span> Terminal sandbox will appear here
+          <div className="rounded border border-dashed border-[var(--color-border)] bg-[var(--color-bg)] p-6 font-mono text-sm text-[var(--color-text-dim)]">
+            <span className="text-[var(--color-text-muted)]">$</span> Terminal sandbox will appear
+            here
           </div>
         </section>
 

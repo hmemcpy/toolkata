@@ -71,8 +71,8 @@ const jjGitCheatSheet: readonly CheatSheetEntry[] = [
   // COMMITS
   {
     category: "COMMITS",
-    gitCommand: "git add . && git commit -m \"msg\"",
-    jjCommand: "jj describe -m \"msg\"",
+    gitCommand: 'git add . && git commit -m "msg"',
+    jjCommand: 'jj describe -m "msg"',
     note: "Changes auto-tracked",
   },
   {
@@ -208,7 +208,7 @@ const jjGitCheatSheet: readonly CheatSheetEntry[] = [
   {
     category: "UNDO",
     gitCommand: "git revert <commit>",
-    jjCommand: "jj new <commit>; jj new; jj describe -m \"Revert\"",
+    jjCommand: 'jj new <commit>; jj new; jj describe -m "Revert"',
     note: "Manual revert process",
   },
   // CONFLICTS
@@ -361,9 +361,7 @@ export default function CheatSheetPage({
             </Link>
           </div>
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold font-mono text-[var(--color-text)]">
-              Cheat Sheet
-            </h1>
+            <h1 className="text-2xl font-bold font-mono text-[var(--color-text)]">Cheat Sheet</h1>
             <button
               type="button"
               onClick={handlePrint}

@@ -16,14 +16,8 @@ export interface ComparisonCardWrapperProps {
  * it to the server-side ComparisonCard component. The separation allows the home
  * page to remain a server component while still displaying client-side progress.
  */
-export function ComparisonCardWrapper({
-  pairing,
-  className = "",
-}: ComparisonCardWrapperProps) {
-  const { completedCount, currentStep, isLoading } = useStepProgress(
-    pairing.slug,
-    pairing.steps
-  )
+export function ComparisonCardWrapper({ pairing, className = "" }: ComparisonCardWrapperProps) {
+  const { completedCount, currentStep, isLoading } = useStepProgress(pairing.slug, pairing.steps)
 
   // During SSR/hydration, show default state (no progress)
   // This prevents hydration mismatch

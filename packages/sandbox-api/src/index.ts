@@ -2,10 +2,13 @@ import { Data, Effect, Layer } from "effect"
 import { Hono } from "hono"
 import { cors } from "hono/cors"
 import type { Env } from "hono"
+import { createServer as createHttpServer, type Server as NodeHttpServer } from "node:http"
 import { sessionRoutes } from "./routes/sessions.js"
+import { createWebSocketServer, closeAllConnections } from "./routes/websocket.js"
 import { ContainerService, DockerClientLive } from "./services/container.js"
 import { SessionService, SessionServiceLive } from "./services/session.js"
 import { RateLimitServiceLive } from "./services/rate-limit.js"
+import { WebSocketServiceLive } from "./services/websocket.js"
 
 // Error types with Data.TaggedClass
 export class ServerError extends Data.TaggedClass("ServerError")<{
@@ -21,6 +24,7 @@ export class ConfigError extends Data.TaggedClass("ConfigError")<{
 // Configuration schema
 export interface ServerConfig {
   readonly port: number
+  readonly host: string
   readonly frontendOrigin: string
 }
 
@@ -46,12 +50,15 @@ const createApp = (config: ServerConfig) => {
   const app = new Hono<{ Bindings: Env }>()
 
   // CORS configuration
-  app.use("/*", cors({
-    origin: config.frontendOrigin,
-    credentials: true,
-    allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
-  }))
+  app.use(
+    "/*",
+    cors({
+      origin: config.frontendOrigin,
+      credentials: true,
+      allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
+      allowHeaders: ["Content-Type", "Authorization"],
+    }),
+  )
 
   // Health check endpoint
   app.get("/health", (c) => {
@@ -72,24 +79,67 @@ const createApp = (config: ServerConfig) => {
 const make = Effect.gen(function* () {
   const config = yield* ServerConfig
 
-  let server: ReturnType<typeof Bun.serve> | null = null
+  let httpServer: NodeHttpServer | null = null
   const app = createApp(config)
 
   const start = Effect.sync(() => {
-    server = Bun.serve({
-      port: config.port,
-      fetch: app.fetch,
+    // Create Node.js HTTP server for WebSocket upgrade support
+    httpServer = createHttpServer({
+      // Use Hono's fetch handler as the request handler
+      // @ts-expect-error - Node's request type is compatible enough
+      async listener(req, res) {
+        const url = new URL(req.url ?? "", `http://${req.headers.host}`)
+        const request = new Request(url.toString(), {
+          method: req.method,
+          headers: req.headers as HeadersInit,
+          body: req.method === "GET" || req.method === "HEAD" ? undefined : req,
+        })
+
+        const response = await app.fetch(request, {})
+        res.writeHead(response.status, Object.fromEntries(response.headers.entries()))
+        if (response.body) {
+          // @ts-expect-error - ReadableStream is compatible
+          response.body.pipeTo(
+            // @ts-expect-error - WritableStream is compatible
+            new WritableStream({
+              write(chunk) {
+                res.write(Buffer.from(chunk))
+              },
+              close() {
+                res.end()
+              },
+            }),
+          )
+        } else {
+          res.end()
+        }
+      },
     })
 
-    console.log(`Sandbox API listening on http://localhost:${config.port}`)
-    console.log(`Health check: http://localhost:${config.port}/health`)
-    console.log(`CORS origin: ${config.frontendOrigin}`)
+    // Attach WebSocket server to HTTP server
+    createWebSocketServer(httpServer)
+
+    // Start listening
+    httpServer.listen(config.port, config.host, () => {
+      console.log(`Sandbox API listening on http://${config.host}:${config.port}`)
+      console.log(`Health check: http://${config.host}:${config.port}/health`)
+      console.log(`WebSocket: ws://${config.host}:${config.port}/sessions/:id/ws`)
+      console.log(`CORS origin: ${config.frontendOrigin}`)
+    })
+
+    httpServer.on("error", (error) => {
+      console.error("HTTP server error:", error)
+    })
   })
 
   const stop = Effect.sync(() => {
-    if (server) {
-      server.stop()
-      server = null
+    // Close all WebSocket connections first
+    Effect.runSync(closeAllConnections)
+
+    if (httpServer) {
+      httpServer.closeAllConnections()
+      httpServer.close()
+      httpServer = null
       console.log("Sandbox API stopped")
     }
   })
@@ -105,25 +155,25 @@ export const ServerLayer = Layer.mergeAll(
   DockerClientLive,
   Layer.provide(ContainerService.ContainerServiceLive, DockerClientLive),
   Layer.provide(SessionServiceLive, ContainerService.ContainerServiceLive),
+  Layer.provide(WebSocketServiceLive, ContainerService.ContainerServiceLive),
   RateLimitServiceLive,
 )
 
 // Default config from environment
 const defaultConfig = Effect.sync(() => {
   const port = Number(process.env.PORT ?? "3001")
+  const host = process.env.HOST ?? "0.0.0.0"
   const frontendOrigin = process.env.FRONTEND_ORIGIN ?? "http://localhost:3000"
 
   return {
     port,
+    host,
     frontendOrigin,
   } as ServerConfig
 })
 
 // Default layer
-export const ServerConfigLive = Layer.effect(
-  ServerConfig,
-  defaultConfig,
-)
+export const ServerConfigLive = Layer.effect(ServerConfig, defaultConfig)
 
 // Main function for Bun runtime
 const mainProgram = Effect.gen(function* () {
@@ -141,10 +191,7 @@ const mainProgram = Effect.gen(function* () {
 if (import.meta.main) {
   const program = mainProgram.pipe(
     Effect.provide(
-      HttpServerLive.pipe(
-        Layer.provide(ServerConfigLive),
-        Layer.provide(ServerLayer),
-      ),
+      HttpServerLive.pipe(Layer.provide(ServerConfigLive), Layer.provide(ServerLayer)),
     ),
     Effect.catchAll((error) =>
       Effect.sync(() => {

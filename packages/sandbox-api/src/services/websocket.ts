@@ -1,5 +1,5 @@
-import { Context, Data, Effect, Layer, Queue } from "effect"
-import { ContainerService, ContainerError } from "./container.js"
+import { Context, Data, Effect, Layer } from "effect"
+import { ContainerService, ContainerError, DockerClient } from "./container.js"
 import type Docker from "dockerode"
 import { WebSocket } from "ws"
 
@@ -24,7 +24,8 @@ export interface ConnectionState {
   readonly sessionId: string
   readonly containerId: string
   readonly socket: WebSocket
-  readonly containerStream: Docker.Exec
+  readonly exec: Docker.Exec
+  readonly stream: NodeJS.ReadWriteStream
   readonly isConnected: boolean
 }
 
@@ -37,6 +38,8 @@ export class WebSocketError extends Data.TaggedClass("WebSocketError")<{
     | "ContainerNotFound"
     | "WriteFailed"
     | "SocketClosed"
+    | "ExecCreateFailed"
+    | "ExecStartFailed"
   readonly message: string
   readonly originalError?: unknown
 }> {}
@@ -47,10 +50,14 @@ export interface WebSocketServiceShape {
     sessionId: string,
     containerId: string,
     socket: WebSocket,
-  ) => Effect.Effect<void, WebSocketError>
+  ) => Effect.Effect<ConnectionState, WebSocketError>
   readonly sendMessage: (
     connection: ConnectionState,
     data: string,
+  ) => Effect.Effect<void, WebSocketError>
+  readonly writeInput: (
+    connection: ConnectionState,
+    data: Buffer,
   ) => Effect.Effect<void, WebSocketError>
   readonly resize: (
     connection: ConnectionState,
@@ -66,45 +73,17 @@ export class WebSocketService extends Context.Tag("WebSocketService")<
   WebSocketServiceShape
 >() {}
 
-// Container exec tag for Docker exec operations
-export interface ContainerExecShape {
-  readonly createExec: (
-    containerId: string,
-    cmd: string[],
-    env: Record<string, string>,
-  ) => Effect.Effect<Docker.Exec, ContainerError>
-  readonly startExec: (
-    exec: Docker.Exec,
-    socket: WebSocket,
-  ) => Effect.Effect<void, WebSocketError>
-  readonly resizeExec: (
-    exec: Docker.Exec,
-    rows: number,
-    cols: number,
-  ) => Effect.Effect<void, WebSocketError>
-}
-
-export const ContainerExec = Context.GenericTag<ContainerExecShape>(
-  "ContainerExec",
-)
-
 // Helper: Parse WebSocket message
 const _parseMessage = (data: string): WebSocketMessage => {
   try {
     const parsed = JSON.parse(data) as unknown
 
-    if (
-      typeof parsed === "object" &&
-      parsed !== null &&
-      "type" in parsed
-    ) {
+    if (typeof parsed === "object" && parsed !== null && "type" in parsed) {
       if (parsed.type === "resize") {
         return {
           type: "resize",
-          rows:
-            typeof parsed.rows === "number" ? parsed.rows : 24,
-          cols:
-            typeof parsed.cols === "number" ? parsed.cols : 80,
+          rows: typeof parsed.rows === "number" ? parsed.rows : 24,
+          cols: typeof parsed.cols === "number" ? parsed.cols : 80,
         } satisfies TerminalResize
       }
       if (parsed.type === "input") {
@@ -126,49 +105,92 @@ const _parseMessage = (data: string): WebSocketMessage => {
 // Service implementation
 const make = Effect.gen(function* () {
   const containerService = yield* ContainerService
+  const dockerClient = yield* DockerClient
 
   // Handle a new WebSocket connection
-  const handleConnection = (
-    sessionId: string,
-    containerId: string,
-    socket: WebSocket,
-  ) =>
+  const handleConnection = (sessionId: string, containerId: string, socket: WebSocket) =>
     Effect.gen(function* () {
       // Verify container exists
       const _container = yield* containerService.get(containerId)
 
-      // Create exec for interactive shell
+      const docker = dockerClient.docker
+      const container = docker.getContainer(containerId)
+
+      // Create exec for interactive shell in container
       const exec = yield* Effect.tryPromise({
-        try: async () => {
-          const _docker = containerService
-          // Get Docker client from ContainerService - we need access to it
-          // For now, we'll use a workaround through the container
-          return null as unknown as Docker.Exec
-        },
+        try: async () =>
+          container.exec({
+            AttachStdin: true,
+            AttachStdout: true,
+            AttachStderr: true,
+            Tty: true,
+            Cmd: ["/bin/bash"],
+            Env: ["TERM=xterm-256color"],
+          }),
         catch: (error) => {
-          return new ContainerError({
-            cause: "DockerUnavailable",
-            message:
-              error instanceof Error
-                ? error.message
-                : "Failed to create exec",
+          return new WebSocketError({
+            cause: "ExecCreateFailed",
+            message: error instanceof Error ? error.message : "Failed to create exec",
             originalError: error,
           })
         },
       })
 
-      // TODO: Set up bidirectional stream
-      // This requires more integration with dockerode
+      // Start the exec and get the stream
+      const stream = yield* Effect.tryPromise({
+        try: async () => {
+          const execStream = await exec.start({
+            Detach: false,
+            Tty: true,
+          })
+          return execStream as NodeJS.ReadWriteStream
+        },
+        catch: (error) => {
+          return new WebSocketError({
+            cause: "ExecStartFailed",
+            message: error instanceof Error ? error.message : "Failed to start exec",
+            originalError: error,
+          })
+        },
+      })
+
+      // Set up pipe from container output to WebSocket
+      // Use a FIFO (fake) to avoid blocking issues
+      stream.on("data", (chunk: Buffer) => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(chunk.toString("utf-8"))
+        }
+      })
+
+      // Handle stream errors
+      stream.on("error", (error) => {
+        console.error(`[WebSocketService] Stream error for ${sessionId}:`, error)
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.close(1011, "Container stream error")
+        }
+      })
+
+      // Handle stream close
+      stream.on("close", () => {
+        console.log(`[WebSocketService] Stream closed for ${sessionId}`)
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.close(1000, "Container process exited")
+        }
+      })
 
       return {
         sessionId,
         containerId,
         socket,
-        containerStream: exec,
+        exec,
+        stream,
         isConnected: true,
       } satisfies ConnectionState
     }).pipe(
       Effect.catchAll((error) => {
+        if (error instanceof WebSocketError) {
+          return Effect.fail(error)
+        }
         if (error instanceof ContainerError) {
           return Effect.fail(
             new WebSocketError({
@@ -181,8 +203,7 @@ const make = Effect.gen(function* () {
         return Effect.fail(
           new WebSocketError({
             cause: "ConnectionFailed",
-            message:
-              error instanceof Error ? error.message : "Unknown error",
+            message: error instanceof Error ? error.message : "Unknown error",
             originalError: error,
           }),
         )
@@ -190,10 +211,7 @@ const make = Effect.gen(function* () {
     )
 
   // Send message to WebSocket client
-  const sendMessage = (
-    connection: ConnectionState,
-    data: string,
-  ) =>
+  const sendMessage = (connection: ConnectionState, data: string) =>
     Effect.tryPromise({
       try: async () => {
         if (connection.socket.readyState === WebSocket.OPEN) {
@@ -205,32 +223,40 @@ const make = Effect.gen(function* () {
       catch: (error) => {
         return new WebSocketError({
           cause: "SocketClosed",
-          message:
-            error instanceof Error ? error.message : "Failed to send message",
+          message: error instanceof Error ? error.message : "Failed to send message",
+          originalError: error,
+        })
+      },
+    })
+
+  // Write input to container exec stream
+  const writeInput = (connection: ConnectionState, data: Buffer) =>
+    Effect.tryPromise({
+      try: async () => {
+        if (!connection.stream.writable) {
+          throw new Error("Stream is not writable")
+        }
+        connection.stream.write(data)
+      },
+      catch: (error) => {
+        return new WebSocketError({
+          cause: "WriteFailed",
+          message: error instanceof Error ? error.message : "Failed to write to stream",
           originalError: error,
         })
       },
     })
 
   // Resize terminal
-  const resize = (
-    connection: ConnectionState,
-    rows: number,
-    cols: number,
-  ) =>
+  const resize = (connection: ConnectionState, rows: number, cols: number) =>
     Effect.tryPromise({
       try: async () => {
-        // TODO: Implement exec resize
-        // This requires the exec instance to have resize capability
-        console.log(
-          `[WebSocketService] Resize terminal for ${connection.sessionId}: ${rows}x${cols}`,
-        )
+        await connection.exec.resize({ h: rows, w: cols })
       },
       catch: (error) => {
         return new WebSocketError({
           cause: "WriteFailed",
-          message:
-            error instanceof Error ? error.message : "Failed to resize terminal",
+          message: error instanceof Error ? error.message : "Failed to resize terminal",
           originalError: error,
         })
       },
@@ -239,6 +265,12 @@ const make = Effect.gen(function* () {
   // Close connection gracefully
   const close = (connection: ConnectionState) =>
     Effect.sync(() => {
+      // Close the stream first
+      if (connection.stream && !connection.stream.destroyed) {
+        connection.stream.destroy()
+      }
+
+      // Close the WebSocket
       if (
         connection.socket.readyState === WebSocket.OPEN ||
         connection.socket.readyState === WebSocket.CONNECTING
@@ -250,121 +282,17 @@ const make = Effect.gen(function* () {
   return {
     handleConnection,
     sendMessage,
+    writeInput,
     resize,
     close,
   }
 })
 
 // Live layer
-export const WebSocketServiceLive = Layer.effect(
-  WebSocketService,
-  make,
-)
+export const WebSocketServiceLive = Layer.effect(WebSocketService, make)
 
-// ContainerExec live layer implementation
-const makeContainerExec = Effect.gen(function* () {
-  const _containerService = yield* ContainerService
-
-  const createExec = (
-    _containerId: string,
-    _cmd: string[],
-    _env: Record<string, string>,
-  ) =>
-    Effect.tryPromise({
-      try: async () => {
-        // This needs access to the Docker client
-        // For now, return a placeholder
-        return null as unknown as Docker.Exec
-      },
-      catch: (error) => {
-        return new ContainerError({
-          cause: "DockerUnavailable",
-          message:
-            error instanceof Error ? error.message : "Failed to create exec",
-          originalError: error,
-        })
-      },
-    })
-
-  const startExec = (
-    _exec: Docker.Exec,
-    _socket: WebSocket,
-  ) =>
-    Effect.tryPromise({
-      try: async () => {
-        // TODO: Implement exec start with stream
-        console.log("[ContainerExec] Starting exec stream")
-      },
-      catch: (error) => {
-        return new WebSocketError({
-          cause: "StreamAttachFailed",
-          message:
-            error instanceof Error ? error.message : "Failed to start exec",
-          originalError: error,
-        })
-      },
-    })
-
-  const resizeExec = (
-    _exec: Docker.Exec,
-    rows: number,
-    cols: number,
-  ) =>
-    Effect.tryPromise({
-      try: async () => {
-        // TODO: Implement exec resize
-        console.log(`[ContainerExec] Resize: ${rows}x${cols}`)
-      },
-      catch: (error) => {
-        return new WebSocketError({
-          cause: "WriteFailed",
-          message:
-            error instanceof Error ? error.message : "Failed to resize exec",
-          originalError: error,
-        })
-      },
-    })
-
-  return { createExec, startExec, resizeExec }
-})
-
-export const ContainerExecLive = Layer.effect(
-  ContainerExec,
-  makeContainerExec,
-)
-
-// Helper: Create a queue for streaming terminal output
-export const createTerminalStream = (socket: WebSocket) =>
-  Effect.gen(function* () {
-    // Create the queue
-    const queue = yield* Queue.unbounded<string>()
-
-    // Start consuming from queue and sending to socket
-    const sendLoop = Effect.repeatForever(
-      Queue.take(queue).pipe(
-        Effect.flatMap((data) =>
-          Effect.tryPromise({
-            try: async () => {
-              if (socket.readyState === WebSocket.OPEN) {
-                socket.send(data)
-              }
-            },
-            catch: (error) => {
-              console.error("Failed to send to socket:", error)
-            },
-          }),
-        ),
-      ),
-    ).pipe(
-      Effect.catchAll((error) =>
-        Effect.sync(() => {
-          console.error("Terminal send loop error:", error)
-        }),
-      ),
-    )
-
-    // Start the loop in background
-    yield* Effect.fork(sendLoop)
-
-    return queue
-  })
+// Helper: Parse WebSocket message
+export const parseMessage = (data: string | Buffer): WebSocketMessage => {
+  const str = data instanceof Buffer ? data.toString("utf-8") : data
+  return _parseMessage(str)
+}

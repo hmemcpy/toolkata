@@ -31,10 +31,7 @@ export interface StepProgressState {
  * @param toolPair - The tool pairing slug (e.g., "jj-git")
  * @param totalSteps - Total number of steps for this pairing (for progress calc)
  */
-export function useStepProgress(
-  toolPair: string,
-  _totalSteps?: number
-): StepProgressState {
+export function useStepProgress(toolPair: string, _totalSteps?: number): StepProgressState {
   const [progress, setProgress] = useState<ToolPairProgress | undefined>()
   const [isLoading, setIsLoading] = useState(true)
 
@@ -88,10 +85,7 @@ export function useStepProgress(
  * @param toolPair - The tool pairing slug
  * @param totalSteps - Total number of steps (required for percentage)
  */
-export function useStepProgressWithPercent(
-  toolPair: string,
-  totalSteps: number
-) {
+export function useStepProgressWithPercent(toolPair: string, totalSteps: number) {
   const base = useStepProgress(toolPair, totalSteps)
   const percent = totalSteps > 0 ? (base.completedCount / totalSteps) * 100 : 0
 

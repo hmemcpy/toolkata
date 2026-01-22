@@ -183,9 +183,10 @@ const make = Effect.gen(function* () {
     },
     catch: (error) => {
       return new ContainerError({
-        cause: error instanceof Error && "statusCode" in error && error.statusCode === 404
-          ? "NotFoundError"
-          : "DestroyFailed",
+        cause:
+          error instanceof Error && "statusCode" in error && error.statusCode === 404
+            ? "NotFoundError"
+            : "DestroyFailed",
         message: error instanceof Error ? error.message : "Unknown error destroying container",
         originalError: error,
       })
@@ -208,9 +209,10 @@ const make = Effect.gen(function* () {
     },
     catch: (error) => {
       return new ContainerError({
-        cause: error instanceof Error && "statusCode" in error && error.statusCode === 404
-          ? "NotFoundError"
-          : "DockerUnavailable",
+        cause:
+          error instanceof Error && "statusCode" in error && error.statusCode === 404
+            ? "NotFoundError"
+            : "DockerUnavailable",
         message: error instanceof Error ? error.message : "Unknown error getting container",
         originalError: error,
       })

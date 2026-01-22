@@ -225,17 +225,19 @@ export const createSessionRoutes = () => {
     })
 
     return Effect.runPromise(
-      Effect.either(program).pipe(
-        Effect.mapBoth({
-          onFailure: (error) => errorToResponse(error),
-          onSuccess: (response) => ({ statusCode: 200, body: response }),
+      Effect.either(program)
+        .pipe(
+          Effect.mapBoth({
+            onFailure: (error) => errorToResponse(error),
+            onSuccess: (response) => ({ statusCode: 200, body: response }),
+          }),
+        )
+        .then((either) => {
+          if (either._tag === "Left") {
+            return c.json<ErrorResponse>(either.left.body, either.left.statusCode)
+          }
+          return c.json<SessionStatusResponse>(either.right)
         }),
-      ).then((either) => {
-        if (either._tag === "Left") {
-          return c.json<ErrorResponse>(either.left.body, either.left.statusCode)
-        }
-        return c.json<SessionStatusResponse>(either.right)
-      }),
     )
   })
 
@@ -279,17 +281,19 @@ export const createSessionRoutes = () => {
     })
 
     return Effect.runPromise(
-      Effect.either(program).pipe(
-        Effect.mapBoth({
-          onFailure: (error) => errorToResponse(error),
-          onSuccess: () => ({ statusCode: 200, body: { success: true } }),
+      Effect.either(program)
+        .pipe(
+          Effect.mapBoth({
+            onFailure: (error) => errorToResponse(error),
+            onSuccess: () => ({ statusCode: 200, body: { success: true } }),
+          }),
+        )
+        .then((either) => {
+          if (either._tag === "Left") {
+            return c.json<ErrorResponse>(either.left.body, either.left.statusCode)
+          }
+          return c.json<{ success: true }>(either.right)
         }),
-      ).then((either) => {
-        if (either._tag === "Left") {
-          return c.json<ErrorResponse>(either.left.body, either.left.statusCode)
-        }
-        return c.json<{ success: true }>(either.right)
-      }),
     )
   })
 

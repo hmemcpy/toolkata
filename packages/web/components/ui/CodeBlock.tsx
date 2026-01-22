@@ -62,7 +62,12 @@ interface HighlightedCode {
 /**
  * CodeBlock component with syntax highlighting and copy functionality.
  */
-export function CodeBlock({ code, language, showLineNumbers: _showLineNumbers = false, title }: CodeBlockProps) {
+export function CodeBlock({
+  code,
+  language,
+  showLineNumbers: _showLineNumbers = false,
+  title,
+}: CodeBlockProps) {
   const [highlighted, setHighlighted] = useState<HighlightedCode | null>(null)
   const [copyState, setCopyState] = useState<CopyState>("idle")
   const copyTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)

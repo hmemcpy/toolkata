@@ -28,7 +28,7 @@ export class ProgressError extends Error {
   readonly _tag = "ProgressError"
   constructor(
     readonly cause: "Unavailable" | "InvalidData" | "WriteFailed",
-    message: string
+    message: string,
   ) {
     super(message)
     this.name = "ProgressError"

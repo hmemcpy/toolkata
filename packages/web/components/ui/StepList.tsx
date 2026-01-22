@@ -80,31 +80,19 @@ function StepIcon({ state }: { readonly state: StepCompletionState }): JSX.Eleme
   switch (state) {
     case "completed":
       return (
-        <span
-          className="text-[var(--color-accent)]"
-          aria-label="Completed"
-          role="img"
-        >
+        <span className="text-[var(--color-accent)]" aria-label="Completed" role="img">
           ✓
         </span>
       )
     case "current":
       return (
-        <span
-          className="text-[var(--color-accent)]"
-          aria-label="Current step"
-          role="img"
-        >
+        <span className="text-[var(--color-accent)]" aria-label="Current step" role="img">
           →
         </span>
       )
     case "pending":
       return (
-        <span
-          className="text-[var(--color-text-dim)]"
-          aria-label="Not started"
-          role="img"
-        >
+        <span className="text-[var(--color-text-dim)]" aria-label="Not started" role="img">
           ○
         </span>
       )

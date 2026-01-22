@@ -22,7 +22,11 @@ import { Context, Data, Effect, Layer } from "effect"
 import fs from "node:fs/promises"
 import path from "node:path"
 import matter from "gray-matter"
-import type { StepFrontmatter, IndexFrontmatter, CheatsheetFrontmatter } from "../lib/content/schemas"
+import type {
+  StepFrontmatter,
+  IndexFrontmatter,
+  CheatsheetFrontmatter,
+} from "../lib/content/schemas"
 
 /**
  * Error types for content loading operations.
@@ -89,10 +93,7 @@ export interface ContentServiceShape {
    * @param step - The step number (1-indexed).
    * @returns The step content with validated frontmatter.
    */
-  readonly loadStep: (
-    toolPair: string,
-    step: number,
-  ) => Effect.Effect<StepContent, ContentError>
+  readonly loadStep: (toolPair: string, step: number) => Effect.Effect<StepContent, ContentError>
 
   /**
    * Load the index/landing page for a tool pairing.
@@ -100,9 +101,7 @@ export interface ContentServiceShape {
    * @param toolPair - The tool pairing slug (e.g., "jj-git").
    * @returns The index content with validated frontmatter.
    */
-  readonly loadIndex: (
-    toolPair: string,
-  ) => Effect.Effect<IndexContent, ContentError>
+  readonly loadIndex: (toolPair: string) => Effect.Effect<IndexContent, ContentError>
 
   /**
    * Load the cheat sheet for a tool pairing.
@@ -110,9 +109,7 @@ export interface ContentServiceShape {
    * @param toolPair - The tool pairing slug (e.g., "jj-git").
    * @returns The cheat sheet content with validated frontmatter.
    */
-  readonly loadCheatsheet: (
-    toolPair: string,
-  ) => Effect.Effect<CheatsheetContent, ContentError>
+  readonly loadCheatsheet: (toolPair: string) => Effect.Effect<CheatsheetContent, ContentError>
 
   /**
    * List all available steps for a tool pairing.
@@ -122,9 +119,7 @@ export interface ContentServiceShape {
    * @param toolPair - The tool pairing slug (e.g., "jj-git").
    * @returns Array of step metadata.
    */
-  readonly listSteps: (
-    toolPair: string,
-  ) => Effect.Effect<readonly StepMeta[], ContentError>
+  readonly listSteps: (toolPair: string) => Effect.Effect<readonly StepMeta[], ContentError>
 }
 
 /**
@@ -232,7 +227,10 @@ function readMdxFile(filePath: string): Effect.Effect<RawMdxContent, ContentErro
 /**
  * Check if a file exists, returning a ContentError if not.
  */
-function requireFileExists(filePath: string, description: string): Effect.Effect<void, ContentError> {
+function requireFileExists(
+  filePath: string,
+  description: string,
+): Effect.Effect<void, ContentError> {
   return Effect.tryPromise({
     try: () => fs.access(filePath),
     catch: () =>

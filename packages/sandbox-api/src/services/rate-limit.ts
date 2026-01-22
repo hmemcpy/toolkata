@@ -31,26 +31,12 @@ export class RateLimitError extends Data.TaggedClass("RateLimitError")<{
 
 // Service interface
 export interface RateLimitServiceShape {
-  readonly checkSessionLimit: (
-    ipAddress: string,
-  ) => Effect.Effect<RateLimitResult, RateLimitError>
-  readonly recordSession: (
-    ipAddress: string,
-    sessionId: string,
-  ) => Effect.Effect<void, never>
-  readonly removeSession: (
-    ipAddress: string,
-    sessionId: string,
-  ) => Effect.Effect<void, never>
-  readonly checkCommandLimit: (
-    ipAddress: string,
-  ) => Effect.Effect<RateLimitResult, RateLimitError>
-  readonly recordCommand: (
-    ipAddress: string,
-  ) => Effect.Effect<void, never>
-  readonly getActiveSessionCount: (
-    ipAddress: string,
-  ) => Effect.Effect<number, never>
+  readonly checkSessionLimit: (ipAddress: string) => Effect.Effect<RateLimitResult, RateLimitError>
+  readonly recordSession: (ipAddress: string, sessionId: string) => Effect.Effect<void, never>
+  readonly removeSession: (ipAddress: string, sessionId: string) => Effect.Effect<void, never>
+  readonly checkCommandLimit: (ipAddress: string) => Effect.Effect<RateLimitResult, RateLimitError>
+  readonly recordCommand: (ipAddress: string) => Effect.Effect<void, never>
+  readonly getActiveSessionCount: (ipAddress: string) => Effect.Effect<number, never>
 }
 
 // Service tag
@@ -65,11 +51,7 @@ interface RateLimitStore {
 }
 
 // Helper: Get current tracking state for IP, creating if needed
-const getOrCreateTracking = (
-  store: RateLimitStore,
-  ipAddress: string,
-  now: number,
-): IpTracking => {
+const getOrCreateTracking = (store: RateLimitStore, ipAddress: string, now: number): IpTracking => {
   const existing = MutableHashMap.get(store.ipTracking, ipAddress)
 
   if (existing === undefined) {
@@ -118,11 +100,7 @@ const getOrCreateTracking = (
 }
 
 // Helper: Calculate retry-after seconds
-const calculateRetryAfter = (
-  windowStart: number,
-  windowDuration: number,
-  now: number,
-): number => {
+const calculateRetryAfter = (windowStart: number, windowDuration: number, now: number): number => {
   const windowEnd = windowStart + windowDuration
   const remainingMs = Math.max(0, windowEnd - now)
   return Math.ceil(remainingMs / 1000)
@@ -144,11 +122,7 @@ const make = Effect.gen(function* () {
 
       // Check hourly limit
       if (tracking.sessionCount >= RATE_LIMITS.sessionsPerHour) {
-        const retryAfter = calculateRetryAfter(
-          tracking.hourWindowStart,
-          60 * 60 * 1000,
-          now,
-        )
+        const retryAfter = calculateRetryAfter(tracking.hourWindowStart, 60 * 60 * 1000, now)
         return {
           allowed: false,
           retryAfter,
@@ -204,9 +178,7 @@ const make = Effect.gen(function* () {
       }
 
       const tracking = trackingOption
-      const updatedActiveSessions = tracking.activeSessions.filter(
-        (id) => id !== sessionId,
-      )
+      const updatedActiveSessions = tracking.activeSessions.filter((id) => id !== sessionId)
 
       // If no active sessions and no recent activity, we could clean up
       // But keep the tracking entry for rate limit state
@@ -233,11 +205,7 @@ const make = Effect.gen(function* () {
       const tracking = getOrCreateTracking(store, ipAddress, now)
 
       if (tracking.commandCount >= RATE_LIMITS.commandsPerMinute) {
-        const retryAfter = calculateRetryAfter(
-          tracking.minuteWindowStart,
-          60 * 1000,
-          now,
-        )
+        const retryAfter = calculateRetryAfter(tracking.minuteWindowStart, 60 * 1000, now)
         return {
           allowed: false,
           retryAfter,
@@ -274,10 +242,7 @@ const make = Effect.gen(function* () {
     Ref.get(storeRef).pipe(
       Effect.flatMap((store) =>
         Effect.gen(function* () {
-          const trackingOption = yield* MutableHashMap.get(
-            store.ipTracking,
-            ipAddress,
-          )
+          const trackingOption = yield* MutableHashMap.get(store.ipTracking, ipAddress)
           if (trackingOption === undefined) {
             return 0
           }
