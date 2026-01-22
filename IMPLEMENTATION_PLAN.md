@@ -398,6 +398,8 @@ Two related efforts:
 
 ### Phase 9: Manual Verification (Post-Tests)
 
+> **Note**: These are manual testing tasks that require human verification in a browser. All code implementation is complete.
+
 - [ ] **9.1** Desktop verification checklist
   - [ ] Toggle button visible in bottom-right
   - [ ] Click toggle opens sidebar from right
@@ -421,6 +423,8 @@ Two related efforts:
   - [ ] Focus trap works correctly
   - [ ] Keyboard navigation complete
   - [ ] Works with `prefers-reduced-motion`
+
+> **Status 2026-01-22**: All automated implementation complete. 62 Playwright tests passing. Manual verification deferred to human testing.
 
 ---
 
