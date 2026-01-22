@@ -118,29 +118,22 @@ Two related efforts:
 > **WHY**: Step page uses wrong SideBySide variant and duplicates MDX component definitions.
 > **Discovery**: Gap analysis found step page imports SideBySide directly (line 7), missing direction context.
 
-- [ ] **0.5.1** Fix step page MDX component import
+- [x] **0.5.1** Fix step page MDX component import
   - Location: `packages/web/app/[toolPair]/[step]/page.tsx`
-  - Remove local `mdxComponents` definition (lines 53-57):
-    ```typescript
-    const mdxComponents = {
-      Callout,
-      CodeBlock,
-      SideBySide,
-    }
-    ```
-  - Remove direct imports (lines 3-4, 7):
-    - Line 3: `import { Callout } from "../../../components/ui/Callout"`
-    - Line 4: `import { CodeBlock } from "../../../components/ui/CodeBlock"`
-    - Line 7: `import { SideBySide } from "../../../components/ui/SideBySide"`
-  - Add import: `import { mdxComponents } from "../../../components/mdx/MDXComponents"`
+  - Removed local `mdxComponents` definition
+  - Removed direct imports (Callout, CodeBlock, SideBySide)
+  - Added import: `import { mdxComponents } from "../../../components/mdx/MDXComponents"`
   - This gives access to `SideBySideWithDirection` (direction-aware) instead of plain `SideBySide`
   - Also provides proper `pre`/`code` handling via centralized `Pre` and `Code` components
+  - **Completed 2026-01-22**
 
-- [ ] **0.5.2** Verify MDXComponents.tsx exports are sufficient
+- [x] **0.5.2** Verify MDXComponents.tsx exports are sufficient
   - Location: `packages/web/components/mdx/MDXComponents.tsx`
   - CodeBlock is used internally via `Pre` component for fenced code blocks
   - Direct `CodeBlock` export not needed if step page uses centralized `mdxComponents`
-  - Verify that after task 0.5.1, all MDX rendering works correctly
+  - Verified that after task 0.5.1, all MDX rendering works correctly
+  - Build validation passed: typecheck, lint, build all successful
+  - **Completed 2026-01-22**
 
 ---
 

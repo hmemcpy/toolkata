@@ -1,12 +1,10 @@
 import { MDXRemote } from "next-mdx-remote/rsc"
 import { notFound } from "next/navigation"
-import { Callout } from "../../../components/ui/Callout"
-import { CodeBlock } from "../../../components/ui/CodeBlock"
 import { Footer } from "../../../components/ui/Footer"
 import { Header } from "../../../components/ui/Header"
-import { SideBySide } from "../../../components/ui/SideBySide"
 import { StepPageClientWrapper } from "../../../components/ui/StepPageClientWrapper"
 import { getPairing, isValidPairingSlug } from "../../../content/pairings"
+import { mdxComponents } from "../../../components/mdx/MDXComponents"
 import { loadStep } from "../../../services/content"
 
 /**
@@ -45,15 +43,6 @@ export async function generateMetadata(props: {
     title: `Step ${stepNum} | ${pairing.to.name} ← ${pairing.from.name}`,
     description: `Learn ${pairing.to.name} if you already know ${pairing.from.name}. Step ${stepNum} of ${pairing.steps}.`,
   }
-}
-
-/**
- * Custom MDX components for rendering.
- */
-const mdxComponents = {
-  Callout,
-  CodeBlock,
-  SideBySide,
 }
 
 /**
