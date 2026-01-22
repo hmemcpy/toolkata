@@ -1,13 +1,13 @@
 # Implementation Plan: toolkata
 
-> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1-13.3.3, 13.4.1 complete
+> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1-13.3.3, 13.4.1-13.4.2 complete
 > **Validation**: `bun run typecheck`, `bun run lint`, `bun run build`, Playwright tests
 > **Priority Legend**: P0 = Blocking, P1 = Core MVP, P2 = Polish/Enhancement
-> **Last Updated**: 2026-01-22 (13.4.1 Glossary data module complete. Next: 13.4.2 Update cheatsheet to use shared data)
+> **Last Updated**: 2026-01-22 (13.4.2 Cheatsheet updated to use shared glossary data. Next: 13.5.1 Create glossary page)
 
 ### Current Priority: Phase 13 (Bidirectional Comparison)
 
-**Recommended starting point**: Task 13.4.2 (Update cheatsheet page) - depends on completed 13.4.1 glossary data module
+**Recommended starting point**: Task 13.5.1 (Create glossary page) - depends on completed 13.4 glossary data module
 
 ### Phase 12 Remaining Items
 
@@ -18,11 +18,11 @@ Phase 12 Playwright tests are written but some need manual verification:
 
 ### Immediate Next Tasks (in order)
 
-1. **13.4.2** Update cheatsheet page to use shared glossary data
-   - Location: `packages/web/app/[toolPair]/cheatsheet/page.tsx`
-   - Import `jjGitGlossary`, `getCategories` from `content/glossary/jj-git`
-   - Remove inline `jjGitCheatSheet` array (lines 33-252)
-   - ~30 lines net change (remove ~220, add ~30)
+1. **13.5.1** Create glossary page at `packages/web/app/[toolPair]/glossary/page.tsx`
+   - Server component shell for static generation
+   - `generateStaticParams` for known pairings (`["jj-git"]`)
+   - `generateMetadata` for SEO: title, description, OG tags
+   - Route: `/jj-git/glossary`
 
 ---
 
@@ -1016,7 +1016,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
     - `filterByCategory(entries, category): GlossaryEntry[]`
     - `searchEntries(entries, query): GlossaryEntry[]` (search both commands + notes)
 
-- [ ] **13.4.2** Update cheatsheet page to use shared glossary data
+- [x] **13.4.2** Update cheatsheet page to use shared glossary data
   - Location: `packages/web/app/[toolPair]/cheatsheet/page.tsx`
   - Import `jjGitGlossary`, `getCategories` from `content/glossary/jj-git`
   - Remove inline `jjGitCheatSheet` array (lines 33-252)
