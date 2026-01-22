@@ -1,9 +1,9 @@
 # Implementation Plan: toolkata
 
-> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1-13.3.1 complete
+> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1-13.3.2 complete
 > **Validation**: `bun run typecheck`, `bun run lint`, `bun run build`, Playwright tests
 > **Priority Legend**: P0 = Blocking, P1 = Core MVP, P2 = Polish/Enhancement
-> **Last Updated**: 2026-01-22 (13.3.1 SideBySide isReversed prop complete. Next: 13.3.2 SideBySideWithDirection wrapper)
+> **Last Updated**: 2026-01-22 (13.3.2 SideBySideWithDirection wrapper complete. Next: 13.3.3 MDX component mapping)
 
 ### Current Priority: Phase 13 (Bidirectional Comparison)
 
@@ -18,15 +18,11 @@ Phase 12 Playwright tests are written but some need manual verification:
 
 ### Immediate Next Tasks (in order)
 
-1. **13.3.2** Create `SideBySideWithDirection.tsx` wrapper
-   - Client component wrapper consuming useDirectionContext
-   - ~30 lines estimated
-
-2. **13.3.3** Update MDX component mapping
+1. **13.3.3** Update MDX component mapping
    - Replace SideBySide with SideBySideWithDirection in MDXComponents.tsx
    - ~2 lines
 
-3. **13.4.1** Extract glossary data to `packages/web/content/glossary/jj-git.ts`
+2. **13.4.1** Extract glossary data to `packages/web/content/glossary/jj-git.ts`
    - Move 42 entries from cheatsheet/page.tsx lines 33-252
    - Add search/filter helpers
    - ~300 lines (mostly data)
@@ -988,7 +984,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Keep semantic props unchanged (`fromCommands` always means "from" tool)
   - Location: `packages/web/components/ui/SideBySide.tsx`
 
-- [ ] **13.3.2** Create `SideBySideWithDirection.tsx` wrapper
+- [x] **13.3.2** Create `SideBySideWithDirection.tsx` wrapper
   - Client component with `"use client"`
   - Consumes `useDirectionContext()` to get `isReversed`
   - Passes all props through to `SideBySide` plus `isReversed`
