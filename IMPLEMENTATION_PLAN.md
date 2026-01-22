@@ -353,13 +353,14 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - CORS configuration for frontend origin (toolkata.dev, localhost:3000)
   - Location: `packages/sandbox-api/src/index.ts`
 
-- [ ] **7.2** Create Docker base image
+- [x] **7.2** Create Docker base image
   - Base: `debian:bookworm-slim`
-  - Install: git, curl, jj (from GitHub releases)
+  - Install: git, curl, jj (via cargo/rustup due to Rust 2024 edition requirement)
   - Non-root user "sandbox" with home directory
   - Pre-configure git/jj user settings (name: "Sandbox User", email: sandbox@toolkata.dev)
   - Working directory: `/home/sandbox/workspace`
   - Location: `packages/sandbox-api/docker/Dockerfile`
+  - Note: jj 0.37.0 requires Rust 2024 edition, which isn't supported by Debian's cargo. Using rustup for modern toolchain.
 
 - [ ] **7.3** Create ContainerService with Effect-TS
   - `create(toolPair)` → `Effect<Container, ContainerError>`
@@ -764,6 +765,14 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 - Added `effect@3` as a dependency to `packages/web`
 - Required for ContentService with proper typed error handling
 - Using `Data.TaggedClass` for error types and `Layer.effect` for service composition
+
+**Docker Sandbox Image Build Challenges:**
+- jj 0.37.0 uses Rust 2024 edition, incompatible with Debian 12's cargo (only supports up to 2021)
+- Downloading pre-built binaries from GitHub releases failed during Docker builds (404 errors from within build container)
+- Solution: Install via `cargo install jj-cli` using rustup for modern Rust toolchain
+- Required `build-essential` package for proper linking during compilation
+- jj config file creation required `printf` instead of `echo -e` for proper TOML formatting
+- Final image size: ~656MB (acceptable for ephemeral sandbox containers)
 
 ### Out of Scope (MVP)
 
