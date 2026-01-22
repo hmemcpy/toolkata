@@ -7,8 +7,6 @@ export interface NavigationWrapperProps {
   readonly currentStep: number
   readonly totalSteps: number
   readonly toolPair: string
-  readonly previousTitle?: string | null
-  readonly nextTitle?: string | null
   readonly className?: string
 }
 
@@ -25,8 +23,6 @@ export function NavigationWrapper({
   currentStep,
   totalSteps,
   toolPair,
-  previousTitle,
-  nextTitle,
   className = "",
 }: NavigationWrapperProps) {
   const { isStepComplete, markComplete, setCurrentStep } = useStepProgress(toolPair, totalSteps)
@@ -53,8 +49,6 @@ export function NavigationWrapper({
       currentStep={currentStep}
       totalSteps={totalSteps}
       toolPair={toolPair}
-      previousTitle={previousTitle ?? null}
-      nextTitle={nextTitle ?? null}
       onComplete={handleComplete}
       isCompleted={isCompleted}
       className={className}

@@ -126,6 +126,8 @@ export function StepPageClientWrapper({
         currentStep={currentStep}
         totalSteps={totalSteps}
         title={title}
+        previousHref={previousHref}
+        nextHref={nextHref}
       />
 
       {/* MDX Content */}
@@ -150,8 +152,6 @@ export function StepPageClientWrapper({
         toolPair={toolPair}
         currentStep={currentStep}
         totalSteps={totalSteps}
-        previousTitle={previousHref ? `Step ${currentStep - 1}` : null}
-        nextTitle={nextHref ? `Step ${currentStep + 1}` : null}
       />
 
       {/* Keyboard Shortcuts Modal */}

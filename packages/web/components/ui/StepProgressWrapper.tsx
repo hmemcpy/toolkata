@@ -9,6 +9,8 @@ export interface StepProgressWrapperProps {
   readonly title: string
   readonly toolPair: string
   readonly overviewHref?: string
+  readonly previousHref?: string | null
+  readonly nextHref?: string | null
   readonly showKeyboardHints?: boolean
   readonly className?: string
 }
@@ -27,6 +29,8 @@ export function StepProgressWrapper({
   title,
   toolPair,
   overviewHref,
+  previousHref,
+  nextHref,
   showKeyboardHints,
   className = "",
 }: StepProgressWrapperProps) {
@@ -48,6 +52,8 @@ export function StepProgressWrapper({
       title={title}
       toolPair={toolPair}
       overviewHref={overviewHref ?? `/${toolPair}`}
+      previousHref={previousHref}
+      nextHref={nextHref}
       showKeyboardHints={showKeyboardHints ?? true}
       isCompleted={isCompleted}
       className={className}

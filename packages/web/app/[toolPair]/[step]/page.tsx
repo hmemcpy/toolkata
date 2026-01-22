@@ -159,7 +159,7 @@ export default async function StepPage(props: {
           currentStep={stepNum}
           totalSteps={pairing.steps}
           title={frontmatter.title}
-          previousHref={stepNum > 1 ? `/${toolPair}/${stepNum - 1}` : null}
+          previousHref={stepNum > 1 ? `/${toolPair}/${stepNum - 1}` : `/${toolPair}`}
           nextHref={stepNum < pairing.steps ? `/${toolPair}/${stepNum + 1}` : null}
           suggestedCommands={allCommands}
         >

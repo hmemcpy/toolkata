@@ -5,8 +5,6 @@ export interface NavigationProps {
   readonly currentStep: number
   readonly totalSteps: number
   readonly toolPair: string
-  readonly previousTitle?: string | null
-  readonly nextTitle?: string | null
   readonly onComplete?: () => void
   readonly isCompleted?: boolean
   readonly className?: string
@@ -16,8 +14,6 @@ export function Navigation({
   currentStep,
   totalSteps,
   toolPair,
-  previousTitle,
-  nextTitle,
   onComplete,
   isCompleted = false,
   className = "",
@@ -33,7 +29,7 @@ export function Navigation({
       >
         {/* Previous button */}
         <div className="flex-1">
-          {hasPrevious && previousTitle ? (
+          {hasPrevious ? (
             <Link
               href={`/${toolPair}/${currentStep - 1}`}
               className="
@@ -43,7 +39,7 @@ export function Navigation({
                 focus-visible:outline-none focus-visible:ring-[var(--focus-ring)]
                 transition-colors duration-[var(--transition-fast)]
               "
-              aria-label={`Go to previous step: ${previousTitle}`}
+              aria-label={`Go to step ${currentStep - 1}`}
             >
               <span
                 aria-hidden="true"
@@ -51,8 +47,7 @@ export function Navigation({
               >
                 ←
               </span>
-              <span className="hidden sm:inline">Step {currentStep - 1}:</span>
-              <span className="hidden sm:inline truncate max-w-[150px]">{previousTitle}</span>
+              <span className="hidden sm:inline">Step {currentStep - 1}</span>
               <span className="sm:hidden">Previous</span>
             </Link>
           ) : (
@@ -103,7 +98,7 @@ export function Navigation({
 
         {/* Next button */}
         <div className="flex-1 flex justify-end">
-          {hasNext && nextTitle ? (
+          {hasNext ? (
             <Link
               href={`/${toolPair}/${currentStep + 1}`}
               className="
@@ -113,10 +108,8 @@ export function Navigation({
                 focus-visible:outline-none focus-visible:ring-[var(--focus-ring)]
                 transition-colors duration-[var(--transition-fast)]
               "
-              aria-label={`Go to next step: ${nextTitle}`}
+              aria-label={`Go to step ${currentStep + 1}`}
             >
-              <span className="hidden sm:inline truncate max-w-[150px]">{nextTitle}</span>
-              <span className="hidden sm:inline">:</span>
               <span className="hidden sm:inline">Step {currentStep + 1}</span>
               <span className="sm:hidden">Next</span>
               <span aria-hidden="true">→</span>

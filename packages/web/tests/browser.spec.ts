@@ -24,7 +24,7 @@ test.describe("Progress Persistence (12.6)", () => {
     await page.goto("/jj-git/1")
 
     // Click "Mark Complete" or "Next" to complete step
-    const nextButton = page.getByRole("link", { name: /next|step 2/i })
+    const nextButton = page.getByRole("link", { name: /go to next step/i })
     await nextButton.click()
 
     // Wait for navigation to step 2
@@ -50,7 +50,7 @@ test.describe("Progress Persistence (12.6)", () => {
   test("clearing localStorage resets progress", async ({ page }) => {
     // Set up some progress
     await page.goto("/jj-git/1")
-    const nextButton = page.getByRole("link", { name: /next|step 2/i })
+    const nextButton = page.getByRole("link", { name: /go to next step/i })
     await nextButton.click()
     await page.waitForURL("/jj-git/2")
 
@@ -71,7 +71,7 @@ test.describe("Progress Persistence (12.6)", () => {
   test("Reset Progress button clears progress", async ({ page }) => {
     // Set up some progress
     await page.goto("/jj-git/1")
-    const nextButton = page.getByRole("link", { name: /next|step 2/i })
+    const nextButton = page.getByRole("link", { name: /go to next step/i })
     await nextButton.click()
     await page.waitForURL("/jj-git/2")
 
