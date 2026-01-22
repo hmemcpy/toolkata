@@ -1,11 +1,11 @@
-import { Data, Effect, Layer } from "effect"
+import { Context, Data, Effect, Layer } from "effect"
 import { Hono } from "hono"
 import { cors } from "hono/cors"
 import type { Env } from "hono"
 import { createServer as createHttpServer, type Server as NodeHttpServer } from "node:http"
 import { sessionRoutes } from "./routes/sessions.js"
 import { createWebSocketServer, closeAllConnections } from "./routes/websocket.js"
-import { ContainerService, DockerClientLive } from "./services/container.js"
+import { ContainerServiceLive, DockerClientLive } from "./services/container.js"
 import { SessionService, SessionServiceLive } from "./services/session.js"
 import { RateLimitServiceLive } from "./services/rate-limit.js"
 import { WebSocketServiceLive } from "./services/websocket.js"
@@ -176,12 +176,13 @@ const make = Effect.gen(function* () {
 export const HttpServerLive = Layer.effect(HttpServer, make)
 
 // Main server layer composition - all services needed for the API
+// Simple approach: Layer.mergeAll automatically resolves dependencies
 export const ServerLayer = Layer.mergeAll(
   DockerClientLive,
-  Layer.provide(ContainerService.ContainerServiceLive, DockerClientLive),
-  Layer.provide(SessionServiceLive, ContainerService.ContainerServiceLive),
-  Layer.provide(WebSocketServiceLive, ContainerService.ContainerServiceLive),
   RateLimitServiceLive,
+  ContainerServiceLive,
+  SessionServiceLive,
+  WebSocketServiceLive,
 )
 
 // Default config from environment
@@ -214,10 +215,16 @@ const mainProgram = Effect.gen(function* () {
 
 // Run main when file is executed directly
 if (import.meta.main) {
+  // Build the complete application layer
+  // HttpServerLive depends on ServerConfig and SessionService
+  // We need to provide ServerConfig and ServerLayer (which contains SessionService)
+  const appLayer = HttpServerLive.pipe(
+    Layer.provide(ServerConfigLive),
+    Layer.provide(ServerLayer),
+  )
+
   const program = mainProgram.pipe(
-    Effect.provide(
-      HttpServerLive.pipe(Layer.provide(ServerConfigLive), Layer.provide(ServerLayer)),
-    ),
+    Effect.provide(appLayer),
     Effect.catchAll((error) =>
       Effect.sync(() => {
         console.error("Server failed to start:", error)
