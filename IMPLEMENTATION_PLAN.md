@@ -233,12 +233,13 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Justify-between layout
   - Location: `packages/web/components/ui/Navigation.tsx`
 
-- [ ] **4.8** Build StepList component
+- [x] **4.8** Build StepList component
   - Checklist of all steps with completion state
   - Icons: ✓ checkmark (done), → arrow (current), ○ circle (pending)
   - Grouped by section (Fundamentals, Daily Workflow, Advanced)
   - Clickable rows navigate to step
-  - Location: `packages/web/src/components/ui/StepList.tsx`
+  - Location: `packages/web/components/ui/StepList.tsx`
+  - Note: Project uses `components/` not `src/components/` (app directory structure)
 
 - [ ] **4.9** Build CommandSuggestions component
   - Show suggested commands from MDX frontmatter
