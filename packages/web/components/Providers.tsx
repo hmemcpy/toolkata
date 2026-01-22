@@ -1,6 +1,7 @@
 "use client"
 
 import { DirectionProvider } from "../contexts/DirectionContext"
+import { TerminalProvider } from "../contexts/TerminalContext"
 import type { ReactNode } from "react"
 
 /**
@@ -28,6 +29,7 @@ export interface ProvidersProps {
  *
  * Currently provides:
  * - DirectionProvider: For bidirectional comparison direction state
+ * - TerminalProvider: For terminal sidebar state and command execution
  *
  * Why a separate file?
  * - Keeps layout.tsx as a server component (better performance, SEO)
@@ -49,6 +51,10 @@ export interface ProvidersProps {
  * }
  * ```
  */
-export function Providers({ toolPair, children }: ProvidersProps) {
-  return <DirectionProvider toolPair={toolPair}>{children}</DirectionProvider>
+export function Providers({ toolPair, children }: ProvidersProps): ReactNode {
+  return (
+    <DirectionProvider toolPair={toolPair}>
+      <TerminalProvider toolPair={toolPair}>{children}</TerminalProvider>
+    </DirectionProvider>
+  )
 }

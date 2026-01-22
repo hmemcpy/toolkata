@@ -185,10 +185,11 @@ Two related efforts:
   - Note: `prefers-reduced-motion` rule already exists at lines 91-100 and covers all transitions including sidebar
   - **Completed 2026-01-22**
 
-- [ ] **1.4** Update `Providers.tsx` to include TerminalProvider
+- [x] **1.4** Update `Providers.tsx` to include TerminalProvider
   - Location: `packages/web/components/Providers.tsx`
   - Wrap children with TerminalProvider (inside DirectionProvider)
   - Pass toolPair to TerminalProvider
+  - **Completed 2026-01-22**
 
 ---
 
