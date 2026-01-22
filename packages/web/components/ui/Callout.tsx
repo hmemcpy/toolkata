@@ -69,12 +69,12 @@ export function Callout({ variant = "note", children }: CalloutProps) {
         borderLeftStyle: "solid",
       }}
     >
-      <p className="m-0 text-sm text-[var(--color-text)] leading-[var(--line-height-normal)]">
+      <div className="m-0 text-sm text-[var(--color-text)] leading-[var(--line-height-normal)]">
         <span className="font-semibold" style={{ color: config.borderColor }}>
           {config.label}:
         </span>{" "}
         {children}
-      </p>
+      </div>
     </div>
   )
 }
