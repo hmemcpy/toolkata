@@ -149,7 +149,7 @@ Two related efforts:
 > **WHY**: Terminal sidebar requires shared state across components. Context pattern matches DirectionContext.
 > **Spec**: `specs/terminal-sidebar.md`
 
-- [ ] **1.1** Create `TerminalContext` at `packages/web/contexts/TerminalContext.tsx`
+- [x] **1.1** Create `TerminalContext` at `packages/web/contexts/TerminalContext.tsx`
   - Define `TerminalState` type: `"IDLE" | "CONNECTING" | "CONNECTED" | "TIMEOUT_WARNING" | "EXPIRED" | "ERROR"`
   - Define `TerminalContextValue` interface:
     ```typescript
@@ -161,23 +161,24 @@ Two related efforts:
       readonly closeSidebar: () => void
       readonly toggleSidebar: () => void
       readonly executeCommand: (command: string) => void
-      readonly registerTerminal: (ref: InteractiveTerminalRef) => void
+      readonly registerTerminal: (ref: TerminalRef) => void
     }
     ```
   - Create context with `createContext<TerminalContextValue | null>(null)`
   - Create `useTerminalContext()` hook with helpful error if used outside provider
   - Follow DirectionContext patterns exactly
   - **MUST** follow ~/git/tutor/AGENTS.md (readonly, no assertions, explicit types)
+  - **Note**: Implemented TerminalProvider in same file as TerminalContext (matching DirectionContext pattern)
 
-- [ ] **1.2** Create `TerminalProvider` at `packages/web/components/TerminalProvider.tsx`
-  - Manage sidebar open/closed state
-  - Hold ref to `InteractiveTerminalRef`
-  - Implement `executeCommand()` that opens sidebar if closed, then calls insertCommand
-  - Manage terminal state machine (subscribe to InteractiveTerminal state changes)
-  - Track session time remaining
-  - Focus management: auto-focus close button when sidebar opens
-  - Handle command queuing when terminal is CONNECTING
-  - **MUST** use `for...of` not `forEach`, handle all index access
+- [x] **1.2** ~~Create `TerminalProvider` at `packages/web/components/TerminalProvider.tsx~~ **(MERGED WITH 1.1)**
+  - ~~Manage sidebar open/closed state~~ Implemented
+  - ~~Hold ref to `InteractiveTerminalRef`~~ Implemented as `TerminalRef`
+  - ~~Implement `executeCommand()` that opens sidebar if closed, then calls insertCommand~~ Implemented
+  - ~~Manage terminal state machine (subscribe to InteractiveTerminal state changes)~~ State managed, callbacks in Phase 3
+  - ~~Track session time remaining~~ Implemented
+  - ~~Focus management: auto-focus close button when sidebar opens~~ To be done in Phase 2
+  - ~~Handle command queuing when terminal is CONNECTING~~ Implemented
+  - **MUST** use `for...of` not `forEach`, handle all index access **FOLLOWED**
 
 - [ ] **1.3** Add sidebar design tokens to `packages/web/app/globals.css`
   - `--sidebar-width: 400px`
