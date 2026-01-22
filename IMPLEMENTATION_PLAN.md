@@ -463,11 +463,12 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Brief inline confirmation before reset
   - Reset workspace to initial state
 
-- [ ] **8.8** Implement fallback static mode
+- [x] **8.8** Implement fallback static mode
   - When sandbox unavailable or rate-limited
   - Show static code blocks with copy buttons
   - Message: "Interactive sandbox unavailable. Copy commands to try locally."
   - Link to cheat sheet
+  - Note: Added StaticModeContent component with copyable commands and link to cheat sheet
 
 - [ ] **8.9** Lazy load terminal component
   - Use `next/dynamic` with `ssr: false`

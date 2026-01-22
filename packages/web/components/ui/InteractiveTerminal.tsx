@@ -36,6 +36,7 @@ type TerminalState =
   | "TIMEOUT_WARNING"
   | "EXPIRED"
   | "ERROR"
+  | "STATIC"
 
 /**
  * Imperative handle for InteractiveTerminal.
@@ -148,6 +149,8 @@ function StatusIndicator({ state }: { readonly state: TerminalState }) {
         return "Expired"
       case "ERROR":
         return "Error"
+      case "STATIC":
+        return "Static Mode"
       default:
         return "Idle"
     }
@@ -162,6 +165,175 @@ function StatusIndicator({ state }: { readonly state: TerminalState }) {
         aria-hidden="true"
       />
       <span className="text-xs text-[var(--color-text-muted)]">{getStatusText()}</span>
+    </div>
+  )
+}
+
+/**
+ * Props for StaticModeContent component.
+ */
+interface StaticModeContentProps {
+  /**
+   * The tool pairing slug (e.g., "jj-git").
+   */
+  readonly toolPair: string
+
+  /**
+   * Callback when user wants to try the interactive terminal again.
+   */
+  readonly onTryInteractive: () => void
+}
+
+/**
+ * Copy button state for user feedback.
+ */
+type CopyState = "idle" | "copied" | "error"
+
+/**
+ * StaticModeContent - Fallback static command blocks when sandbox unavailable.
+ *
+ * Shows copyable code blocks with commands for users to run locally.
+ * Includes a link to the cheat sheet for reference.
+ */
+function StaticModeContent({ toolPair, onTryInteractive }: StaticModeContentProps) {
+  const [copyState, setCopyState] = useState<CopyState>("idle")
+
+  // Define commands to show in static mode based on the tool pair
+  // For jj-git, show essential commands for getting started
+  const staticCommands =
+    toolPair === "jj-git"
+      ? [
+          "jj status",
+          "jj log",
+          "jj describe -m 'Your commit message'",
+          "jj new",
+          "jj diff",
+        ]
+      : []
+
+  const handleCopyAll = async () => {
+    const allCommands = staticCommands.join("\n")
+    try {
+      await navigator.clipboard.writeText(allCommands)
+      setCopyState("copied")
+      setTimeout(() => setCopyState("idle"), 2000)
+    } catch {
+      setCopyState("error")
+      setTimeout(() => setCopyState("idle"), 2000)
+    }
+  }
+
+  const handleCopySingle = async (command: string) => {
+    try {
+      await navigator.clipboard.writeText(command)
+      setCopyState("copied")
+      setTimeout(() => setCopyState("idle"), 2000)
+    } catch {
+      setCopyState("error")
+      setTimeout(() => setCopyState("idle"), 2000)
+    }
+  }
+
+  return (
+    <div className="flex min-h-[200px] flex-col p-6">
+      {/* Message */}
+      <div className="mb-4">
+        <p className="mb-2 text-sm text-[var(--color-text-muted)]">
+          Interactive sandbox unavailable. Copy commands to try locally.
+        </p>
+        <a
+          href={`/${toolPair}/cheatsheet`}
+          className="text-sm text-[var(--color-accent)] transition-colors hover:text-[var(--color-accent-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+        >
+          View cheat sheet →
+        </a>
+      </div>
+
+      {/* Command blocks */}
+      <div className="mb-4 flex flex-col gap-2">
+        {staticCommands.map((command, index) => (
+          <div
+            // biome-ignore lint/suspicious/noArrayIndexKey: Commands are static and order matters
+            key={index}
+            className="group flex items-center justify-between rounded border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 transition-colors hover:border-[var(--color-border-focus)]"
+          >
+            <code className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-sm text-[var(--color-text)]">
+              {command}
+            </code>
+            <button
+              type="button"
+              onClick={() => handleCopySingle(command)}
+              className="ml-3 flex-shrink-0 text-[var(--color-text-dim)] transition-colors hover:text-[var(--color-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+              aria-label={`Copy command: ${command}`}
+            >
+              {copyState === "copied" ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-4 w-4 text-[var(--color-accent)]"
+                >
+                  <title>Copied</title>
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              ) : copyState === "error" ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-4 w-4 text-[var(--color-error)]"
+                >
+                  <title>Error</title>
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="15" y1="9" x2="9" y2="15" />
+                  <line x1="9" y1="9" x2="15" y2="15" />
+                </svg>
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-4 w-4"
+                >
+                  <title>Copy</title>
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+              )}
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Footer actions */}
+      <div className="mt-auto flex items-center justify-between border-t border-[var(--color-border)] pt-4">
+        <button
+          type="button"
+          onClick={onTryInteractive}
+          className="rounded bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-bg)] transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+        >
+          Try Interactive Terminal
+        </button>
+        <button
+          type="button"
+          onClick={handleCopyAll}
+          className="text-sm text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+        >
+          Copy All Commands
+        </button>
+      </div>
     </div>
   )
 }
@@ -498,7 +670,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
               <button
                 type="button"
                 onClick={() => {
-                  setState("IDLE")
+                  setState("STATIC")
                   setError(null)
                 }}
                 className="rounded border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
@@ -507,6 +679,8 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
               </button>
             </div>
           </div>
+        ) : state === "STATIC" ? (
+          <StaticModeContent toolPair={toolPair} onTryInteractive={() => setState("IDLE")} />
         ) : (
           <div
             ref={terminalRef}
