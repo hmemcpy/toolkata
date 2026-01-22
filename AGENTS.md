@@ -184,6 +184,49 @@ packages/sandbox-api/src/services/
 
 ---
 
+### `/playwright-skill`
+**Purpose:** Complete browser automation with Playwright. Auto-detects dev servers, writes clean test scripts to /tmp.
+
+**Use for:**
+- Testing pages and user flows
+- Responsive design verification (multiple viewports)
+- Form filling and submission testing
+- Screenshot capture for visual verification
+- Login flow and navigation testing
+- Checking for broken links
+
+**Key Features:**
+- **Auto-detects dev servers** - Finds running localhost servers automatically
+- **Visible browser by default** - Shows browser window for debugging
+- **Scripts in /tmp** - Keeps project clean, OS auto-cleans
+- **Parameterized URLs** - Easy to switch between environments
+
+**toolkata Context:**
+- Use to verify responsive design at 320px, 768px, 1024px+
+- Test keyboard navigation (Tab, arrows, Esc)
+- Verify progress persistence in localStorage
+- Test fallback mode when sandbox unavailable
+- Verify all 16 routes load correctly
+
+**Examples:**
+```
+/playwright-skill Test the home page at mobile and desktop viewports
+/playwright-skill Verify keyboard navigation works on step pages
+/playwright-skill Take screenshots of all step pages for visual review
+/playwright-skill Test that progress persists after page refresh
+```
+
+**Execution Pattern:**
+```bash
+# 1. Detect dev servers first
+cd $SKILL_DIR && node -e "require('./lib/helpers').detectDevServers().then(s => console.log(JSON.stringify(s)))"
+
+# 2. Write test script to /tmp
+# 3. Execute via: cd $SKILL_DIR && node run.js /tmp/playwright-test-*.js
+```
+
+---
+
 ### `/profile`
 **Purpose:** Switch Claude profile between native and z.ai settings.
 
@@ -439,7 +482,8 @@ jjCommands: ["jj describe", "jj new"]
 | Build Effect service | `/effect-ts`, `/typescript` |
 | Fix type errors | `/typescript`, `/effect-ts` |
 | Review accessibility | `/ux-designer` |
-| E2E testing | `/agent-browser` |
+| E2E testing | `/playwright-skill`, `/agent-browser` |
+| Browser automation | `/playwright-skill` |
 | Performance optimization | `/vercel-react-best-practices` |
 
 ### Commands
@@ -463,14 +507,32 @@ bun run typecheck    # Type check
 - Verifies accessibility elements (skip link, main landmark)
 - Outputs comprehensive manual testing checklist for items requiring browser verification
 
+**Playwright Browser Tests:**
+```bash
+cd packages/web
+bun run test           # Run all Playwright tests headless
+bun run test:ui        # Open Playwright UI for interactive testing
+bun run test:headed    # Run with visible browser window
+```
+
+Tests cover (see `packages/web/tests/browser.spec.ts`):
+- Progress persistence (localStorage refresh, reset)
+- Fallback mode when sandbox unavailable
+- Responsive design at 320px width
+- Layout at 200% zoom
+- Keyboard navigation (Tab, arrows, ?, Esc, skip link)
+- All 16 routes load successfully
+
+**Using `/playwright-skill` for Ad-hoc Testing:**
+```bash
+# Use the skill for quick browser automation
+/playwright-skill Test responsive design at mobile viewport
+/playwright-skill Take screenshot of the cheatsheet page
+/playwright-skill Verify all navigation links work
+```
+
 **Manual Testing Checklist:**
-Use browser DevTools to verify:
-- Responsive design at 320px, 768px, 1024px+ breakpoints
-- 200% zoom usability
+Use browser DevTools or `/playwright-skill` to verify:
 - Touch targets >= 44px
-- Focus indicators on all interactive elements
-- Progress persistence (localStorage)
-- Keyboard navigation (Tab, Arrow keys, Esc, ?)
 - Terminal states (connecting, connected, error, timeout)
-- Fallback mode when API unavailable
 - Sandbox API integration (requires running sandbox-api)

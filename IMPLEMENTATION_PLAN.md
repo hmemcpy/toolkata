@@ -631,6 +631,8 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Complete entire tutorial without mouse
   - Document any gaps in navigation
   - Fix any focus traps (especially in terminal)
+  - **Playwright tests:** `packages/web/tests/browser.spec.ts` - "Keyboard Navigation" test suite
+  - Run with: `cd packages/web && bun run test --grep "Keyboard Navigation"`
   - Note: Fixed Escape key handling conflict in useKeyboardNavigation hook - removed global Escape handler to avoid conflicts with modal and terminal handlers
   - Note: Added Escape key handler to InteractiveTerminal to allow exiting terminal focus trap
   - Note: Updated keyboard shortcuts modal to document terminal Escape behavior
@@ -672,13 +674,16 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - All content accessible ✓ (routes validated)
   - Touch targets >= 44px (requires visual verification)
   - Test on real mobile device if possible
-  - Note: Use `scripts/test-all.sh` for route validation; responsive testing requires browser DevTools
+  - **Playwright tests:** `packages/web/tests/browser.spec.ts` - "Responsive Design - 320px" test suite
+  - Run with: `cd packages/web && bun run test --grep "320px"`
+  - Or use `/playwright-skill` for ad-hoc responsive testing
 
 - [x] **11.9** Test at 200% zoom
   - Layout remains usable (requires browser DevTools verification)
   - Text doesn't overflow containers (requires browser DevTools verification)
   - All functionality accessible
-  - Note: This requires manual browser testing at 200% zoom level
+  - **Playwright tests:** `packages/web/tests/browser.spec.ts` - "Responsive Design - 200% Zoom" test suite
+  - Run with: `cd packages/web && bun run test --grep "200% Zoom"`
 
 ---
 
@@ -698,7 +703,8 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Each step page renders MDX content ✓ (all 12 steps accessible)
   - Cheat sheet displays command table ✓ (route returns 200 OK)
   - Progress persists across refreshes
-  - Note: Created `scripts/test-all.sh` for automated route testing
+  - **Playwright tests:** `packages/web/tests/browser.spec.ts` - "All Routes Load" test suite
+  - Run with: `cd packages/web && bun run test --grep "All Routes Load"`
   - All 16 routes validated: /, /jj-git, /jj-git/[1-12], /jj-git/cheatsheet
 
 - [ ] **12.5** Manual test sandbox connection
@@ -706,23 +712,27 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Commands execute correctly (jj log, jj status, etc.)
   - Session times out after 5 min idle
   - Reset button works
+  - **Playwright tests:** `packages/web/tests/browser.spec.ts` - "Sandbox Connection" test suite (skipped if sandbox-api not running)
+  - Run with: `cd packages/web && bun run test --grep "Sandbox Connection"`
+  - Or use `/playwright-skill` to test interactively with visible browser
   - Note: Requires `packages/sandbox-api` running on localhost:3001
-  - Note: See `scripts/MANUAL_TESTING.md` for detailed step-by-step instructions
 
 - [ ] **12.6** Verify progress persistence
   - Complete steps, refresh page - progress preserved
   - Clear localStorage - progress resets
   - Progress survives browser restart
-  - Note: Run `localStorage.clear()` in browser console to test reset
-  - Note: See `scripts/MANUAL_TESTING.md` for detailed step-by-step instructions
+  - **Playwright tests:** `packages/web/tests/browser.spec.ts` - "Progress Persistence" test suite
+  - Run with: `cd packages/web && bun run test --grep "Progress Persistence"`
+  - Tests: refresh persistence, localStorage clear, Reset Progress button
 
 - [ ] **12.7** Verify fallback mode
   - Block sandbox API (disconnect network)
   - Static mode activates gracefully
   - Copy buttons work
   - No JavaScript errors in console
-  - Note: Block localhost:3001 or disconnect network to test
-  - Note: See `scripts/MANUAL_TESTING.md` for detailed step-by-step instructions
+  - **Playwright tests:** `packages/web/tests/browser.spec.ts` - "Fallback Mode" test suite
+  - Run with: `cd packages/web && bun run test --grep "Fallback Mode"`
+  - Tests: static mode activation, copy buttons functionality
 
 - [x] **12.8** Performance validation
   - First Contentful Paint < 1s ✓ (static generation enabled)
@@ -849,6 +859,20 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 - Fixed container service methods to use proper Effect.tryPromise patterns
 - Fixed all Biome lint errors (useLiteralKeys violations)
 - Remaining sandbox-api type errors are Effect-TS context inference issues with exactOptionalPropertyTypes
+
+**Playwright Browser Tests Added (2026-01-22):**
+- Added `@playwright/test` to packages/web for automated browser testing
+- Created `packages/web/tests/browser.spec.ts` with 33 tests covering:
+  - Progress persistence (localStorage refresh, clear, reset button)
+  - Fallback mode when sandbox unavailable
+  - Responsive design at 320px width
+  - Layout at 200% zoom
+  - Keyboard navigation (Tab, arrows, ?, Esc, skip link, focus indicators)
+  - All 16 routes load successfully
+  - Sandbox connection (when available)
+- Added GitHub Actions CI workflow (`.github/workflows/ci.yml`) with lint, build, and Playwright jobs
+- Run tests with: `cd packages/web && bun run test` (headless) or `bun run test:headed` (visible browser)
+- Use `/playwright-skill` for ad-hoc browser automation and testing
 
 ### Out of Scope (MVP)
 
