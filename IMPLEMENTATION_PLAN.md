@@ -370,12 +370,13 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Location: `packages/sandbox-api/src/services/container.ts`
   - Note: Also added `get(containerId)` method for retrieving container info
 
-- [ ] **7.4** Create SessionService
+- [x] **7.4** Create SessionService
   - Session states: `IDLE` | `STARTING` | `RUNNING` | `DESTROYING`
   - Timeout tracking: 5 min idle, 30 min max lifetime
   - Maps session ID to container ID
   - Auto-destroy on timeout or disconnect
   - Location: `packages/sandbox-api/src/services/session.ts`
+  - Note: Uses MutableHashMap for thread-safe session storage, Ref for state management
 
 - [ ] **7.5** Create WebSocketService for terminal proxy
   - Bidirectional terminal I/O (stdin/stdout/stderr)
