@@ -9,9 +9,12 @@ Read all files in `specs/` directory using parallel subagents.
 
 ### 0b. Study existing implementation
 Use parallel subagents to analyze relevant source directories:
-- `packages/web/src/`
-- `packages/sandbox-api/src/`
-- `package.json` files
+- `packages/web/core/` - State management (ProgressStore pattern)
+- `packages/web/hooks/` - React hooks (useStepProgress pattern)
+- `packages/web/components/ui/` - UI components
+- `packages/web/app/` - Pages and routes
+- `packages/web/content/` - Content and data
+- `packages/sandbox-api/src/` - Sandbox API services
 
 ### 0c. Study the current plan
 Read `IMPLEMENTATION_PLAN.md` if it exists.

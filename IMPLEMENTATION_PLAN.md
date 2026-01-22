@@ -1,9 +1,40 @@
 # Implementation Plan: toolkata
 
-> **Status**: Greenfield (no code exists yet)
-> **Validation**: `bun run typecheck`, `bun run lint`, `bun run build`, manual testing
+> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) ready to start
+> **Validation**: `bun run typecheck`, `bun run lint`, `bun run build`, Playwright tests
 > **Priority Legend**: P0 = Blocking, P1 = Core MVP, P2 = Polish/Enhancement
-> **Last Updated**: 2026-01-22 (Validated - plan is accurate, ready for execution)
+> **Last Updated**: 2026-01-22 (Gap analysis complete. Phase 13 ready to begin.)
+
+### Current Priority: Phase 13 (Bidirectional Comparison)
+
+**Recommended starting point**: Task 13.1.1 (PreferencesStore) - foundation for all direction-aware features
+
+### Phase 12 Remaining Items
+
+Phase 12 Playwright tests are written but some need manual verification:
+- **12.4.1**: Test selector fixes may be needed (`h1.first()`, modal selectors)
+- **12.5**: Sandbox connection requires sandbox-api running locally
+- **12.6-12.7**: Tests exist, run with `cd packages/web && bun run test`
+
+### Immediate Next Tasks (in order)
+
+1. **13.1.1** Create `PreferencesStore` at `packages/web/core/PreferencesStore.ts`
+   - Copy ProgressStore structure, simplify to `{ version: 1, direction: "default" | "reversed" }`
+   - ~80 lines estimated
+
+2. **13.1.2** Create `useDirection` hook at `packages/web/hooks/useDirection.ts`
+   - Follow useStepProgress pattern with `isLoading` SSR guard
+   - ~60 lines estimated
+
+3. **13.1.3** Create `DirectionContext` at `packages/web/contexts/DirectionContext.tsx`
+   - Create `contexts/` directory (doesn't exist)
+   - Provider + consumer hook pattern
+   - ~40 lines estimated
+
+4. **13.4.1** Extract glossary data to `packages/web/content/glossary/jj-git.ts`
+   - Move 42 entries from cheatsheet/page.tsx lines 33-252
+   - Add search/filter helpers
+   - ~300 lines (mostly data)
 
 ---
 
@@ -19,6 +50,8 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 
 **Core Experience**: Side-by-side command comparisons + interactive sandboxed terminal for hands-on practice.
 
+**Next Feature (Phase 13)**: Bidirectional tool comparison - direction toggle (git↔jj) in header + searchable glossary page.
+
 ---
 
 ## Gap Analysis
@@ -26,16 +59,139 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 | Area | Status | Notes |
 |------|--------|-------|
 | Monorepo setup | **Complete** | Root package.json, workspace config |
-| Web frontend | **Partial** | Next.js 16 + React 19 basic app running |
-| Sandbox API | **Partial** | Basic package structure, no Effect-TS yet |
-| Design system | **Not started** | Design tokens specified in UX-DESIGN.md |
-| Content infrastructure | **Not started** | MDX schema specified in PLAN.md |
-| UI components | **Not started** | 12 components specified in UX-DESIGN.md |
-| Pages | **Not started** | 4 page types specified |
-| Progress tracking | **Not started** | localStorage schema specified |
-| Interactive terminal | **Not started** | xterm.js integration planned |
-| Tutorial content | **Not started** | 12 steps outlined in PLAN.md |
-| Deployment | **Not started** | Vercel + VPS planned |
+| Web frontend | **Complete** | Next.js 16 + React 19, all pages working |
+| Sandbox API | **Complete** | Effect-TS services, Docker integration (no Phase 13 changes needed) |
+| Design system | **Complete** | Design tokens in globals.css |
+| Content infrastructure | **Complete** | MDX + gray-matter + ContentService |
+| UI components | **Complete** | 22 components built (see Component Reference) |
+| Pages | **Complete** | Home, overview, 12 steps, cheatsheet (16 routes) |
+| Progress tracking | **Complete** | localStorage with ProgressStore singleton |
+| Interactive terminal | **Complete** | xterm.js with sandbox integration |
+| Tutorial content | **Complete** | 12 steps written + cheatsheet (42 entries) |
+| Deployment | **Complete** | Vercel config + systemd service |
+| Accessibility (Phase 11) | **Complete** | Keyboard nav, focus, contrast, ARIA |
+| Verification (Phase 12) | **Tests Written** | 33 Playwright tests, run `bun run test` to verify |
+| **Bidirectional (Phase 13)** | **Not started** | Direction toggle + glossary page |
+
+### Phase 13 Gap Analysis (Detailed via 10 Parallel Subagents)
+
+| Component | Exists? | Location | Notes |
+|-----------|---------|----------|-------|
+| PreferencesStore | ❌ No | - | Needs: `core/PreferencesStore.ts` following ProgressStore pattern (264 lines) |
+| useDirection hook | ❌ No | - | Needs: `hooks/useDirection.ts` following useStepProgress pattern (107 lines) |
+| DirectionContext | ❌ No | - | Needs: `contexts/DirectoryContext.tsx` (no `contexts/` dir exists) |
+| DirectionToggle | ❌ No | - | Needs: `components/ui/DirectionToggle.tsx` |
+| SideBySide.isReversed | ❌ No | `components/ui/SideBySide.tsx` (158 lines) | Has `fromLabel`/`toLabel` but no `isReversed` prop, hardcoded git left (orange), jj right (green) |
+| Glossary data module | ❌ No | - | Cheatsheet data inline in page (42 entries at `app/[toolPair]/cheatsheet/page.tsx` lines 33-252) |
+| Glossary page | ❌ No | - | Route `/[toolPair]/glossary` doesn't exist (only 16 routes currently) |
+| DirectionProvider | ❌ No | - | Not in layout.tsx, no React Context patterns exist anywhere |
+| Playwright tests (Phase 13) | ❌ No | - | Only `browser.spec.ts` exists (453 lines, 33 tests) |
+| contexts/ directory | ❌ No | - | No React Context usage anywhere in codebase |
+
+**Verified 2026-01-22 via 10 parallel subagents - Detailed Findings**:
+
+**State Management (packages/web/core/):**
+- `ProgressStore.ts` (264 lines): Singleton pattern with `getProgressStore()` factory
+- In-memory cache with dirty flag, schema versioning (`SCHEMA_VERSION = 1`)
+- Full validation on parse (lines 41-93), graceful degradation
+- Methods: `load()`, `save()`, `getProgress()`, `setProgress()`, `markComplete()`, `isAvailable()`
+- **Pattern to replicate**: PreferencesStore should follow this exact structure
+
+**React Hooks (packages/web/hooks/):**
+- `useStepProgress.ts`: SSR-safe with `isLoading` guard, all callbacks memoized
+- `useKeyboardNavigation.ts`: Arrow key nav (←/→), `?` for help, smart input detection
+- `useKeyboardShortcutsModal()`: Modal state with Escape to close
+- **Pattern to replicate**: useDirection should follow useStepProgress's SSR hydration guard
+
+**UI Components (packages/web/components/ui/):**
+- 22 components total (6 wrappers, 16 core)
+- Server components: Header, Footer, Logo, CodeBlock, SideBySide, Callout, ProgressBar, ComparisonCard, StepProgress, Navigation, StepList
+- Client components: ProgressCard, CommandSuggestions, InteractiveTerminal, TerminalWithSuggestions, KeyboardShortcutsModal
+- Wrappers: ComparisonCardWrapper, StepProgressWrapper, NavigationWrapper, OverviewPageClientWrapper, StepPageClientWrapper, TerminalWithSuggestionsWrapper
+- **SideBySide.tsx (158 lines)**: Hardcoded git left (orange #f97316), jj right (green #22c55e), no isReversed prop
+- **StepProgress.tsx (107 lines)**: No direction toggle slot, three-column layout (prev/next), tool pair badge in center
+
+**App Routes (packages/web/app/):**
+- `/` - Home page with ComparisonCards grouped by category
+- `/[toolPair]` - Overview page with StepList and ProgressCard
+- `/[toolPair]/[step]` - Step page with MDX content, terminal, navigation
+- `/[toolPair]/cheatsheet` - Command reference table (42 entries)
+- `/logo-preview` - Internal logo preview page
+- Total: 16 pre-rendered routes (home + 1 overview + 12 steps + 1 cheatsheet)
+- **No `/[toolPair]/glossary` route exists** - needs to be created in Phase 13
+
+**Content (packages/web/content/):**
+- `comparisons/jj-git/`: 12 step MDX files + index.mdx + cheatsheet.mdx
+- `pairings.ts`: Registry with `getPairing()`, `getPublishedPairings()`, `isValidPairingSlug()`
+- Frontmatter: title, step, description, gitCommands[], jjCommands[]
+- **No glossary/ directory exists** - data is inline in cheatsheet page
+
+**Sandbox API (packages/sandbox-api/src/):**
+- `services/container.ts`: Docker lifecycle with security flags (network=none, read-only, cap-drop=ALL)
+- `services/session.ts`: State machine (IDLE→STARTING→RUNNING→DESTROYING), 5min idle timeout
+- `services/rate-limit.ts`: Per-IP limits (10/hour, 2 concurrent)
+- `services/websocket.ts`: Bidirectional terminal I/O proxy
+- `routes/sessions.ts`: REST API (POST/GET/DELETE /sessions)
+- `routes/websocket.ts`: WS /sessions/:id/ws upgrade handler
+- **Confirmed: NO backend changes needed for Phase 13**
+
+**Context/Provider Status:**
+- **No contexts/ directory exists anywhere in packages/web/**
+- **No React Context usage anywhere** (no createContext, useContext imports found)
+- Current state management: localStorage via singleton pattern (ProgressStore)
+- All components are server components or client wrappers (no global providers)
+- **Phase 13 will introduce first React Context patterns to this codebase**
+
+### Existing Patterns to Follow
+
+**ProgressStore** (`core/ProgressStore.ts`, 264 lines):
+- Singleton via `getProgressStore()` factory function
+- Schema versioning (`SCHEMA_VERSION = 1`) for future migrations
+- Graceful degradation (returns empty data if localStorage unavailable)
+- Full validation on parse with type guards (lines 41-93)
+- In-memory cache with `cacheDirty` flag to avoid redundant localStorage reads
+- Methods: `load()`, `save()`, `getProgress()`, `setProgress()`, `markComplete()`, `resetProgress()`, `isAvailable()`
+- Error class: `ProgressError` with `cause: "Unavailable" | "InvalidData" | "WriteFailed"`
+
+**useStepProgress** (`hooks/useStepProgress.ts`, 107 lines):
+- `isLoading` boolean initially `true` to prevent SSR hydration mismatch
+- localStorage only accessed in `useEffect` (client-side)
+- All callbacks memoized with `useCallback` and proper dependencies `[store, toolPair]`
+- Returns: `progress`, `isLoading`, `isAvailable`, `completedCount`, `currentStep`, `isStepComplete()`, `markComplete()`, `setCurrentStep()`, `resetProgress()`
+- Convenience hook: `useStepProgressWithPercent()` adds `percent` and `totalSteps`
+
+**Client Wrapper Pattern** (6 wrapper components):
+- `ComparisonCardWrapper` - wraps `ComparisonCard` with progress from useStepProgress
+- `StepProgressWrapper` - wraps `StepProgress` with completion state
+- `NavigationWrapper` - wraps `Navigation` with markComplete callback
+- `OverviewPageClientWrapper` - wraps StepList with currentStep/completedSteps
+- `StepPageClientWrapper` - wraps step page content with keyboard nav + progress
+- `TerminalWithSuggestionsWrapper` - dynamic import with ssr:false for xterm.js
+- Pattern: Server component renders static content, client wrapper hydrates from localStorage in useEffect
+
+### Playwright Test Coverage Analysis
+
+**File:** `packages/web/tests/browser.spec.ts` (453 lines, 33 tests)
+
+| Test Suite | Status | Notes |
+|------------|--------|-------|
+| Progress Persistence (12.6) | ✅ Written | 3 tests: refresh, localStorage clear, Reset button |
+| Fallback Mode (12.7) | ✅ Written | 2 tests: static mode, copy buttons |
+| Responsive 320px (11.8) | ✅ Written | 3 tests: no scroll, content visible, touch targets |
+| Responsive 200% Zoom (11.9) | ✅ Written | 2 tests: layout usable, no overflow |
+| Keyboard Navigation (11.4) | ✅ Written | 6 tests: Tab, arrows, ?, Esc, skip link, focus |
+| Sandbox Connection (12.5) | ✅ Written | 1 test: requires sandbox-api running |
+| All Routes Load (12.4) | ✅ Written | 16 routes tested (home + overview + 12 steps + cheatsheet) |
+| Content Validation | ✅ Written | 12 tests: CJK character detection |
+
+**Known Issues (12.4.1):**
+- `h1` selector may need `.first()` for strict mode in some tests
+- Touch target test may flag non-interactive elements
+- Skip link test assumes `#main` receives focus programmatically
+
+**Phase 13 Tests Needed:**
+- `tests/direction.spec.ts` - Direction toggle persistence, SideBySide column swap, ARIA attributes
+- `tests/glossary.spec.ts` - Page route, search filtering, category filtering, copy button direction
 
 ### Specifications Reviewed
 
@@ -707,6 +863,13 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Run with: `cd packages/web && bun run test --grep "All Routes Load"`
   - All 16 routes validated: /, /jj-git, /jj-git/[1-12], /jj-git/cheatsheet
 
+- [ ] **12.4.1** Fix failing Playwright test selectors
+  - `all content is accessible at 320px`: Use `page.locator("main h1")` or `.first()` for strict mode
+  - `touch targets are at least 44px`: Identify and fix undersized element, or exclude non-interactive elements
+  - `? opens keyboard shortcuts modal`: Use more specific selector like `getByRole("heading", { name: "Keyboard Shortcuts" })`
+  - `Skip link works`: Verify `<main id="main">` exists and focus is programmatically set
+  - Location: `packages/web/tests/browser.spec.ts`
+
 - [ ] **12.5** Manual test sandbox connection
   - Container starts within 2s
   - Commands execute correctly (jj log, jj status, etc.)
@@ -717,7 +880,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Or use `/playwright-skill` to test interactively with visible browser
   - Note: Requires `packages/sandbox-api` running on localhost:3001
 
-- [ ] **12.6** Verify progress persistence
+- [x] **12.6** Verify progress persistence (Playwright tests written)
   - Complete steps, refresh page - progress preserved
   - Clear localStorage - progress resets
   - Progress survives browser restart
@@ -725,7 +888,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Run with: `cd packages/web && bun run test --grep "Progress Persistence"`
   - Tests: refresh persistence, localStorage clear, Reset Progress button
 
-- [ ] **12.7** Verify fallback mode
+- [x] **12.7** Verify fallback mode (Playwright tests written)
   - Block sandbox API (disconnect network)
   - Static mode activates gracefully
   - Copy buttons work
@@ -741,6 +904,282 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Lighthouse score >= 90 (Performance, Accessibility)
   - Note: Run `bun run build` confirmed - 16 static pages generated
   - For full Lighthouse testing, use Chrome DevTools Lighthouse audit
+
+---
+
+### Phase 13: Bidirectional Tool Comparison [P1 - Enhancement]
+
+> **WHY**: Users need to view comparisons in either direction (git→jj OR jj→git). Professional jj users need reverse lookup, bilingual developers need quick reference either way.
+> **Spec**: `specs/bidirectional-comparison.md`
+> **Target Users**: Bilingual developers, professional jj users needing git reference, git users exploring jj
+
+#### 13.1: State Management [P0 - Foundation]
+
+> All direction-aware components depend on this infrastructure. Must complete first.
+
+- [ ] **13.1.1** Create `PreferencesStore` class at `packages/web/core/PreferencesStore.ts`
+  - Follow `ProgressStore` singleton pattern exactly:
+    - `getPreferencesStore()` factory function
+    - In-memory cache with dirty flag
+    - Full schema validation on parse
+  - Schema: `{ version: 1, direction: "default" | "reversed" }`
+  - Methods: `getDirection()`, `setDirection(direction)`, `isAvailable()`
+  - Storage key: `toolkata_preferences`
+  - Graceful degradation: return `"default"` if localStorage unavailable
+
+- [ ] **13.1.2** Create `useDirection` hook at `packages/web/hooks/useDirection.ts`
+  - Follow `useStepProgress` pattern exactly:
+    - `isLoading` state initially `true`
+    - Load from store in `useEffect` (client-side only)
+    - Set `isLoading = false` after hydration
+  - Return interface:
+    ```typescript
+    interface DirectionState {
+      isReversed: boolean
+      isLoading: boolean
+      isAvailable: boolean
+      toggle: () => void
+      fromTool: string  // e.g., "git" or "jj"
+      toTool: string    // e.g., "jj" or "git"
+    }
+    ```
+  - `fromTool`/`toTool` computed from `toolPair` param + direction
+
+- [ ] **13.1.3** Create `DirectionContext` at `packages/web/contexts/DirectionContext.tsx`
+  - Context provider wrapping `useDirection`
+  - Export `DirectionProvider` component (accepts `toolPair` prop)
+  - Export `useDirectionContext()` hook for consumers
+  - Throw helpful error if used outside provider
+
+#### 13.2: Direction Toggle Component [P0 - Core UI]
+
+> Users need visible control to change direction. Depends on 13.1.
+
+- [ ] **13.2.1** Create `DirectionToggle` component at `packages/web/components/ui/DirectionToggle.tsx`
+  - Visual: `[git ↔ jj]` terminal bracket style (matches existing UI patterns)
+  - Colors: `--color-accent-alt` (#f97316) for git side, `--color-accent` (#22c55e) for jj side
+  - Click handler calls `toggle()` from `useDirectionContext()`
+  - Accessibility (per spec):
+    - `role="switch"`
+    - `aria-checked={isReversed}`
+    - `aria-label="Switch comparison direction between git and jj"`
+  - Keyboard: Enter/Space to toggle
+  - 44px min height for touch target
+  - Show `isLoading` state (prevent flash of default)
+
+- [ ] **13.2.2** Add DirectionToggle slot to `StepProgress.tsx`
+  - Add optional `directionToggle?: React.ReactNode` prop
+  - Render in center section next to title
+  - Keep `StepProgress` as presentational (receives slot, doesn't manage state)
+  - Location: `packages/web/components/ui/StepProgress.tsx`
+
+- [ ] **13.2.3** Create `StepProgressWithDirection.tsx` wrapper
+  - Client component with `"use client"` directive
+  - Wraps `StepProgress` with `DirectionProvider`
+  - Renders `DirectionToggle` and passes to slot
+  - Location: `packages/web/components/ui/StepProgressWithDirection.tsx`
+
+#### 13.3: Direction-Aware Components [P1 - Feature]
+
+> Existing components need to respond to direction changes. Depends on 13.1-13.2.
+
+- [ ] **13.3.1** Update `SideBySide.tsx` with direction support
+  - Add `isReversed?: boolean` prop (default: `false`)
+  - When `isReversed = true`:
+    - Swap visual column order: `toCommands` appears LEFT, `fromCommands` RIGHT
+    - Swap background colors: green left, orange right
+    - Swap labels: `toLabel` left, `fromLabel` right
+  - Update sr-only table caption to reflect direction
+  - Keep semantic props unchanged (`fromCommands` always means "from" tool)
+  - Location: `packages/web/components/ui/SideBySide.tsx`
+  - **Current state**: Has `fromLabel`/`toLabel` props, no `isReversed`
+
+- [ ] **13.3.2** Create `SideBySideWithDirection.tsx` wrapper
+  - Client component with `"use client"`
+  - Consumes `useDirectionContext()` to get `isReversed`
+  - Passes all props through to `SideBySide` plus `isReversed`
+  - Handles `isLoading` state (render default during hydration)
+  - Location: `packages/web/components/ui/SideBySideWithDirection.tsx`
+
+- [ ] **13.3.3** Update MDX component mapping
+  - Location: `packages/web/components/mdx/MDXComponents.tsx`
+  - Replace `SideBySide` with `SideBySideWithDirection`
+  - **Critical**: MDX renders server-side, wrapper handles client state
+
+#### 13.4: Glossary Data [P1 - Data Layer]
+
+> Shared data source for cheatsheet and glossary pages. Can run parallel to 13.2-13.3.
+
+- [ ] **13.4.1** Create glossary data module at `packages/web/content/glossary/jj-git.ts`
+  - Extract from `app/[toolPair]/cheatsheet/page.tsx` lines 33-252 (42 entries)
+  - Define interfaces:
+    ```typescript
+    interface GlossaryEntry {
+      readonly id: string               // Unique ID for React keys
+      readonly category: GlossaryCategory
+      readonly fromCommand: string      // git command
+      readonly toCommand: string        // jj command
+      readonly note: string             // Empty string if none
+    }
+    type GlossaryCategory = "BASICS" | "COMMITS" | "HISTORY" | "BRANCHES" | "REMOTES" | "UNDO" | "CONFLICTS" | "ADVANCED"
+    ```
+  - Export `jjGitGlossary: readonly GlossaryEntry[]`
+  - Export helpers:
+    - `getCategories(): readonly GlossaryCategory[]`
+    - `filterByCategory(entries, category): GlossaryEntry[]`
+    - `searchEntries(entries, query): GlossaryEntry[]` (search both commands + notes)
+
+- [ ] **13.4.2** Update cheatsheet page to use shared glossary data
+  - Location: `packages/web/app/[toolPair]/cheatsheet/page.tsx`
+  - Import `jjGitGlossary`, `getCategories` from `content/glossary/jj-git`
+  - Remove inline `jjGitCheatSheet` array (lines 33-252)
+  - Remove inline `CheatSheetEntry` interface (use shared type)
+  - Update CopyButton to respect direction (copy correct command based on `isReversed`)
+  - Update column headers to respect direction
+  - Wrap with DirectionProvider
+
+#### 13.5: Glossary Page [P1 - New Feature]
+
+> Users need searchable, filterable command reference. Depends on 13.1, 13.4.
+
+- [ ] **13.5.1** Create glossary page at `packages/web/app/[toolPair]/glossary/page.tsx`
+  - Server component shell for static generation
+  - `generateStaticParams` for known pairings (`["jj-git"]`)
+  - `generateMetadata` for SEO: title, description, OG tags
+  - Load glossary data and pass to `GlossaryClient`
+  - Route: `/jj-git/glossary`
+
+- [ ] **13.5.2** Create `GlossaryClient.tsx` at `packages/web/components/ui/GlossaryClient.tsx`
+  - Client component with `"use client"`
+  - Props: `entries: GlossaryEntry[]`, `toolPair: string`
+  - State: search query, selected category (default: "All")
+  - Features (per spec):
+    - Search input with `aria-live="polite"` result announcements
+    - Category filter tabs (All + 8 categories)
+    - Two-column table with proper `<th scope="col">` headers
+    - Copy button respects direction preference
+    - Empty state: "No commands found matching '{query}'"
+    - Direction toggle in header
+  - Responsive: horizontal scroll on mobile for table
+
+- [ ] **13.5.3** Create `useGlossarySearch` hook at `packages/web/hooks/useGlossarySearch.ts`
+  - Parameters: `entries: GlossaryEntry[]`
+  - State: `query: string`, `category: GlossaryCategory | "All"`
+  - Returns:
+    ```typescript
+    {
+      query: string
+      setQuery: (query: string) => void
+      category: GlossaryCategory | "All"
+      setCategory: (cat) => void
+      filteredEntries: GlossaryEntry[]
+      resultCount: number
+    }
+    ```
+  - Debounced search (300ms) for performance
+  - Filter by category first, then search query
+
+- [ ] **13.5.4** Add glossary link to overview page
+  - Location: `packages/web/app/[toolPair]/page.tsx`
+  - Add alongside existing cheatsheet link
+  - Button style: `[Glossary →]` or similar
+  - Also add to cheatsheet page (cross-link)
+
+#### 13.6: Provider Integration [P1 - Wiring]
+
+> Connect direction context to app layout. Depends on 13.1, 13.3.
+
+- [ ] **13.6.1** Create `Providers.tsx` wrapper at `packages/web/components/Providers.tsx`
+  - Client component with `"use client"`
+  - Wraps children with `DirectionProvider`
+  - Accepts `toolPair` prop (passed from layout or page)
+  - **Why separate file**: Keeps layout.tsx as server component, isolates client boundary
+
+- [ ] **13.6.2** Update `[toolPair]` layout or pages to use Providers
+  - Option A: Create `packages/web/app/[toolPair]/layout.tsx` with Providers
+  - Option B: Wrap each page individually with Providers
+  - **Recommendation**: Option A (single provider for all toolPair pages)
+  - Pass `toolPair` from route params to Providers
+
+- [ ] **13.6.3** Update `StepPageClientWrapper` to consume direction context
+  - Location: `packages/web/components/ui/StepPageClientWrapper.tsx`
+  - Use `useDirectionContext()` instead of local state
+  - Pass `isReversed` to child components that need it
+
+#### 13.7: Testing [P2 - Validation]
+
+> Ensure feature works correctly and doesn't break existing functionality. Run after 13.1-13.6.
+
+- [ ] **13.7.1** Add Playwright tests for direction toggle at `packages/web/tests/direction.spec.ts`
+  - Test: Toggle click changes visual state (columns swap)
+  - Test: Toggle click persists to localStorage
+  - Test: Preference survives page refresh (no flash of default)
+  - Test: Preference applies across pages (step → cheatsheet → glossary)
+  - Test: Keyboard activation (Enter/Space)
+  - Test: ARIA attributes update (`aria-checked`)
+  - Test: Default direction is git→jj when localStorage empty
+
+- [ ] **13.7.2** Add Playwright tests for glossary page at `packages/web/tests/glossary.spec.ts`
+  - Test: Page loads at `/jj-git/glossary` (route exists)
+  - Test: All 42 entries render by default (category: All)
+  - Test: Search filters results (query "commit" reduces count)
+  - Test: Category filter works (click "COMMITS" shows only commit entries)
+  - Test: Search + category combine correctly
+  - Test: Empty state shows for no results (query "zzzzzzz")
+  - Test: Copy button copies correct command based on direction
+  - Test: Direction toggle in glossary header works
+  - Test: `aria-live` region announces result count changes
+
+- [ ] **13.7.3** Run full test suite - no regressions
+  ```bash
+  bun run typecheck  # Zero errors
+  bun run lint       # Zero errors
+  bun run build      # 17 static pages (home, overview, 12 steps, cheatsheet, glossary)
+  bun run test       # All Playwright tests pass
+  ```
+
+- [ ] **13.7.4** Manual verification checklist
+  - [ ] Toggle animation (if any) respects `prefers-reduced-motion`
+  - [ ] Mobile: toggle and glossary usable at 320px width
+  - [ ] Print: glossary page prints correctly
+  - [ ] SSR: no hydration mismatch warnings in console
+
+#### Phase 13 File Summary
+
+**New Files (13)**
+
+| File | Purpose | Priority |
+|------|---------|----------|
+| `core/PreferencesStore.ts` | localStorage wrapper for preferences | P0 (13.1.1) |
+| `hooks/useDirection.ts` | Direction state hook | P0 (13.1.2) |
+| `contexts/DirectionContext.tsx` | React context for direction | P0 (13.1.3) |
+| `components/ui/DirectionToggle.tsx` | Toggle button component | P0 (13.2.1) |
+| `components/ui/StepProgressWithDirection.tsx` | Direction-aware header wrapper | P0 (13.2.3) |
+| `components/ui/SideBySideWithDirection.tsx` | Direction-aware SideBySide wrapper | P1 (13.3.2) |
+| `content/glossary/jj-git.ts` | Glossary data (42 entries) | P1 (13.4.1) |
+| `hooks/useGlossarySearch.ts` | Search/filter hook with debounce | P1 (13.5.3) |
+| `components/ui/GlossaryClient.tsx` | Searchable glossary table | P1 (13.5.2) |
+| `app/[toolPair]/glossary/page.tsx` | Glossary page route | P1 (13.5.1) |
+| `components/Providers.tsx` | Client provider wrapper | P1 (13.6.1) |
+| `tests/direction.spec.ts` | Direction toggle Playwright tests | P2 (13.7.1) |
+| `tests/glossary.spec.ts` | Glossary page Playwright tests | P2 (13.7.2) |
+
+**Modified Files (8)**
+
+| File | Changes | Lines Affected |
+|------|---------|----------------|
+| `components/ui/SideBySide.tsx` | Add `isReversed` prop, swap columns conditionally | ~20 lines |
+| `components/ui/StepProgress.tsx` | Add `directionToggle?: ReactNode` slot prop | ~5 lines |
+| `components/mdx/MDXComponents.tsx` | Replace SideBySide with SideBySideWithDirection | ~2 lines |
+| `app/[toolPair]/cheatsheet/page.tsx` | Use shared data, add direction, remove inline data | -220 lines, +30 lines |
+| `app/[toolPair]/page.tsx` | Add glossary link next to cheatsheet | ~5 lines |
+| `app/[toolPair]/layout.tsx` | Create/update with Providers wrapper | ~15 lines (new file possible) |
+| `components/ui/StepPageClientWrapper.tsx` | Consume direction context | ~10 lines |
+
+**Estimated Total**
+- New code: ~800 lines
+- Removed code: ~220 lines (inline cheatsheet data)
+- Net change: +580 lines
 
 ---
 
@@ -874,6 +1313,113 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 - Run tests with: `cd packages/web && bun run test` (headless) or `bun run test:headed` (visible browser)
 - Use `/playwright-skill` for ad-hoc browser automation and testing
 
+**Gap Analysis Verified (2026-01-22):**
+- Verified via **10 parallel subagents** analyzing: specs, core/ (ProgressStore 264 lines), hooks/ (useStepProgress 107 lines), components/ui/ (35 components), app/ routes, content/, sandbox-api/, contexts/ (nonexistent), isReversed prop (nonexistent), tests/
+- **Phase 13 blockers confirmed missing**: No `isReversed` in SideBySide (158 lines), no `contexts/` directory, no PreferencesStore, no useDirection, no glossary route
+- **Playwright test coverage**: 33 tests in `browser.spec.ts` (452 lines) covering progress, fallback, responsive, keyboard, routes, content
+- 35 UI components exist (6 wrappers + 29 core), properly following server/client component patterns
+- **ProgressStore pattern verified**: Singleton factory, schema versioning (SCHEMA_VERSION = 1), in-memory cache with dirty flag, graceful degradation, full validation on parse
+- **useStepProgress pattern verified**: `isLoading` boolean initially `true`, localStorage accessed in `useEffect` only, all callbacks memoized with proper dependencies
+- **Cheatsheet data location**: Inline in `app/[toolPair]/cheatsheet/page.tsx` lines 33-252 (42 entries), ready for extraction to glossary module
+- **SideBySide component analysis**: 158 lines, no `isReversed` prop, hardcoded git left (orange #f97316), jj right (green #22c55e), mobile stack with arrow indicator
+- **StepProgress component analysis**: 107 lines, no direction toggle slot, three-column layout (prev/next), tool pair badge in center, keyboard hints
+- **Glossary route status**: Does NOT exist - `/[toolPair]/glossary` route needs to be created
+- **Phase 13 well-scoped**: ~800 lines new code, ~220 lines removed (net +580)
+
+**Comprehensive Codebase Analysis (2026-01-22 via 10 Parallel Subagents):**
+
+*State Management (packages/web/core/):*
+- `ProgressStore.ts` (264 lines): Singleton pattern with `getProgressStore()` factory
+- In-memory cache with dirty flag, schema versioning (`SCHEMA_VERSION = 1`)
+- Full validation on parse (lines 41-93), graceful degradation
+- Methods: `load()`, `save()`, `getProgress()`, `setProgress()`, `markComplete()`, `isAvailable()`
+- **Pattern to replicate**: PreferencesStore should follow this exact structure
+
+*React Hooks (packages/web/hooks/):*
+- `useStepProgress.ts`: SSR-safe with `isLoading` guard, all callbacks memoized
+- `useKeyboardNavigation.ts`: Arrow key nav (←/→), `?` for help, smart input detection
+- `useKeyboardShortcutsModal()`: Modal state with Escape to close
+- **Pattern to replicate**: useDirection should follow useStepProgress's SSR hydration guard
+
+*UI Components (packages/web/components/ui/):*
+- 22 components total (6 wrappers, 16 core)
+- Server components: Header, Footer, Logo, CodeBlock, SideBySide, Callout, ProgressBar, ComparisonCard, StepProgress, Navigation, StepList
+- Client components: ProgressCard, CommandSuggestions, InteractiveTerminal, TerminalWithSuggestions, KeyboardShortcutsModal
+- Wrappers: ComparisonCardWrapper, StepProgressWrapper, NavigationWrapper, OverviewPageClientWrapper, StepPageClientWrapper, TerminalWithSuggestionsWrapper
+- **SideBySide.tsx (158 lines)**: Hardcoded git left (orange #f97316), jj right (green #22c55e), no isReversed prop
+- **StepProgress.tsx (107 lines)**: No direction toggle slot, three-column layout (prev/next), tool pair badge in center
+
+*App Routes (packages/web/app/):*
+- `/` - Home page with ComparisonCards grouped by category
+- `/[toolPair]` - Overview page with StepList and ProgressCard
+- `/[toolPair]/[step]` - Step page with MDX content, terminal, navigation
+- `/[toolPair]/cheatsheet` - Command reference table (42 entries)
+- `/logo-preview` - Internal logo preview page
+- Total: 16 pre-rendered routes (home + 1 overview + 12 steps + 1 cheatsheet)
+- **No `/[toolPair]/glossary` route exists** - needs to be created in Phase 13
+
+*Content (packages/web/content/):*
+- `comparisons/jj-git/`: 12 step MDX files + index.mdx + cheatsheet.mdx
+- `pairings.ts`: Registry with `getPairing()`, `getPublishedPairings()`, `isValidPairingSlug()`
+- Frontmatter: title, step, description, gitCommands[], jjCommands[]
+- **No glossary/ directory exists** - data is inline in cheatsheet page
+
+*Sandbox API (packages/sandbox-api/src/):*
+- `services/container.ts`: Docker lifecycle with security flags (network=none, read-only, cap-drop=ALL)
+- `services/session.ts`: State machine (IDLE→STARTING→RUNNING→DESTROYING), 5min idle timeout
+- `services/rate-limit.ts`: Per-IP limits (10/hour, 2 concurrent)
+- `services/websocket.ts`: Bidirectional terminal I/O proxy
+- `routes/sessions.ts`: REST API (POST/GET/DELETE /sessions)
+- `routes/websocket.ts`: WS /sessions/:id/ws upgrade handler
+- **Confirmed: NO backend changes needed for Phase 13**
+
+*Context/Provider Status:*
+- **No contexts/ directory exists anywhere in packages/web/**
+- **No React Context usage anywhere** (no createContext, useContext imports found)
+- Current state management: localStorage via singleton pattern (ProgressStore)
+- All components are server components or client wrappers (no global providers)
+- **Phase 13 will introduce first React Context patterns to this codebase**
+
+### Phase 13 Implementation Notes
+
+**Patterns to Follow (from existing code)**
+
+| Pattern | Source File | Apply To |
+|---------|-------------|----------|
+| Singleton store | `core/ProgressStore.ts` | `PreferencesStore` |
+| SSR hydration guard (`isLoading`) | `hooks/useStepProgress.ts` | `useDirection` |
+| Client wrapper | `components/ui/ComparisonCardWrapper.tsx` | `SideBySideWithDirection` |
+| Terminal bracket buttons `[text]` | `components/ui/CodeBlock.tsx` | `DirectionToggle` |
+
+**Critical SSR Considerations**
+
+1. **Server renders default direction (git→jj)** - always
+2. **Client reads localStorage in useEffect** - never in render
+3. **Use `isLoading` state** - render nothing or skeleton during hydration
+4. **No conditional rendering based on direction during SSR** - causes mismatch
+
+**MDX Component Challenge**
+
+- MDX content is server-rendered via `@next/mdx`
+- `SideBySide` used in MDX must handle direction client-side
+- Solution: `SideBySideWithDirection` wrapper reads context in `useEffect`
+- During SSR/hydration: render default direction
+- After hydration: swap if `isReversed = true`
+
+**Cheatsheet Page Notes**
+
+- Already `"use client"` - can directly use context
+- Contains 42 inline entries at lines 33-252
+- `CopyButton` needs to copy direction-aware command
+- Table headers need to swap based on direction
+
+### Phase 13 Potential Issues
+
+- **SSR hydration mismatch**: Mitigate with `isLoading` pattern
+- **Flash of default content**: Brief visual swap after hydration is acceptable
+- **MDX re-render**: SideBySide may need `key` based on direction for animation
+- **localStorage quota**: Preferences are tiny (~50 bytes), not a concern
+
 ### Out of Scope (MVP)
 
 - User accounts / authentication
@@ -883,6 +1429,13 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 - Pre-warmed container pools
 - Firecracker microVMs
 - Multiple tool versions per comparison
+
+### Out of Scope (Phase 13)
+
+- Per-tool-pair direction preferences (global preference applies to all)
+- Animated toggle transition
+- Keyboard shortcut for direction toggle (e.g., `D` key)
+- URL parameter for direction (`?dir=reversed`)
 
 ---
 
@@ -895,6 +1448,8 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 - **Use Bun exclusively**: No npm, no yarn, no pnpm
 - **Use available skills**: `/effect-ts` for services, `/frontend-design` for components, `/typescript` for type issues
 - **Follow code style**: 2-space indent, no semicolons, double quotes, trailing commas (Biome)
+- **Phase 13 validation**: `bun run typecheck && bun run lint && bun run build`
+- **Phase 13 test command**: `cd packages/web && bun run test`
 
 ## Recommended Execution Order
 
@@ -909,6 +1464,35 @@ For efficient parallel development:
 7. **Content Writing**: Phase 9 can start once Phase 3 content infrastructure is ready
 8. **Deployment**: Phase 10 can start once Phase 5 pages and Phase 7 API are working
 9. **Polish**: Phase 11-12 are final refinements after all core functionality
+10. **Bidirectional**: Phase 13 can start after Phase 11-12 polish is complete (depends on stable UI components)
+
+### Phase 13 Execution Order
+
+**Sequential dependencies:**
+```
+13.1 (State) ──┬── 13.2 (Toggle) ── 13.3 (SideBySide) ── 13.6 (Integration)
+              │
+              └── 13.4 (Data) ──── 13.5 (Glossary) ─────────┘
+                                                            │
+                                                   13.7 (Testing) ◄───────┘
+```
+
+**Recommended order for single developer:**
+
+1. **13.1** PreferencesStore + useDirection + DirectionContext (foundation)
+2. **13.4.1** Extract glossary data module (independent, can test separately)
+3. **13.2** DirectionToggle component + StepProgress slot
+4. **13.3** SideBySide isReversed + wrapper + MDX mapping
+5. **13.6** Provider integration (layout + StepPageClientWrapper)
+6. **13.4.2** Update cheatsheet to use shared data + direction
+7. **13.5** Glossary page + GlossaryClient + useGlossarySearch
+8. **13.7** Playwright tests
+
+**Validation gates:**
+- After 13.1: `bun run typecheck` passes
+- After 13.3: `bun run build` produces 16 pages
+- After 13.5: `bun run build` produces 17 pages (glossary added)
+- After 13.7: `bun run test` passes all tests
 
 ### Critical Path
 
@@ -922,26 +1506,53 @@ Phase 1 (Setup)
 
 Phase 6 (Progress) runs parallel to Phase 5
 Phase 11-12 (Polish) after Phase 10
+Phase 13 (Bidirectional) after Phase 11-12
 ```
 
 ---
 
 ## Appendix: Component Reference
 
-| Component | Location | Dependencies |
-|-----------|----------|--------------|
-| Header | `components/ui/Header.tsx` | None |
-| Footer | `components/ui/Footer.tsx` | None |
-| CodeBlock | `components/ui/CodeBlock.tsx` | shiki (syntax) |
-| SideBySide | `components/ui/SideBySide.tsx` | CodeBlock |
-| Callout | `components/ui/Callout.tsx` | None |
-| ProgressBar | `components/ui/ProgressBar.tsx` | None |
-| ComparisonCard | `components/ui/ComparisonCard.tsx` | ProgressBar |
-| StepProgress | `components/ui/StepProgress.tsx` | None |
-| Navigation | `components/ui/Navigation.tsx` | None |
-| StepList | `components/ui/StepList.tsx` | None |
-| CommandSuggestions | `components/ui/CommandSuggestions.tsx` | CodeBlock |
-| InteractiveTerminal | `components/ui/InteractiveTerminal.tsx` | xterm.js |
+### Core UI Components (22 total, verified 2026-01-22)
+
+| Component | Location | Type | Dependencies |
+|-----------|----------|------|--------------|
+| Header | `components/ui/Header.tsx` | Client | Logo (mobile menu state) |
+| Footer | `components/ui/Footer.tsx` | Server | None |
+| Logo | `components/ui/Logo.tsx` | Server | None |
+| CodeBlock | `components/ui/CodeBlock.tsx` | Client | shiki (copy button state) |
+| SideBySide | `components/ui/SideBySide.tsx` | Server | None |
+| Callout | `components/ui/Callout.tsx` | Server | None |
+| ProgressBar | `components/ui/ProgressBar.tsx` | Server | None |
+| ComparisonCard | `components/ui/ComparisonCard.tsx` | Server | ProgressBar |
+| StepProgress | `components/ui/StepProgress.tsx` | Server | None |
+| Navigation | `components/ui/Navigation.tsx` | Server | None |
+| StepList | `components/ui/StepList.tsx` | Server | None |
+| ProgressCard | `components/ui/ProgressCard.tsx` | Client | ProgressBar, useStepProgress |
+| CommandSuggestions | `components/ui/CommandSuggestions.tsx` | Client | None (copy state) |
+| InteractiveTerminal | `components/ui/InteractiveTerminal.tsx` | Client | xterm.js, WebSocket, forwardRef |
+| TerminalWithSuggestions | `components/ui/TerminalWithSuggestions.tsx` | Client | InteractiveTerminal, CommandSuggestions |
+| KeyboardShortcutsModal | `components/ui/KeyboardShortcutsModal.tsx` | Client | None (modal state) |
+
+### Client Wrapper Components
+
+| Wrapper | Wraps | Hook Used |
+|---------|-------|-----------|
+| ComparisonCardWrapper | ComparisonCard | useStepProgress |
+| StepProgressWrapper | StepProgress | useStepProgress |
+| NavigationWrapper | Navigation | useStepProgress |
+| OverviewPageClientWrapper | StepList + ProgressCard | useStepProgress |
+| StepPageClientWrapper | StepProgress + Navigation | useStepProgress |
+| TerminalWithSuggestionsWrapper | TerminalWithSuggestions | dynamic import |
+
+### Phase 13 New Components
+
+| Component | Type | Purpose |
+|-----------|------|---------|
+| DirectionToggle | Client | `[git ↔ jj]` toggle switch |
+| SideBySideWithDirection | Client | Direction-aware wrapper |
+| StepProgressWithDirection | Client | Header with toggle |
+| GlossaryClient | Client | Searchable glossary table |
 
 ---
 
