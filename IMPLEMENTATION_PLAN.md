@@ -96,20 +96,23 @@ Two related efforts:
   - Run `bun run typecheck` and fix any new errors
   - Note: Effect-TS context inference issues with `exactOptionalPropertyTypes` are known
 
-- [ ] **0.2** Add content loading unit tests (Bun test, not Playwright)
+- [x] **0.2** Add content loading unit tests (Bun test, not Playwright)
   - Create `packages/web/tests/content.test.ts`
   - Test `loadStep("jj-git", 1)` returns valid content
   - Test `loadStep("invalid", 999)` returns null (NotFound)
   - Test `loadIndex("jj-git")` returns valid content
   - Test `loadCheatsheet("jj-git")` returns valid content
   - Test frontmatter validation rejects invalid data
+  - **Completed 2026-01-22**
+  - **Note**: Also fixed `listSteps()` function which was using `service.list()` incorrectly (slug format mismatch). Changed to incremental loading from step 1 until NotFound.
 
-- [ ] **0.3** Validate tutor migration
+- [x] **0.3** Validate tutor migration
   ```bash
   bun run typecheck        # Both packages
   bun run lint             # Root level
   bun run build            # Web package
   ```
+  - **Completed 2026-01-22** - All validation passes
 
 ---
 
@@ -402,12 +405,15 @@ Two related efforts:
 | `components/ui/TryIt.tsx` | MDX command execution component |
 | `tests/terminal-sidebar.spec.ts` | Playwright tests (Phase 8) |
 
-### Modified Files (10)
+### Modified Files (13)
 
 | File | Changes |
 |------|---------|
 | `packages/sandbox-api/tsconfig.json` | Extend `@hmemcpy/tutor-config/tsconfig.library.json` instead of `../../tsconfig.json` |
 | `packages/sandbox-api/package.json` | Add `@hmemcpy/tutor-config` as devDependency |
+| `packages/web/services/content.ts` | Fixed `listSteps()` to use incremental loading instead of `service.list()` (slug format mismatch) |
+| `package.json` (root) | Added `bun-types` as devDependency for test type declarations |
+| `packages/web/package.json` | Added `bun-types` as devDependency |
 | `packages/web/app/globals.css` | Add sidebar design tokens (--sidebar-width, z-index, transitions) |
 | `packages/web/components/Providers.tsx` | Wrap children with TerminalProvider |
 | `packages/web/app/[toolPair]/layout.tsx` | Render TerminalSidebar and TerminalToggle at layout level |
@@ -473,3 +479,12 @@ Two related efforts:
 
 **Files Changed**:
 - `packages/web/lib/content/schemas.ts`
+
+### 2026-01-22: listSteps() Using Incorrect Loading Pattern (Fixed)
+
+**Issue**: The `listSteps()` function in `packages/web/services/content.ts` was using `service.list()` which finds files via glob pattern, then extracts slugs from file paths. The extracted slug format (e.g., `comparisons/jj-git/01-step`) didn't match what the `pathResolver` expected (e.g., `jj-git/1`), causing all step loads to fail.
+
+**Fix**: Changed `listSteps()` to use incremental loading - iterate from step 1 until NotFound is returned. This is more efficient and ensures correct slug format.
+
+**Files Changed**:
+- `packages/web/services/content.ts`

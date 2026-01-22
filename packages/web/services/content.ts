@@ -131,6 +131,7 @@ export async function loadCheatsheet(toolPair: string): Promise<CheatsheetConten
  * List all steps for a tool pairing.
  *
  * Returns full content for each step, sorted by step number.
+ * Uses incremental loading from step 1 until NotFound is returned.
  *
  * @param toolPair - The tool pairing slug (e.g., "jj-git")
  * @returns Promise resolving to array of step content
@@ -138,12 +139,25 @@ export async function loadCheatsheet(toolPair: string): Promise<CheatsheetConten
 export async function listSteps(toolPair: string): Promise<readonly StepContent[]> {
   const program = Effect.gen(function* () {
     const service = yield* ContentService
-    const allSteps = yield* service.list(StepType, {
-      // Filter to only include steps for this tool pair
-      filter: (content) => content.filePath.includes(`/${toolPair}/`),
-    })
-    // Sort by step number
-    return [...allSteps].sort((a, b) => a.frontmatter.step - b.frontmatter.step)
+    const steps: StepContent[] = []
+
+    // Load steps incrementally until we hit NotFound
+    // This is more efficient than globbing and trying to extract slugs
+    for (let stepNum = 1; stepNum <= 100; stepNum++) {
+      const result = yield* Effect.either(service.load(StepType, `${toolPair}/${stepNum}`))
+
+      if (result._tag === "Left") {
+        if (result.left.cause === "NotFound") {
+          break
+        }
+        // Skip invalid steps but continue loading others
+        continue
+      }
+
+      steps.push(result.right)
+    }
+
+    return steps
   })
 
   return program.pipe(Effect.provide(ContentLayer), Effect.runPromise)
