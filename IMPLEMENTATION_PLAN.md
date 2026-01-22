@@ -394,7 +394,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Error type: `RateLimited` with retry-after info
   - Location: `packages/sandbox-api/src/services/rate-limit.ts`
 
-- [ ] **7.7** Create REST routes
+- [x] **7.7** Create REST routes
   - `POST /sessions` → Create session, return `{ sessionId, wsUrl }`
   - `GET /sessions/:id` → Session status `{ status, createdAt, expiresAt }`
   - `DELETE /sessions/:id` → Destroy session immediately
@@ -406,10 +406,10 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Forward I/O between client and container via dockerode attach
   - Location: `packages/sandbox-api/src/routes/sessions.ts`
 
-- [ ] **7.9** Create server layer composition
+- [x] **7.9** Create server layer composition
   - Wire ContainerService, SessionService, RateLimitService, WebSocketService
   - Use Effect-TS Layer composition pattern
-  - Location: `packages/sandbox-api/src/services/server-layer.ts`
+  - Location: `packages/sandbox-api/src/index.ts` (ServerLayer)
 
 ---
 

@@ -1,7 +1,11 @@
-import { Context, Data, Effect, Layer, } from "effect"
+import { Data, Effect, Layer } from "effect"
 import { Hono } from "hono"
 import { cors } from "hono/cors"
 import type { Env } from "hono"
+import { sessionRoutes } from "./routes/sessions.js"
+import { ContainerService, DockerClientLive } from "./services/container.js"
+import { SessionService, SessionServiceLive } from "./services/session.js"
+import { RateLimitServiceLive } from "./services/rate-limit.js"
 
 // Error types with Data.TaggedClass
 export class ServerError extends Data.TaggedClass("ServerError")<{
@@ -58,6 +62,9 @@ const createApp = (config: ServerConfig) => {
     })
   })
 
+  // Mount session routes
+  app.route("/", sessionRoutes)
+
   return app
 }
 
@@ -93,6 +100,14 @@ const make = Effect.gen(function* () {
 // Live layer
 export const HttpServerLive = Layer.effect(HttpServer, make)
 
+// Main server layer composition - all services needed for the API
+export const ServerLayer = Layer.mergeAll(
+  DockerClientLive,
+  Layer.provide(ContainerService.ContainerServiceLive, DockerClientLive),
+  Layer.provide(SessionServiceLive, ContainerService.ContainerServiceLive),
+  RateLimitServiceLive,
+)
+
 // Default config from environment
 const defaultConfig = Effect.sync(() => {
   const port = Number(process.env.PORT ?? "3001")
@@ -113,13 +128,24 @@ export const ServerConfigLive = Layer.effect(
 // Main function for Bun runtime
 const mainProgram = Effect.gen(function* () {
   const http = yield* HttpServer
+  const sessionService = yield* SessionService
+
+  // Start the session cleanup scheduler
+  yield* sessionService.startCleanupScheduler
+
+  // Start the HTTP server
   yield* http.start
 })
 
 // Run main when file is executed directly
 if (import.meta.main) {
   const program = mainProgram.pipe(
-    Effect.provide(HttpServerLive.pipe(Layer.provide(ServerConfigLive))),
+    Effect.provide(
+      HttpServerLive.pipe(
+        Layer.provide(ServerConfigLive),
+        Layer.provide(ServerLayer),
+      ),
+    ),
     Effect.catchAll((error) =>
       Effect.sync(() => {
         console.error("Server failed to start:", error)
