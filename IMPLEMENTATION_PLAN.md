@@ -220,11 +220,11 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Touch target >= 44px, keyboard accessible
   - Location: `packages/web/components/ui/ComparisonCard.tsx`
 
-- [ ] **4.6** Build StepProgress header component
+- [x] **4.6** Build StepProgress header component
   - Shows: back link ("← Overview"), "Step N of M: Title", next link
   - Keyboard nav hints (← and → arrow keys)
   - Responsive: condense on mobile
-  - Location: `packages/web/src/components/ui/StepProgress.tsx`
+  - Location: `packages/web/components/ui/StepProgress.tsx`
 
 - [ ] **4.7** Build Navigation footer component
   - Previous/Next step buttons
