@@ -817,6 +817,12 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 - For small text (12px) that needs to be readable, switched from `text-dim` to `text-muted` (#a1a1a1) which meets AAA
 - `text-dim` is now primarily used for icons that have hover states and decorative borders
 
+**Build Validation Status (2025-01-22):**
+- `bun run typecheck` passes with zero errors
+- `bun run lint` passes with zero errors
+- `bun run build` completes successfully, generating 16 static pages (home, jj-git overview, 12 steps, cheatsheet)
+- Remaining tasks (12.4-12.8, 11.8-11.9) require manual browser testing
+
 ### Out of Scope (MVP)
 
 - User accounts / authentication
