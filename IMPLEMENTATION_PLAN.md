@@ -424,21 +424,22 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - CSS import for xterm.js base styles (will be lazy-loaded with component in 8.9)
   - Location: `packages/web/package.json`
 
-- [ ] **8.2** Create InteractiveTerminal component
+- [x] **8.2** Create InteractiveTerminal component
   - xterm.js integration with React refs (useRef)
   - Theming to match design tokens (JetBrains Mono, dark background #0c0c0c)
   - Min height 200px, max height 400px
   - Status indicator in header (●/○ with color states)
-  - Location: `packages/web/src/components/ui/InteractiveTerminal.tsx`
+  - Location: `packages/web/components/ui/InteractiveTerminal.tsx`
+  - Note: Project uses `components/` not `src/components/` (app directory structure)
 
-- [ ] **8.3** Create SandboxClient service
+- [x] **8.3** Create SandboxClient service
   - Effect-TS client for sandbox API
   - `createSession(toolPair)` → `Effect<Session, SandboxError>`
   - `destroySession(sessionId)` → `Effect<void, SandboxError>`
   - WebSocket connection management
-  - Location: `packages/web/src/services/sandbox-client.ts`
+  - Location: `packages/web/services/sandbox-client.ts`
 
-- [ ] **8.4** Implement terminal states in InteractiveTerminal
+- [x] **8.4** Implement terminal states in InteractiveTerminal
   - IDLE: "Click to start sandbox" button
   - CONNECTING: Loading spinner, "Starting sandbox..."
   - CONNECTED: Active terminal with green status indicator
@@ -451,12 +452,12 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Auto-focus terminal after insertion
   - Update `CommandSuggestions` component from Phase 4.9
 
-- [ ] **8.6** Add session timer display
+- [x] **8.6** Add session timer display
   - Countdown showing remaining time (Session: 4:32 / 5:00)
   - Visual indicator when < 1 minute (yellow then red)
   - Reset timer on activity
 
-- [ ] **8.7** Add reset button functionality
+- [x] **8.7** Add reset button functionality
   - [Reset] button destroys current session and creates new one
   - Brief inline confirmation before reset
   - Reset workspace to initial state
