@@ -206,11 +206,12 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Location: `packages/web/components/ui/Callout.tsx`
   - Note: Location uses `components/` not `src/components/` (project uses `app/` not `src/app/`)
 
-- [ ] **4.4** Build ProgressBar component
+- [x] **4.4** Build ProgressBar component
   - Visual progress indicator (filled blocks, green accent)
   - Shows "N/M" text alongside
   - `aria-valuenow`, `aria-valuemin`, `aria-valuemax` for accessibility
-  - Location: `packages/web/src/components/ui/ProgressBar.tsx`
+  - Location: `packages/web/components/ui/ProgressBar.tsx`
+  - Note: Project uses `components/` not `src/components/` (app directory structure)
 
 - [ ] **4.5** Build ComparisonCard component
   - For home page tool pairing grid
