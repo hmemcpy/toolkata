@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 /* Accessibility utilities */
 @utility sr-only {
@@ -97,3 +98,5 @@
     scroll-behavior: auto !important;
   }
 }
+
+

@@ -131,7 +131,7 @@ export function StepPageClientWrapper({
       />
 
       {/* MDX Content */}
-      <article className="my-8 prose prose-invert max-w-none">{children}</article>
+      <article className="my-8 prose prose-invert max-w-none prose-a:text-[var(--color-accent)] prose-a:hover:text-[var(--color-accent-hover)] prose-code:bg-[var(--color-surface)] prose-code:text-[var(--color-accent)] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-[var(--color-surface)]">{children}</article>
 
       {/* Interactive Terminal with Command Suggestions */}
       {suggestedCommands.length > 0 ? (
