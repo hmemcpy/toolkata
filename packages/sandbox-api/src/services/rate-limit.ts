@@ -1,4 +1,4 @@
-import { Context, Data, Effect, Layer, MutableHashMap, Ref } from "effect"
+import { Context, Data, Effect, Layer, MutableHashMap, Option, Ref } from "effect"
 
 // Rate limit configuration (from PLAN.md specs)
 const RATE_LIMITS = {
@@ -52,9 +52,11 @@ interface RateLimitStore {
 
 // Helper: Get current tracking state for IP, creating if needed
 const getOrCreateTracking = (store: RateLimitStore, ipAddress: string, now: number): IpTracking => {
-  const existing = MutableHashMap.get(store.ipTracking, ipAddress)
+  // Since MutableHashMap.get returns an Effect, we need to run it
+  // This function is used in a context where we can't yield*, so we use runSync
+  const existingOption = Effect.runSync(MutableHashMap.get(store.ipTracking, ipAddress))
 
-  if (existing === undefined) {
+  if (Option.isNone(existingOption)) {
     // First request from this IP
     return {
       sessionCount: 0,
@@ -65,7 +67,7 @@ const getOrCreateTracking = (store: RateLimitStore, ipAddress: string, now: numb
     } satisfies IpTracking
   }
 
-  const tracking = existing
+  const tracking = existingOption.value
   const hourElapsed = now - tracking.hourWindowStart >= 60 * 60 * 1000
   const minuteElapsed = now - tracking.minuteWindowStart >= 60 * 1000
 
@@ -172,13 +174,13 @@ const make = Effect.gen(function* () {
       const store = yield* Ref.get(storeRef)
       const trackingOption = yield* MutableHashMap.get(store.ipTracking, ipAddress)
 
-      if (trackingOption === undefined) {
+      if (Option.isNone(trackingOption)) {
         // IP not tracked, nothing to do
         return
       }
 
-      const tracking = trackingOption
-      const updatedActiveSessions = tracking.activeSessions.filter((id) => id !== sessionId)
+      const tracking = trackingOption.value
+      const updatedActiveSessions = tracking.activeSessions.filter((id: string) => id !== sessionId)
 
       // If no active sessions and no recent activity, we could clean up
       // But keep the tracking entry for rate limit state
@@ -243,10 +245,10 @@ const make = Effect.gen(function* () {
       Effect.flatMap((store) =>
         Effect.gen(function* () {
           const trackingOption = yield* MutableHashMap.get(store.ipTracking, ipAddress)
-          if (trackingOption === undefined) {
+          if (Option.isNone(trackingOption)) {
             return 0
           }
-          return trackingOption.activeSessions.length
+          return trackingOption.value.activeSessions.length
         }),
       ),
     )

@@ -1,9 +1,9 @@
 "use client"
 
-import { useStepProgress } from "../../hooks/useStepProgress"
-import { StepList } from "./StepList"
 import Link from "next/link"
+import { useStepProgress } from "../../hooks/useStepProgress"
 import type { StepMeta } from "../../services/content"
+import { StepList } from "./StepList"
 
 /**
  * Props for OverviewPageClientWrapper component

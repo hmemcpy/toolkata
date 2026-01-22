@@ -83,7 +83,10 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
         }}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 id="keyboard-shortcuts-title" className="text-lg font-mono font-medium text-[var(--color-text)]">
+          <h2
+            id="keyboard-shortcuts-title"
+            className="text-lg font-mono font-medium text-[var(--color-text)]"
+          >
             Keyboard Shortcuts
           </h2>
           <button
@@ -113,7 +116,9 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
 
         <div className="space-y-4">
           <div>
-            <h3 className="mb-2 text-sm font-semibold text-[var(--color-text-muted)]">Navigation</h3>
+            <h3 className="mb-2 text-sm font-semibold text-[var(--color-text-muted)]">
+              Navigation
+            </h3>
             <div className="space-y-2">
               <Shortcut keyName="Previous step" shortcut="←" description="Go to previous step" />
               <Shortcut keyName="Next step" shortcut="→" description="Go to next step" />
@@ -141,7 +146,8 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
         </div>
 
         <div className="mt-6 text-xs text-[var(--color-text-muted)]">
-          Press <kbd className="rounded border border-[var(--color-border)] bg-[var(--color-bg)] px-1.5 py-0.5 font-mono">
+          Press{" "}
+          <kbd className="rounded border border-[var(--color-border)] bg-[var(--color-bg)] px-1.5 py-0.5 font-mono">
             Esc
           </kbd>{" "}
           or click outside to close

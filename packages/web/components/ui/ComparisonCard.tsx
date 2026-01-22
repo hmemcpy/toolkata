@@ -1,7 +1,7 @@
-import type { JSX } from "react"
 import Link from "next/link"
-import { ProgressBar } from "./ProgressBar"
+import type { JSX } from "react"
 import type { ToolPairing } from "../../content/pairings"
+import { ProgressBar } from "./ProgressBar"
 
 export interface ComparisonCardProps {
   readonly pairing: ToolPairing

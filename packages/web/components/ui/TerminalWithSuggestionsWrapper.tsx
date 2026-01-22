@@ -79,6 +79,10 @@ export function TerminalWithSuggestionsWrapper({
   suggestedCommands,
 }: TerminalWithSuggestionsWrapperProps) {
   return (
-    <TerminalWithSuggestions toolPair={toolPair} stepId={stepId} suggestedCommands={suggestedCommands} />
+    <TerminalWithSuggestions
+      toolPair={toolPair}
+      stepId={stepId}
+      suggestedCommands={suggestedCommands}
+    />
   )
 }

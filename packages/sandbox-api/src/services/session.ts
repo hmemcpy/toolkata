@@ -1,5 +1,5 @@
-import { Context, Data, Effect, Layer, MutableHashMap, Ref } from "effect"
-import { ContainerService, ContainerError } from "./container.js"
+import { Context, Data, Effect, Layer, MutableHashMap, Option, Ref } from "effect"
+import { ContainerError, ContainerService } from "./container.js"
 
 // Session states
 export type SessionState = "IDLE" | "STARTING" | "RUNNING" | "DESTROYING"
@@ -102,67 +102,68 @@ const make = Effect.gen(function* () {
   const schedulerRef = yield* Ref.make<ReturnType<typeof setInterval> | null>(null)
 
   // Create a new session
-  const create = Effect.gen(function* () {
-    return yield* Effect.all([containerService.create, Ref.get(storeRef)]).pipe(
-      Effect.flatMap(([container, store]) =>
-        Effect.gen(function* () {
-          const sessionId = generateSessionId()
-          const now = new Date()
+  const create = (toolPair: string) =>
+    Effect.gen(function* () {
+      return yield* Effect.all([containerService.create(toolPair), Ref.get(storeRef)]).pipe(
+        Effect.flatMap(([container, store]) =>
+          Effect.gen(function* () {
+            const sessionId = generateSessionId()
+            const now = new Date()
 
-          const session: Session = {
-            id: sessionId,
-            containerId: container.id,
-            toolPair: container.toolPair,
-            state: "RUNNING",
-            createdAt: now,
-            expiresAt: new Date(now.getTime() + TIMEOUTS.maxLifetime),
-            lastActivityAt: now,
-          }
+            const session: Session = {
+              id: sessionId,
+              containerId: container.id,
+              toolPair: container.toolPair,
+              state: "RUNNING",
+              createdAt: now,
+              expiresAt: new Date(now.getTime() + TIMEOUTS.maxLifetime),
+              lastActivityAt: now,
+            }
 
-          // Check for ID collisions (extremely unlikely)
-          const existing = yield* MutableHashMap.has(store.sessions, sessionId)
-          if (existing) {
-            yield* containerService.destroy(container.id)
-            return yield* Effect.fail(
-              new SessionError({
-                cause: "AlreadyExists",
-                message: `Session ID collision: ${sessionId}`,
-              }),
-            )
-          }
+            // Check for ID collisions (extremely unlikely)
+            const existingOption = yield* MutableHashMap.get(store.sessions, sessionId)
+            if (Option.isSome(existingOption)) {
+              yield* containerService.destroy(container.id)
+              return yield* Effect.fail(
+                new SessionError({
+                  cause: "AlreadyExists",
+                  message: `Session ID collision: ${sessionId}`,
+                }),
+              )
+            }
 
-          // Store session
-          const updatedSessions = yield* MutableHashMap.set(store.sessions, sessionId, session)
+            // Store session
+            const updatedSessions = yield* MutableHashMap.set(store.sessions, sessionId, session)
 
-          yield* Ref.set(storeRef, { sessions: updatedSessions })
+            yield* Ref.set(storeRef, { sessions: updatedSessions })
 
-          return session
-        }),
-      ),
-    )
-  }).pipe(
-    Effect.catchAll((error) => {
-      if (error instanceof SessionError) {
-        return Effect.fail(error)
-      }
-      if (error instanceof ContainerError) {
+            return session
+          }),
+        ),
+      )
+    }).pipe(
+      Effect.catchAll((error) => {
+        if (error instanceof SessionError) {
+          return Effect.fail(error)
+        }
+        if (error instanceof ContainerError) {
+          return Effect.fail(
+            new SessionError({
+              cause: "CreateFailed",
+              message: `Failed to create container for session: ${error.message}`,
+              originalError: error,
+            }),
+          )
+        }
         return Effect.fail(
           new SessionError({
             cause: "CreateFailed",
-            message: `Failed to create container for session: ${error.message}`,
+            message: error instanceof Error ? error.message : "Unknown error creating session",
             originalError: error,
           }),
         )
-      }
-      return Effect.fail(
-        new SessionError({
-          cause: "CreateFailed",
-          message: error instanceof Error ? error.message : "Unknown error creating session",
-          originalError: error,
-        }),
-      )
-    }),
-  )
+      }),
+    )
 
   // Get session by ID
   const get = (sessionId: string) =>
@@ -171,7 +172,7 @@ const make = Effect.gen(function* () {
         Effect.gen(function* () {
           const sessionOption = yield* MutableHashMap.get(store.sessions, sessionId)
 
-          if (sessionOption === undefined) {
+          if (Option.isNone(sessionOption)) {
             return yield* Effect.fail(
               new SessionError({
                 cause: "NotFound",
@@ -180,8 +181,10 @@ const make = Effect.gen(function* () {
             )
           }
 
+          const session = sessionOption.value
+
           // Check if expired
-          if (isSessionExpired(sessionOption)) {
+          if (isSessionExpired(session)) {
             // Auto-destroy expired sessions
             yield* destroy(sessionId)
             return yield* Effect.fail(
@@ -192,7 +195,7 @@ const make = Effect.gen(function* () {
             )
           }
 
-          return sessionOption
+          return session
         }),
       ),
     )
@@ -203,12 +206,12 @@ const make = Effect.gen(function* () {
       const store = yield* Ref.get(storeRef)
       const sessionOption = yield* MutableHashMap.get(store.sessions, sessionId)
 
-      if (sessionOption === undefined) {
+      if (Option.isNone(sessionOption)) {
         // Session doesn't exist, already destroyed
         return
       }
 
-      const session = sessionOption
+      const session = sessionOption.value
 
       // Update state to DESTROYING
       const updatedSession: Session = {
@@ -258,7 +261,7 @@ const make = Effect.gen(function* () {
       const store = yield* Ref.get(storeRef)
       const sessionOption = yield* MutableHashMap.get(store.sessions, sessionId)
 
-      if (sessionOption === undefined) {
+      if (Option.isNone(sessionOption)) {
         return yield* Effect.fail(
           new SessionError({
             cause: "NotFound",
@@ -269,7 +272,7 @@ const make = Effect.gen(function* () {
 
       const now = new Date()
       const updatedSession: Session = {
-        ...sessionOption,
+        ...sessionOption.value,
         lastActivityAt: now,
       }
 
@@ -285,7 +288,7 @@ const make = Effect.gen(function* () {
         Effect.gen(function* () {
           const sessionOption = yield* MutableHashMap.get(store.sessions, sessionId)
 
-          if (sessionOption === undefined) {
+          if (Option.isNone(sessionOption)) {
             return yield* Effect.fail(
               new SessionError({
                 cause: "NotFound",
@@ -294,7 +297,7 @@ const make = Effect.gen(function* () {
             )
           }
 
-          return isSessionExpired(sessionOption)
+          return isSessionExpired(sessionOption.value)
         }),
       ),
     )
@@ -308,7 +311,7 @@ const make = Effect.gen(function* () {
           const sessions = yield* MutableHashMap.values(store.sessions)
 
           // Find expired sessions
-          const expiredSessions = sessions.filter(isSessionExpired)
+          const expiredSessions = sessions.filter((s: Session) => isSessionExpired(s))
 
           if (expiredSessions.length > 0) {
             console.log(`[SessionService] Cleaning up ${expiredSessions.length} expired session(s)`)
@@ -348,10 +351,10 @@ const make = Effect.gen(function* () {
 
         const stats: SessionStats = {
           total: sessions.length,
-          running: sessions.filter((s) => s.state === "RUNNING").length,
-          starting: sessions.filter((s) => s.state === "STARTING").length,
-          idle: sessions.filter((s) => s.state === "IDLE").length,
-          destroying: sessions.filter((s) => s.state === "DESTROYING").length,
+          running: sessions.filter((s: Session) => s.state === "RUNNING").length,
+          starting: sessions.filter((s: Session) => s.state === "STARTING").length,
+          idle: sessions.filter((s: Session) => s.state === "IDLE").length,
+          destroying: sessions.filter((s: Session) => s.state === "DESTROYING").length,
         }
 
         return stats
@@ -360,14 +363,14 @@ const make = Effect.gen(function* () {
   )
 
   return {
-    create,
-    get,
-    destroy,
-    updateActivity,
-    checkExpired,
+    create: (toolPair: string) => create(toolPair),
+    get: (sessionId: string) => get(sessionId),
+    destroy: (sessionId: string) => destroy(sessionId),
+    updateActivity: (sessionId: string) => updateActivity(sessionId),
+    checkExpired: (sessionId: string) => checkExpired(sessionId),
     startCleanupScheduler,
     getStats,
-  }
+  } satisfies SessionServiceShape
 })
 
 // Live layer

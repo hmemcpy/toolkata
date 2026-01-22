@@ -110,7 +110,9 @@ export interface SandboxClientShape {
    * @param options - Session creation options.
    * @returns The session info with WebSocket URL.
    */
-  readonly createSession: (options: CreateSessionOptions) => Effect.Effect<Session, SandboxClientError>
+  readonly createSession: (
+    options: CreateSessionOptions,
+  ) => Effect.Effect<Session, SandboxClientError>
 
   /**
    * Destroy a session by ID.
@@ -125,9 +127,7 @@ export interface SandboxClientShape {
    * @param sessionId - The session ID to check.
    * @returns The session status.
    */
-  readonly getSessionStatus: (
-    sessionId: string,
-  ) => Effect.Effect<
+  readonly getSessionStatus: (sessionId: string) => Effect.Effect<
     {
       readonly sessionId: string
       readonly status: "IDLE" | "STARTING" | "RUNNING" | "DESTROYING"

@@ -36,7 +36,7 @@
 
 "use client"
 
-import { useEffect, useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 export interface KeyboardNavigationOptions {
   /**

@@ -27,9 +27,9 @@
 "use client"
 
 import { useRef } from "react"
+import { CommandSuggestions } from "./CommandSuggestions"
 import type { InteractiveTerminalRef } from "./InteractiveTerminal"
 import { InteractiveTerminal } from "./InteractiveTerminal"
-import { CommandSuggestions } from "./CommandSuggestions"
 
 export interface TerminalWithSuggestionsProps {
   /**

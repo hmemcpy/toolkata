@@ -1,4 +1,4 @@
-import type { JSX, CSSProperties } from "react"
+import type { CSSProperties, JSX } from "react"
 
 export interface ProgressBarProps {
   readonly current: number

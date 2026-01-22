@@ -18,14 +18,14 @@
  * ```
  */
 
-import { Context, Data, Effect, Layer } from "effect"
 import fs from "node:fs/promises"
 import path from "node:path"
+import { Context, Data, Effect, Layer } from "effect"
 import matter from "gray-matter"
 import type {
-  StepFrontmatter,
-  IndexFrontmatter,
   CheatsheetFrontmatter,
+  IndexFrontmatter,
+  StepFrontmatter,
 } from "../lib/content/schemas"
 
 /**

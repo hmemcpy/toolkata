@@ -1,7 +1,7 @@
-import { Context, Data, Effect, Layer } from "effect"
-import { ContainerService, ContainerError, DockerClient } from "./container.js"
 import type Docker from "dockerode"
+import { Context, Data, Effect, Layer } from "effect"
 import { WebSocket } from "ws"
+import { ContainerError, ContainerService, DockerClient } from "./container.js"
 
 // Terminal resize event from client
 export interface TerminalResize {
@@ -76,17 +76,18 @@ export class WebSocketService extends Context.Tag("WebSocketService")<
 // Helper: Parse WebSocket message
 const _parseMessage = (data: string): WebSocketMessage => {
   try {
-    const parsed = JSON.parse(data) as unknown
+    const parsed = JSON.parse(data) as Record<string, unknown>
 
     if (typeof parsed === "object" && parsed !== null && "type" in parsed) {
-      if (parsed.type === "resize") {
+      const msgType = parsed.type
+      if (msgType === "resize") {
         return {
           type: "resize",
           rows: typeof parsed.rows === "number" ? parsed.rows : 24,
           cols: typeof parsed.cols === "number" ? parsed.cols : 80,
         } satisfies TerminalResize
       }
-      if (parsed.type === "input") {
+      if (msgType === "input") {
         return {
           type: "input",
           data: typeof parsed.data === "string" ? parsed.data : "",
@@ -127,7 +128,7 @@ const make = Effect.gen(function* () {
             Cmd: ["/bin/bash"],
             Env: ["TERM=xterm-256color"],
           }),
-        catch: (error) => {
+        catch: (error: unknown) => {
           return new WebSocketError({
             cause: "ExecCreateFailed",
             message: error instanceof Error ? error.message : "Failed to create exec",
@@ -145,7 +146,7 @@ const make = Effect.gen(function* () {
           })
           return execStream as NodeJS.ReadWriteStream
         },
-        catch: (error) => {
+        catch: (error: unknown) => {
           return new WebSocketError({
             cause: "ExecStartFailed",
             message: error instanceof Error ? error.message : "Failed to start exec",
@@ -187,7 +188,7 @@ const make = Effect.gen(function* () {
         isConnected: true,
       } satisfies ConnectionState
     }).pipe(
-      Effect.catchAll((error) => {
+      Effect.catchAll((error: unknown) => {
         if (error instanceof WebSocketError) {
           return Effect.fail(error)
         }
@@ -266,8 +267,15 @@ const make = Effect.gen(function* () {
   const close = (connection: ConnectionState) =>
     Effect.sync(() => {
       // Close the stream first
-      if (connection.stream && !connection.stream.destroyed) {
-        connection.stream.destroy()
+      const stream = connection.stream as NodeJS.ReadWriteStream & {
+        destroy?: () => void
+        destroyed?: boolean
+      }
+      if (stream && typeof stream.destroy === "function" && !stream.destroyed) {
+        stream.destroy()
+      } else if (stream && typeof stream.end === "function") {
+        // Fallback to end() if destroy is not available
+        stream.end()
       }
 
       // Close the WebSocket
@@ -293,6 +301,6 @@ export const WebSocketServiceLive = Layer.effect(WebSocketService, make)
 
 // Helper: Parse WebSocket message
 export const parseMessage = (data: string | Buffer): WebSocketMessage => {
-  const str = data instanceof Buffer ? data.toString("utf-8") : data
+  const str = data instanceof Buffer ? data.toString("utf-8") : (data as string)
   return _parseMessage(str)
 }

@@ -1,18 +1,27 @@
+import {
+  type IncomingMessage,
+  type Server as NodeHttpServer,
+  type ServerResponse,
+  createServer as createHttpServer,
+} from "node:http"
 import { Context, Data, Effect, Layer } from "effect"
 import { Hono } from "hono"
-import { cors } from "hono/cors"
 import type { Env } from "hono"
-import { createServer as createHttpServer, type Server as NodeHttpServer } from "node:http"
-import { sessionRoutes } from "./routes/sessions.js"
-import { createWebSocketServer, closeAllConnections } from "./routes/websocket.js"
+import { cors } from "hono/cors"
+import { createSessionRoutes } from "./routes/sessions.js"
+import { closeAllConnections, createWebSocketServer } from "./routes/websocket.js"
 import { ContainerServiceLive, DockerClientLive } from "./services/container.js"
-import { SessionService, SessionServiceLive } from "./services/session.js"
-import { RateLimitServiceLive } from "./services/rate-limit.js"
+import {
+  RateLimitService,
+  RateLimitServiceLive,
+  type RateLimitServiceShape,
+} from "./services/rate-limit.js"
+import { SessionService, SessionServiceLive, type SessionServiceShape } from "./services/session.js"
 import { WebSocketServiceLive } from "./services/websocket.js"
 
 // Module-level reference to SessionService for health checks
 // This is set when the server starts and allows the health endpoint to access session stats
-let sessionServiceForHealth: SessionService | null = null
+let sessionServiceForHealth: SessionServiceShape | null = null
 
 // Error types with Data.TaggedClass
 export class ServerError extends Data.TaggedClass("ServerError")<{
@@ -51,7 +60,11 @@ export interface HealthResponse {
 }
 
 // Create Hono app with CORS and health check
-const createApp = (config: ServerConfig) => {
+const createApp = (
+  config: ServerConfig,
+  sessionService: SessionServiceShape,
+  rateLimitService: RateLimitServiceShape,
+) => {
   const app = new Hono<{ Bindings: Env }>()
 
   // CORS configuration
@@ -71,11 +84,10 @@ const createApp = (config: ServerConfig) => {
 
     // Get session stats if session service is available
     if (sessionServiceForHealth !== null) {
-      const statsResult = Effect.runSync(
-        Effect.either(sessionServiceForHealth.getStats),
-      )
+      const statsResult = Effect.runSync(Effect.either(sessionServiceForHealth.getStats))
       if (statsResult._tag === "Right") {
-        containers = statsResult.right.total
+        const stats = statsResult.right
+        containers = stats.total
       }
     }
 
@@ -88,7 +100,7 @@ const createApp = (config: ServerConfig) => {
   })
 
   // Mount session routes
-  app.route("/", sessionRoutes)
+  app.route("/", createSessionRoutes(sessionService, rateLimitService))
 
   return app
 }
@@ -97,45 +109,52 @@ const createApp = (config: ServerConfig) => {
 const make = Effect.gen(function* () {
   const config = yield* ServerConfig
   const sessionService = yield* SessionService
+  const rateLimitService = yield* RateLimitService
 
   let httpServer: NodeHttpServer | null = null
-  const app = createApp(config)
+  const app = createApp(config, sessionService, rateLimitService)
 
   const start = Effect.sync(() => {
     // Store session service reference for health checks
     sessionServiceForHealth = sessionService
 
     // Create Node.js HTTP server for WebSocket upgrade support
-    httpServer = createHttpServer({
-      // Use Hono's fetch handler as the request handler
-      // @ts-expect-error - Node's request type is compatible enough
-      async listener(req, res) {
-        const url = new URL(req.url ?? "", `http://${req.headers.host}`)
-        const request = new Request(url.toString(), {
-          method: req.method,
-          headers: req.headers as HeadersInit,
-          body: req.method === "GET" || req.method === "HEAD" ? undefined : req,
-        })
-
-        const response = await app.fetch(request, {})
-        res.writeHead(response.status, Object.fromEntries(response.headers.entries()))
-        if (response.body) {
-          // @ts-expect-error - ReadableStream is compatible
-          response.body.pipeTo(
-            // @ts-expect-error - WritableStream is compatible
-            new WritableStream({
-              write(chunk) {
-                res.write(Buffer.from(chunk))
-              },
-              close() {
-                res.end()
-              },
-            }),
-          )
-        } else {
-          res.end()
+    httpServer = createHttpServer(async (req: IncomingMessage, res: ServerResponse) => {
+      const url = new URL(req.url ?? "", `http://${req.headers.host}`)
+      const headers = new Headers()
+      for (const [key, value] of Object.entries(req.headers)) {
+        if (typeof value === "string") {
+          headers.set(key, value)
+        } else if (Array.isArray(value)) {
+          for (const v of value) {
+            headers.append(key, v)
+          }
         }
-      },
+      }
+
+      const requestInit: RequestInit = {
+        method: req.method ?? "GET",
+        headers,
+      }
+      if (req.method !== "GET" && req.method !== "HEAD") {
+        requestInit.body = req as unknown as BodyInit
+      }
+
+      const request = new Request(url.toString(), requestInit)
+
+      const response = await app.fetch(request, {})
+      res.writeHead(response.status, Object.fromEntries(response.headers.entries()))
+      if (response.body) {
+        const reader = response.body.getReader()
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          res.write(Buffer.from(value))
+        }
+        res.end()
+      } else {
+        res.end()
+      }
     })
 
     // Attach WebSocket server to HTTP server
@@ -187,9 +206,10 @@ export const ServerLayer = Layer.mergeAll(
 
 // Default config from environment
 const defaultConfig = Effect.sync(() => {
-  const port = Number(process.env.PORT ?? "3001")
-  const host = process.env.HOST ?? "0.0.0.0"
-  const frontendOrigin = process.env.FRONTEND_ORIGIN ?? "http://localhost:3000"
+  const env = process.env as Record<string, string | undefined>
+  const port = Number(env.PORT ?? "3001")
+  const host = env.HOST ?? "0.0.0.0"
+  const frontendOrigin = env.FRONTEND_ORIGIN ?? "http://localhost:3000"
 
   return {
     port,
@@ -216,11 +236,15 @@ const mainProgram = Effect.gen(function* () {
 // Run main when file is executed directly
 if (import.meta.main) {
   // Build the complete application layer
-  // HttpServerLive depends on ServerConfig and SessionService
-  // We need to provide ServerConfig and ServerLayer (which contains SessionService)
-  const appLayer = HttpServerLive.pipe(
-    Layer.provide(ServerConfigLive),
-    Layer.provide(ServerLayer),
+  // Order matters: provide dependencies first
+  const appLayer = Layer.mergeAll(
+    ServerConfigLive,
+    DockerClientLive,
+    RateLimitServiceLive,
+    ContainerServiceLive,
+    SessionServiceLive,
+    WebSocketServiceLive,
+    HttpServerLive,
   )
 
   const program = mainProgram.pipe(
@@ -242,9 +266,7 @@ export const healthCheck = (): HealthResponse => {
 
   // Get session stats if session service is available
   if (sessionServiceForHealth !== null) {
-    const statsResult = Effect.runSync(
-      Effect.either(sessionServiceForHealth.getStats),
-    )
+    const statsResult = Effect.runSync(Effect.either(sessionServiceForHealth.getStats))
     if (statsResult._tag === "Right") {
       containers = statsResult.right.total
     }

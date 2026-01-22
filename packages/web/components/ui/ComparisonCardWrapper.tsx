@@ -1,8 +1,8 @@
 "use client"
 
-import { ComparisonCard } from "./ComparisonCard"
 import type { ToolPairing } from "../../content/pairings"
 import { useStepProgress } from "../../hooks/useStepProgress"
+import { ComparisonCard } from "./ComparisonCard"
 
 export interface ComparisonCardWrapperProps {
   readonly pairing: ToolPairing

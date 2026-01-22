@@ -1,6 +1,6 @@
-import { Header } from "../components/ui/Header"
-import { Footer } from "../components/ui/Footer"
 import { ComparisonCardWrapper } from "../components/ui/ComparisonCardWrapper"
+import { Footer } from "../components/ui/Footer"
+import { Header } from "../components/ui/Header"
 import { getPairingsByCategory } from "../content/pairings"
 
 /**

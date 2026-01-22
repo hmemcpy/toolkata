@@ -1,8 +1,8 @@
+import type { Server as HttpServer } from "node:http"
 import { Data, Effect } from "effect"
 import { WebSocketServer } from "ws"
-import type { Server as HttpServer } from "node:http"
 import { SessionService } from "../services/session.js"
-import { WebSocketService, WebSocketError, parseMessage } from "../services/websocket.js"
+import { WebSocketError, WebSocketService, parseMessage } from "../services/websocket.js"
 
 // Error types for WebSocket route
 export class WsRouteError extends Data.TaggedClass("WsRouteError")<{
@@ -24,7 +24,7 @@ const connections = new Map<string, ActiveConnection>()
 const getSessionId = (url: string): string | null => {
   // Path format: /sessions/:sessionId/ws
   const match = url.match(/^\/sessions\/([^/]+)\/ws$/)
-  return match ? match[1] : null
+  return match?.[1] ?? null
 }
 
 // Create a WebSocket server attached to an HTTP server

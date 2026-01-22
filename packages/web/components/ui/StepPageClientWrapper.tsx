@@ -25,11 +25,11 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useKeyboardShortcutsModal, useKeyboardNavigation } from "../../hooks/useKeyboardNavigation"
+import { useKeyboardNavigation, useKeyboardShortcutsModal } from "../../hooks/useKeyboardNavigation"
 import { KeyboardShortcutsModal } from "./KeyboardShortcutsModal"
-import { TerminalWithSuggestionsWrapper } from "./TerminalWithSuggestionsWrapper"
 import { NavigationWrapper } from "./NavigationWrapper"
 import { StepProgressWrapper } from "./StepProgressWrapper"
+import { TerminalWithSuggestionsWrapper } from "./TerminalWithSuggestionsWrapper"
 
 export interface StepPageClientWrapperProps {
   /**

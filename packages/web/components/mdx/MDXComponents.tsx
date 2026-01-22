@@ -14,10 +14,10 @@
  * ```
  */
 
+import type { BundledLanguage } from "shiki"
 import { Callout } from "../ui/Callout"
 import { CodeBlock } from "../ui/CodeBlock"
 import { SideBySide } from "../ui/SideBySide"
-import type { BundledLanguage } from "shiki"
 
 /**
  * Props for code elements in MDX.

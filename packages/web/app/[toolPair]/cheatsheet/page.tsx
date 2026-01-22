@@ -1,12 +1,12 @@
 "use client"
 
-import React from "react"
-import { Header } from "../../../components/ui/Header"
-import { Footer } from "../../../components/ui/Footer"
-import { getPairing, isValidPairingSlug } from "../../../content/pairings"
-import { notFound } from "next/navigation"
 import Link from "next/link"
+import { notFound } from "next/navigation"
+import React from "react"
 import type { JSX } from "react"
+import { Footer } from "../../../components/ui/Footer"
+import { Header } from "../../../components/ui/Header"
+import { getPairing, isValidPairingSlug } from "../../../content/pairings"
 
 /**
  * Command mapping for the cheat sheet.

@@ -1,10 +1,10 @@
-import { Header } from "../../components/ui/Header"
+import Link from "next/link"
+import { notFound } from "next/navigation"
 import { Footer } from "../../components/ui/Footer"
+import { Header } from "../../components/ui/Header"
 import { OverviewPageClientWrapper } from "../../components/ui/OverviewPageClientWrapper"
 import { getPairing, isValidPairingSlug } from "../../content/pairings"
 import type { StepMeta } from "../../services/content"
-import { notFound } from "next/navigation"
-import Link from "next/link"
 
 /**
  * Generate static params for all published tool pairings.

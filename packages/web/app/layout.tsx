@@ -24,8 +24,7 @@ export const metadata: Metadata = {
     // Default to localhost for development
     "sandbox-api-preconnect":
       // biome-ignore lint/complexity/useLiteralKeys: Required for TypeScript strictness
-      process.env["NEXT_PUBLIC_SANDBOX_API_URL"] ??
-      "ws://localhost:3001",
+      process.env["NEXT_PUBLIC_SANDBOX_API_URL"] ?? "ws://localhost:3001",
   },
 }
 

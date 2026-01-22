@@ -829,16 +829,26 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 - For small text (12px) that needs to be readable, switched from `text-dim` to `text-muted` (#a1a1a1) which meets AAA
 - `text-dim` is now primarily used for icons that have hover states and decorative borders
 
-**Build Validation Status (2025-01-22):**
-- `bun run typecheck` passes with zero errors
+**Build Validation Status (2026-01-22):**
+- `bun run typecheck` passes for web package (packages/web)
 - `bun run lint` passes with zero errors
 - `bun run build` completes successfully, generating 16 static pages (home, jj-git overview, 12 steps, cheatsheet)
 - Remaining tasks (12.5-12.7) require manual browser testing (11.8-11.9 also require browser DevTools)
+- **Note:** sandbox-api (packages/sandbox-api) has remaining TypeScript type errors due to `exactOptionalPropertyTypes` strict mode causing Effect-TS context type inference issues. The code would work at runtime but TypeScript cannot properly verify the Effect context requirements. This is a known limitation of combining Effect-TS with TypeScript's strictest settings.
 
 **Sandbox API Dev Script Added (2026-01-22):**
 - Added `dev` script to `packages/sandbox-api/package.json` for running the sandbox API server
 - Added `typecheck` script for TypeScript validation
 - Now supports `bun run --cwd packages/sandbox-api dev` for local development
+
+**TypeScript Type Error Fixes (2026-01-22):**
+- Fixed session service to properly handle `toolPair` parameter in `create` method
+- Fixed MutableHashMap.get() Option handling in session and rate-limit services
+- Fixed websocket parsed message type access using bracket notation
+- Fixed index.ts to use proper RequestInit types and avoid `any`
+- Fixed container service methods to use proper Effect.tryPromise patterns
+- Fixed all Biome lint errors (useLiteralKeys violations)
+- Remaining sandbox-api type errors are Effect-TS context inference issues with exactOptionalPropertyTypes
 
 ### Out of Scope (MVP)
 

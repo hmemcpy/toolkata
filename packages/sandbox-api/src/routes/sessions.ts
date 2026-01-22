@@ -1,8 +1,18 @@
 import { Data, Effect } from "effect"
 import { Hono } from "hono"
 import type { Env } from "hono"
-import { SessionService, SessionError } from "../services/session.js"
-import { RateLimitService, RateLimitError } from "../services/rate-limit.js"
+import type { RateLimitServiceShape } from "../services/rate-limit.js"
+import { RateLimitError } from "../services/rate-limit.js"
+import type { SessionServiceShape } from "../services/session.js"
+import { SessionError } from "../services/session.js"
+
+// Helper: Cast statusCode to the literal type Hono expects
+const toStatusCode = (code: number): 200 | 201 | 400 | 401 | 403 | 404 | 409 | 429 | 500 => {
+  if ([200, 201, 400, 401, 403, 404, 409, 429, 500].includes(code)) {
+    return code as 200 | 201 | 400 | 401 | 403 | 404 | 409 | 429 | 500
+  }
+  return 500
+}
 
 // Error types for HTTP responses
 export class HttpRouteError extends Data.TaggedClass("HttpRouteError")<{
@@ -21,7 +31,7 @@ export interface CreateSessionRequest {
 export interface CreateSessionResponse {
   readonly sessionId: string
   readonly wsUrl: string
-  readonly status: "RUNNING"
+  readonly status: "IDLE" | "STARTING" | "RUNNING" | "DESTROYING"
   readonly createdAt: string
   readonly expiresAt: string
 }
@@ -45,7 +55,8 @@ const getClientIp = (request: Request): string => {
   // Check common proxy headers
   const forwardedFor = request.headers.get("x-forwarded-for")
   if (forwardedFor) {
-    return forwardedFor.split(",")[0].trim()
+    const parts = forwardedFor.split(",")
+    return parts[0]?.trim() ?? "unknown"
   }
 
   const realIp = request.headers.get("x-real-ip")
@@ -65,13 +76,21 @@ const getClientIp = (request: Request): string => {
 // Helper: Convert errors to HTTP responses
 const errorToResponse = (error: unknown): { statusCode: number; body: ErrorResponse } => {
   if (error instanceof RateLimitError) {
+    const bodyObj: {
+      error: string
+      message: string
+      retryAfter?: number
+    } = {
+      error: error.cause,
+      message: error.message,
+    }
+    // Only include retryAfter if it's defined (for exactOptionalPropertyTypes)
+    if (error.retryAfter !== undefined) {
+      bodyObj.retryAfter = error.retryAfter
+    }
     return {
-      statusCode: error.cause === "TooManySessions" ? 429 : 429,
-      body: {
-        error: error.cause,
-        message: error.message,
-        retryAfter: error.retryAfter,
-      },
+      statusCode: 429,
+      body: bodyObj as ErrorResponse,
     }
   }
 
@@ -120,185 +139,153 @@ const getWsUrl = (request: Request, sessionId: string): string => {
   return `${protocol === "https" ? "wss" : "ws"}://${host}/sessions/${sessionId}/ws`
 }
 
-// Create session routes
-export const createSessionRoutes = () => {
+// Create session routes with service instances
+const createSessionRoutes = (
+  sessionService: SessionServiceShape,
+  rateLimitService: RateLimitServiceShape,
+) => {
   const app = new Hono<{ Bindings: Env }>()
 
   // POST /sessions - Create a new session
   app.post("/sessions", async (c) => {
-    const program = Effect.gen(function* () {
-      const sessionService = yield* SessionService
-      const rateLimitService = yield* RateLimitService
-
-      // Parse request body using Effect
-      const body = yield* Effect.tryPromise({
-        try: () => c.req.json(),
-        catch: () =>
-          new HttpRouteError({
-            cause: "BadRequest",
-            message: "Invalid JSON in request body",
-            statusCode: 400,
-          }),
-      })
-
-      const toolPair = (body as CreateSessionRequest)?.toolPair
+    try {
+      // Parse request body
+      const body = (await c.req.json()) as CreateSessionRequest
+      const toolPair = body?.toolPair
 
       if (!toolPair || typeof toolPair !== "string") {
-        return yield* Effect.fail(
-          new HttpRouteError({
-            cause: "BadRequest",
-            message: "Missing or invalid toolPair in request body",
-            statusCode: 400,
-          }),
-        )
+        const error = new HttpRouteError({
+          cause: "BadRequest",
+          message: "Missing or invalid toolPair in request body",
+          statusCode: 400,
+        })
+        const { statusCode, body: errorBody } = errorToResponse(error)
+        return c.json<ErrorResponse>(errorBody, toStatusCode(statusCode))
       }
 
       // Get client IP for rate limiting
       const clientIp = getClientIp(c.req.raw)
 
       // Check rate limits
-      const limitResult = yield* rateLimitService.checkSessionLimit(clientIp)
+      const limitResult = await Effect.runPromise(rateLimitService.checkSessionLimit(clientIp))
       if (!limitResult.allowed) {
-        return yield* Effect.fail(
-          new RateLimitError({
-            cause: "TooManySessions",
-            message: "Rate limit exceeded. Please try again later.",
+        const errorData = {
+          cause: "TooManySessions" as const,
+          message: "Rate limit exceeded. Please try again later.",
+        }
+        // Only add retryAfter if it's defined
+        if (limitResult.retryAfter !== undefined) {
+          const error = new RateLimitError({
+            ...errorData,
             retryAfter: limitResult.retryAfter,
-          }),
-        )
+          })
+          const { statusCode, body: errorBody } = errorToResponse(error)
+          return c.json<ErrorResponse>(errorBody, toStatusCode(statusCode))
+        }
+        const error = new RateLimitError(errorData)
+        const { statusCode, body: errorBody } = errorToResponse(error)
+        return c.json<ErrorResponse>(errorBody, toStatusCode(statusCode))
       }
 
       // Create the session
-      const session = yield* sessionService.create(toolPair)
+      const session = await Effect.runPromise(sessionService.create(toolPair))
 
       // Record the session for rate limiting
-      yield* rateLimitService.recordSession(clientIp, session.id)
+      await Effect.runPromise(rateLimitService.recordSession(clientIp, session.id))
 
       // Build response
       const wsUrl = getWsUrl(c.req.raw, session.id)
 
-      return {
-        sessionId: session.id,
-        wsUrl,
-        status: session.state,
-        createdAt: session.createdAt.toISOString(),
-        expiresAt: session.expiresAt.toISOString(),
-      } satisfies CreateSessionResponse
-    })
-
-    // Run the Effect program
-    const result = await Effect.runPromise(Effect.either(program))
-
-    if (result._tag === "Left") {
-      const { statusCode, body } = errorToResponse(result.left)
-      return c.json<ErrorResponse>(body, statusCode)
+      return c.json<CreateSessionResponse>(
+        {
+          sessionId: session.id,
+          wsUrl,
+          status: session.state,
+          createdAt: session.createdAt.toISOString(),
+          expiresAt: session.expiresAt.toISOString(),
+        },
+        201,
+      )
+    } catch (error) {
+      const { statusCode, body } = errorToResponse(error)
+      return c.json<ErrorResponse>(body, toStatusCode(statusCode))
     }
-
-    return c.json<CreateSessionResponse>(result.right, 201)
   })
 
   // GET /sessions/:id - Get session status
-  app.get("/sessions/:id", (c) => {
-    const program = Effect.gen(function* () {
-      const sessionService = yield* SessionService
-
+  app.get("/sessions/:id", async (c) => {
+    try {
       const sessionId = c.req.param("id")
       if (!sessionId) {
-        return yield* Effect.fail(
-          new HttpRouteError({
-            cause: "BadRequest",
-            message: "Missing session ID",
-            statusCode: 400,
-          }),
-        )
+        const error = new HttpRouteError({
+          cause: "BadRequest",
+          message: "Missing session ID",
+          statusCode: 400,
+        })
+        const { statusCode, body } = errorToResponse(error)
+        return c.json<ErrorResponse>(body, toStatusCode(statusCode))
       }
 
-      const session = yield* sessionService.get(sessionId)
+      const session = await Effect.runPromise(sessionService.get(sessionId))
 
-      return {
+      return c.json<SessionStatusResponse>({
         sessionId: session.id,
         status: session.state,
         createdAt: session.createdAt.toISOString(),
         expiresAt: session.expiresAt.toISOString(),
         toolPair: session.toolPair,
-      } satisfies SessionStatusResponse
-    })
-
-    return Effect.runPromise(
-      Effect.either(program)
-        .pipe(
-          Effect.mapBoth({
-            onFailure: (error) => errorToResponse(error),
-            onSuccess: (response) => ({ statusCode: 200, body: response }),
-          }),
-        )
-        .then((either) => {
-          if (either._tag === "Left") {
-            return c.json<ErrorResponse>(either.left.body, either.left.statusCode)
-          }
-          return c.json<SessionStatusResponse>(either.right)
-        }),
-    )
+      })
+    } catch (error) {
+      const { statusCode, body } = errorToResponse(error)
+      return c.json<ErrorResponse>(body, toStatusCode(statusCode))
+    }
   })
 
   // DELETE /sessions/:id - Destroy a session
-  app.delete("/sessions/:id", (c) => {
-    const program = Effect.gen(function* () {
-      const sessionService = yield* SessionService
-      const rateLimitService = yield* RateLimitService
-
+  app.delete("/sessions/:id", async (c) => {
+    try {
       const sessionId = c.req.param("id")
       if (!sessionId) {
-        return yield* Effect.fail(
-          new HttpRouteError({
-            cause: "BadRequest",
-            message: "Missing session ID",
-            statusCode: 400,
-          }),
-        )
+        const error = new HttpRouteError({
+          cause: "BadRequest",
+          message: "Missing session ID",
+          statusCode: 400,
+        })
+        const { statusCode, body } = errorToResponse(error)
+        return c.json<ErrorResponse>(body, toStatusCode(statusCode))
       }
 
       // Get client IP to remove from rate limit tracking
       const clientIp = getClientIp(c.req.raw)
 
       // Destroy the session (ignore errors if already destroyed)
-      const destroyResult = yield* Effect.either(sessionService.destroy(sessionId))
+      const destroyResult = await Effect.runPromise(
+        Effect.either(sessionService.destroy(sessionId)),
+      )
 
       // Remove from rate limit tracking regardless of destroy result
-      yield* rateLimitService.removeSession(clientIp, sessionId)
+      await Effect.runPromise(rateLimitService.removeSession(clientIp, sessionId))
 
       // Handle destroy errors
       if (destroyResult._tag === "Left") {
         const error = destroyResult.left
         if (error.cause === "NotFound") {
           // Session already destroyed, that's okay
-          return { success: true }
+          return c.json<{ success: true }>({ success: true })
         }
-        return yield* Effect.fail(error)
+        const { statusCode, body } = errorToResponse(error)
+        return c.json<ErrorResponse>(body, toStatusCode(statusCode))
       }
 
-      return { success: true }
-    })
-
-    return Effect.runPromise(
-      Effect.either(program)
-        .pipe(
-          Effect.mapBoth({
-            onFailure: (error) => errorToResponse(error),
-            onSuccess: () => ({ statusCode: 200, body: { success: true } }),
-          }),
-        )
-        .then((either) => {
-          if (either._tag === "Left") {
-            return c.json<ErrorResponse>(either.left.body, either.left.statusCode)
-          }
-          return c.json<{ success: true }>(either.right)
-        }),
-    )
+      return c.json<{ success: true }>({ success: true })
+    } catch (error) {
+      const { statusCode, body } = errorToResponse(error)
+      return c.json<ErrorResponse>(body, toStatusCode(statusCode))
+    }
   })
 
   return app
 }
 
-// Export the routes for use in main server
-export const sessionRoutes = createSessionRoutes()
+// Export the factory function
+export { createSessionRoutes }
