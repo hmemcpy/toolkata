@@ -6,7 +6,7 @@ import { MDXRemote } from "next-mdx-remote/rsc"
 import { Callout } from "../../../components/ui/Callout"
 import { CodeBlock } from "../../../components/ui/CodeBlock"
 import { SideBySide } from "../../../components/ui/SideBySide"
-import { TerminalWithSuggestions } from "../../../components/ui/TerminalWithSuggestions"
+import { TerminalWithSuggestionsWrapper } from "../../../components/ui/TerminalWithSuggestionsWrapper"
 import { getPairing, isValidPairingSlug } from "../../../content/pairings"
 import { notFound } from "next/navigation"
 import fs from "node:fs/promises"
@@ -176,7 +176,7 @@ export default async function StepPage(props: {
             <h2 className="mb-6 text-xl font-mono font-medium text-[var(--color-text)]">
               Try It Yourself
             </h2>
-            <TerminalWithSuggestions
+            <TerminalWithSuggestionsWrapper
               toolPair={toolPair}
               stepId={stepNum.toString()}
               suggestedCommands={allCommands}

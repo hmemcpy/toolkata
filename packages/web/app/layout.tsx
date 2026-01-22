@@ -15,6 +15,18 @@ export const metadata: Metadata = {
   },
   description:
     "Hands-on tutorials for developers switching tools. No fluff. Just the commands you need.",
+  icons: {
+    icon: "/favicon.ico",
+  },
+  other: {
+    // Preconnect to sandbox API for faster WebSocket connection
+    // The environment variable is set in .env.local or at build time
+    // Default to localhost for development
+    "sandbox-api-preconnect":
+      // biome-ignore lint/complexity/useLiteralKeys: Required for TypeScript strictness
+      process.env["NEXT_PUBLIC_SANDBOX_API_URL"] ??
+      "ws://localhost:3001",
+  },
 }
 
 export const viewport: Viewport = {
@@ -27,8 +39,18 @@ export default function RootLayout({
 }: {
   readonly children: React.ReactNode
 }) {
+  // Get sandbox API URL for preconnect
+  const sandboxApiUrl =
+    // biome-ignore lint/complexity/useLiteralKeys: Required for TypeScript strictness
+    process.env["NEXT_PUBLIC_SANDBOX_API_URL"]?.replace(/^wss?:\/\//, "") ?? "localhost:3001"
+
   return (
     <html lang="en" className={jetbrainsMono.variable}>
+      <head>
+        {/* Preconnect to sandbox API for faster WebSocket connections */}
+        <link rel="preconnect" href={`http://${sandboxApiUrl}`} crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href={`http://${sandboxApiUrl}`} />
+      </head>
       <body className="bg-[var(--color-bg)] text-[var(--color-text)] font-mono antialiased">
         <a
           href="#main"

@@ -470,10 +470,11 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Link to cheat sheet
   - Note: Added StaticModeContent component with copyable commands and link to cheat sheet
 
-- [ ] **8.9** Lazy load terminal component
+- [x] **8.9** Lazy load terminal component
   - Use `next/dynamic` with `ssr: false`
   - Only load when user scrolls to "Try It" section or clicks to start
   - Preconnect to sandbox API domain (`<link rel="preconnect">`)
+  - Note: Created TerminalWithSuggestionsWrapper client component with dynamic import and loading state, added preconnect links to root layout
 
 ---
 
