@@ -246,11 +246,12 @@ Two related efforts:
   - Content maintains full width (sidebar overlays)
   - **Completed 2026-01-22** - Rendered sidebar and toggle in Providers.tsx (inside TerminalProvider)
 
-- [ ] **3.2** Update `InteractiveTerminal.tsx` with state change callback
+- [x] **3.2** Update `InteractiveTerminal.tsx` with state change callback
   - Add `onStateChange?: (state: TerminalState) => void` prop
   - Call callback whenever internal state changes
   - Add `onSessionTimeChange?: (remaining: number) => void` prop
   - Expose session time remaining via callback
+  - **Completed 2026-01-22** - Added callback props with useEffect for change detection, exported TerminalState type for TerminalContext to use
 
 - [ ] **3.3** Remove terminal from StepPageClientWrapper
   - Remove `suggestedCommands` prop from StepPageClientWrapper

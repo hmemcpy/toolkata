@@ -1,28 +1,10 @@
 "use client"
 
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react"
+import type { TerminalState } from "../components/ui/InteractiveTerminal"
 
-/**
- * Terminal connection states.
- *
- * Matches the state machine in InteractiveTerminal:
- * - IDLE: Terminal initialized, not connected
- * - CONNECTING: Establishing WebSocket connection
- * - CONNECTED: Active session, accepting input
- * - TIMEOUT_WARNING: Connected but session expiring soon (<60s)
- * - EXPIRED: Session timer reached zero
- * - ERROR: Connection or session error
- *
- * Note: STATIC state is handled internally by InteractiveTerminal
- * and is not exposed through the context.
- */
-export type TerminalState =
-  | "IDLE"
-  | "CONNECTING"
-  | "CONNECTED"
-  | "TIMEOUT_WARNING"
-  | "EXPIRED"
-  | "ERROR"
+// Re-export TerminalState from InteractiveTerminal for convenience
+export type { TerminalState }
 
 /**
  * Imperative handle for terminal operations.

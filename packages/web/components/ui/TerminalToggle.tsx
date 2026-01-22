@@ -68,15 +68,32 @@ export function TerminalToggle({ className = "" }: TerminalToggleProps): ReactNo
   }
 
   // Button label with connection status
-  const getButtonLabel = () => {
-    const statusText = {
-      IDLE: "Open terminal",
-      CONNECTING: "Terminal connecting...",
-      CONNECTED: "Terminal connected",
-      TIMEOUT_WARNING: "Terminal expires soon",
-      EXPIRED: "Terminal expired",
-      ERROR: "Terminal error",
-    }[state]
+  const getButtonLabel = (): string => {
+    let statusText: string
+    switch (state) {
+      case "IDLE":
+        statusText = "Open terminal"
+        break
+      case "CONNECTING":
+        statusText = "Terminal connecting..."
+        break
+      case "CONNECTED":
+        statusText = "Terminal connected"
+        break
+      case "TIMEOUT_WARNING":
+        statusText = "Terminal expires soon"
+        break
+      case "EXPIRED":
+        statusText = "Terminal expired"
+        break
+      case "ERROR":
+        statusText = "Terminal error"
+        break
+      default:
+        // Handle STATIC state which exists in the union
+        statusText = "Terminal"
+        break
+    }
 
     return `${statusText} (Press T to toggle)`
   }

@@ -28,8 +28,10 @@ import type { TerminalMessage } from "../../services/sandbox-client"
 
 /**
  * Terminal connection states.
+ *
+ * Exported for use in TerminalContext to track terminal state.
  */
-type TerminalState =
+export type TerminalState =
   | "IDLE"
   | "CONNECTING"
   | "CONNECTED"
@@ -89,6 +91,26 @@ export interface InteractiveTerminalProps {
    * If not provided, use CommandSuggestions component separately.
    */
   readonly preloadCommands?: readonly string[]
+
+  /**
+   * Optional callback when terminal state changes.
+   *
+   * Called when the terminal transitions between states:
+   * IDLE, CONNECTING, CONNECTED, TIMEOUT_WARNING, EXPIRED, ERROR, STATIC
+   *
+   * Used by TerminalProvider to track terminal state for the sidebar.
+   */
+  readonly onStateChange?: (state: TerminalState) => void
+
+  /**
+   * Optional callback when session time remaining changes.
+   *
+   * Called approximately every second when session is active.
+   * Passes the remaining time in seconds, or null if no session is active.
+   *
+   * Used by TerminalProvider to display the session timer in the sidebar footer.
+   */
+  readonly onSessionTimeChange?: (remaining: number | null) => void
 }
 
 /**
@@ -337,7 +359,7 @@ function StaticModeContent({ toolPair, onTryInteractive }: StaticModeContentProp
  */
 export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, InteractiveTerminalProps>(
   function InteractiveTerminal(
-    { toolPair, stepId: _stepId, onCommandInsert, preloadCommands = [] }: InteractiveTerminalProps,
+    { toolPair, stepId: _stepId, onCommandInsert, preloadCommands = [], onStateChange, onSessionTimeChange }: InteractiveTerminalProps,
     ref,
   ) {
     const terminalRef = useRef<HTMLDivElement>(null)
@@ -349,6 +371,16 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
     const [state, setState] = useState<TerminalState>("IDLE")
     const [error, setError] = useState<string | null>(null)
     const [timeRemaining, setTimeRemaining] = useState<number>(300) // 5 minutes in seconds
+
+    // Call onStateChange callback when state changes
+    useEffect(() => {
+      onStateChange?.(state)
+    }, [state, onStateChange])
+
+    // Call onSessionTimeChange callback when time remaining changes
+    useEffect(() => {
+      onSessionTimeChange?.(timeRemaining)
+    }, [timeRemaining, onSessionTimeChange])
 
     /**
      * Insert a command into the terminal programmatically.
