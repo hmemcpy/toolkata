@@ -1,9 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "bun run build",
+  "buildCommand": "cd packages/web && bun run build",
   "installCommand": "bun install",
-  "devCommand": "bun run dev",
+  "outputDirectory": "packages/web/.next",
+  "devCommand": "cd packages/web && bun run dev",
   "env": {
     "NEXT_PUBLIC_SANDBOX_API_URL": "https://sandbox.toolkata.dev"
   }
