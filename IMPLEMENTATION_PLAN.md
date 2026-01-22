@@ -1,9 +1,9 @@
 # Implementation Plan: toolkata
 
-> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1-13.3.3, 13.4.1-13.4.2 complete
+> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1-13.3.3, 13.4.1-13.4.2, 13.5.1-13.5.4, 13.6.1-13.6.2 complete
 > **Validation**: `bun run typecheck`, `bun run lint`, `bun run build`, Playwright tests
 > **Priority Legend**: P0 = Blocking, P1 = Core MVP, P2 = Polish/Enhancement
-> **Last Updated**: 2026-01-22 (13.5.1-13.5.4 Glossary page, client, hook, and overview/cheatsheet links complete. Next: 13.6.1 Create Providers.tsx wrapper)
+> **Last Updated**: 2026-01-22 (13.6.2 Created [toolPair]/layout.tsx with Providers wrapper. Next: 13.6.3 Update StepPageClientWrapper)
 
 ### Current Priority: Phase 13 (Bidirectional Comparison)
 
@@ -1082,11 +1082,13 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Accepts `toolPair` prop (passed from layout or page)
   - **Why separate file**: Keeps layout.tsx as server component, isolates client boundary
 
-- [ ] **13.6.2** Update `[toolPair]` layout or pages to use Providers
-  - Option A: Create `packages/web/app/[toolPair]/layout.tsx` with Providers
-  - Option B: Wrap each page individually with Providers
-  - **Recommendation**: Option A (single provider for all toolPair pages)
+- [x] **13.6.2** Update `[toolPair]` layout or pages to use Providers
+  - Created `packages/web/app/[toolPair]/layout.tsx` with Providers
+  - Single provider wraps all toolPair pages (overview, steps, cheatsheet, glossary)
+  - Removed DirectionProvider from cheatsheet page (now covered by layout)
+  - Removed DirectionProvider from GlossaryClientWrapper (now covered by layout)
   - Pass `toolPair` from route params to Providers
+  - Validates toolPair slug before creating provider (404 for invalid slugs)
 
 - [ ] **13.6.3** Update `StepPageClientWrapper` to consume direction context
   - Location: `packages/web/components/ui/StepPageClientWrapper.tsx`
@@ -1158,10 +1160,11 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 | `components/ui/SideBySide.tsx` | Add `isReversed` prop, swap columns conditionally | ~20 lines |
 | `components/ui/StepProgress.tsx` | Add `directionToggle?: ReactNode` slot prop | ~5 lines |
 | `components/mdx/MDXComponents.tsx` | Replace SideBySide with SideBySideWithDirection | ~2 lines |
-| `app/[toolPair]/cheatsheet/page.tsx` | Use shared data, add direction, remove inline data | -220 lines, +30 lines |
+| `app/[toolPair]/cheatsheet/page.tsx` | Use shared data, add direction, remove inline data, remove DirectionProvider | -225 lines, +30 lines |
 | `app/[toolPair]/page.tsx` | Add glossary link next to cheatsheet | ~5 lines |
-| `app/[toolPair]/layout.tsx` | Create/update with Providers wrapper | ~15 lines (new file possible) |
+| `app/[toolPair]/layout.tsx` | Created with Providers wrapper for all toolPair pages | +41 lines (new file) |
 | `components/ui/StepPageClientWrapper.tsx` | Consume direction context | ~10 lines |
+| `components/ui/GlossaryClientWrapper.tsx` | Remove DirectionProvider (now in layout) | -15 lines |
 
 **Estimated Total**
 - New code: ~800 lines

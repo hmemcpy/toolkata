@@ -2,9 +2,11 @@
  * GlossaryClientWrapper - Client component wrapper for the glossary page.
  *
  * This wrapper provides:
- * - DirectionProvider for direction context
  * - Header with DirectionToggle
  * - GlossaryClient with interactive search and filtering
+ *
+ * DirectionProvider is now provided by the [toolPair]/layout.tsx, so this
+ * component can directly use useDirectionContext() for direction state.
  *
  * @example
  * ```tsx
@@ -20,7 +22,6 @@
 "use client"
 
 import type { GlossaryEntry } from "../../content/glossary/jj-git"
-import { DirectionProvider } from "../../contexts/DirectionContext"
 import { DirectionToggle } from "./DirectionToggle"
 import { GlossaryClient } from "./GlossaryClient"
 
@@ -50,9 +51,11 @@ export interface GlossaryClientWrapperProps {
  * GlossaryClientWrapper component.
  *
  * Client component that wraps the glossary with:
- * - DirectionProvider for direction context
  * - DirectionToggle in the header
  * - GlossaryClient for interactive search and filtering
+ *
+ * Note: DirectionProvider is now provided by [toolPair]/layout.tsx,
+ * so useDirectionContext() can be used directly in child components.
  */
 export function GlossaryClientWrapper({
   entries,
@@ -61,7 +64,7 @@ export function GlossaryClientWrapper({
   pairingTo: _pairingTo,
 }: GlossaryClientWrapperProps) {
   return (
-    <DirectionProvider toolPair={toolPair}>
+    <>
       {/* Header with direction toggle */}
       <div className="mb-8 flex items-center justify-end">
         <DirectionToggle />
@@ -69,6 +72,6 @@ export function GlossaryClientWrapper({
 
       {/* Glossary client with search and filtering */}
       <GlossaryClient entries={entries} toolPair={toolPair} />
-    </DirectionProvider>
+    </>
   )
 }

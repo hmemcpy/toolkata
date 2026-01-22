@@ -6,7 +6,6 @@ import React from "react"
 import type { JSX } from "react"
 import { Footer } from "../../../components/ui/Footer"
 import { Header } from "../../../components/ui/Header"
-import { DirectionProvider } from "../../../contexts/DirectionContext"
 import { DirectionToggle } from "../../../components/ui/DirectionToggle"
 import { useDirectionContext } from "../../../contexts/DirectionContext"
 import { getPairing, isValidPairingSlug } from "../../../content/pairings"
@@ -246,6 +245,9 @@ function CheatsheetContent({
  *
  * The table columns, colors, and copy buttons all respect the direction preference.
  *
+ * DirectionProvider is now provided by the [toolPair]/layout.tsx, so this
+ * page can directly use useDirectionContext().
+ *
  * @param params - Route params containing toolPair slug
  */
 export default function CheatSheetPage({
@@ -280,9 +282,6 @@ export default function CheatSheetPage({
     )
   }
 
-  return (
-    <DirectionProvider toolPair={toolPair}>
-      <CheatsheetContent toolPair={toolPair} />
-    </DirectionProvider>
-  )
+  // DirectionProvider is now in layout.tsx - just render the content
+  return <CheatsheetContent toolPair={toolPair} />
 }
