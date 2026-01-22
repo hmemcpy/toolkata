@@ -74,7 +74,7 @@ export function StepProgress({
       {/* Keyboard hints - only show when enabled */}
       {showKeyboardHints && (
         <div className="border-t border-[var(--color-border)] px-4 py-1 sm:px-6 lg:px-8">
-          <p className="text-xs text-[var(--color-text-dim)] text-center">
+          <p className="text-xs text-[var(--color-text-muted)] text-center">
             <kbd className="px-1.5 py-0.5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded text-[var(--color-text-muted)]">
               ←
             </kbd>{" "}

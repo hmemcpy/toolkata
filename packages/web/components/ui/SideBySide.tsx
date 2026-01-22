@@ -80,7 +80,7 @@ export function SideBySide({
               <div key={i} className="mb-3 last:mb-0">
                 <code className="block text-sm text-[var(--color-text)]">{cmd}</code>
                 {fromComments[i] && (
-                  <span className="mt-1 block text-xs text-[var(--color-text-dim)]">
+                  <span className="mt-1 block text-xs text-[var(--color-text-muted)]">
                     {fromComments[i]}
                   </span>
                 )}
@@ -118,7 +118,7 @@ export function SideBySide({
               <div key={i} className="mb-3 last:mb-0">
                 <code className="block text-sm text-[var(--color-text)]">{cmd}</code>
                 {toComments[i] && (
-                  <span className="mt-1 block text-xs text-[var(--color-text-dim)]">
+                  <span className="mt-1 block text-xs text-[var(--color-text-muted)]">
                     {toComments[i]}
                   </span>
                 )}

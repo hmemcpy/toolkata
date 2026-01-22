@@ -163,7 +163,7 @@ export function StepPageClientWrapper({
         <button
           type="button"
           onClick={showModal}
-          className="text-xs text-[var(--color-text-dim)] transition-colors hover:text-[var(--color-text-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+          className="text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
         >
           Press ? for keyboard shortcuts
         </button>

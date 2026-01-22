@@ -92,7 +92,7 @@ function StepIcon({ state }: { readonly state: StepCompletionState }): JSX.Eleme
       )
     case "pending":
       return (
-        <span className="text-[var(--color-text-dim)]" aria-label="Not started" role="img">
+        <span className="text-[var(--color-text-muted)]" aria-label="Not started" role="img">
           ○
         </span>
       )
@@ -202,7 +202,7 @@ export function StepList({
                         {/* Estimated time */}
                         {estimatedTimes?.get(step.step) && (
                           <span
-                            className="flex-shrink-0 text-xs font-mono text-[var(--color-text-dim)]"
+                            className="flex-shrink-0 text-xs font-mono text-[var(--color-text-muted)]"
                             aria-label={`Estimated time: ${estimatedTimes.get(step.step)}`}
                           >
                             {estimatedTimes.get(step.step)}

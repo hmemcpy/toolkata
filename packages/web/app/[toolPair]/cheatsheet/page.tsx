@@ -431,7 +431,7 @@ export default function CheatSheetPage({
                     {/* jj command column */}
                     <div className="col-span-5 flex items-center justify-end gap-2">
                       {entry.note && (
-                        <span className="text-xs text-[var(--color-text-dim)] italic">
+                        <span className="text-xs text-[var(--color-text-muted)] italic">
                           ({entry.note})
                         </span>
                       )}

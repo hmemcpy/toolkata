@@ -129,7 +129,7 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
           </div>
         </div>
 
-        <div className="mt-6 text-xs text-[var(--color-text-dim)]">
+        <div className="mt-6 text-xs text-[var(--color-text-muted)]">
           Press <kbd className="rounded border border-[var(--color-border)] bg-[var(--color-bg)] px-1.5 py-0.5 font-mono">
             Esc
           </kbd>{" "}

@@ -34,14 +34,14 @@
 
   --color-text: #fafafa;
   --color-text-muted: #a1a1a1;
-  --color-text-dim: #525252;
+  --color-text-dim: #737373;
 
   --color-accent: #22c55e;
   --color-accent-hover: #16a34a;
   --color-accent-alt: #f97316;
   --color-accent-alt-hover: #ea580c;
 
-  --color-error: #ef4444;
+  --color-error: #f87171;
   --color-warning: #eab308;
 
   /* Typography */

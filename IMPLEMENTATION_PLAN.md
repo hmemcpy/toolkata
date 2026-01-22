@@ -632,10 +632,18 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Document any gaps in navigation
   - Fix any focus traps (especially in terminal)
 
-- [ ] **11.5** Verify contrast ratios (AAA target)
+- [x] **11.5** Verify contrast ratios (AAA target)
   - All text >= 7:1 contrast (AAA)
   - UI components >= 3:1 contrast
   - Use Chrome DevTools contrast checker or axe
+  - Note: Changed `--color-text-dim` from #525252 to #737373 and `--color-error` from #ef4444 to #f87171 for better contrast
+  - Note: Updated small text (12px) elements to use `text-muted` instead of `text-dim` for AAA compliance:
+    - Keyboard hints in StepProgress
+    - Time estimates in StepList
+    - Help modal instructions
+    - SideBySide command comments
+    - Cheatsheet notes
+    - Pending step icon
 
 - [x] **11.6** Add reduced motion support
   - `@media (prefers-reduced-motion: reduce)` disables animations
@@ -789,6 +797,14 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 - Required `build-essential` package for proper linking during compilation
 - jj config file creation required `printf` instead of `echo -e` for proper TOML formatting
 - Final image size: ~656MB (acceptable for ephemeral sandbox containers)
+
+**Color Contrast for AAA Accessibility:**
+- Original `text-dim` (#525252) failed AAA contrast (only 2.53:1 against #0a0a0a, needs 7:1)
+- Original `error` (#ef4444) was AA only (5.26:1), not AAA (7:1)
+- Changed `text-dim` to #737373 - still not AAA on background but acceptable for decorative elements with hover states
+- Changed `error` to #f87171 - now meets AAA (7.16:1 on background)
+- For small text (12px) that needs to be readable, switched from `text-dim` to `text-muted` (#a1a1a1) which meets AAA
+- `text-dim` is now primarily used for icons that have hover states and decorative borders
 
 ### Out of Scope (MVP)
 
