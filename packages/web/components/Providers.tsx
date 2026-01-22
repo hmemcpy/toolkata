@@ -2,6 +2,7 @@
 
 import { DirectionProvider } from "../contexts/DirectionContext"
 import { TerminalProvider } from "../contexts/TerminalContext"
+import { MobileBottomSheet } from "./ui/MobileBottomSheet"
 import { TerminalSidebar } from "./ui/TerminalSidebar"
 import { TerminalToggle } from "./ui/TerminalToggle"
 import type { ReactNode } from "react"
@@ -34,7 +35,8 @@ export interface ProvidersProps {
  * - TerminalProvider: For terminal sidebar state and command execution
  *
  * Also renders:
- * - TerminalSidebar: Desktop sidebar component (fixed overlay)
+ * - TerminalSidebar: Desktop sidebar component (fixed overlay, lg+)
+ * - MobileBottomSheet: Mobile bottom sheet component (fixed overlay, <lg)
  * - TerminalToggle: FAB button to toggle terminal
  *
  * Why render sidebar/toggle here?
@@ -67,6 +69,7 @@ export function Providers({ toolPair, children }: ProvidersProps): ReactNode {
     <DirectionProvider toolPair={toolPair}>
       <TerminalProvider toolPair={toolPair}>
         {children}
+        <MobileBottomSheet toolPair={toolPair} />
         <TerminalSidebar toolPair={toolPair} />
         <TerminalToggle />
       </TerminalProvider>
