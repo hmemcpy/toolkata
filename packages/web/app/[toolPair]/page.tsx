@@ -1,7 +1,6 @@
 import { Header } from "../../components/ui/Header"
 import { Footer } from "../../components/ui/Footer"
-import { StepList } from "../../components/ui/StepList"
-import { ProgressBar } from "../../components/ui/ProgressBar"
+import { OverviewPageClientWrapper } from "../../components/ui/OverviewPageClientWrapper"
 import { getPairing, isValidPairingSlug } from "../../content/pairings"
 import type { StepMeta } from "../../services/content"
 import { notFound } from "next/navigation"
@@ -44,10 +43,17 @@ export async function generateMetadata(props: { readonly params: Promise<{ reado
  * Shows:
  * - "Why {tool}?" introduction section
  * - Key differences callout box
- * - StepList with all steps grouped by section
- * - Progress summary sidebar (desktop) / section (mobile)
+ * - StepList with all steps grouped by section (with progress from localStorage)
+ * - Progress summary sidebar (desktop) / section (mobile) (with continue button)
  * - Link to cheat sheet
- * - "Continue Step N →" button if has progress
+ *
+ * Progress features:
+ * - Current step highlighted in StepList
+ * - Completed steps show with checkmark
+ * - "Continue Step N →" button if progress exists
+ * - "Start Learning →" button if no progress
+ * - "Reset Progress" button to clear progress
+ * - Time remaining estimate
  *
  * @param props - Props containing the dynamic route params.
  */
@@ -100,11 +106,6 @@ export default async function ComparisonOverviewPage(
     [12, "~5 min"],
   ])
 
-  // TODO: Load progress from localStorage via client component
-  // For now, these are placeholder values
-  const currentStep = 1
-  const completedSteps = new Set<number>()
-
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
       <Header />
@@ -147,8 +148,8 @@ export default async function ComparisonOverviewPage(
 
         {/* Main content with progress sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left column: Introduction + Steps */}
-          <div className="lg:col-span-2 space-y-12">
+          {/* Left column: Introduction */}
+          <div className="lg:col-span-3 space-y-12">
             {/* Why {tool}? Section */}
             <section>
               <h2 className="mb-4 text-2xl font-bold font-mono text-[var(--color-text)]">
@@ -185,72 +186,15 @@ export default async function ComparisonOverviewPage(
                 </ul>
               </div>
             </section>
-
-            {/* Steps List */}
-            <section>
-              <StepList
-                toolPair={toolPair}
-                steps={steps}
-                currentStep={currentStep}
-                completedSteps={completedSteps}
-                estimatedTimes={estimatedTimes}
-              />
-            </section>
           </div>
 
-          {/* Right column: Progress summary */}
-          <aside className="lg:col-span-1">
-            <div className="sticky top-8 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-              <h3 className="mb-4 text-sm font-mono font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
-                Your Progress
-              </h3>
-
-              <div className="mb-6">
-                <ProgressBar current={completedSteps.size} total={pairing.steps} />
-              </div>
-
-              {/* Time remaining estimate */}
-              {completedSteps.size > 0 && completedSteps.size < pairing.steps && (
-                <div className="mb-6 text-sm text-[var(--color-text-muted)]">
-                  {(() => {
-                    const remainingSteps = pairing.steps - completedSteps.size
-                    const avgTimePerStep = 3 // minutes
-                    const remainingMins = remainingSteps * avgTimePerStep
-                    return `~${remainingMins} min remaining`
-                  })()}
-                </div>
-              )}
-
-              {/* Continue button or Start button */}
-              {completedSteps.size > 0 ? (
-                <Link
-                  href={`/${toolPair}/${currentStep}`}
-                  className="block w-full text-center px-4 py-3 text-sm font-mono text-[var(--color-bg)] bg-[var(--color-accent)] rounded-md hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-all duration-[var(--transition-fast)]"
-                >
-                  Continue Step {currentStep} →
-                </Link>
-              ) : (
-                <Link
-                  href={`/${toolPair}/1`}
-                  className="block w-full text-center px-4 py-3 text-sm font-mono text-[var(--color-bg)] bg-[var(--color-accent)] rounded-md hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-all duration-[var(--transition-fast)]"
-                >
-                  Start Learning →
-                </Link>
-              )}
-
-              {/* Divider */}
-              <div className="my-6 border-t border-[var(--color-border)]" />
-
-              {/* Reset progress option */}
-              {/* TODO: Wire up to localStorage in a client component */}
-              <button
-                type="button"
-                className="w-full text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
-              >
-                Reset Progress
-              </button>
-            </div>
-          </aside>
+          {/* Client component wrapper for steps and progress */}
+          <OverviewPageClientWrapper
+            toolPair={toolPair}
+            totalSteps={pairing.steps}
+            steps={steps}
+            estimatedTimes={estimatedTimes}
+          />
         </div>
       </main>
 

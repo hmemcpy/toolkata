@@ -334,10 +334,12 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Location: `packages/web/components/ui/ComparisonCardWrapper.tsx` (client wrapper)
   - Note: Creates client component wrapper that hydrates from localStorage via useStepProgress hook
 
-- [ ] **6.5** Add "Continue where you left off" functionality
+- [x] **6.5** Add "Continue where you left off" functionality
   - On overview page, highlight current step in StepList
   - "Continue Step N →" primary CTA if progress exists
   - Show completed/total count in header
+  - Location: `packages/web/components/ui/OverviewPageClientWrapper.tsx`
+  - Note: Client component uses useStepProgress hook to hydrate from localStorage, passes currentStep/completedSteps to StepList
 
 ---
 
