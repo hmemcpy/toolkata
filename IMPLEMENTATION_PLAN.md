@@ -1,13 +1,13 @@
 # Implementation Plan: toolkata
 
-> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1-13.2.2 complete
+> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1-13.2.3 complete
 > **Validation**: `bun run typecheck`, `bun run lint`, `bun run build`, Playwright tests
 > **Priority Legend**: P0 = Blocking, P1 = Core MVP, P2 = Polish/Enhancement
-> **Last Updated**: 2026-01-22 (13.2.2 StepProgress slot complete. Next: 13.2.3 StepProgressWithDirection wrapper)
+> **Last Updated**: 2026-01-22 (13.2.3 StepProgressWithDirection wrapper complete. Next: 13.3.1 SideBySide isReversed prop)
 
 ### Current Priority: Phase 13 (Bidirectional Comparison)
 
-**Recommended starting point**: Task 13.2.2 (DirectionToggle slot in StepProgress) - depends on completed 13.2.1 DirectionToggle component
+**Recommended starting point**: Task 13.3.1 (SideBySide isReversed prop) - depends on completed 13.2.3 StepProgressWithDirection wrapper
 
 ### Phase 12 Remaining Items
 
@@ -18,20 +18,16 @@ Phase 12 Playwright tests are written but some need manual verification:
 
 ### Immediate Next Tasks (in order)
 
-1. **13.2.1** Create `DirectionToggle` component at `packages/web/components/ui/DirectionToggle.tsx`
-   - Visual: `[git ↔ jj]` terminal bracket style
-   - `role="switch"`, `aria-checked`, keyboard accessible
-   - ~60 lines estimated
+1. **13.3.1** Update `SideBySide.tsx` with direction support
+   - Add `isReversed?: boolean` prop (default: `false`)
+   - Swap visual column order, colors, and labels when reversed
+   - ~20 lines estimated
 
-2. **13.2.2** Add DirectionToggle slot to `StepProgress.tsx`
-   - Optional `directionToggle?: React.ReactNode` prop
-   - ~5 lines estimated
+2. **13.3.2** Create `SideBySideWithDirection.tsx` wrapper
+   - Client component wrapper consuming useDirectionContext
+   - ~30 lines estimated
 
-3. **13.2.3** Create `StepProgressWithDirection.tsx` wrapper
-   - Client component wrapper with DirectionProvider
-   - ~40 lines estimated
-
-4. **13.4.1** Extract glossary data to `packages/web/content/glossary/jj-git.ts`
+3. **13.4.1** Extract glossary data to `packages/web/content/glossary/jj-git.ts`
    - Move 42 entries from cheatsheet/page.tsx lines 33-252
    - Add search/filter helpers
    - ~300 lines (mostly data)
@@ -973,7 +969,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Keep `StepProgress` as presentational (receives slot, doesn't manage state)
   - Location: `packages/web/components/ui/StepProgress.tsx`
 
-- [ ] **13.2.3** Create `StepProgressWithDirection.tsx` wrapper
+- [x] **13.2.3** Create `StepProgressWithDirection.tsx` wrapper
   - Client component with `"use client"` directive
   - Wraps `StepProgress` with `DirectionProvider`
   - Renders `DirectionToggle` and passes to slot
