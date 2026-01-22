@@ -266,7 +266,7 @@ Two related efforts:
 > **WHY**: Allow MDX content to trigger commands in sidebar terminal.
 > **Spec**: `specs/terminal-sidebar.md` section R3
 
-- [ ] **4.1** Create `TryIt.tsx` at `packages/web/components/ui/TryIt.tsx`
+- [x] **4.1** Create `TryIt.tsx` at `packages/web/components/ui/TryIt.tsx`
   - Props: `command: string`, `description?: string`
   - Display command in monospace code block (same style as CodeBlock)
   - Green "Run" button (min 44px height, min 80px width)
@@ -277,12 +277,14 @@ Two related efforts:
   - Calls `executeCommand()` from `useTerminalContext()`
   - If terminal not started, executeCommand handles auto-start
   - **MUST** handle all readonly props, explicit return types
+  - **Completed 2026-01-22**
 
-- [ ] **4.2** Register TryIt in MDX components
+- [x] **4.2** Register TryIt in MDX components
   - Location: `packages/web/components/mdx/MDXComponents.tsx`
   - Add `TryIt` to mdxComponents object
   - Import from `../ui/TryIt`
   - Test in step MDX file with `<TryIt command="jj status" />`
+  - **Completed 2026-01-22**
 
 ---
 

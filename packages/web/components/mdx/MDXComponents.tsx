@@ -18,6 +18,7 @@ import type { BundledLanguage } from "shiki"
 import { Callout } from "../ui/Callout"
 import { CodeBlock } from "../ui/CodeBlock"
 import { SideBySideWithDirection } from "../ui/SideBySideWithDirection"
+import { TryIt } from "../ui/TryIt"
 
 /**
  * Props for code elements in MDX.
@@ -88,8 +89,7 @@ export const mdxComponents = {
   code: Code,
   SideBySide: SideBySideWithDirection,
   Callout,
-  // TODO: Implement InteractiveTerminal component (task 8.2)
-  // Terminal: InteractiveTerminal,
+  TryIt,
 }
 
 /**
