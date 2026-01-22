@@ -419,9 +419,9 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 
 > **WHY**: This is the hands-on learning experience. Depends on Phase 7 (sandbox API).
 
-- [ ] **8.1** Install xterm.js dependencies in packages/web
+- [x] **8.1** Install xterm.js dependencies in packages/web
   - `@xterm/xterm`, `@xterm/addon-fit`, `@xterm/addon-web-links`
-  - CSS import for xterm.js base styles
+  - CSS import for xterm.js base styles (will be lazy-loaded with component in 8.9)
   - Location: `packages/web/package.json`
 
 - [ ] **8.2** Create InteractiveTerminal component
