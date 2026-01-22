@@ -213,12 +213,12 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Location: `packages/web/components/ui/ProgressBar.tsx`
   - Note: Project uses `components/` not `src/components/` (app directory structure)
 
-- [ ] **4.5** Build ComparisonCard component
+- [x] **4.5** Build ComparisonCard component
   - For home page tool pairing grid
   - Shows: tool names ("jj ← git"), description, ProgressBar, step count
   - States: default, hover (border highlight), has-progress, coming-soon (muted)
   - Touch target >= 44px, keyboard accessible
-  - Location: `packages/web/src/components/ui/ComparisonCard.tsx`
+  - Location: `packages/web/components/ui/ComparisonCard.tsx`
 
 - [ ] **4.6** Build StepProgress header component
   - Shows: back link ("← Overview"), "Step N of M: Title", next link
