@@ -327,10 +327,12 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Visual indicator for current step
   - Location: `packages/web/components/ui/StepProgressWrapper.tsx`, `packages/web/components/ui/NavigationWrapper.tsx`
 
-- [ ] **6.4** Add progress display to ComparisonCard
+- [x] **6.4** Add progress display to ComparisonCard
   - Show ProgressBar on home page cards
   - "Continue from Step N" button if progress exists
   - "Start Learning →" if no progress
+  - Location: `packages/web/components/ui/ComparisonCardWrapper.tsx` (client wrapper)
+  - Note: Creates client component wrapper that hydrates from localStorage via useStepProgress hook
 
 - [ ] **6.5** Add "Continue where you left off" functionality
   - On overview page, highlight current step in StepList

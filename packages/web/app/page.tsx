@@ -1,6 +1,6 @@
 import { Header } from "../components/ui/Header"
 import { Footer } from "../components/ui/Footer"
-import { ComparisonCard } from "../components/ui/ComparisonCard"
+import { ComparisonCardWrapper } from "../components/ui/ComparisonCardWrapper"
 import { getPairingsByCategory } from "../content/pairings"
 
 /**
@@ -37,7 +37,7 @@ export default function HomePage() {
 
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {pairings.map((pairing) => (
-                  <ComparisonCard key={pairing.slug} pairing={pairing} />
+                  <ComparisonCardWrapper key={pairing.slug} pairing={pairing} />
                 ))}
               </div>
             </div>
