@@ -12,6 +12,7 @@ export interface StepProgressProps {
   readonly showKeyboardHints?: boolean
   readonly isCompleted?: boolean
   readonly className?: string
+  readonly directionToggle?: React.ReactNode
 }
 
 export function StepProgress({
@@ -25,6 +26,7 @@ export function StepProgress({
   showKeyboardHints = true,
   isCompleted = false,
   className = "",
+  directionToggle,
 }: StepProgressProps): JSX.Element {
   return (
     <header className={`border-b border-[var(--color-border)] ${className}`}>
@@ -58,10 +60,13 @@ export function StepProgress({
           >
             {toolPair}
           </Link>
-          <h1 className="text-base font-mono font-semibold text-[var(--color-text)] text-center flex items-center gap-2">
-            {isCompleted && <span aria-label="Step completed">✓</span>}
-            {title}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-base font-mono font-semibold text-[var(--color-text)] text-center flex items-center gap-2">
+              {isCompleted && <span aria-label="Step completed">✓</span>}
+              {title}
+            </h1>
+            {directionToggle}
+          </div>
           <span className="text-xs font-mono text-[var(--color-text-muted)] text-center">
             Step {currentStep} of {totalSteps}
           </span>

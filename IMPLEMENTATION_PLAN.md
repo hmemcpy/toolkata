@@ -1,9 +1,9 @@
 # Implementation Plan: toolkata
 
-> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1-13.2.1 complete
+> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1-13.2.2 complete
 > **Validation**: `bun run typecheck`, `bun run lint`, `bun run build`, Playwright tests
 > **Priority Legend**: P0 = Blocking, P1 = Core MVP, P2 = Polish/Enhancement
-> **Last Updated**: 2026-01-22 (13.2.1 DirectionToggle complete. Next: 13.2.2 DirectionToggle slot in StepProgress)
+> **Last Updated**: 2026-01-22 (13.2.2 StepProgress slot complete. Next: 13.2.3 StepProgressWithDirection wrapper)
 
 ### Current Priority: Phase 13 (Bidirectional Comparison)
 
@@ -967,7 +967,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - 44px min height for touch target
   - Show `isLoading` state (prevent flash of default)
 
-- [ ] **13.2.2** Add DirectionToggle slot to `StepProgress.tsx`
+- [x] **13.2.2** Add DirectionToggle slot to `StepProgress.tsx`
   - Add optional `directionToggle?: React.ReactNode` prop
   - Render in center section next to title
   - Keep `StepProgress` as presentational (receives slot, doesn't manage state)
