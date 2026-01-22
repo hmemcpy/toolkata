@@ -241,11 +241,12 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Location: `packages/web/components/ui/StepList.tsx`
   - Note: Project uses `components/` not `src/components/` (app directory structure)
 
-- [ ] **4.9** Build CommandSuggestions component
+- [x] **4.9** Build CommandSuggestions component
   - Show suggested commands from MDX frontmatter
   - Click/tap to insert into terminal (callback prop)
   - Styled as clickable code blocks with hover state
-  - Location: `packages/web/src/components/ui/CommandSuggestions.tsx`
+  - Location: `packages/web/components/ui/CommandSuggestions.tsx`
+  - Note: Corrected location - project uses `components/` not `src/components/`
 
 ---
 
