@@ -833,7 +833,12 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 - `bun run typecheck` passes with zero errors
 - `bun run lint` passes with zero errors
 - `bun run build` completes successfully, generating 16 static pages (home, jj-git overview, 12 steps, cheatsheet)
-- Remaining tasks (12.4-12.8, 11.8-11.9) require manual browser testing
+- Remaining tasks (12.5-12.7) require manual browser testing (11.8-11.9 also require browser DevTools)
+
+**Sandbox API Dev Script Added (2026-01-22):**
+- Added `dev` script to `packages/sandbox-api/package.json` for running the sandbox API server
+- Added `typecheck` script for TypeScript validation
+- Now supports `bun run --cwd packages/sandbox-api dev` for local development
 
 ### Out of Scope (MVP)
 
