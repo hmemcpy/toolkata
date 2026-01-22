@@ -362,12 +362,13 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Location: `packages/sandbox-api/docker/Dockerfile`
   - Note: jj 0.37.0 requires Rust 2024 edition, which isn't supported by Debian's cargo. Using rustup for modern toolchain.
 
-- [ ] **7.3** Create ContainerService with Effect-TS
+- [x] **7.3** Create ContainerService with Effect-TS
   - `create(toolPair)` → `Effect<Container, ContainerError>`
   - `destroy(containerId)` → `Effect<void, ContainerError>`
   - Uses dockerode for Docker API
   - Security flags: `--network=none`, `--read-only`, `--cap-drop=ALL`, memory 128MB, CPU 0.5
   - Location: `packages/sandbox-api/src/services/container.ts`
+  - Note: Also added `get(containerId)` method for retrieving container info
 
 - [ ] **7.4** Create SessionService
   - Session states: `IDLE` | `STARTING` | `RUNNING` | `DESTROYING`
