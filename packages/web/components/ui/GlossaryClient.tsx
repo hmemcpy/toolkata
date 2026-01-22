@@ -110,8 +110,7 @@ export function GlossaryClient({
   entries,
   toolPair,
 }: GlossaryClientProps): React.JSX.Element {
-  const { isReversed, isLoading, fromTool, toTool } =
-    useDirectionContext()
+  const { isReversed, fromTool, toTool } = useDirectionContext()
 
   const {
     query,
@@ -125,27 +124,8 @@ export function GlossaryClient({
   const categories = getCategories()
   const _pairing = getPairing(toolPair)
 
-  // Don't render direction-dependent UI during hydration
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center">
-        <p className="text-[var(--color-text-muted)]">Loading...</p>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-[var(--color-bg)]">
-      {/* Header with title and direction toggle */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold font-mono text-[var(--color-text)]">
-          Command Glossary
-        </h1>
-        <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-          Search and filter commands for {fromTool} {"\u2192"} {toTool}
-        </p>
-      </div>
-
+    <div>
       {/* Search input */}
       <div className="mb-6">
         <label htmlFor="glossary-search" className="sr-only">

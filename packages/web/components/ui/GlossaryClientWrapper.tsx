@@ -1,76 +1,51 @@
 /**
  * GlossaryClientWrapper - Client component wrapper for the glossary page.
  *
- * This wrapper provides:
- * - Header with DirectionToggle
- * - GlossaryClient with interactive search and filtering
- *
- * DirectionProvider is now provided by the [toolPair]/layout.tsx, so this
- * component can directly use useDirectionContext() for direction state.
- *
- * @example
- * ```tsx
- * <GlossaryClientWrapper
- *   entries={jjGitGlossary}
- *   toolPair="jj-git"
- *   pairingFrom="git"
- *   pairingTo="jj"
- * />
- * ```
+ * Renders tagline with direction toggle, then the interactive glossary.
+ * DirectionProvider is provided by [toolPair]/layout.tsx.
  */
 
 "use client"
 
 import type { GlossaryEntry } from "../../content/glossary/jj-git"
+import { useDirectionContext } from "../../contexts/DirectionContext"
 import { DirectionToggle } from "./DirectionToggle"
 import { GlossaryClient } from "./GlossaryClient"
 
 export interface GlossaryClientWrapperProps {
-  /**
-   * The glossary entries to display.
-   */
   readonly entries: readonly GlossaryEntry[]
-
-  /**
-   * The tool pairing slug (e.g., "jj-git").
-   */
   readonly toolPair: string
-
-  /**
-   * The "from" tool name (e.g., "git") for display.
-   */
   readonly pairingFrom: string
-
-  /**
-   * The "to" tool name (e.g., "jj") for display.
-   */
   readonly pairingTo: string
 }
 
-/**
- * GlossaryClientWrapper component.
- *
- * Client component that wraps the glossary with:
- * - DirectionToggle in the header
- * - GlossaryClient for interactive search and filtering
- *
- * Note: DirectionProvider is now provided by [toolPair]/layout.tsx,
- * so useDirectionContext() can be used directly in child components.
- */
 export function GlossaryClientWrapper({
   entries,
   toolPair,
-  pairingFrom: _pairingFrom,
-  pairingTo: _pairingTo,
 }: GlossaryClientWrapperProps) {
+  const { isLoading, fromTool, toTool } = useDirectionContext()
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-[var(--color-text-muted)]">Loading...</p>
+      </div>
+    )
+  }
+
   return (
     <>
-      {/* Header with direction toggle */}
-      <div className="mb-8 flex items-center justify-end">
+      {/* Tagline */}
+      <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+        Search and filter commands for {fromTool} {"\u2192"} {toTool}
+      </p>
+
+      {/* Direction toggle */}
+      <div className="mt-4 mb-8">
         <DirectionToggle />
       </div>
 
-      {/* Glossary client with search and filtering */}
+      {/* Interactive glossary */}
       <GlossaryClient entries={entries} toolPair={toolPair} />
     </>
   )

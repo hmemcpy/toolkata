@@ -98,28 +98,20 @@ export default async function GlossaryPage({
       <Header />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Header with back link and title */}
-        <div className="mb-8">
-          <div className="mb-6">
-            <a
-              href={`/${toolPair}`}
-              className="inline-flex items-center text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
-            >
-              ← {pairing.to.name} ← {pairing.from.name}
-            </a>
-          </div>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold font-mono text-[var(--color-text)]">
-                Command Glossary
-              </h1>
-              <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-                Searchable command reference for{" "}
-                {pairing.to.name} if you already know {pairing.from.name}
-              </p>
-            </div>
-          </div>
+        {/* Back link */}
+        <div className="mb-6">
+          <a
+            href={`/${toolPair}`}
+            className="inline-flex items-center text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
+          >
+            ← {pairing.to.name} ← {pairing.from.name}
+          </a>
         </div>
+
+        {/* Title */}
+        <h1 className="text-2xl font-bold font-mono text-[var(--color-text)]">
+          Command Glossary
+        </h1>
 
         {/* Client wrapper for interactive glossary */}
         <GlossaryClientWrapper

@@ -68,8 +68,8 @@ export function DirectionToggle() {
         className={[
           "font-mono",
           isReversed
-            ? "text-[var(--color-accent-alt)]"
-            : "text-[var(--color-text-muted)]",
+            ? "text-[var(--color-accent)]"
+            : "text-[var(--color-accent-alt)]",
         ].join(" ")}
       >
         {fromTool}
@@ -79,7 +79,7 @@ export function DirectionToggle() {
         className={[
           "font-mono",
           isReversed
-            ? "text-[var(--color-text-muted)]"
+            ? "text-[var(--color-accent-alt)]"
             : "text-[var(--color-accent)]",
         ].join(" ")}
       >
