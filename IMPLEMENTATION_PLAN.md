@@ -252,14 +252,15 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 
 > **WHY**: These are the actual routes users visit. Requires components from Phase 4.
 
-- [ ] **5.1** Create home page `packages/web/src/app/page.tsx`
+- [x] **5.1** Create home page `packages/web/app/page.tsx`
   - Hero section: "Learn X if you already know Y"
   - Subtext: "Hands-on tutorials for developers switching tools. No fluff. Just the commands you need."
   - Comparison grid using ComparisonCard
   - Category groupings (Version Control, Package Management)
   - Responsive: 3 columns desktop, 2 tablet, 1 mobile
+  - Note: Location uses `app/` directory structure (not `src/app/`)
 
-- [ ] **5.2** Create comparison overview page `packages/web/src/app/[toolPair]/page.tsx`
+- [ ] **5.2** Create comparison overview page `packages/web/app/[toolPair]/page.tsx`
   - "Why jj?" introduction section (from index.mdx)
   - Key differences callout box
   - StepList with all 12 steps grouped by section
@@ -267,14 +268,14 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Link to cheat sheet
   - "Continue Step N →" button if has progress
 
-- [ ] **5.3** Create cheat sheet page `packages/web/src/app/[toolPair]/cheatsheet/page.tsx`
+- [ ] **5.3** Create cheat sheet page `packages/web/app/[toolPair]/cheatsheet/page.tsx`
   - Two-column command reference table (git → jj)
   - Sections: Basics, Commits, History, Branches, Remotes, Undo
   - Copy button per row
   - Print-friendly styling (@media print)
   - Print button in header
 
-- [ ] **5.4** Create step page `packages/web/src/app/[toolPair]/[step]/page.tsx`
+- [ ] **5.4** Create step page `packages/web/app/[toolPair]/[step]/page.tsx`
   - MDX content rendering with MDXComponents
   - StepProgress header
   - Navigation footer
