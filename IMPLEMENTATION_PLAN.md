@@ -273,7 +273,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Note: Uses static step metadata for now; TODO: load from ContentService when MDX content exists
   - Note: Progress tracking uses placeholder values; TODO: wire to localStorage via client component
 
-- [ ] **5.3** Create cheat sheet page `packages/web/app/[toolPair]/cheatsheet/page.tsx`
+- [x] **5.3** Create cheat sheet page `packages/web/app/[toolPair]/cheatsheet/page.tsx`
   - Two-column command reference table (git → jj)
   - Sections: Basics, Commits, History, Branches, Remotes, Undo
   - Copy button per row
