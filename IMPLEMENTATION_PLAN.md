@@ -3,11 +3,11 @@
 > **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1-13.3.3, 13.4.1-13.4.2 complete
 > **Validation**: `bun run typecheck`, `bun run lint`, `bun run build`, Playwright tests
 > **Priority Legend**: P0 = Blocking, P1 = Core MVP, P2 = Polish/Enhancement
-> **Last Updated**: 2026-01-22 (13.4.2 Cheatsheet updated to use shared glossary data. Next: 13.5.1 Create glossary page)
+> **Last Updated**: 2026-01-22 (13.5.1-13.5.3 Glossary page, client, and hook created. Next: 13.5.4 Add glossary link to overview page)
 
 ### Current Priority: Phase 13 (Bidirectional Comparison)
 
-**Recommended starting point**: Task 13.5.1 (Create glossary page) - depends on completed 13.4 glossary data module
+**Recommended starting point**: Task 13.5.4 (Add glossary link to overview page) - glossary page now exists
 
 ### Phase 12 Remaining Items
 
@@ -1029,14 +1029,14 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 
 > Users need searchable, filterable command reference. Depends on 13.1, 13.4.
 
-- [ ] **13.5.1** Create glossary page at `packages/web/app/[toolPair]/glossary/page.tsx`
+- [x] **13.5.1** Create glossary page at `packages/web/app/[toolPair]/glossary/page.tsx`
   - Server component shell for static generation
   - `generateStaticParams` for known pairings (`["jj-git"]`)
   - `generateMetadata` for SEO: title, description, OG tags
   - Load glossary data and pass to `GlossaryClient`
   - Route: `/jj-git/glossary`
 
-- [ ] **13.5.2** Create `GlossaryClient.tsx` at `packages/web/components/ui/GlossaryClient.tsx`
+- [x] **13.5.2** Create `GlossaryClient.tsx` at `packages/web/components/ui/GlossaryClient.tsx`
   - Client component with `"use client"`
   - Props: `entries: GlossaryEntry[]`, `toolPair: string`
   - State: search query, selected category (default: "All")
@@ -1049,7 +1049,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
     - Direction toggle in header
   - Responsive: horizontal scroll on mobile for table
 
-- [ ] **13.5.3** Create `useGlossarySearch` hook at `packages/web/hooks/useGlossarySearch.ts`
+- [x] **13.5.3** Create `useGlossarySearch` hook at `packages/web/hooks/useGlossarySearch.ts`
   - Parameters: `entries: GlossaryEntry[]`
   - State: `query: string`, `category: GlossaryCategory | "All"`
   - Returns:
