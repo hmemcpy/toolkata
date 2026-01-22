@@ -1,13 +1,13 @@
 # Implementation Plan: toolkata
 
-> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1-13.1.2 complete
+> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1-13.2.1 complete
 > **Validation**: `bun run typecheck`, `bun run lint`, `bun run build`, Playwright tests
 > **Priority Legend**: P0 = Blocking, P1 = Core MVP, P2 = Polish/Enhancement
-> **Last Updated**: 2026-01-22 (13.1.3 DirectionContext complete. Next: 13.2.1 DirectionToggle component)
+> **Last Updated**: 2026-01-22 (13.2.1 DirectionToggle complete. Next: 13.2.2 DirectionToggle slot in StepProgress)
 
 ### Current Priority: Phase 13 (Bidirectional Comparison)
 
-**Recommended starting point**: Task 13.2.1 (DirectionToggle component) - depends on completed 13.1.1-13.1.3 state management
+**Recommended starting point**: Task 13.2.2 (DirectionToggle slot in StepProgress) - depends on completed 13.2.1 DirectionToggle component
 
 ### Phase 12 Remaining Items
 
@@ -955,7 +955,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 
 > Users need visible control to change direction. Depends on 13.1.
 
-- [ ] **13.2.1** Create `DirectionToggle` component at `packages/web/components/ui/DirectionToggle.tsx`
+- [x] **13.2.1** Create `DirectionToggle` component at `packages/web/components/ui/DirectionToggle.tsx`
   - Visual: `[git ↔ jj]` terminal bracket style (matches existing UI patterns)
   - Colors: `--color-accent-alt` (#f97316) for git side, `--color-accent` (#22c55e) for jj side
   - Click handler calls `toggle()` from `useDirectionContext()`
