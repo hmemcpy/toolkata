@@ -595,10 +595,11 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Can be used for uptime monitoring
   - Note: Added SessionService.getStats() method and updated health endpoint to include active container count
 
-- [ ] **10.6** Configure environment variables
+- [x] **10.6** Configure environment variables
   - Frontend: `NEXT_PUBLIC_SANDBOX_API_URL=https://sandbox.toolkata.dev`
   - Sandbox API: `DOCKER_HOST`, `PORT`, `FRONTEND_ORIGIN`
   - Document in `.env.example` files
+  - Note: Created .env.example files for both packages/web and packages/sandbox-api
 
 ---
 
