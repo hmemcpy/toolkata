@@ -2,6 +2,23 @@
 
 You are in PLANNING mode. Analyze specifications against existing code and generate a prioritized implementation plan.
 
+## CRITICAL: Tutor Guidelines
+
+**This project uses local tutor packages from `~/git/tutor` via `bun link`.**
+
+Before planning ANY implementation, you MUST read:
+- `~/git/tutor/AGENTS.md` - The authoritative source for all coding standards
+
+All planned code must strictly follow these rules:
+- No `any`, no `!` assertions, no `as` assertions
+- Handle all index access (returns `T | undefined`)
+- Explicit return types on exported functions
+- `readonly` by default for all properties and parameters
+- Use `import * as Option from "effect/Option"` (not `import { Option }`)
+- Use `for...of` (not `forEach`)
+
+---
+
 ## Phase 0: Orient
 
 ### 0a. Study specifications
@@ -9,18 +26,18 @@ Read all files in `specs/` directory using parallel subagents.
 
 ### 0b. Study existing implementation
 Use parallel subagents to analyze relevant source directories:
-- `packages/web/core/` - State management (ProgressStore pattern)
-- `packages/web/hooks/` - React hooks (useStepProgress pattern)
-- `packages/web/components/ui/` - UI components
-- `packages/web/app/` - Pages and routes
-- `packages/web/content/` - Content and data
-- `packages/sandbox-api/src/` - Sandbox API services
+- `packages/web/contexts/` - existing context patterns (DirectionContext)
+- `packages/web/components/ui/` - existing UI components, especially InteractiveTerminal.tsx
+- `packages/web/components/Providers.tsx` - how providers are composed
+- `packages/web/app/[toolPair]/layout.tsx` - current layout structure
+- `packages/web/hooks/useKeyboardNavigation.ts` - keyboard shortcut patterns
+- `packages/web/components/ui/StepPageClientWrapper.tsx` - current terminal integration
 
 ### 0c. Study the current plan
 Read `IMPLEMENTATION_PLAN.md` if it exists.
 
-### 0d. Study project guidelines
-Read `AGENTS.md` for project conventions, skills, and development guidelines.
+### 0d. Study tutor guidelines
+Read `~/git/tutor/AGENTS.md` for coding standards that MUST be followed.
 
 ## Phase 1: Gap Analysis
 
@@ -31,6 +48,13 @@ Compare specs against implementation:
 
 **CRITICAL**: Don't assume something isn't implemented. Search the codebase first.
 
+Key questions to answer:
+1. Does TerminalContext exist? What state does it manage?
+2. Does TerminalSidebar exist? What UI does it provide?
+3. Does TryIt MDX component exist? Is it registered?
+4. Is the terminal currently embedded in step pages or in a sidebar?
+5. Are keyboard shortcuts for terminal toggle implemented?
+
 ## Phase 2: Generate Plan
 
 Update `IMPLEMENTATION_PLAN.md` with:
@@ -38,12 +62,9 @@ Update `IMPLEMENTATION_PLAN.md` with:
 - Clear descriptions with file locations
 - Dependencies noted where relevant
 - Discoveries from gap analysis
+- Ensure all tasks follow tutor AGENTS.md guidelines
 
 Capture the WHY, not just the WHAT.
-
-## Phase 3: Exit
-
-After updating the plan, exit.
 
 ## Guardrails
 
@@ -51,3 +72,4 @@ After updating the plan, exit.
 1000. Use up to 10 parallel subagents for analysis
 1001. Each task must be completable in ONE loop iteration
 1002. Ultrathink before finalizing priorities
+1003. **All planned code MUST follow ~/git/tutor/AGENTS.md**
