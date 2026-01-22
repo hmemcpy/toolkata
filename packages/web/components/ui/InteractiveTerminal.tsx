@@ -258,10 +258,10 @@ function StaticModeContent({ toolPair, onTryInteractive }: StaticModeContentProp
           Interactive sandbox unavailable. Copy commands to try locally.
         </p>
         <a
-          href={`/${toolPair}/cheatsheet`}
+          href={`/${toolPair}/diff`}
           className="text-sm text-[var(--color-accent)] transition-colors hover:text-[var(--color-accent-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
         >
-          View cheat sheet →
+          View diff →
         </a>
       </div>
 

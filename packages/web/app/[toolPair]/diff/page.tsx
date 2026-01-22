@@ -1,14 +1,13 @@
 /**
- * Glossary page - Searchable command reference for tool comparisons.
+ * Diff page - Searchable command comparison for tool pairings.
  *
  * Features:
  * - Server component for static generation and SEO
  * - generateStaticParams for known pairings
  * - generateMetadata for SEO
- * - Loads glossary data and passes to GlossaryClientWrapper
- * - Route: /{toolPair}/glossary (e.g., /jj-git/glossary)
+ * - Route: /{toolPair}/diff (e.g., /jj-git/diff)
  *
- * This page provides a searchable, filterable command reference
+ * This page provides a searchable, filterable command comparison
  * that respects the user's direction preference (git→jj or jj→git).
  */
 
@@ -22,19 +21,13 @@ import { jjGitGlossary } from "../../../content/glossary/jj-git"
 
 /**
  * Generate static params for all known tool pairings.
- *
- * This enables static generation at build time for all glossary pages.
  */
 export function generateStaticParams(): Array<{ readonly toolPair: string }> {
-  // For MVP, only jj-git is published
-  // Future: fetch from pairing registry
   return [{ toolPair: "jj-git" }]
 }
 
 /**
  * Generate metadata for SEO.
- *
- * Dynamic title and description based on tool pairing.
  */
 export async function generateMetadata({
   params,
@@ -46,44 +39,38 @@ export async function generateMetadata({
 
   if (!pairing) {
     return {
-      title: "Glossary Not Found",
+      title: "Diff Not Found",
     }
   }
 
   return {
-    title: `Command Glossary: ${pairing.to.name} ← ${pairing.from.name}`,
-    description: `Searchable command reference for ${pairing.to.name} if you already know ${pairing.from.name}. Find commands, compare syntax, and copy examples.`,
+    title: `Diff: ${pairing.to.name} ← ${pairing.from.name}`,
+    description: `Command comparison for ${pairing.to.name} vs ${pairing.from.name}. Find equivalent commands and compare syntax.`,
     openGraph: {
-      title: `${pairing.to.name} ← ${pairing.from.name} Command Glossary`,
-      description: `Searchable command reference for learning ${pairing.to.name} from ${pairing.from.name}`,
+      title: `${pairing.to.name} ← ${pairing.from.name} Command Diff`,
+      description: `Compare commands between ${pairing.to.name} and ${pairing.from.name}`,
       type: "website",
     },
     twitter: {
       card: "summary",
-      title: `${pairing.to.name} ← ${pairing.from.name} Command Glossary`,
-      description: `Searchable command reference for learning ${pairing.to.name} from ${pairing.from.name}`,
+      title: `${pairing.to.name} ← ${pairing.from.name} Command Diff`,
+      description: `Compare commands between ${pairing.to.name} and ${pairing.from.name}`,
     },
   }
 }
 
 /**
- * Glossary page component.
+ * Diff page component.
  *
- * Displays a searchable, filterable command reference table.
- * Users can toggle between:
- * - Default: {fromTool} → {toTool} (e.g., git → jj)
- * - Reversed: {toTool} → {fromTool} (e.g., jj → git)
- *
- * The search, filters, and table columns all respect the direction preference.
+ * Displays a searchable, filterable command comparison table.
  */
-export default async function GlossaryPage({
+export default async function DiffPage({
   params,
 }: {
   readonly params: Promise<{ readonly toolPair: string }>
 }) {
   const { toolPair } = await params
 
-  // Validate the tool pair slug
   if (!isValidPairingSlug(toolPair)) {
     notFound()
   }
@@ -109,9 +96,9 @@ export default async function GlossaryPage({
         </div>
 
         {/* Title */}
-        <h1 className="text-2xl font-bold font-mono text-[var(--color-text)]">Command Glossary</h1>
+        <h1 className="text-2xl font-bold font-mono text-[var(--color-text)]">Diff</h1>
 
-        {/* Client wrapper for interactive glossary */}
+        {/* Client wrapper for interactive diff */}
         <GlossaryClientWrapper
           entries={jjGitGlossary}
           toolPair={toolPair}
@@ -119,15 +106,6 @@ export default async function GlossaryPage({
           pairingTo={pairing.to.name}
         />
 
-        {/* Footer link to cheatsheet */}
-        <div className="mt-8 text-sm text-[var(--color-text-muted)]">
-          <a
-            href={`/${toolPair}/cheatsheet`}
-            className="hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
-          >
-            [View printable cheat sheet →]
-          </a>
-        </div>
       </main>
 
       <Footer />
