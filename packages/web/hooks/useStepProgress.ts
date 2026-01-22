@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import type { ToolPairProgress } from "../core/ProgressStore"
 import { getProgressStore } from "../core/ProgressStore"
 
@@ -44,24 +44,33 @@ export function useStepProgress(toolPair: string, _totalSteps?: number): StepPro
   }, [toolPair, store])
 
   // Memoized callbacks
-  const markComplete = (step: number) => {
-    store.markComplete(toolPair, step)
-    setProgress(store.getProgress(toolPair))
-  }
+  const markComplete = useCallback(
+    (step: number) => {
+      store.markComplete(toolPair, step)
+      setProgress(store.getProgress(toolPair))
+    },
+    [store, toolPair],
+  )
 
-  const setCurrentStep = (step: number) => {
-    store.setCurrentStep(toolPair, step)
-    setProgress(store.getProgress(toolPair))
-  }
+  const setCurrentStep = useCallback(
+    (step: number) => {
+      store.setCurrentStep(toolPair, step)
+      setProgress(store.getProgress(toolPair))
+    },
+    [store, toolPair],
+  )
 
-  const resetProgress = () => {
+  const resetProgress = useCallback(() => {
     store.resetProgress(toolPair)
     setProgress(undefined)
-  }
+  }, [store, toolPair])
 
-  const isStepComplete = (step: number) => {
-    return progress?.completedSteps.includes(step) ?? false
-  }
+  const isStepComplete = useCallback(
+    (step: number) => {
+      return progress?.completedSteps.includes(step) ?? false
+    },
+    [progress?.completedSteps],
+  )
 
   const completedCount = progress?.completedSteps.length ?? 0
   const currentStep = progress?.currentStep ?? 1
