@@ -142,7 +142,7 @@ export function GlossaryClient({
           Command Glossary
         </h1>
         <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-          Search and filter commands for {fromTool} \u2192 {toTool}
+          Search and filter commands for {fromTool} {"\u2192"} {toTool}
         </p>
       </div>
 
@@ -222,81 +222,55 @@ export function GlossaryClient({
       {/* Results table */}
       {filteredEntries.length > 0 && (
         <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
-          {/* Mobile: horizontal scroll */}
           <div className="overflow-x-auto">
             {/* Table header */}
-            <div className="grid grid-cols-12 gap-4 border-b border-[var(--color-border)] bg-[var(--color-bg)] px-6 py-3 min-w-[600px]">
+            <div className="grid grid-cols-2 gap-4 border-b border-[var(--color-border)] bg-[var(--color-bg)] px-6 py-3">
               <div
                 className={[
-                  "col-span-5 text-xs font-mono font-medium uppercase tracking-wide",
-                  isReversed
-                    ? "text-[var(--color-accent)] text-right"
-                    : "text-[var(--color-accent-alt)]",
+                  "text-xs font-mono font-medium uppercase tracking-wide",
+                  isReversed ? "text-[var(--color-accent)]" : "text-[var(--color-accent-alt)]",
                 ].join(" ")}
               >
                 {fromTool}
               </div>
-              <div className="col-span-1 text-center text-xs font-mono font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
-                \u2551
-              </div>
               <div
                 className={[
-                  "col-span-5 text-xs font-mono font-medium uppercase tracking-wide",
-                  isReversed
-                    ? "text-[var(--color-accent-alt)]"
-                    : "text-[var(--color-accent)]",
+                  "text-xs font-mono font-medium uppercase tracking-wide",
+                  isReversed ? "text-[var(--color-accent-alt)]" : "text-[var(--color-accent)]",
                 ].join(" ")}
               >
                 {toTool}
               </div>
-              <div className="col-span-1" />
             </div>
 
             {/* Command rows */}
             {filteredEntries.map((entry) => {
-              // When reversed, show toCommand on left (from position) and fromCommand on right (to position)
               const leftCommand = isReversed ? entry.toCommand : entry.fromCommand
               const rightCommand = isReversed ? entry.fromCommand : entry.toCommand
-              const leftColor = isReversed
-                ? "text-[var(--color-accent)]"
-                : "text-[var(--color-accent-alt)]"
-              const rightColor = isReversed
-                ? "text-[var(--color-accent-alt)]"
-                : "text-[var(--color-accent)]"
+              const leftColor = isReversed ? "text-[var(--color-accent)]" : "text-[var(--color-accent-alt)]"
+              const rightColor = isReversed ? "text-[var(--color-accent-alt)]" : "text-[var(--color-accent)]"
 
               return (
                 <div
                   key={entry.id}
-                  className="grid grid-cols-12 gap-4 border-b border-[var(--color-border)] px-6 py-3 last:border-b-0 hover:bg-[var(--color-surface-hover)] transition-colors duration-[var(--transition-fast)] min-w-[600px]"
+                  className="grid grid-cols-2 gap-4 border-b border-[var(--color-border)] px-6 py-3 last:border-b-0 hover:bg-[var(--color-surface-hover)] transition-colors duration-[var(--transition-fast)]"
                 >
-                  {/* Left column (fromTool's command in current direction) */}
-                  <div className="col-span-5 flex items-center">
+                  <div className="flex items-center">
                     <code className={["text-sm font-mono", leftColor].join(" ")}>
                       {leftCommand}
                     </code>
                   </div>
-
-                  {/* Divider */}
-                  <div className="col-span-1 flex items-center justify-center">
-                    <span className="text-[var(--color-text-dim)] text-sm">
-                      \u2551
-                    </span>
-                  </div>
-
-                  {/* Right column (toTool's command in current direction) */}
-                  <div className="col-span-5 flex items-center justify-end gap-2">
-                    {entry.note && (
-                      <span className="text-xs text-[var(--color-text-muted)] italic hidden sm:inline">
-                        ({entry.note})
-                      </span>
-                    )}
-                    <code className={["text-sm font-mono", rightColor].join(" ")}>
-                      {rightCommand}
-                    </code>
-                  </div>
-
-                  {/* Copy button - copies the toCommand (right column) */}
-                  <div className="col-span-1 flex items-center justify-end">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <code className={["text-sm font-mono", rightColor].join(" ")}>
+                        {rightCommand}
+                      </code>
+                      {entry.note && (
+                        <span className="text-xs text-[var(--color-text-muted)] italic hidden sm:inline">
+                          ({entry.note})
+                        </span>
+                      )}
+                    </div>
                     <CopyButton text={rightCommand} />
                   </div>
                 </div>
@@ -306,12 +280,6 @@ export function GlossaryClient({
         </div>
       )}
 
-      {/* Mobile note display below table for small screens */}
-      {filteredEntries.some((e) => e.note) && (
-        <div className="mt-4 text-xs text-[var(--color-text-muted)] sm:hidden">
-          Notes shown inline on desktop. Tap any row to expand (coming soon).
-        </div>
-      )}
     </div>
   )
 }
