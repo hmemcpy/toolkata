@@ -85,6 +85,13 @@
   /* Transitions */
   --transition-fast: 100ms ease;
   --transition-normal: 200ms ease;
+  --transition-sidebar: 300ms ease-in-out;
+
+  /* Sidebar */
+  --sidebar-width: 400px;
+  --sidebar-z-index: 40;
+  --backdrop-z-index: 30;
+  --toggle-z-index: 50;
 }
 
 /* Reduced motion support */

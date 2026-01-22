@@ -176,13 +176,14 @@ Two related efforts:
   - ~~Handle command queuing when terminal is CONNECTING~~ Implemented
   - **MUST** use `for...of` not `forEach`, handle all index access **FOLLOWED**
 
-- [ ] **1.3** Add sidebar design tokens to `packages/web/app/globals.css`
+- [x] **1.3** Add sidebar design tokens to `packages/web/app/globals.css`
   - `--sidebar-width: 400px`
   - `--sidebar-z-index: 40`
   - `--backdrop-z-index: 30`
   - `--toggle-z-index: 50`
   - `--transition-sidebar: 300ms ease-in-out`
-  - Add `prefers-reduced-motion` rule for sidebar transitions
+  - Note: `prefers-reduced-motion` rule already exists at lines 91-100 and covers all transitions including sidebar
+  - **Completed 2026-01-22**
 
 - [ ] **1.4** Update `Providers.tsx` to include TerminalProvider
   - Location: `packages/web/components/Providers.tsx`
