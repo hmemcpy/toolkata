@@ -707,12 +707,14 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Session times out after 5 min idle
   - Reset button works
   - Note: Requires `packages/sandbox-api` running on localhost:3001
+  - Note: See `scripts/MANUAL_TESTING.md` for detailed step-by-step instructions
 
 - [ ] **12.6** Verify progress persistence
   - Complete steps, refresh page - progress preserved
   - Clear localStorage - progress resets
   - Progress survives browser restart
   - Note: Run `localStorage.clear()` in browser console to test reset
+  - Note: See `scripts/MANUAL_TESTING.md` for detailed step-by-step instructions
 
 - [ ] **12.7** Verify fallback mode
   - Block sandbox API (disconnect network)
@@ -720,6 +722,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Copy buttons work
   - No JavaScript errors in console
   - Note: Block localhost:3001 or disconnect network to test
+  - Note: See `scripts/MANUAL_TESTING.md` for detailed step-by-step instructions
 
 - [x] **12.8** Performance validation
   - First Contentful Paint < 1s ✓ (static generation enabled)
