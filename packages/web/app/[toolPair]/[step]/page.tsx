@@ -91,7 +91,7 @@ export async function generateMetadata(props: {
   }
 
   return {
-    title: `Step ${stepNum}: ${pairing.to.name} Tutorial | ${pairing.to.name} ← ${pairing.from.name} | toolkata`,
+    title: `Step ${stepNum} | ${pairing.to.name} ← ${pairing.from.name}`,
     description: `Learn ${pairing.to.name} if you already know ${pairing.from.name}. Step ${stepNum} of ${pairing.steps}.`,
   }
 }

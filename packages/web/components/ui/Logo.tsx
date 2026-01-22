@@ -66,7 +66,7 @@ export function Logo({
       {/* Tagline */}
       {showTagline && (
         <span className={`${styles.tagline} text-zinc-500`}>
-          Master developer tools through practice
+          Master tools through practice
         </span>
       )}
     </div>

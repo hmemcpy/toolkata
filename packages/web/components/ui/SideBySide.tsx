@@ -169,32 +169,33 @@ export function SideBySide({
       </div>
 
       {/* Accessible table for screen readers (visually hidden) */}
-      <table
-        className="sr-only"
-        aria-label={`Command comparison: ${fromLabel} vs ${toLabel}`}
-        summary={`Side-by-side comparison of ${fromLabel} and ${toLabel} commands`}
-      >
-        <caption className="sr-only">
-          {isReversed
-            ? `Command comparison: ${toLabel} commands on the left, ${fromLabel} commands on the right`
-            : `Command comparison: ${fromLabel} commands on the left, ${toLabel} commands on the right`}
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">{leftLabel}</th>
-            <th scope="col">{rightLabel}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {leftCommands.map((cmd, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: Commands are static and order won't change
-            <tr key={i}>
-              <td>{cmd}</td>
-              <td>{rightCommands[i] ?? ""}</td>
+      <div className="sr-only">
+        <table
+          aria-label={`Command comparison: ${fromLabel} vs ${toLabel}`}
+          summary={`Side-by-side comparison of ${fromLabel} and ${toLabel} commands`}
+        >
+          <caption>
+            {isReversed
+              ? `Command comparison: ${toLabel} commands on the left, ${fromLabel} commands on the right`
+              : `Command comparison: ${fromLabel} commands on the left, ${toLabel} commands on the right`}
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">{leftLabel}</th>
+              <th scope="col">{rightLabel}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {leftCommands.map((cmd, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: Commands are static and order won't change
+              <tr key={i}>
+                <td>{cmd}</td>
+                <td>{rightCommands[i] ?? ""}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

@@ -46,12 +46,12 @@ export async function generateMetadata({
 
   if (!pairing) {
     return {
-      title: "Glossary Not Found | toolkata",
+      title: "Glossary Not Found",
     }
   }
 
   return {
-    title: `Command Glossary: ${pairing.to.name} ← ${pairing.from.name} | toolkata`,
+    title: `Command Glossary: ${pairing.to.name} ← ${pairing.from.name}`,
     description: `Searchable command reference for ${pairing.to.name} if you already know ${pairing.from.name}. Find commands, compare syntax, and copy examples.`,
     openGraph: {
       title: `${pairing.to.name} ← ${pairing.from.name} Command Glossary`,
@@ -104,7 +104,7 @@ export default async function GlossaryPage({
             href={`/${toolPair}`}
             className="inline-flex items-center text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
           >
-            ← {pairing.to.name} ← {pairing.from.name}
+            ← Overview
           </a>
         </div>
 
