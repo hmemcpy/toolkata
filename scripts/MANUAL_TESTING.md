@@ -15,11 +15,11 @@ This guide provides step-by-step instructions for completing the remaining verif
 
 ```bash
 # Terminal 1: Start the frontend
-cd /Users/hmemcpy/git/jj-kata
+cd /Users/hmemcpy/git/toolkata
 bun run dev
 
 # Terminal 2: Start the sandbox API (if testing sandbox features)
-cd /Users/hmemcpy/git/jj-kata/packages/sandbox-api
+cd /Users/hmemcpy/git/toolkata/packages/sandbox-api
 bun run dev
 ```
 
@@ -34,14 +34,14 @@ Verify that the sandbox API can create containers, execute commands, and handle 
 
 1. **Start the sandbox API**
    ```bash
-   cd /Users/hmemcpy/git/jj-kata/packages/sandbox-api
+   cd /Users/hmemcpy/git/toolkata/packages/sandbox-api
    bun run dev
    ```
    Expected output: Server listening on port 3001
 
 2. **Start the frontend**
    ```bash
-   cd /Users/hmemcpy/git/jj-kata
+   cd /Users/hmemcpy/git/toolkata
    bun run dev
    ```
 
@@ -187,7 +187,7 @@ Ensure the static fallback mode activates gracefully when sandbox API is unavail
 
 1. **Start frontend only (no sandbox API)**
    ```bash
-   cd /Users/hmemcpy/git/jj-kata
+   cd /Users/hmemcpy/git/toolkata
    bun run dev
    ```
    - Do NOT start the sandbox-api server

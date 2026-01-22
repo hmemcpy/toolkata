@@ -45,3 +45,4 @@ coverage/
 # Misc
 .cache/
 .turbo/
+.vercel

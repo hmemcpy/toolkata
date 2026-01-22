@@ -29,7 +29,7 @@ export function Header() {
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-6 sm:flex">
           <a
-            href="https://github.com/hmemcpy/jj-kata"
+            href="https://github.com/hmemcpy/toolkata"
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)]"
@@ -63,7 +63,7 @@ export function Header() {
         <div className="border-t border-[var(--color-border)] sm:hidden">
           <div className="space-y-2 px-4 py-4">
             <a
-              href="https://github.com/hmemcpy/jj-kata"
+              href="https://github.com/hmemcpy/toolkata"
               target="_blank"
               rel="noopener noreferrer"
               className="block text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)]"
