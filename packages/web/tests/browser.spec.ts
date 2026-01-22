@@ -236,7 +236,7 @@ test.describe("Keyboard Navigation (11.4)", () => {
     // Then through navigation, then through content
 
     // Tab multiple times and verify focus moves
-    let focusedElements = new Set<string>()
+    const focusedElements = new Set<string>()
     for (let i = 0; i < 20; i++) {
       await page.keyboard.press("Tab")
       const focused = await page.evaluate(() => {
@@ -296,10 +296,7 @@ test.describe("Keyboard Navigation (11.4)", () => {
     // Tab to skip link
     await page.keyboard.press("Tab")
 
-    // Skip link should be focusable
-    const skipLink = page.locator("text=Skip to main content")
-
-    // Press Enter on skip link
+    // Press Enter on skip link (skip link should be focusable)
     await page.keyboard.press("Enter")
 
     // Focus should move to main content

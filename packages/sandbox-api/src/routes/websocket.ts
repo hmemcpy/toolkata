@@ -2,7 +2,7 @@ import type { Server as HttpServer } from "node:http"
 import { Data, Effect } from "effect"
 import { WebSocketServer } from "ws"
 import type { SessionServiceShape } from "../services/session.js"
-import { WebSocketError, type WebSocketServiceShape, parseMessage } from "../services/websocket.js"
+import { type WebSocketServiceShape, parseMessage } from "../services/websocket.js"
 
 // Error types for WebSocket route
 export class WsRouteError extends Data.TaggedClass("WsRouteError")<{

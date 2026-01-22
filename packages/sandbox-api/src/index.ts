@@ -17,11 +17,7 @@ import {
   type RateLimitServiceShape,
 } from "./services/rate-limit.js"
 import { SessionService, SessionServiceLive, type SessionServiceShape } from "./services/session.js"
-import {
-  WebSocketService,
-  WebSocketServiceLive,
-  type WebSocketServiceShape,
-} from "./services/websocket.js"
+import { WebSocketService, WebSocketServiceLive } from "./services/websocket.js"
 
 // Module-level reference to SessionService for health checks
 // This is set when the server starts and allows the health endpoint to access session stats
@@ -211,8 +207,11 @@ export const ServerLayer = Layer.mergeAll(
 
 // Default config from environment
 const defaultConfig = Effect.sync(() => {
+  // biome-ignore lint/complexity/useLiteralKeys: process.env requires bracket notation for TypeScript
   const port = Number(process.env["PORT"] ?? "3001")
+  // biome-ignore lint/complexity/useLiteralKeys: process.env requires bracket notation for TypeScript
   const host = process.env["HOST"] ?? "0.0.0.0"
+  // biome-ignore lint/complexity/useLiteralKeys: process.env requires bracket notation for TypeScript
   const frontendOrigin = process.env["FRONTEND_ORIGIN"] ?? "http://localhost:3000"
 
   return {

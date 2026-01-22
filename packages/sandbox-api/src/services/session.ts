@@ -1,5 +1,5 @@
 import { Context, Data, Effect, Layer, MutableHashMap, Option, Ref } from "effect"
-import { ContainerError, ContainerService } from "./container.js"
+import { ContainerService } from "./container.js"
 
 // Session states
 export type SessionState = "IDLE" | "STARTING" | "RUNNING" | "DESTROYING"

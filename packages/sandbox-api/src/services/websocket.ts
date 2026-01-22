@@ -79,18 +79,18 @@ const _parseMessage = (data: string): WebSocketMessage => {
     const parsed = JSON.parse(data) as Record<string, unknown>
 
     if (typeof parsed === "object" && parsed !== null && "type" in parsed) {
-      const msgType = parsed["type"]
+      const msgType = parsed.type
       if (msgType === "resize") {
         return {
           type: "resize",
-          rows: typeof parsed["rows"] === "number" ? parsed["rows"] : 24,
-          cols: typeof parsed["cols"] === "number" ? parsed["cols"] : 80,
+          rows: typeof parsed.rows === "number" ? parsed.rows : 24,
+          cols: typeof parsed.cols === "number" ? parsed.cols : 80,
         } satisfies TerminalResize
       }
       if (msgType === "input") {
         return {
           type: "input",
-          data: typeof parsed["data"] === "string" ? parsed["data"] : "",
+          data: typeof parsed.data === "string" ? parsed.data : "",
         } satisfies TerminalInput
       }
     }

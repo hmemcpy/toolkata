@@ -232,6 +232,7 @@ export const ContainerServiceLive = Layer.effect(ContainerService, make)
 export const DockerClientLive = Layer.effect(
   DockerClient,
   Effect.sync(() => ({
+    // biome-ignore lint/complexity/useLiteralKeys: process.env requires bracket notation for TypeScript
     docker: new Docker({ socketPath: process.env["DOCKER_HOST"] ?? "/var/run/docker.sock" }),
   })),
 )

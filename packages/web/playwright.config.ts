@@ -11,12 +11,15 @@ import { defineConfig, devices } from "@playwright/test"
  *
  * @see https://playwright.dev/docs/test-configuration
  */
+// biome-ignore lint/complexity/useLiteralKeys: process.env requires bracket notation for TypeScript
+const isCI = !!process.env["CI"]
+
 export default defineConfig({
   testDir: "./tests",
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  forbidOnly: isCI,
+  retries: isCI ? 2 : 0,
+  ...(isCI ? { workers: 1 } : {}),
   reporter: "html",
   use: {
     baseURL: "http://localhost:3000",
@@ -38,7 +41,7 @@ export default defineConfig({
   webServer: {
     command: "bun run dev",
     url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: !isCI,
     timeout: 120 * 1000,
   },
 })
