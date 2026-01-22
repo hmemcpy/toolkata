@@ -62,8 +62,8 @@ export function useDirection(toolPair: string): DirectionState {
   // Compute fromTool/toTool based on direction
   // When reversed, swap the tools
   const isReversed = direction === "reversed"
-  const fromTool = isReversed ? pairing?.to.name ?? "" : pairing?.from.name ?? ""
-  const toTool = isReversed ? pairing?.from.name ?? "" : pairing?.to.name ?? ""
+  const fromTool = isReversed ? (pairing?.to.name ?? "") : (pairing?.from.name ?? "")
+  const toTool = isReversed ? (pairing?.from.name ?? "") : (pairing?.to.name ?? "")
 
   return {
     isReversed,

@@ -38,9 +38,7 @@ export interface GlossarySearchState {
  * )
  * ```
  */
-export function useGlossarySearch(
-  entries: readonly GlossaryEntry[],
-): GlossarySearchState {
+export function useGlossarySearch(entries: readonly GlossaryEntry[]): GlossarySearchState {
   const [query, setQuery] = useState("")
   const [debouncedQuery, setDebouncedQuery] = useState("")
   const [category, setCategory] = useState<GlossaryCategory | "All">("All")

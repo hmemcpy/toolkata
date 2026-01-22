@@ -109,9 +109,7 @@ export default async function GlossaryPage({
         </div>
 
         {/* Title */}
-        <h1 className="text-2xl font-bold font-mono text-[var(--color-text)]">
-          Command Glossary
-        </h1>
+        <h1 className="text-2xl font-bold font-mono text-[var(--color-text)]">Command Glossary</h1>
 
         {/* Client wrapper for interactive glossary */}
         <GlossaryClientWrapper

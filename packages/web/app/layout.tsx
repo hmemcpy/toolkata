@@ -16,9 +16,7 @@ export const metadata: Metadata = {
   description:
     "Hands-on tutorials for developers switching tools. No fluff. Just the commands you need.",
   icons: {
-    icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
-    ],
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
   },
   openGraph: {
     images: [

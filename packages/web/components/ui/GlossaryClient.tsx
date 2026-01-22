@@ -28,7 +28,6 @@ import type { GlossaryEntry, GlossaryCategory } from "../../content/glossary/jj-
 import { getCategories } from "../../content/glossary/jj-git"
 import { useGlossarySearch } from "../../hooks/useGlossarySearch"
 import { useDirectionContext } from "../../contexts/DirectionContext"
-import { getPairing } from "../../content/pairings"
 
 /**
  * Copy button component for individual commands.
@@ -108,21 +107,14 @@ export interface GlossaryClientProps {
  */
 export function GlossaryClient({
   entries,
-  toolPair,
+  toolPair: _toolPair,
 }: GlossaryClientProps): React.JSX.Element {
   const { isReversed, fromTool, toTool } = useDirectionContext()
 
-  const {
-    query,
-    setQuery,
-    category,
-    setCategory,
-    filteredEntries,
-    resultCount,
-  } = useGlossarySearch(entries)
+  const { query, setQuery, category, setCategory, filteredEntries, resultCount } =
+    useGlossarySearch(entries)
 
   const categories = getCategories()
-  const _pairing = getPairing(toolPair)
 
   return (
     <div>
@@ -227,8 +219,12 @@ export function GlossaryClient({
             {filteredEntries.map((entry) => {
               const leftCommand = isReversed ? entry.toCommand : entry.fromCommand
               const rightCommand = isReversed ? entry.fromCommand : entry.toCommand
-              const leftColor = isReversed ? "text-[var(--color-accent)]" : "text-[var(--color-accent-alt)]"
-              const rightColor = isReversed ? "text-[var(--color-accent-alt)]" : "text-[var(--color-accent)]"
+              const leftColor = isReversed
+                ? "text-[var(--color-accent)]"
+                : "text-[var(--color-accent-alt)]"
+              const rightColor = isReversed
+                ? "text-[var(--color-accent-alt)]"
+                : "text-[var(--color-accent)]"
 
               return (
                 <div
@@ -259,7 +255,6 @@ export function GlossaryClient({
           </div>
         </div>
       )}
-
     </div>
   )
 }

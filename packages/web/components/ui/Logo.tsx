@@ -56,18 +56,14 @@ export function Logo({
 
       {/* Wordmark */}
       {showWordmark && (
-        <span
-          className={`${styles.wordmark} font-medium text-zinc-50 tracking-wider`}
-        >
+        <span className={`${styles.wordmark} font-medium text-zinc-50 tracking-wider`}>
           toolkata
         </span>
       )}
 
       {/* Tagline */}
       {showTagline && (
-        <span className={`${styles.tagline} text-zinc-500`}>
-          Master tools through practice
-        </span>
+        <span className={`${styles.tagline} text-zinc-500`}>Master tools through practice</span>
       )}
     </div>
   )
@@ -87,9 +83,7 @@ export function LogoInline({ className = "" }: { readonly className?: string }) 
       >
         型
       </span>
-      <span className="text-base font-medium text-zinc-50 tracking-wider">
-        toolkata
-      </span>
+      <span className="text-base font-medium text-zinc-50 tracking-wider">toolkata</span>
     </div>
   )
 }

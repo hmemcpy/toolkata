@@ -92,7 +92,10 @@ export const createWebSocketServer = (
         const closeEffect = Effect.all([
           webSocketService.close(connection),
           sessionService.updateActivity(sessionId),
-        ]).pipe(Effect.asVoid, Effect.catchAll(() => Effect.void))
+        ]).pipe(
+          Effect.asVoid,
+          Effect.catchAll(() => Effect.void),
+        )
 
         connections.set(sessionId, {
           sessionId,
@@ -118,7 +121,9 @@ export const createWebSocketServer = (
           if (message.type === "input") {
             // Write input to container
             const writeResult = await Effect.runPromise(
-              Effect.either(webSocketService.writeInput(connection, Buffer.from(message.data, "utf-8"))),
+              Effect.either(
+                webSocketService.writeInput(connection, Buffer.from(message.data, "utf-8")),
+              ),
             )
             if (writeResult._tag === "Left") {
               console.error("[WebSocket] Write error:", writeResult.left.message)

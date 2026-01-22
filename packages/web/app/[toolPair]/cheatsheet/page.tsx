@@ -98,9 +98,7 @@ function CheatsheetContent({
             >
               [Glossary →]
             </Link>
-            <h1 className="text-2xl font-bold font-mono text-[var(--color-text)]">
-              Cheat Sheet
-            </h1>
+            <h1 className="text-2xl font-bold font-mono text-[var(--color-text)]">Cheat Sheet</h1>
             <button
               type="button"
               onClick={handlePrint}
@@ -140,9 +138,7 @@ function CheatsheetContent({
             <div
               className={[
                 "col-span-5 text-xs font-mono font-medium uppercase tracking-wide",
-                isReversed
-                  ? "text-[var(--color-accent-alt)]"
-                  : "text-[var(--color-accent)]",
+                isReversed ? "text-[var(--color-accent-alt)]" : "text-[var(--color-accent)]",
               ].join(" ")}
             >
               {toTool}
@@ -152,9 +148,7 @@ function CheatsheetContent({
 
           {/* Command rows grouped by category */}
           {categories.map((category) => {
-            const categoryEntries = jjGitGlossary.filter(
-              (entry) => entry.category === category,
-            )
+            const categoryEntries = jjGitGlossary.filter((entry) => entry.category === category)
             return (
               <div key={category}>
                 {/* Category header */}
@@ -162,9 +156,7 @@ function CheatsheetContent({
                   <span className="text-sm font-mono font-medium text-[var(--color-text-muted)]">
                     {category}
                   </span>
-                  <span className="ml-2 text-sm text-[var(--color-text-dim)]">
-                    ─────────
-                  </span>
+                  <span className="ml-2 text-sm text-[var(--color-text-dim)]">─────────</span>
                 </div>
 
                 {/* Command rows in this category */}
@@ -223,8 +215,7 @@ function CheatsheetContent({
         {/* Print-only footer */}
         <div className="mt-8 text-sm text-[var(--color-text-muted)] print:block hidden">
           <p>
-            Cheat sheet for {pairing.to.name} if you already know{" "}
-            {pairing.from.name}.
+            Cheat sheet for {pairing.to.name} if you already know {pairing.from.name}.
           </p>
           <p className="mt-2">Visit toolkata.com for interactive tutorials.</p>
         </div>

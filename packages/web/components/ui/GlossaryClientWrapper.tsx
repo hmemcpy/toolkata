@@ -19,10 +19,7 @@ export interface GlossaryClientWrapperProps {
   readonly pairingTo: string
 }
 
-export function GlossaryClientWrapper({
-  entries,
-  toolPair,
-}: GlossaryClientWrapperProps) {
+export function GlossaryClientWrapper({ entries, toolPair }: GlossaryClientWrapperProps) {
   const { isLoading, fromTool, toTool } = useDirectionContext()
 
   if (isLoading) {

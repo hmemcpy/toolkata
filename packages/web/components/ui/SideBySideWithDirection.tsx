@@ -54,9 +54,7 @@ export interface SideBySideWithDirectionProps {
  * to prevent hydration mismatch. After hydration, swaps columns if
  * isReversed=true.
  */
-export function SideBySideWithDirection(
-  props: SideBySideWithDirectionProps,
-): JSX.Element {
+export function SideBySideWithDirection(props: SideBySideWithDirectionProps): JSX.Element {
   const { isReversed, isLoading } = useDirectionContext()
 
   // During SSR/hydration, use default direction to prevent mismatch

@@ -70,11 +70,7 @@ export interface DirectionProviderProps {
 export function DirectionProvider({ toolPair, children }: DirectionProviderProps) {
   const state = useDirection(toolPair)
 
-  return (
-    <DirectionContext.Provider value={{ state }}>
-      {children}
-    </DirectionContext.Provider>
-  )
+  return <DirectionContext.Provider value={{ state }}>{children}</DirectionContext.Provider>
 }
 
 /**

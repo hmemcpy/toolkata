@@ -69,7 +69,9 @@ export function ProgressCard({ toolPair, totalSteps }: ProgressCardProps) {
 
       {/* Time remaining estimate */}
       {!isLoading && completedCount > 0 && completedCount < totalSteps && (
-        <div className="mb-6 text-sm text-[var(--color-text-muted)]">~{remainingMins} min remaining</div>
+        <div className="mb-6 text-sm text-[var(--color-text-muted)]">
+          ~{remainingMins} min remaining
+        </div>
       )}
 
       {/* Continue button or Start button */}

@@ -192,8 +192,14 @@ test.describe("Direction Toggle (13.7.1)", () => {
     const sideBySide = page.locator(".grid.md\\:grid-cols-2").first()
 
     // Get initial column labels
-    const leftLabel = sideBySide.locator("span").filter({ hasText: /^(git|jj)$/ }).first()
-    const rightLabel = sideBySide.locator("span").filter({ hasText: /^(git|jj)$/ }).last()
+    const leftLabel = sideBySide
+      .locator("span")
+      .filter({ hasText: /^(git|jj)$/ })
+      .first()
+    const rightLabel = sideBySide
+      .locator("span")
+      .filter({ hasText: /^(git|jj)$/ })
+      .last()
 
     // In default direction (git→jj), left should be "git", right should be "jj"
     const initialLeftText = await leftLabel.textContent()

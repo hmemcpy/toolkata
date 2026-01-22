@@ -1,6 +1,3 @@
-import fs from "node:fs/promises"
-import path from "node:path"
-import matter from "gray-matter"
 import { MDXRemote } from "next-mdx-remote/rsc"
 import { notFound } from "next/navigation"
 import { Callout } from "../../../components/ui/Callout"
@@ -10,6 +7,7 @@ import { Header } from "../../../components/ui/Header"
 import { SideBySide } from "../../../components/ui/SideBySide"
 import { StepPageClientWrapper } from "../../../components/ui/StepPageClientWrapper"
 import { getPairing, isValidPairingSlug } from "../../../content/pairings"
+import { loadStep } from "../../../services/content"
 
 /**
  * Generate static params for all steps of all published tool pairings.
@@ -27,53 +25,6 @@ export function generateStaticParams() {
       step: step.toString(),
     })),
   )
-}
-
-/**
- * Get the MDX filename for a step number.
- */
-function getStepFilename(step: number): string {
-  return `${step.toString().padStart(2, "0")}-step.mdx`
-}
-
-/**
- * Get the content directory path for a tool pairing.
- */
-function getContentPath(toolPair: string): string {
-  const isDev = process.env.NODE_ENV === "development"
-  if (isDev) {
-    return path.join(process.cwd(), "content", "comparisons", toolPair)
-  }
-  return path.join(process.cwd(), "content", "comparisons", toolPair)
-}
-
-/**
- * Load MDX content for a specific step.
- */
-async function loadStepContent(toolPair: string, step: number) {
-  const basePath = getContentPath(toolPair)
-  const filename = getStepFilename(step)
-  const filePath = path.join(basePath, filename)
-
-  try {
-    await fs.access(filePath)
-  } catch {
-    return null
-  }
-
-  const fileContent = await fs.readFile(filePath, "utf-8")
-  const { data: frontmatter, content } = matter(fileContent)
-
-  return {
-    frontmatter: frontmatter as {
-      title: string
-      step: number
-      description?: string
-      gitCommands?: string[]
-      jjCommands?: string[]
-    },
-    content,
-  }
 }
 
 /**
@@ -136,8 +87,8 @@ export default async function StepPage(props: {
     notFound()
   }
 
-  // Load MDX content
-  const stepContent = await loadStepContent(toolPair, stepNum)
+  // Load MDX content using tutor-content-core
+  const stepContent = await loadStep(toolPair, stepNum)
 
   if (!stepContent) {
     notFound()

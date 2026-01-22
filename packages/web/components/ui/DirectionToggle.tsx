@@ -33,8 +33,7 @@ import { useDirectionContext } from "../../contexts/DirectionContext"
  * Must be used within a DirectionProvider.
  */
 export function DirectionToggle() {
-  const { isReversed, isLoading, toggle, fromTool, toTool } =
-    useDirectionContext()
+  const { isReversed, isLoading, toggle, fromTool, toTool } = useDirectionContext()
 
   // Don't render during hydration to prevent flash of default content
   if (isLoading) {
@@ -67,9 +66,7 @@ export function DirectionToggle() {
       <span
         className={[
           "font-mono",
-          isReversed
-            ? "text-[var(--color-accent)]"
-            : "text-[var(--color-accent-alt)]",
+          isReversed ? "text-[var(--color-accent)]" : "text-[var(--color-accent-alt)]",
         ].join(" ")}
       >
         {fromTool}
@@ -78,9 +75,7 @@ export function DirectionToggle() {
       <span
         className={[
           "font-mono",
-          isReversed
-            ? "text-[var(--color-accent-alt)]"
-            : "text-[var(--color-accent)]",
+          isReversed ? "text-[var(--color-accent-alt)]" : "text-[var(--color-accent)]",
         ].join(" ")}
       >
         {toTool}

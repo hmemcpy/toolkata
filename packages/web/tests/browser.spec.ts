@@ -170,7 +170,9 @@ test.describe("Responsive Design - 320px (11.8)", () => {
     await page.locator("text=Installation & Setup").click()
     await page.waitForURL("/jj-git/1")
     // Use .first() to get the first visible h1 (there's one in nav and one in content)
-    await expect(page.locator("h1").filter({ hasText: "Installation & Setup" }).first()).toBeVisible()
+    await expect(
+      page.locator("h1").filter({ hasText: "Installation & Setup" }).first(),
+    ).toBeVisible()
   })
 
   test("touch targets are at least 44px", async ({ page }) => {
@@ -345,8 +347,8 @@ test.describe("Keyboard Navigation (11.4)", () => {
         const hasBorder = styles.borderColor !== styles.backgroundColor
 
         // Also check for the skip link specific focus class
-        const hasSkipLinkFocus = el.classList.contains("focus:not-sr-only") ||
-                                  el.classList.contains("not-sr-only")
+        const hasSkipLinkFocus =
+          el.classList.contains("focus:not-sr-only") || el.classList.contains("not-sr-only")
 
         return hasOutline || hasBoxShadow || hasBorder || hasSkipLinkFocus
       })
@@ -361,15 +363,12 @@ test.describe("Sandbox Connection (12.5)", () => {
   // These tests require sandbox-api running on localhost:3001
   // Skip if sandbox is not available
 
-  test.skip(
-    ({ browserName }) => browserName !== "chromium",
-    "Sandbox tests only run on Chromium",
-  )
+  test.skip(({ browserName }) => browserName !== "chromium", "Sandbox tests only run on Chromium")
 
   test("terminal connects when sandbox available", async ({ page }) => {
     // Check if sandbox API is running
-    const sandboxAvailable = await page
-      .request.get("http://localhost:3001/health")
+    const sandboxAvailable = await page.request
+      .get("http://localhost:3001/health")
       .then((r) => r.ok())
       .catch(() => false)
 
@@ -388,9 +387,9 @@ test.describe("Sandbox Connection (12.5)", () => {
       }
 
       // Wait for connection (green indicator or connected text)
-      await expect(
-        page.locator("text=/connected|ready/i, [data-status=connected]"),
-      ).toBeVisible({ timeout: 10000 })
+      await expect(page.locator("text=/connected|ready/i, [data-status=connected]")).toBeVisible({
+        timeout: 10000,
+      })
     }
   })
 })

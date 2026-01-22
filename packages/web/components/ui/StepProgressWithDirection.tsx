@@ -47,9 +47,7 @@ export interface StepProgressWithDirectionProps extends StepProgressProps {}
  * The DirectionProvider wraps the entire component, making direction
  * state available to any nested components that might need it.
  */
-export function StepProgressWithDirection(
-  props: StepProgressWithDirectionProps,
-): JSX.Element {
+export function StepProgressWithDirection(props: StepProgressWithDirectionProps): JSX.Element {
   const { toolPair, ...stepProgressProps } = props
 
   return (

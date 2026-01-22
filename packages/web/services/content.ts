@@ -1,369 +1,150 @@
 /**
- * ContentService - Effect-TS service for loading and parsing MDX content.
+ * Content service - Re-exports from tutor-content-core with helper functions.
  *
- * Provides type-safe content loading with proper error handling for:
- * - Tutorial steps (e.g., 01-installation.mdx)
- * - Index/landing pages
- * - Cheat sheets
+ * This module provides convenient helper functions for loading content
+ * that handle Effect execution and layer provision.
  *
  * @example
  * ```ts
- * import { ContentService } from "./services/content"
+ * import { loadStep, loadIndex, listSteps } from "@/services/content"
  *
- * const program = Effect.gen(function* () {
- *   const content = yield* ContentService
- *   const step = yield* content.loadStep("jj-git", 3)
- *   return step
- * })
+ * // In a Next.js page component
+ * const step = await loadStep("jj-git", 1)
+ * const index = await loadIndex("jj-git")
+ * const steps = await listSteps("jj-git")
  * ```
  */
 
-import fs from "node:fs/promises"
-import path from "node:path"
-import { Context, Data, Effect, Layer } from "effect"
-import matter from "gray-matter"
+import type { Content, ContentError } from "@hmemcpy/tutor-content-core"
+import { ContentService } from "@hmemcpy/tutor-content-core"
+import { Effect } from "effect"
+import { ContentLayer } from "../lib/content/layer"
 import type {
   CheatsheetFrontmatter,
   IndexFrontmatter,
   StepFrontmatter,
 } from "../lib/content/schemas"
+import { CheatsheetType, IndexType, StepType } from "../lib/content/types"
+
+// Re-export types for convenience
+export type { StepMeta } from "../lib/content/types"
+export type { Content, ContentError }
 
 /**
- * Error types for content loading operations.
+ * Step content with validated frontmatter.
  */
-export class ContentError extends Data.TaggedClass("ContentError")<{
-  readonly cause: "NotFound" | "ParseError" | "ValidationError"
-  readonly message: string
-  readonly path?: string
-}> {}
+export type StepContent = Content<StepFrontmatter>
 
 /**
- * Raw MDX content with frontmatter.
+ * Index content with validated frontmatter.
  */
-interface RawMdxContent {
-  readonly frontmatter: unknown
-  readonly content: string
-}
+export type IndexContent = Content<IndexFrontmatter>
 
 /**
- * Step content with validated frontmatter and MDX body.
+ * Cheatsheet content with validated frontmatter.
  */
-export interface StepContent {
-  readonly frontmatter: StepFrontmatter
-  readonly content: string
-  readonly slug: string
-}
+export type CheatsheetContent = Content<CheatsheetFrontmatter>
 
 /**
- * Index/landing page content.
- */
-export interface IndexContent {
-  readonly frontmatter: IndexFrontmatter
-  readonly content: string
-}
-
-/**
- * Cheat sheet content.
- */
-export interface CheatsheetContent {
-  readonly frontmatter: CheatsheetFrontmatter
-  readonly content: string
-}
-
-/**
- * Metadata for a step (lighter than full content).
- */
-export interface StepMeta {
-  readonly step: number
-  readonly title: string
-  readonly description: string | undefined
-  readonly slug: string
-}
-
-/**
- * ContentService interface.
+ * Load a step by tool pair and step number.
  *
- * Provides methods for loading MDX content with proper error handling.
- */
-export interface ContentServiceShape {
-  /**
-   * Load a specific step by tool pair and step number.
-   *
-   * @param toolPair - The tool pairing slug (e.g., "jj-git").
-   * @param step - The step number (1-indexed).
-   * @returns The step content with validated frontmatter.
-   */
-  readonly loadStep: (toolPair: string, step: number) => Effect.Effect<StepContent, ContentError>
-
-  /**
-   * Load the index/landing page for a tool pairing.
-   *
-   * @param toolPair - The tool pairing slug (e.g., "jj-git").
-   * @returns The index content with validated frontmatter.
-   */
-  readonly loadIndex: (toolPair: string) => Effect.Effect<IndexContent, ContentError>
-
-  /**
-   * Load the cheat sheet for a tool pairing.
-   *
-   * @param toolPair - The tool pairing slug (e.g., "jj-git").
-   * @returns The cheat sheet content with validated frontmatter.
-   */
-  readonly loadCheatsheet: (toolPair: string) => Effect.Effect<CheatsheetContent, ContentError>
-
-  /**
-   * List all available steps for a tool pairing.
-   *
-   * Returns metadata only (no content) for performance.
-   *
-   * @param toolPair - The tool pairing slug (e.g., "jj-git").
-   * @returns Array of step metadata.
-   */
-  readonly listSteps: (toolPair: string) => Effect.Effect<readonly StepMeta[], ContentError>
-}
-
-/**
- * ContentService tag for dependency injection.
- */
-export class ContentService extends Context.Tag("ContentService")<
-  ContentService,
-  ContentServiceShape
->() {}
-
-/**
- * Validate frontmatter against the step schema.
- */
-function validateStepFrontmatter(
-  data: unknown,
-  filePath: string,
-): Effect.Effect<StepFrontmatter, ContentError> {
-  const { stepFrontmatterSchema } = require("../lib/content/schemas")
-
-  const result = stepFrontmatterSchema.safeParse(data)
-
-  if (!result.success) {
-    return Effect.fail(
-      new ContentError({
-        cause: "ValidationError",
-        message: `Invalid frontmatter in ${filePath}: ${result.error.errors.map((e: { message: string }) => e.message).join(", ")}`,
-        path: filePath,
-      }),
-    )
-  }
-
-  return Effect.succeed(result.data)
-}
-
-/**
- * Validate frontmatter against the index schema.
- */
-function validateIndexFrontmatter(
-  data: unknown,
-  filePath: string,
-): Effect.Effect<IndexFrontmatter, ContentError> {
-  const { indexFrontmatterSchema } = require("../lib/content/schemas")
-
-  const result = indexFrontmatterSchema.safeParse(data)
-
-  if (!result.success) {
-    return Effect.fail(
-      new ContentError({
-        cause: "ValidationError",
-        message: `Invalid frontmatter in ${filePath}: ${result.error.errors.map((e: { message: string }) => e.message).join(", ")}`,
-        path: filePath,
-      }),
-    )
-  }
-
-  return Effect.succeed(result.data)
-}
-
-/**
- * Validate frontmatter against the cheat sheet schema.
- */
-function validateCheatsheetFrontmatter(
-  data: unknown,
-  filePath: string,
-): Effect.Effect<CheatsheetFrontmatter, ContentError> {
-  const { cheatsheetFrontmatterSchema } = require("../lib/content/schemas")
-
-  const result = cheatsheetFrontmatterSchema.safeParse(data)
-
-  if (!result.success) {
-    return Effect.fail(
-      new ContentError({
-        cause: "ValidationError",
-        message: `Invalid frontmatter in ${filePath}: ${result.error.errors.map((e: { message: string }) => e.message).join(", ")}`,
-        path: filePath,
-      }),
-    )
-  }
-
-  return Effect.succeed(result.data)
-}
-
-/**
- * Read and parse an MDX file with gray-matter.
- */
-function readMdxFile(filePath: string): Effect.Effect<RawMdxContent, ContentError> {
-  return Effect.tryPromise({
-    try: async () => {
-      const fileContent = await fs.readFile(filePath, "utf-8")
-      const parsed = matter(fileContent)
-      return {
-        frontmatter: parsed.data,
-        content: parsed.content,
-      } as const
-    },
-    catch: (error) =>
-      new ContentError({
-        cause: "ParseError",
-        message: `Failed to parse MDX file: ${error instanceof Error ? error.message : String(error)}`,
-        path: filePath,
-      }),
-  })
-}
-
-/**
- * Check if a file exists, returning a ContentError if not.
- */
-function requireFileExists(
-  filePath: string,
-  description: string,
-): Effect.Effect<void, ContentError> {
-  return Effect.tryPromise({
-    try: () => fs.access(filePath),
-    catch: () =>
-      new ContentError({
-        cause: "NotFound",
-        message: `${description} not found`,
-        path: filePath,
-      }),
-  })
-}
-
-/**
- * Resolve the content directory path for a tool pairing.
- */
-function getContentPath(toolPair: string): string {
-  // In development: packages/web/content/comparisons/{toolPair}/
-  // In production: .next/ or similar
-  const isDev = process.env.NODE_ENV === "development"
-
-  if (isDev) {
-    return path.join(process.cwd(), "content", "comparisons", toolPair)
-  }
-
-  // Production path (Next.js build output)
-  return path.join(process.cwd(), "content", "comparisons", toolPair)
-}
-
-/**
- * Get the filename for a step number.
- */
-function getStepFilename(step: number): string {
-  return `${step.toString().padStart(2, "0")}-step.mdx`
-}
-
-/**
- * Create the ContentService implementation.
- */
-const make = Effect.succeed<ContentServiceShape>({
-  loadStep: (toolPair: string, step: number) =>
-    Effect.gen(function* () {
-      const basePath = getContentPath(toolPair)
-      const filename = getStepFilename(step)
-      const filePath = path.join(basePath, filename)
-
-      yield* requireFileExists(filePath, `Step ${step} for ${toolPair}`)
-
-      const raw = yield* readMdxFile(filePath)
-      const frontmatter = yield* validateStepFrontmatter(raw.frontmatter, filePath)
-
-      return {
-        frontmatter,
-        content: raw.content,
-        slug: filename.replace(".mdx", ""),
-      } as const
-    }),
-
-  loadIndex: (toolPair: string) =>
-    Effect.gen(function* () {
-      const basePath = getContentPath(toolPair)
-      const filePath = path.join(basePath, "index.mdx")
-
-      yield* requireFileExists(filePath, `Index page for ${toolPair}`)
-
-      const raw = yield* readMdxFile(filePath)
-      const frontmatter = yield* validateIndexFrontmatter(raw.frontmatter, filePath)
-
-      return {
-        frontmatter,
-        content: raw.content,
-      } as const
-    }),
-
-  loadCheatsheet: (toolPair: string) =>
-    Effect.gen(function* () {
-      const basePath = getContentPath(toolPair)
-      const filePath = path.join(basePath, "cheatsheet.mdx")
-
-      yield* requireFileExists(filePath, `Cheat sheet for ${toolPair}`)
-
-      const raw = yield* readMdxFile(filePath)
-      const frontmatter = yield* validateCheatsheetFrontmatter(raw.frontmatter, filePath)
-
-      return {
-        frontmatter,
-        content: raw.content,
-      } as const
-    }),
-
-  listSteps: (toolPair: string) =>
-    Effect.gen(function* () {
-      const basePath = getContentPath(toolPair)
-
-      const entries = yield* Effect.tryPromise({
-        try: () => fs.readdir(basePath),
-        catch: (error) =>
-          new ContentError({
-            cause: "NotFound",
-            message: `Failed to read content directory: ${error instanceof Error ? error.message : String(error)}`,
-            path: basePath,
-          }),
-      })
-
-      // Filter for step files (XX-step.mdx)
-      const stepFiles = entries.filter((entry) => /^\d{2}-step\.mdx$/.test(entry))
-
-      // Read metadata from each step file
-      const steps = yield* Effect.all(
-        stepFiles.map((filename) =>
-          Effect.gen(function* () {
-            const filePath = path.join(basePath, filename)
-            const raw = yield* readMdxFile(filePath)
-            const frontmatter = yield* validateStepFrontmatter(raw.frontmatter, filePath)
-
-            return {
-              step: frontmatter.step,
-              title: frontmatter.title,
-              description: frontmatter.description,
-              slug: filename.replace(".mdx", ""),
-            }
-          }),
-        ),
-        { concurrency: "unbounded" },
-      )
-
-      // Sort by step number
-      const sorted = Array.from(steps).sort((a, b) => a.step - b.step)
-      return sorted
-    }),
-})
-
-/**
- * Live layer for ContentService.
+ * @param toolPair - The tool pairing slug (e.g., "jj-git")
+ * @param step - The step number (1-indexed)
+ * @returns Promise resolving to step content, or null if not found
  *
- * Provides the real implementation for production use.
+ * @example
+ * ```ts
+ * const step = await loadStep("jj-git", 1)
+ * if (step) {
+ *   console.log(step.frontmatter.title)
+ * }
+ * ```
  */
-export const ContentServiceLive = Layer.effect(ContentService, make)
+export async function loadStep(toolPair: string, step: number): Promise<StepContent | null> {
+  const program = Effect.gen(function* () {
+    const service = yield* ContentService
+    return yield* service.load(StepType, `${toolPair}/${step}`)
+  })
+
+  const result = await program.pipe(Effect.provide(ContentLayer), Effect.either, Effect.runPromise)
+
+  if (result._tag === "Left") {
+    // Return null for NotFound, throw for other errors
+    if (result.left.cause === "NotFound") {
+      return null
+    }
+    throw new Error(result.left.message)
+  }
+
+  return result.right
+}
+
+/**
+ * Load the index page for a tool pairing.
+ *
+ * @param toolPair - The tool pairing slug (e.g., "jj-git")
+ * @returns Promise resolving to index content, or null if not found
+ */
+export async function loadIndex(toolPair: string): Promise<IndexContent | null> {
+  const program = Effect.gen(function* () {
+    const service = yield* ContentService
+    return yield* service.load(IndexType, toolPair)
+  })
+
+  const result = await program.pipe(Effect.provide(ContentLayer), Effect.either, Effect.runPromise)
+
+  if (result._tag === "Left") {
+    if (result.left.cause === "NotFound") {
+      return null
+    }
+    throw new Error(result.left.message)
+  }
+
+  return result.right
+}
+
+/**
+ * Load the cheatsheet for a tool pairing.
+ *
+ * @param toolPair - The tool pairing slug (e.g., "jj-git")
+ * @returns Promise resolving to cheatsheet content, or null if not found
+ */
+export async function loadCheatsheet(toolPair: string): Promise<CheatsheetContent | null> {
+  const program = Effect.gen(function* () {
+    const service = yield* ContentService
+    return yield* service.load(CheatsheetType, toolPair)
+  })
+
+  const result = await program.pipe(Effect.provide(ContentLayer), Effect.either, Effect.runPromise)
+
+  if (result._tag === "Left") {
+    if (result.left.cause === "NotFound") {
+      return null
+    }
+    throw new Error(result.left.message)
+  }
+
+  return result.right
+}
+
+/**
+ * List all steps for a tool pairing.
+ *
+ * Returns full content for each step, sorted by step number.
+ *
+ * @param toolPair - The tool pairing slug (e.g., "jj-git")
+ * @returns Promise resolving to array of step content
+ */
+export async function listSteps(toolPair: string): Promise<readonly StepContent[]> {
+  const program = Effect.gen(function* () {
+    const service = yield* ContentService
+    const allSteps = yield* service.list(StepType, {
+      // Filter to only include steps for this tool pair
+      filter: (content) => content.filePath.includes(`/${toolPair}/`),
+    })
+    // Sort by step number
+    return [...allSteps].sort((a, b) => a.frontmatter.step - b.frontmatter.step)
+  })
+
+  return program.pipe(Effect.provide(ContentLayer), Effect.runPromise)
+}

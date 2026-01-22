@@ -43,9 +43,7 @@ test.describe("Glossary Page (13.7.2)", () => {
     await page.waitForLoadState("domcontentloaded")
 
     // Get the result count text
-    const countText = await page
-      .locator('[id="search-results-count"]')
-      .textContent()
+    const countText = await page.locator('[id="search-results-count"]').textContent()
 
     // Should say "All 42 commands"
     expect(countText).toMatch(/\b42\b/)
@@ -70,9 +68,7 @@ test.describe("Glossary Page (13.7.2)", () => {
     await page.waitForLoadState("domcontentloaded")
 
     // Get initial count
-    const initialCountText = await page
-      .locator('[id="search-results-count"]')
-      .textContent()
+    const initialCountText = await page.locator('[id="search-results-count"]').textContent()
     expect(initialCountText).toMatch(/\b42\b/)
 
     // Type "commit" in search
@@ -83,9 +79,7 @@ test.describe("Glossary Page (13.7.2)", () => {
     await page.waitForTimeout(500)
 
     // Count should be reduced (there are fewer than 42 commit-related commands)
-    const filteredCountText = await page
-      .locator('[id="search-results-count"]')
-      .textContent()
+    const filteredCountText = await page.locator('[id="search-results-count"]').textContent()
     expect(filteredCountText).toMatch(/Found/)
     expect(filteredCountText).not.toMatch(/\b42\b/)
 
@@ -98,16 +92,12 @@ test.describe("Glossary Page (13.7.2)", () => {
     }
   })
 
-  test("category filter works (click 'COMMITS' shows only commit entries)", async ({
-    page,
-  }) => {
+  test("category filter works (click 'COMMITS' shows only commit entries)", async ({ page }) => {
     await page.goto("/jj-git/glossary")
     await page.waitForLoadState("domcontentloaded")
 
     // Get initial count (should be 42)
-    const initialCountText = await page
-      .locator('[id="search-results-count"]')
-      .textContent()
+    const initialCountText = await page.locator('[id="search-results-count"]').textContent()
     expect(initialCountText).toMatch(/\b42\b/)
 
     // Click COMMITS category tab
@@ -118,9 +108,7 @@ test.describe("Glossary Page (13.7.2)", () => {
     await page.waitForTimeout(200)
 
     // Count should be reduced
-    const filteredCountText = await page
-      .locator('[id="search-results-count"]')
-      .textContent()
+    const filteredCountText = await page.locator('[id="search-results-count"]').textContent()
     expect(filteredCountText).not.toMatch(/\b42\b/)
 
     // Extract the number
@@ -144,9 +132,7 @@ test.describe("Glossary Page (13.7.2)", () => {
     await commitsTab.click()
     await page.waitForTimeout(200)
 
-    const commitsCountText = await page
-      .locator('[id="search-results-count"]')
-      .textContent()
+    const commitsCountText = await page.locator('[id="search-results-count"]').textContent()
     const commitsMatch = (commitsCountText ?? "").match(/(\d+) command/)
     const commitsCount = commitsMatch?.[1] ? Number.parseInt(commitsMatch[1], 10) : 0
 
@@ -156,9 +142,7 @@ test.describe("Glossary Page (13.7.2)", () => {
     await page.waitForTimeout(500)
 
     // Count should be reduced further (intersection of COMMITS + "log")
-    const combinedCountText = await page
-      .locator('[id="search-results-count"]')
-      .textContent()
+    const combinedCountText = await page.locator('[id="search-results-count"]').textContent()
     const combinedMatch = (combinedCountText ?? "").match(/(\d+) command/)
     const combinedCount = combinedMatch?.[1] ? Number.parseInt(combinedMatch[1], 10) : 0
 
@@ -166,9 +150,7 @@ test.describe("Glossary Page (13.7.2)", () => {
     expect(combinedCount).toBeGreaterThanOrEqual(0)
   })
 
-  test("empty state shows for no results (query 'zzzzzzz')", async ({
-    page,
-  }) => {
+  test("empty state shows for no results (query 'zzzzzzz')", async ({ page }) => {
     await page.goto("/jj-git/glossary")
     await page.waitForLoadState("domcontentloaded")
 
@@ -189,15 +171,11 @@ test.describe("Glossary Page (13.7.2)", () => {
     await page.waitForTimeout(200)
 
     // Should return to showing all 42 commands
-    const countText = await page
-      .locator('[id="search-results-count"]')
-      .textContent()
+    const countText = await page.locator('[id="search-results-count"]').textContent()
     expect(countText).toMatch(/\b42\b/)
   })
 
-  test("copy button copies correct command based on direction", async ({
-    page,
-  }) => {
+  test("copy button copies correct command based on direction", async ({ page }) => {
     // Note: Testing actual clipboard write requires permissions and context
     // This test verifies the button exists and has correct aria-label
 
@@ -256,9 +234,7 @@ test.describe("Glossary Page (13.7.2)", () => {
     expect(rightText).toContain("git")
   })
 
-  test("aria-live region announces result count changes", async ({
-    page,
-  }) => {
+  test("aria-live region announces result count changes", async ({ page }) => {
     await page.goto("/jj-git/glossary")
     await page.waitForLoadState("domcontentloaded")
 
