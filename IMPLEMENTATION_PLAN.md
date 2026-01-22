@@ -1,13 +1,13 @@
 # Implementation Plan: toolkata
 
-> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) ready to start
+> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1 complete
 > **Validation**: `bun run typecheck`, `bun run lint`, `bun run build`, Playwright tests
 > **Priority Legend**: P0 = Blocking, P1 = Core MVP, P2 = Polish/Enhancement
-> **Last Updated**: 2026-01-22 (Gap analysis complete. Phase 13 ready to begin.)
+> **Last Updated**: 2026-01-22 (13.1.1 PreferencesStore complete. Next: 13.1.2 useDirection hook)
 
 ### Current Priority: Phase 13 (Bidirectional Comparison)
 
-**Recommended starting point**: Task 13.1.1 (PreferencesStore) - foundation for all direction-aware features
+**Recommended starting point**: Task 13.1.2 (useDirection hook) - depends on completed 13.1.1 PreferencesStore
 
 ### Phase 12 Remaining Items
 
@@ -917,7 +917,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 
 > All direction-aware components depend on this infrastructure. Must complete first.
 
-- [ ] **13.1.1** Create `PreferencesStore` class at `packages/web/core/PreferencesStore.ts`
+- [x] **13.1.1** Create `PreferencesStore` class at `packages/web/core/PreferencesStore.ts`
   - Follow `ProgressStore` singleton pattern exactly:
     - `getPreferencesStore()` factory function
     - In-memory cache with dirty flag
