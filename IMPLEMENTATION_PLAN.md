@@ -1,13 +1,13 @@
 # Implementation Plan: toolkata
 
-> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1 complete
+> **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1-13.1.2 complete
 > **Validation**: `bun run typecheck`, `bun run lint`, `bun run build`, Playwright tests
 > **Priority Legend**: P0 = Blocking, P1 = Core MVP, P2 = Polish/Enhancement
-> **Last Updated**: 2026-01-22 (13.1.1 PreferencesStore complete. Next: 13.1.2 useDirection hook)
+> **Last Updated**: 2026-01-22 (13.1.2 useDirection hook complete. Next: 13.1.3 DirectionContext)
 
 ### Current Priority: Phase 13 (Bidirectional Comparison)
 
-**Recommended starting point**: Task 13.1.2 (useDirection hook) - depends on completed 13.1.1 PreferencesStore
+**Recommended starting point**: Task 13.1.3 (DirectionContext) - depends on completed 13.1.2 useDirection hook
 
 ### Phase 12 Remaining Items
 
@@ -927,7 +927,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Storage key: `toolkata_preferences`
   - Graceful degradation: return `"default"` if localStorage unavailable
 
-- [ ] **13.1.2** Create `useDirection` hook at `packages/web/hooks/useDirection.ts`
+- [x] **13.1.2** Create `useDirection` hook at `packages/web/hooks/useDirection.ts`
   - Follow `useStepProgress` pattern exactly:
     - `isLoading` state initially `true`
     - Load from store in `useEffect` (client-side only)
