@@ -5,6 +5,7 @@
  * - Keyboard navigation (←/→ for prev/next step, ? for help, Esc to close)
  * - Keyboard shortcuts modal
  * - Integration with progress tracking and navigation components
+ * - Direction toggle for bidirectional comparisons (consumes DirectionContext)
  *
  * @example
  * ```tsx
@@ -30,6 +31,7 @@ import { KeyboardShortcutsModal } from "./KeyboardShortcutsModal"
 import { NavigationWrapper } from "./NavigationWrapper"
 import { StepProgressWrapper } from "./StepProgressWrapper"
 import { TerminalWithSuggestionsWrapper } from "./TerminalWithSuggestionsWrapper"
+import { DirectionToggle } from "./DirectionToggle"
 
 export interface StepPageClientWrapperProps {
   /**
@@ -82,6 +84,10 @@ export interface StepPageClientWrapperProps {
  * - Progress tracking
  * - Navigation (prev/next buttons)
  * - Interactive terminal with command suggestions
+ * - Direction toggle (for bidirectional comparisons)
+ *
+ * Note: DirectionContext is provided by the [toolPair] layout, so this component
+ * can consume it directly via DirectionToggle without needing a local provider.
  */
 export function StepPageClientWrapper({
   toolPair,
@@ -120,7 +126,7 @@ export function StepPageClientWrapper({
 
   return (
     <>
-      {/* Step Progress Header with keyboard hints */}
+      {/* Step Progress Header with keyboard hints and direction toggle */}
       <StepProgressWrapper
         toolPair={toolPair}
         currentStep={currentStep}
@@ -128,6 +134,7 @@ export function StepPageClientWrapper({
         title={title}
         previousHref={previousHref}
         nextHref={nextHref}
+        directionToggle={<DirectionToggle />}
       />
 
       {/* MDX Content */}

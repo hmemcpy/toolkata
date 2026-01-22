@@ -13,6 +13,7 @@ export interface StepProgressWrapperProps {
   readonly nextHref?: string | null
   readonly showKeyboardHints?: boolean
   readonly className?: string
+  readonly directionToggle?: React.ReactNode
 }
 
 /**
@@ -33,6 +34,7 @@ export function StepProgressWrapper({
   nextHref,
   showKeyboardHints,
   className = "",
+  directionToggle,
 }: StepProgressWrapperProps) {
   const { isStepComplete, setCurrentStep } = useStepProgress(toolPair, totalSteps)
 
@@ -57,6 +59,7 @@ export function StepProgressWrapper({
       showKeyboardHints={showKeyboardHints ?? true}
       isCompleted={isCompleted}
       className={className}
+      directionToggle={directionToggle}
     />
   )
 }

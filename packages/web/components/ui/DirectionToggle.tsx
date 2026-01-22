@@ -43,7 +43,7 @@ export function DirectionToggle() {
         className="inline-block min-h-[44px] px-3 py-2 text-sm font-mono text-[var(--color-text-dim)]"
         aria-hidden="true"
       >
-        [{fromTool} ↔ {toTool}]
+        {`[${fromTool} ↔ ${toTool}]`}
       </span>
     )
   }

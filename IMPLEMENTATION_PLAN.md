@@ -1090,10 +1090,11 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Pass `toolPair` from route params to Providers
   - Validates toolPair slug before creating provider (404 for invalid slugs)
 
-- [ ] **13.6.3** Update `StepPageClientWrapper` to consume direction context
+- [x] **13.6.3** Update `StepPageClientWrapper` to consume direction context
   - Location: `packages/web/components/ui/StepPageClientWrapper.tsx`
   - Use `useDirectionContext()` instead of local state
   - Pass `isReversed` to child components that need it
+  - **Note**: Also fixed DirectionToggle template literal bug (line 46: `{`[${fromTool} ↔ ${toTool}]`}`)
 
 #### 13.7: Testing [P2 - Validation]
 
@@ -1153,7 +1154,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 | `tests/direction.spec.ts` | Direction toggle Playwright tests | P2 (13.7.1) |
 | `tests/glossary.spec.ts` | Glossary page Playwright tests | P2 (13.7.2) |
 
-**Modified Files (8)**
+**Modified Files (9)**
 
 | File | Changes | Lines Affected |
 |------|---------|----------------|
@@ -1163,7 +1164,9 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 | `app/[toolPair]/cheatsheet/page.tsx` | Use shared data, add direction, remove inline data, remove DirectionProvider | -225 lines, +30 lines |
 | `app/[toolPair]/page.tsx` | Add glossary link next to cheatsheet | ~5 lines |
 | `app/[toolPair]/layout.tsx` | Created with Providers wrapper for all toolPair pages | +41 lines (new file) |
-| `components/ui/StepPageClientWrapper.tsx` | Consume direction context | ~10 lines |
+| `components/ui/StepPageClientWrapper.tsx` | Consume direction context, pass DirectionToggle to StepProgressWrapper | ~15 lines |
+| `components/ui/StepProgressWrapper.tsx` | Add `directionToggle?: ReactNode` prop to pass through | ~5 lines |
+| `components/ui/DirectionToggle.tsx` | Fix template literal bug in loading state | ~1 line |
 | `components/ui/GlossaryClientWrapper.tsx` | Remove DirectionProvider (now in layout) | -15 lines |
 
 **Estimated Total**
