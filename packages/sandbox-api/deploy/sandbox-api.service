@@ -1,0 +1,94 @@
+# toolkata Sandbox API - systemd service unit
+#
+# Install instructions:
+# 1. Copy this file to /etc/systemd/system/sandbox-api.service
+# 2. Run: sudo systemctl daemon-reload
+# 3. Run: sudo systemctl enable sandbox-api
+# 4. Run: sudo systemctl start sandbox-api
+#
+# View logs: sudo journalctl -u sandbox-api -f
+# Restart: sudo systemctl restart sandbox-api
+# Stop: sudo systemctl stop sandbox-api
+
+[Unit]
+Description=toolkata Sandbox API - Ephemeral container management
+Documentation=https://github.com/toolkata/toolkata
+After=network.target docker.service
+Requires=docker.service
+
+# Start after Docker is ready
+Wants=docker.service
+
+[Service]
+# Type: notify for systemd status notifications (requires sd-notify)
+# Type: simple for basic foreground service
+Type=notify
+
+# User and group to run the service as
+# Create a dedicated user: sudo useradd -r -s /bin/false sandboxapi
+User=sandboxapi
+Group=sandboxapi
+
+# Working directory
+WorkingDirectory=/opt/sandbox-api
+
+# Command to start the service
+# Adjust the path to your bun installation
+ExecStart=/usr/local/bin/bun run /opt/sandbox-api/src/index.ts
+
+# Environment file for configuration
+EnvironmentFile=/opt/sandbox-api/.env
+
+# Auto-restart configuration
+Restart=always
+RestartSec=5s
+
+# Resource limits (adjust based on your VPS specs)
+# Memory limit: 512MB for API process
+MemoryMax=512M
+# CPU quota: 1.0 CPU core
+CPUQuota=1.0
+# Maximum number of file descriptors
+LimitNOFILE=65536
+# Maximum number of threads
+TasksMax=128
+
+# Security hardening
+# No new privileges
+NoNewPrivileges=true
+# Private /tmp, /dev, /etc
+PrivateTmp=true
+# Read-only root filesystem (exceptions below)
+ReadOnlyPaths=/
+# Read-write paths
+ReadWritePaths=/opt/sandbox-api/node_modules
+ReadWritePaths=/var/log/sandbox-api
+# Protect system directories
+ProtectSystem=strict
+ProtectHome=true
+# Protect kernel parameters
+ProtectKernelTunables=true
+# Protect clock changes
+ProtectClock=true
+# Disable privileged operations
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sandbox-api
+
+# Process management
+# Kill mode: mixed (send SIGTERM to main process, SIGKILL to children)
+KillMode=mixed
+# Wait time for graceful shutdown
+TimeoutStopSec=30s
+
+# OOM handling
+# Send SIGTERM on OOM, not SIGKILL
+OOMPolicy=continue
+
+[Install]
+# Start after multi-user target (normal boot)
+WantedBy=multi-user.target

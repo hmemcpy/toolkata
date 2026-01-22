@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "bun run build",
+  "installCommand": "bun install",
+  "devCommand": "bun run dev",
+  "env": {
+    "NEXT_PUBLIC_SANDBOX_API_URL": "https://sandbox.toolkata.dev"
+  }
+}

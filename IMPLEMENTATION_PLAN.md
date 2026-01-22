@@ -567,28 +567,32 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 
 > **WHY**: Cannot launch without deployment infrastructure.
 
-- [ ] **10.1** Configure Vercel deployment for packages/web
+- [x] **10.1** Configure Vercel deployment for packages/web
   - Set root directory to `packages/web`
   - Framework preset: Next.js
   - Environment variable: `NEXT_PUBLIC_SANDBOX_API_URL`
+  - Note: Created `vercel.json` with buildCommand and env config
 
-- [ ] **10.2** Create systemd service file for sandbox-api
+- [x] **10.2** Create systemd service file for sandbox-api
   - Auto-restart on failure (Restart=on-failure)
   - Resource limits (MemoryMax, CPUQuota)
   - Environment file for secrets
   - Location: `packages/sandbox-api/deploy/sandbox-api.service`
+  - Note: Created complete service file with security hardening
 
-- [ ] **10.3** Create Caddy reverse proxy config
+- [x] **10.3** Create Caddy reverse proxy config
   - HTTPS + WSS termination (automatic certs via Let's Encrypt)
   - CORS headers configuration
   - WebSocket upgrade handling
   - Location: `packages/sandbox-api/deploy/Caddyfile`
+  - Note: Created Caddyfile with WebSocket support and security headers
 
-- [ ] **10.4** Document VPS setup with gVisor
+- [x] **10.4** Document VPS setup with gVisor
   - Install Docker with gVisor runtime (`runsc`)
   - Configure runsc as default runtime for sandbox containers
   - Test isolation: container cannot access host
   - Location: `packages/sandbox-api/README.md`
+  - Note: Created comprehensive README with deployment and troubleshooting guide
 
 - [x] **10.5** Add health check endpoint improvements
   - `GET /health` returns: `{ status: "ok", containers: N, uptime: X }`
