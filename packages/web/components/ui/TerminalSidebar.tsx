@@ -183,74 +183,8 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
   }
 
   return (
-    <div
-      className="fixed right-0 top-0 z-[var(--sidebar-z-index)] h-screen w-[var(--sidebar-width)] border-l border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg transition-transform duration-[var(--transition-sidebar)] ease-in-out lg:translate-x-0"
-      id="terminal-sidebar"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Terminal sidebar"
-    >
-      <div className="flex h-full flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-[var(--color-text)]">Terminal</span>
-            <StatusIndicator />
-          </div>
-          <button
-            ref={closeButtonRef}
-            type="button"
-            onClick={closeSidebar}
-            className="rounded p-1 text-[var(--color-text-dim)] transition-colors hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-            aria-label="Close terminal sidebar"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-5 w-5"
-            >
-              <title>Close</title>
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Body - Terminal */}
-        <div className="flex-1 overflow-hidden">
-          <InteractiveTerminal toolPair={toolPair} stepId="sidebar" />
-        </div>
-
-        {/* Footer */}
-        {state === "CONNECTED" || state === "TIMEOUT_WARNING" ? (
-          <div className="flex items-center justify-between border-t border-[var(--color-border)] px-4 py-3">
-            <button
-              type="button"
-              onClick={() => {
-                // Trigger reset via context or direct call
-                // For now, the reset button inside InteractiveTerminal handles this
-                // This is a secondary reset button for convenience
-              }}
-              className="text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-              aria-label="Reset terminal session"
-            >
-              Reset
-            </button>
-            {sessionTimeRemaining !== null ? (
-              <span className="text-xs text-[var(--color-text-muted)]">
-                Session: {formatTime(sessionTimeRemaining)} / 5:00
-              </span>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-
-      {/* Backdrop */}
+    <>
+      {/* Backdrop - sibling to sidebar, not nested */}
       <div
         className="fixed inset-0 z-[var(--backdrop-z-index)] bg-black/50 transition-opacity duration-[var(--transition-sidebar)]"
         onClick={closeSidebar}
@@ -263,6 +197,75 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
         tabIndex={0}
         aria-label="Close terminal sidebar"
       />
-    </div>
+
+      {/* Sidebar */}
+      <div
+        className="fixed right-0 top-0 z-[var(--sidebar-z-index)] h-screen w-[var(--sidebar-width)] border-l border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg transition-transform duration-[var(--transition-sidebar)] ease-in-out lg:translate-x-0"
+        id="terminal-sidebar"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Terminal sidebar"
+      >
+        <div className="flex h-full flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-[var(--color-text)]">Terminal</span>
+              <StatusIndicator />
+            </div>
+            <button
+              ref={closeButtonRef}
+              type="button"
+              onClick={closeSidebar}
+              className="rounded p-1 text-[var(--color-text-dim)] transition-colors hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+              aria-label="Close terminal sidebar"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5"
+              >
+                <title>Close</title>
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Body - Terminal */}
+          <div className="flex-1 overflow-hidden">
+            <InteractiveTerminal toolPair={toolPair} stepId="sidebar" />
+          </div>
+
+          {/* Footer */}
+          {state === "CONNECTED" || state === "TIMEOUT_WARNING" ? (
+            <div className="flex items-center justify-between border-t border-[var(--color-border)] px-4 py-3">
+              <button
+                type="button"
+                onClick={() => {
+                  // Trigger reset via context or direct call
+                  // For now, the reset button inside InteractiveTerminal handles this
+                  // This is a secondary reset button for convenience
+                }}
+                className="text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                aria-label="Reset terminal session"
+              >
+                Reset
+              </button>
+              {sessionTimeRemaining !== null ? (
+                <span className="text-xs text-[var(--color-text-muted)]">
+                  Session: {formatTime(sessionTimeRemaining)} / 5:00
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </>
   )
 }

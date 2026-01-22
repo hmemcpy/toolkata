@@ -219,89 +219,8 @@ export function MobileBottomSheet({ toolPair }: MobileBottomSheetProps): ReactNo
   const opacity = currentY > 0 ? 1 - currentY / 300 : 1
 
   return (
-    <div
-      ref={sheetRef}
-      className="fixed bottom-0 left-0 right-0 z-[var(--sidebar-z-index)] max-h-[60vh] min-h-[300px] w-auto rounded-t-xl border-t border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg transition-transform duration-[var(--transition-sidebar)] ease-in-out max-lg:translate-y-0 lg:hidden"
-      id="terminal-bottom-sheet"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Terminal"
-      style={{
-        transform,
-        opacity,
-      }}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
-      <div className="flex h-full flex-col">
-        {/* Drag Handle */}
-        <div
-          ref={handleRef}
-          className="flex cursor-grab touch-none items-center justify-center border-b border-[var(--color-border)] px-4 py-3 active:cursor-grabbing"
-          aria-hidden="true"
-        >
-          <div className="h-1 w-12 rounded-full bg-[var(--color-border)]" />
-        </div>
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-2">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-[var(--color-text)]">Terminal</span>
-            <StatusIndicator />
-          </div>
-          <button
-            type="button"
-            onClick={closeSidebar}
-            className="rounded p-1 text-[var(--color-text-dim)] transition-colors hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-            aria-label="Close terminal"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-5 w-5"
-            >
-              <title>Close</title>
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Body - Terminal */}
-        <div className="flex-1 overflow-hidden">
-          <InteractiveTerminal toolPair={toolPair} stepId="mobile" />
-        </div>
-
-        {/* Footer */}
-        {state === "CONNECTED" || state === "TIMEOUT_WARNING" ? (
-          <div className="flex items-center justify-between border-t border-[var(--color-border)] px-4 py-3">
-            <button
-              type="button"
-              onClick={() => {
-                // Trigger reset via context or direct call
-                // For now, the reset button inside InteractiveTerminal handles this
-              }}
-              className="text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-              aria-label="Reset terminal session"
-            >
-              Reset
-            </button>
-            {sessionTimeRemaining !== null ? (
-              <span className="text-xs text-[var(--color-text-muted)]">
-                Session: {formatTime(sessionTimeRemaining)} / 5:00
-              </span>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-
-      {/* Backdrop */}
+    <>
+      {/* Backdrop - sibling to sheet, not nested */}
       <div
         className="fixed inset-0 z-[var(--backdrop-z-index)] bg-black/50 transition-opacity duration-[var(--transition-sidebar)]"
         onClick={closeSidebar}
@@ -314,6 +233,90 @@ export function MobileBottomSheet({ toolPair }: MobileBottomSheetProps): ReactNo
         tabIndex={0}
         aria-label="Close terminal"
       />
-    </div>
+
+      {/* Bottom Sheet */}
+      <div
+        ref={sheetRef}
+        className="fixed bottom-0 left-0 right-0 z-[var(--sidebar-z-index)] max-h-[60vh] min-h-[300px] w-auto rounded-t-xl border-t border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg transition-transform duration-[var(--transition-sidebar)] ease-in-out max-lg:translate-y-0 lg:hidden"
+        id="terminal-bottom-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Terminal"
+        style={{
+          transform,
+          opacity,
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="flex h-full flex-col">
+          {/* Drag Handle */}
+          <div
+            ref={handleRef}
+            className="flex cursor-grab touch-none items-center justify-center border-b border-[var(--color-border)] px-4 py-3 active:cursor-grabbing"
+            aria-hidden="true"
+          >
+            <div className="h-1 w-12 rounded-full bg-[var(--color-border)]" />
+          </div>
+
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-[var(--color-text)]">Terminal</span>
+              <StatusIndicator />
+            </div>
+            <button
+              type="button"
+              onClick={closeSidebar}
+              className="rounded p-1 text-[var(--color-text-dim)] transition-colors hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+              aria-label="Close terminal"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5"
+              >
+                <title>Close</title>
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Body - Terminal */}
+          <div className="flex-1 overflow-hidden">
+            <InteractiveTerminal toolPair={toolPair} stepId="mobile" />
+          </div>
+
+          {/* Footer */}
+          {state === "CONNECTED" || state === "TIMEOUT_WARNING" ? (
+            <div className="flex items-center justify-between border-t border-[var(--color-border)] px-4 py-3">
+              <button
+                type="button"
+                onClick={() => {
+                  // Trigger reset via context or direct call
+                  // For now, the reset button inside InteractiveTerminal handles this
+                }}
+                className="text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                aria-label="Reset terminal session"
+              >
+                Reset
+              </button>
+              {sessionTimeRemaining !== null ? (
+                <span className="text-xs text-[var(--color-text-muted)]">
+                  Session: {formatTime(sessionTimeRemaining)} / 5:00
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </>
   )
 }

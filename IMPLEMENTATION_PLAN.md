@@ -356,7 +356,7 @@ Two related efforts:
 > **WHY**: Playwright tests can hang or take a long time. Run them only after all implementation is complete.
 > **WARNING**: These tests may block the build loop. Run manually if loop times out.
 
-- [ ] **8.1** Add Playwright tests for terminal sidebar
+- [x] **8.1** Add Playwright tests for terminal sidebar
   - Create `packages/web/tests/terminal-sidebar.spec.ts`
   - Test: Toggle button opens sidebar
   - Test: Close button closes sidebar
@@ -365,6 +365,7 @@ Two related efforts:
   - Test: Keyboard shortcut `t` toggles terminal
   - Test: Escape closes sidebar
   - Test: Focus returns to trigger on close
+  - **Completed 2026-01-22** - 15 tests passed, 2 skipped (TryIt not in content yet)
 
 - [ ] **8.2** Add mobile bottom sheet tests
   - Test: Bottom sheet shows on mobile viewport
@@ -507,3 +508,23 @@ Two related efforts:
 
 **Files Changed**:
 - `packages/web/services/content.ts`
+
+### 2026-01-22: Backdrop Blocking Sidebar Interactions (Fixed)
+
+**Issue**: The backdrop div in `TerminalSidebar` and `MobileBottomSheet` was nested inside the sidebar/sheet container with `fixed inset-0`. This caused the backdrop to cover the entire viewport including the sidebar itself, blocking clicks to close buttons and other interactive elements within the sidebar.
+
+**Fix**: Moved the backdrop to be a sibling of the sidebar/sheet (rendered as a fragment with two children) instead of nested inside. The backdrop now correctly sits behind the sidebar (z-index 30 vs 40) and only blocks interaction with page content, not the sidebar itself.
+
+**Files Changed**:
+- `packages/web/components/ui/TerminalSidebar.tsx`
+- `packages/web/components/ui/MobileBottomSheet.tsx`
+- `packages/web/app/[toolPair]/[step]/page.tsx` - Added `id="main-content"` to main element for inert attribute
+
+### 2026-01-22: Missing main-content id for Focus Trap (Fixed)
+
+**Issue**: `TerminalSidebar` and `MobileBottomSheet` set the `inert` attribute on `#main-content` to implement focus trap behavior, but the main element in step pages didn't have this id.
+
+**Fix**: Added `id="main-content"` to the main element in `app/[toolPair]/[step]/page.tsx`.
+
+**Files Changed**:
+- `packages/web/app/[toolPair]/[step]/page.tsx`
