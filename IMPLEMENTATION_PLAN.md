@@ -1076,7 +1076,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 
 > Connect direction context to app layout. Depends on 13.1, 13.3.
 
-- [ ] **13.6.1** Create `Providers.tsx` wrapper at `packages/web/components/Providers.tsx`
+- [x] **13.6.1** Create `Providers.tsx` wrapper at `packages/web/components/Providers.tsx`
   - Client component with `"use client"`
   - Wraps children with `DirectionProvider`
   - Accepts `toolPair` prop (passed from layout or page)
