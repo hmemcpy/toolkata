@@ -427,7 +427,7 @@ test.describe("Content Validation", () => {
   ]
 
   // Allowlist of intentional CJK characters (kata, kaizen, etc.)
-  const allowedCJK = ["形", "改善", "道", "術"]
+  const allowedCJK = ["型", "形", "改善", "道", "術"]
 
   for (const route of contentRoutes) {
     test(`${route} has no unexpected CJK characters`, async ({ page }) => {

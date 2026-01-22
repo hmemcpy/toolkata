@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { useState } from "react"
 
@@ -20,10 +21,26 @@ export function Header() {
         {/* Logo */}
         <Link
           href="/"
-          className="text-xl font-bold text-[var(--color-text)] hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)]"
+          className="flex items-center gap-3 hover:opacity-80 focus-visible:outline-none focus-visible:ring-[var(--focus-ring)]"
           onClick={closeMobileMenu}
         >
-          toolkata<span className="text-[var(--color-accent)]">_</span>
+          <Image
+            src="/logo-mark.svg"
+            alt=""
+            width={70}
+            height={60}
+            className="h-[60px] w-auto"
+            priority
+          />
+          <div className="flex flex-col">
+            <span className="text-lg font-semibold leading-tight">
+              <span className="text-[var(--color-text)]">tool</span>
+              <span className="text-[var(--color-accent)]">kata</span>
+            </span>
+            <span className="text-xs text-[var(--color-text-muted)] hidden sm:block">
+              Master tools through practice
+            </span>
+          </div>
         </Link>
 
         {/* Desktop Navigation */}

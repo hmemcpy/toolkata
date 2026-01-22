@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 150">
+  <defs>
+    <!-- CRT screen glow -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Scanlines pattern -->
+    <pattern id="scanlines" patternUnits="userSpaceOnUse" width="2" height="2">
+      <rect width="2" height="1" fill="rgba(0,0,0,0.15)"/>
+    </pattern>
+
+    <!-- Screen curvature gradient -->
+    <radialGradient id="screenGrad" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#0a1a0a"/>
+      <stop offset="100%" stop-color="#050a05"/>
+    </radialGradient>
+
+    <!-- Bezel gradient -->
+    <linearGradient id="bezelGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4a4a4a"/>
+      <stop offset="50%" stop-color="#2a2a2a"/>
+      <stop offset="100%" stop-color="#1a1a1a"/>
+    </linearGradient>
+
+    <!-- Inner bezel shadow -->
+    <linearGradient id="innerBezel" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a1a"/>
+      <stop offset="100%" stop-color="#3a3a3a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="140" height="150" fill="#0a0a0a"/>
+
+  <!-- CRT Monitor outer frame -->
+  <rect x="10" y="8" width="120" height="104" rx="5" ry="5" fill="url(#bezelGrad)"/>
+
+  <!-- Monitor inner bezel -->
+  <rect x="14" y="12" width="112" height="96" rx="3" ry="3" fill="url(#innerBezel)"/>
+
+  <!-- Screen bezel (dark inset) -->
+  <rect x="17" y="15" width="106" height="90" rx="3" ry="3" fill="#0a0a0a"/>
+
+  <!-- CRT Screen -->
+  <rect x="20" y="18" width="100" height="84" rx="2" ry="2" fill="url(#screenGrad)"/>
+
+  <!-- Terminal window title bar -->
+  <rect x="20" y="18" width="100" height="12" rx="2" ry="0" fill="#1a2a1a"/>
+  <circle cx="27" cy="24" r="2" fill="#ff5f56"/>
+  <circle cx="34" cy="24" r="2" fill="#ffbd2e"/>
+  <circle cx="41" cy="24" r="2" fill="#27ca40"/>
+  <text x="49" y="27" font-family="monospace" font-size="9" fill="#888" text-anchor="start">toolkata</text>
+
+  <!-- Terminal content area -->
+  <rect x="20" y="30" width="100" height="72" fill="url(#screenGrad)"/>
+
+  <!-- Blinking cursor -->
+  <rect x="28" y="38" width="5" height="9" fill="#22c55e" opacity="0.8">
+    <animate attributeName="opacity" values="0.8;0.2;0.8" dur="1s" repeatCount="indefinite"/>
+  </rect>
+
+  <!-- The character with phosphor glow -->
+  <text
+    x="70"
+    y="72"
+    font-family="Noto Sans JP, Hiragino Sans, sans-serif"
+    font-size="42"
+    font-weight="400"
+    fill="#22c55e"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    filter="url(#glow)">型</text>
+
+  <!-- Scanlines overlay -->
+  <rect x="20" y="30" width="100" height="72" fill="url(#scanlines)" opacity="0.5"/>
+
+  <!-- Wordmark below -->
+  <text
+    x="70"
+    y="135"
+    font-family="JetBrains Mono, monospace"
+    font-size="20"
+    font-weight="500"
+    text-anchor="middle"
+    letter-spacing="0.05em">
+    <tspan fill="#fafafa">tool</tspan><tspan fill="#22c55e">kata</tspan>
+  </text>
+</svg>

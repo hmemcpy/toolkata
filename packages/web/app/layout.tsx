@@ -16,7 +16,23 @@ export const metadata: Metadata = {
   description:
     "Hands-on tutorials for developers switching tools. No fluff. Just the commands you need.",
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+  },
+  openGraph: {
+    images: [
+      {
+        url: "/og-image.svg",
+        width: 1200,
+        height: 630,
+        alt: "toolkata - Master developer tools through practice",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/og-image.svg"],
   },
   other: {
     // Preconnect to sandbox API for faster WebSocket connection

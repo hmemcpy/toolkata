@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="0.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="32" height="32" fill="#0a0a0a" rx="4"/>
+
+  <!-- Monitor frame -->
+  <rect x="4" y="5" width="24" height="22" rx="2" fill="#2a2a2a"/>
+
+  <!-- Screen inset -->
+  <rect x="6" y="7" width="20" height="18" rx="1" fill="#0a0a0a"/>
+
+  <!-- Screen -->
+  <rect x="7" y="8" width="18" height="16" rx="1" fill="#0a1a0a"/>
+
+  <!-- Character -->
+  <text
+    x="16"
+    y="17"
+    font-family="Noto Sans JP, sans-serif"
+    font-size="14"
+    fill="#22c55e"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    filter="url(#glow)">型</text>
+</svg>
