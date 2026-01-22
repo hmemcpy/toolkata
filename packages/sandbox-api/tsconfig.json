@@ -1,10 +1,7 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@hmemcpy/tutor-config/tsconfig.library.json",
   "compilerOptions": {
-    "lib": ["ES2022"],
-    "module": "ESNext",
-    "target": "ES2022",
-    "types": ["bun-types"]
+    "rootDir": "./src"
   },
   "include": ["src/**/*", "src/**/*.d.ts"],
   "exclude": ["node_modules", "dist"]

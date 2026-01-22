@@ -21,8 +21,8 @@ export const stepFrontmatterSchema = z.object({
   title: z.string().min(1, "Title is required"),
   step: z.number().int().positive("Step must be a positive integer"),
   description: z.string().min(1, "Description is required").optional(),
-  gitCommands: z.array(z.string()).min(1, "At least one git command is required").optional(),
-  jjCommands: z.array(z.string()).min(1, "At least one jj command is required").optional(),
+  gitCommands: z.array(z.string()).optional(),
+  jjCommands: z.array(z.string()).optional(),
 })
 
 /**

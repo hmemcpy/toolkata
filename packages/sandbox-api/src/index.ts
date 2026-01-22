@@ -138,7 +138,10 @@ const make = Effect.gen(function* () {
         headers,
       }
       if (req.method !== "GET" && req.method !== "HEAD") {
-        requestInit.body = req as unknown as RequestInit["body"]
+        const body = req as unknown as RequestInit["body"]
+        if (body !== undefined) {
+          requestInit.body = body
+        }
       }
 
       const request = new Request(url.toString(), requestInit)

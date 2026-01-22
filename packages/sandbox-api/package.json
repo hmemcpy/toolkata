@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@hmemcpy/tutor-config": "link:@hmemcpy/tutor-config",
     "@types/bun": "latest",
     "@types/next": "^9.0.0",
     "@types/ws": "^8.18.1",

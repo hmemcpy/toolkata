@@ -81,16 +81,19 @@ const _parseMessage = (data: string): WebSocketMessage => {
     if (typeof parsed === "object" && parsed !== null && "type" in parsed) {
       const msgType = parsed.type
       if (msgType === "resize") {
+        const rows = typeof parsed.rows === "number" ? parsed.rows : 24
+        const cols = typeof parsed.cols === "number" ? parsed.cols : 80
         return {
           type: "resize",
-          rows: typeof parsed.rows === "number" ? parsed.rows : 24,
-          cols: typeof parsed.cols === "number" ? parsed.cols : 80,
+          rows,
+          cols,
         } satisfies TerminalResize
       }
       if (msgType === "input") {
+        const inputData = typeof parsed.data === "string" ? parsed.data : ""
         return {
           type: "input",
-          data: typeof parsed.data === "string" ? parsed.data : "",
+          data: inputData,
         } satisfies TerminalInput
       }
     }
@@ -111,8 +114,8 @@ const make = Effect.gen(function* () {
   // Handle a new WebSocket connection
   const handleConnection = (sessionId: string, containerId: string, socket: WebSocket) =>
     Effect.gen(function* () {
-      // Verify container exists
-      const _container = yield* containerService.get(containerId)
+      // Verify container exists before connecting
+      yield* containerService.get(containerId)
 
       const docker = dockerClient.docker
       const container = docker.getContainer(containerId)
