@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { Footer } from "../../components/ui/Footer"
 import { Header } from "../../components/ui/Header"
 import { OverviewPageClientWrapper } from "../../components/ui/OverviewPageClientWrapper"
+import { ProgressCard } from "../../components/ui/ProgressCard"
 import { getPairing, isValidPairingSlug } from "../../content/pairings"
 import type { StepMeta } from "../../services/content"
 
@@ -166,7 +167,7 @@ export default async function ComparisonOverviewPage(props: {
         {/* Main content with progress sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left column: Introduction */}
-          <div className="lg:col-span-3 space-y-12">
+          <div className="lg:col-span-2">
             {/* Why {tool}? Section */}
             <section>
               <h2 className="mb-4 text-2xl font-bold font-mono text-[var(--color-text)]">
@@ -205,7 +206,12 @@ export default async function ComparisonOverviewPage(props: {
             </section>
           </div>
 
-          {/* Client component wrapper for steps and progress */}
+          {/* Right column: Progress card */}
+          <aside className="lg:col-span-1">
+            <ProgressCard toolPair={toolPair} totalSteps={pairing.steps} />
+          </aside>
+
+          {/* Full width: Steps list */}
           <OverviewPageClientWrapper
             toolPair={toolPair}
             totalSteps={pairing.steps}
