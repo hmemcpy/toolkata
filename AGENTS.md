@@ -452,4 +452,25 @@ bun run test         # Run tests
 bun run lint         # Check lint
 bun run format       # Format code
 bun run typecheck    # Type check
+./scripts/test-all.sh # Run automated test suite
 ```
+
+### Testing
+
+**Automated Testing:**
+- `./scripts/test-all.sh` - Runs all route availability tests, HTML structure tests, and outputs manual testing checklist
+- Tests all 16 routes: home, overview, 12 steps, cheat sheet
+- Verifies accessibility elements (skip link, main landmark)
+- Outputs comprehensive manual testing checklist for items requiring browser verification
+
+**Manual Testing Checklist:**
+Use browser DevTools to verify:
+- Responsive design at 320px, 768px, 1024px+ breakpoints
+- 200% zoom usability
+- Touch targets >= 44px
+- Focus indicators on all interactive elements
+- Progress persistence (localStorage)
+- Keyboard navigation (Tab, Arrow keys, Esc, ?)
+- Terminal states (connecting, connected, error, timeout)
+- Fallback mode when API unavailable
+- Sandbox API integration (requires running sandbox-api)
