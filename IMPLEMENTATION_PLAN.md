@@ -262,13 +262,16 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Responsive: 3 columns desktop, 2 tablet, 1 mobile
   - Note: Location uses `app/` directory structure (not `src/app/`)
 
-- [ ] **5.2** Create comparison overview page `packages/web/app/[toolPair]/page.tsx`
+- [x] **5.2** Create comparison overview page `packages/web/app/[toolPair]/page.tsx`
   - "Why jj?" introduction section (from index.mdx)
   - Key differences callout box
   - StepList with all 12 steps grouped by section
   - Progress summary sidebar (desktop) / section (mobile)
   - Link to cheat sheet
   - "Continue Step N →" button if has progress
+  - Location: `packages/web/app/[toolPair]/page.tsx`
+  - Note: Uses static step metadata for now; TODO: load from ContentService when MDX content exists
+  - Note: Progress tracking uses placeholder values; TODO: wire to localStorage via client component
 
 - [ ] **5.3** Create cheat sheet page `packages/web/app/[toolPair]/cheatsheet/page.tsx`
   - Two-column command reference table (git → jj)
