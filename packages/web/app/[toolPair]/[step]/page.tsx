@@ -1,12 +1,10 @@
 import { Header } from "../../../components/ui/Header"
 import { Footer } from "../../../components/ui/Footer"
-import { StepProgressWrapper } from "../../../components/ui/StepProgressWrapper"
-import { NavigationWrapper } from "../../../components/ui/NavigationWrapper"
 import { MDXRemote } from "next-mdx-remote/rsc"
 import { Callout } from "../../../components/ui/Callout"
 import { CodeBlock } from "../../../components/ui/CodeBlock"
 import { SideBySide } from "../../../components/ui/SideBySide"
-import { TerminalWithSuggestionsWrapper } from "../../../components/ui/TerminalWithSuggestionsWrapper"
+import { StepPageClientWrapper } from "../../../components/ui/StepPageClientWrapper"
 import { getPairing, isValidPairingSlug } from "../../../content/pairings"
 import { notFound } from "next/navigation"
 import fs from "node:fs/promises"
@@ -146,52 +144,27 @@ export default async function StepPage(props: {
   }
 
   const { frontmatter, content } = stepContent
-  const hasGitCommands = frontmatter.gitCommands && frontmatter.gitCommands.length > 0
-  const hasJjCommands = frontmatter.jjCommands && frontmatter.jjCommands.length > 0
   const allCommands = [...(frontmatter.gitCommands ?? []), ...(frontmatter.jjCommands ?? [])]
-  const showCommandSuggestions = hasGitCommands || hasJjCommands
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
       <Header />
 
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Step Progress Header */}
-        <StepProgressWrapper
+        <StepPageClientWrapper
           toolPair={toolPair}
           currentStep={stepNum}
           totalSteps={pairing.steps}
           title={frontmatter.title}
+          previousHref={stepNum > 1 ? `/${toolPair}/${stepNum - 1}` : null}
           nextHref={stepNum < pairing.steps ? `/${toolPair}/${stepNum + 1}` : null}
-        />
-
-        {/* MDX Content */}
-        <article className="my-8 prose prose-invert max-w-none">
-          <MDXRemote source={content} components={mdxComponents} />
-        </article>
-
-        {/* Interactive Terminal with Command Suggestions */}
-        {showCommandSuggestions ? (
-          <section className="my-12">
-            <h2 className="mb-6 text-xl font-mono font-medium text-[var(--color-text)]">
-              Try It Yourself
-            </h2>
-            <TerminalWithSuggestionsWrapper
-              toolPair={toolPair}
-              stepId={stepNum.toString()}
-              suggestedCommands={allCommands}
-            />
-          </section>
-        ) : null}
-
-        {/* Navigation Footer */}
-        <NavigationWrapper
-          toolPair={toolPair}
-          currentStep={stepNum}
-          totalSteps={pairing.steps}
-          previousTitle={stepNum > 1 ? `Step ${stepNum - 1}` : null}
-          nextTitle={stepNum < pairing.steps ? `Step ${stepNum + 1}` : null}
-        />
+          suggestedCommands={allCommands}
+        >
+          {/* MDX Content */}
+          <article className="prose prose-invert max-w-none">
+            <MDXRemote source={content} components={mdxComponents} />
+          </article>
+        </StepPageClientWrapper>
       </main>
 
       <Footer />
