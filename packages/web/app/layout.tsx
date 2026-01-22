@@ -36,9 +36,7 @@ export const metadata: Metadata = {
     // Preconnect to sandbox API for faster WebSocket connection
     // The environment variable is set in .env.local or at build time
     // Default to localhost for development
-    "sandbox-api-preconnect":
-      // biome-ignore lint/complexity/useLiteralKeys: Required for TypeScript strictness
-      process.env["NEXT_PUBLIC_SANDBOX_API_URL"] ?? "ws://localhost:3001",
+    "sandbox-api-preconnect": process.env["NEXT_PUBLIC_SANDBOX_API_URL"] ?? "ws://localhost:3001",
   },
 }
 
@@ -54,7 +52,6 @@ export default function RootLayout({
 }) {
   // Get sandbox API URL for preconnect
   const sandboxApiUrl =
-    // biome-ignore lint/complexity/useLiteralKeys: Required for TypeScript strictness
     process.env["NEXT_PUBLIC_SANDBOX_API_URL"]?.replace(/^wss?:\/\//, "") ?? "localhost:3001"
 
   return (

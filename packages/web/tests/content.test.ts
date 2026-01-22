@@ -8,7 +8,7 @@
 /// <reference types="bun-types" />
 
 import { describe, expect, it } from "bun:test"
-import { loadCheatsheet, loadIndex, loadStep, listSteps } from "../services/content"
+import { loadIndex, loadStep, listSteps } from "../services/content"
 
 describe("content service", () => {
   describe("loadStep", () => {
@@ -76,32 +76,6 @@ describe("content service", () => {
       expect(index?.content).toBeDefined()
       expect(index?.content).toContain("Why jj over git?")
       expect(index?.content).toContain("Jujutsu")
-    })
-  })
-
-  describe("loadCheatsheet", () => {
-    it("returns valid content for existing cheatsheet", async () => {
-      const cheatsheet = await loadCheatsheet("jj-git")
-
-      expect(cheatsheet).not.toBeNull()
-      expect(cheatsheet?.frontmatter.title).toBe("jj vs Git Command Cheat Sheet")
-      expect(cheatsheet?.frontmatter.description).toBe(
-        "Quick reference for git users learning jj (Jujutsu)"
-      )
-    })
-
-    it("returns null for non-existent tool pair", async () => {
-      const cheatsheet = await loadCheatsheet("non-existent-tool-pair")
-
-      expect(cheatsheet).toBeNull()
-    })
-
-    it("returns content with MDX source", async () => {
-      const cheatsheet = await loadCheatsheet("jj-git")
-
-      expect(cheatsheet?.content).toBeDefined()
-      expect(cheatsheet?.content).toContain("jj vs Git Command Cheat Sheet")
-      expect(cheatsheet?.content).toContain("git status")
     })
   })
 

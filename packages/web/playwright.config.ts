@@ -11,7 +11,6 @@ import { defineConfig, devices } from "@playwright/test"
  *
  * @see https://playwright.dev/docs/test-configuration
  */
-// biome-ignore lint/complexity/useLiteralKeys: process.env requires bracket notation for TypeScript
 const isCI = !!process.env["CI"]
 
 export default defineConfig({

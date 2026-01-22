@@ -1,17 +1,13 @@
 /**
- * Content type definitions for tutor-content-core.
+ * Content type definitions.
  *
- * Defines Step, Index, and Cheatsheet content types with:
+ * Defines Step and Index content types with:
  * - Zod schemas for frontmatter validation
  * - Custom path resolvers for the content structure
  */
 
-import { defineContentType } from "@hmemcpy/tutor-content-core"
-import {
-  cheatsheetFrontmatterSchema,
-  indexFrontmatterSchema,
-  stepFrontmatterSchema,
-} from "./schemas"
+import { defineContentType } from "../content-core"
+import { indexFrontmatterSchema, stepFrontmatterSchema } from "./schemas"
 
 /**
  * Content root directory (relative to packages/web).
@@ -61,24 +57,6 @@ export const IndexType = defineContentType({
   schema: indexFrontmatterSchema,
   pathResolver: (slug) => `${CONTENT_ROOT}/${slug}/index.mdx`,
   filePattern: "**/index.mdx",
-})
-
-/**
- * Cheatsheet content type.
- *
- * Path pattern: {toolPair} → content/comparisons/{toolPair}/cheatsheet.mdx
- *
- * @example
- * ```ts
- * const cheatsheet = yield* service.load(CheatsheetType, "jj-git")
- * // Loads: content/comparisons/jj-git/cheatsheet.mdx
- * ```
- */
-export const CheatsheetType = defineContentType({
-  name: "cheatsheet",
-  schema: cheatsheetFrontmatterSchema,
-  pathResolver: (slug) => `${CONTENT_ROOT}/${slug}/cheatsheet.mdx`,
-  filePattern: "**/cheatsheet.mdx",
 })
 
 /**

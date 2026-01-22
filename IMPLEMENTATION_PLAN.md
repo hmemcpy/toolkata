@@ -1,16 +1,10 @@
-# Implementation Plan: Terminal Sidebar + Tutor Migration
+# Implementation Plan: Terminal Sidebar
 
 > **Scope**: Multiple related files | **Risk**: Aggressive | **Validation**: bun run typecheck && bun run lint && bun run build
 
 ---
 
-## CRITICAL: Tutor Package Guidelines
-
-**This project uses local tutor packages from `~/git/tutor` via `bun link`.**
-
-### Authoritative Source
-
-All code MUST strictly follow `~/git/tutor/AGENTS.md`. This is NON-NEGOTIABLE.
+## Code Style Guidelines
 
 ### Non-Negotiable Rules
 
@@ -25,23 +19,11 @@ All code MUST strictly follow `~/git/tutor/AGENTS.md`. This is NON-NEGOTIABLE.
 | Option import | `import { Option }` | `import * as Option from "effect/Option"` |
 | Loops | `forEach` | `for...of` |
 
-### Re-linking Packages
-
-If tutor packages change, re-link:
-
-```bash
-cd ~/git/tutor && bun link
-cd ~/git/toolkata/packages/web && bun link @hmemcpy/tutor-config @hmemcpy/tutor-content-core
-cd ~/git/toolkata/packages/sandbox-api && bun link @hmemcpy/tutor-config
-```
-
 ---
 
 ## Summary
 
-Two related efforts:
-1. **Tutor Migration Completion**: Finish migrating to `@hmemcpy/tutor-*` packages (sandbox-api tsconfig, content tests)
-2. **Terminal Sidebar**: Refactor the sandbox terminal from an embedded bottom section to a collapsible right sidebar with TryIt MDX components
+**Terminal Sidebar**: Refactor the sandbox terminal from an embedded bottom section to a collapsible right sidebar with TryIt MDX components
 
 **Note**: Playwright tests are deferred to the final phase to avoid blocking the build loop.
 
@@ -84,29 +66,25 @@ Two related efforts:
 
 ## Tasks
 
-### Phase 0: Tutor Migration Completion (P0 - Foundation)
+### Phase 0: Infrastructure Setup (P0 - Foundation) ✅ COMPLETE
 
 > **WHY**: Complete infrastructure cleanup before adding new features. Ensures consistent TypeScript strictness across packages.
-> **Spec**: `specs/tutor-migration.md`
+> **Note**: Originally planned to use `@hmemcpy/tutor-*` packages, but these were deprecated. Code was inlined directly into toolkata.
 
-- [x] **0.1** Update `packages/sandbox-api/tsconfig.json` to use tutor-config
-  - Change `extends` from `../../tsconfig.json` to `@hmemcpy/tutor-config/tsconfig.library.json`
-  - Keep existing `outDir: "dist"` and `rootDir: "src"` if needed
-  - Add `@hmemcpy/tutor-config` as devDependency
-  - Run `bun run typecheck` and fix any new errors
-  - Note: Effect-TS context inference issues with `exactOptionalPropertyTypes` are known
+- [x] **0.1** TypeScript config - inlined strict settings into `packages/web/tsconfig.json` and `packages/sandbox-api/tsconfig.json`
+- [x] **0.2** Biome config - inlined lint/format settings into root `biome.json`
+- [x] **0.3** Content-core module - created `packages/web/lib/content-core/` with Effect-based content loading
 
 - [x] **0.2** Add content loading unit tests (Bun test, not Playwright)
   - Create `packages/web/tests/content.test.ts`
   - Test `loadStep("jj-git", 1)` returns valid content
   - Test `loadStep("invalid", 999)` returns null (NotFound)
   - Test `loadIndex("jj-git")` returns valid content
-  - Test `loadCheatsheet("jj-git")` returns valid content
   - Test frontmatter validation rejects invalid data
   - **Completed 2026-01-22**
   - **Note**: Also fixed `listSteps()` function which was using `service.list()` incorrectly (slug format mismatch). Changed to incremental loading from step 1 until NotFound.
 
-- [x] **0.3** Validate tutor migration
+- [x] **0.3** Validate infrastructure setup
   ```bash
   bun run typecheck        # Both packages
   bun run lint             # Root level
@@ -163,7 +141,7 @@ Two related efforts:
   - Create context with `createContext<TerminalContextValue | null>(null)`
   - Create `useTerminalContext()` hook with helpful error if used outside provider
   - Follow DirectionContext patterns exactly
-  - **MUST** follow ~/git/tutor/AGENTS.md (readonly, no assertions, explicit types)
+  - **MUST** follow code style guidelines (readonly, no assertions, explicit types)
   - **Note**: Implemented TerminalProvider in same file as TerminalContext (matching DirectionContext pattern)
 
 - [x] **1.2** ~~Create `TerminalProvider` at `packages/web/components/TerminalProvider.tsx~~ **(MERGED WITH 1.1)**
@@ -447,8 +425,8 @@ Two related efforts:
 
 | File | Changes |
 |------|---------|
-| `packages/sandbox-api/tsconfig.json` | Extend `@hmemcpy/tutor-config/tsconfig.library.json` instead of `../../tsconfig.json` |
-| `packages/sandbox-api/package.json` | Add `@hmemcpy/tutor-config` as devDependency |
+| `packages/sandbox-api/tsconfig.json` | Inlined strict TypeScript settings |
+| `packages/sandbox-api/package.json` | Removed tutor-config dependency |
 | `packages/web/services/content.ts` | Fixed `listSteps()` to use incremental loading instead of `service.list()` (slug format mismatch) |
 | `package.json` (root) | Added `bun-types` as devDependency for test type declarations |
 | `packages/web/package.json` | Added `bun-types` as devDependency |
@@ -475,7 +453,7 @@ Two related efforts:
 
 ## Execution Notes
 
-- **Start with Phase 0** - Complete tutor migration before terminal sidebar work
+- **Phase 0 complete** - Infrastructure setup done
 - **Phase 0.5 is a bug fix** - Step page uses wrong SideBySide variant (discovered in gap analysis)
 - **Validation command** (use throughout): `bun run typecheck && bun run lint && bun run build`
 - **Playwright tests LAST** - Phase 8 runs only after all implementation is complete
@@ -486,7 +464,7 @@ Two related efforts:
 
 ## Task Count
 
-- Phase 0: 3 tasks (Tutor Migration)
+- Phase 0: 3 tasks (Infrastructure Setup) ✅
 - Phase 0.5: 2 tasks (MDX Cleanup - Bug Fix)
 - Phase 1: 4 tasks (Foundation)
 - Phase 2: 3 tasks (Sidebar UI)

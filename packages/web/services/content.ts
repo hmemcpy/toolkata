@@ -1,7 +1,7 @@
 /**
- * Content service - Re-exports from tutor-content-core with helper functions.
+ * Content service - Helper functions for loading MDX content.
  *
- * This module provides convenient helper functions for loading content
+ * Provides convenient helper functions for loading content
  * that handle Effect execution and layer provision.
  *
  * @example
@@ -15,16 +15,12 @@
  * ```
  */
 
-import type { Content, ContentError } from "@hmemcpy/tutor-content-core"
-import { ContentService } from "@hmemcpy/tutor-content-core"
+import type { Content, ContentError } from "../lib/content-core"
+import { ContentService } from "../lib/content-core"
 import { Effect } from "effect"
 import { ContentLayer } from "../lib/content/layer"
-import type {
-  CheatsheetFrontmatter,
-  IndexFrontmatter,
-  StepFrontmatter,
-} from "../lib/content/schemas"
-import { CheatsheetType, IndexType, StepType } from "../lib/content/types"
+import type { IndexFrontmatter, StepFrontmatter } from "../lib/content/schemas"
+import { IndexType, StepType } from "../lib/content/types"
 
 // Re-export types for convenience
 export type { StepMeta } from "../lib/content/types"
@@ -41,24 +37,11 @@ export type StepContent = Content<StepFrontmatter>
 export type IndexContent = Content<IndexFrontmatter>
 
 /**
- * Cheatsheet content with validated frontmatter.
- */
-export type CheatsheetContent = Content<CheatsheetFrontmatter>
-
-/**
  * Load a step by tool pair and step number.
  *
  * @param toolPair - The tool pairing slug (e.g., "jj-git")
  * @param step - The step number (1-indexed)
  * @returns Promise resolving to step content, or null if not found
- *
- * @example
- * ```ts
- * const step = await loadStep("jj-git", 1)
- * if (step) {
- *   console.log(step.frontmatter.title)
- * }
- * ```
  */
 export async function loadStep(toolPair: string, step: number): Promise<StepContent | null> {
   const program = Effect.gen(function* () {
@@ -69,7 +52,6 @@ export async function loadStep(toolPair: string, step: number): Promise<StepCont
   const result = await program.pipe(Effect.provide(ContentLayer), Effect.either, Effect.runPromise)
 
   if (result._tag === "Left") {
-    // Return null for NotFound, throw for other errors
     if (result.left.cause === "NotFound") {
       return null
     }
@@ -104,30 +86,6 @@ export async function loadIndex(toolPair: string): Promise<IndexContent | null> 
 }
 
 /**
- * Load the cheatsheet for a tool pairing.
- *
- * @param toolPair - The tool pairing slug (e.g., "jj-git")
- * @returns Promise resolving to cheatsheet content, or null if not found
- */
-export async function loadCheatsheet(toolPair: string): Promise<CheatsheetContent | null> {
-  const program = Effect.gen(function* () {
-    const service = yield* ContentService
-    return yield* service.load(CheatsheetType, toolPair)
-  })
-
-  const result = await program.pipe(Effect.provide(ContentLayer), Effect.either, Effect.runPromise)
-
-  if (result._tag === "Left") {
-    if (result.left.cause === "NotFound") {
-      return null
-    }
-    throw new Error(result.left.message)
-  }
-
-  return result.right
-}
-
-/**
  * List all steps for a tool pairing.
  *
  * Returns full content for each step, sorted by step number.
@@ -141,8 +99,6 @@ export async function listSteps(toolPair: string): Promise<readonly StepContent[
     const service = yield* ContentService
     const steps: StepContent[] = []
 
-    // Load steps incrementally until we hit NotFound
-    // This is more efficient than globbing and trying to extract slugs
     for (let stepNum = 1; stepNum <= 100; stepNum++) {
       const result = yield* Effect.either(service.load(StepType, `${toolPair}/${stepNum}`))
 
@@ -150,7 +106,6 @@ export async function listSteps(toolPair: string): Promise<readonly StepContent[
         if (result.left.cause === "NotFound") {
           break
         }
-        // Skip invalid steps but continue loading others
         continue
       }
 

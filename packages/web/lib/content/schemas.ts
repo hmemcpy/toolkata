@@ -35,20 +35,11 @@ export const indexFrontmatterSchema = z.object({
 })
 
 /**
- * MDX frontmatter schema for cheat sheet pages.
- */
-export const cheatsheetFrontmatterSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: z.string().min(1, "Description is required"),
-})
-
-/**
  * Union type for all supported frontmatter schemas.
  */
 export const frontmatterSchema = z.discriminatedUnion("type", [
   stepFrontmatterSchema.extend({ type: z.literal("step") }),
   indexFrontmatterSchema.extend({ type: z.literal("index") }),
-  cheatsheetFrontmatterSchema.extend({ type: z.literal("cheatsheet") }),
 ])
 
 /**
@@ -56,5 +47,4 @@ export const frontmatterSchema = z.discriminatedUnion("type", [
  */
 export type StepFrontmatter = z.infer<typeof stepFrontmatterSchema>
 export type IndexFrontmatter = z.infer<typeof indexFrontmatterSchema>
-export type CheatsheetFrontmatter = z.infer<typeof cheatsheetFrontmatterSchema>
 export type Frontmatter = z.infer<typeof frontmatterSchema>

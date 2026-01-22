@@ -1,7 +1,7 @@
 /**
  * Content service layer configuration.
  *
- * Provides the Effect layer for ContentService from tutor-content-core.
+ * Provides the Effect layer for ContentService.
  * Used by page components to load MDX content.
  */
 
@@ -9,7 +9,7 @@ import {
   CacheServiceLive,
   ContentConfigLive,
   ContentServiceLive,
-} from "@hmemcpy/tutor-content-core"
+} from "../content-core"
 import { Layer } from "effect"
 
 /**
@@ -18,21 +18,6 @@ import { Layer } from "effect"
  * Configuration:
  * - Content root: Current working directory (Next.js project root)
  * - Caching: Disabled (static generation handles caching)
- *
- * @example
- * ```ts
- * import { ContentService } from "@hmemcpy/tutor-content-core"
- * import { ContentLayer } from "@/lib/content/layer"
- * import { StepType } from "@/lib/content/types"
- * import { Effect } from "effect"
- *
- * const program = Effect.gen(function* () {
- *   const service = yield* ContentService
- *   return yield* service.load(StepType, "jj-git/1")
- * })
- *
- * const result = await Effect.runPromise(Effect.provide(program, ContentLayer))
- * ```
  */
 export const ContentLayer = ContentServiceLive.pipe(
   Layer.provide(

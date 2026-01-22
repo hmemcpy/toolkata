@@ -21,7 +21,6 @@ import { Context, Data, Effect, Layer } from "effect"
 /**
  * Sandbox API base URL from environment.
  */
-// biome-ignore lint/complexity/useLiteralKeys: Required for TypeScript strictness
 const SANDBOX_API_URL = process.env["NEXT_PUBLIC_SANDBOX_API_URL"] ?? "ws://localhost:3001"
 
 /**

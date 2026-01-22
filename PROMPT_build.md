@@ -2,14 +2,9 @@
 
 Implement ONE task from the plan, validate, commit, exit.
 
-## CRITICAL: Tutor Guidelines
+## Code Style Guidelines
 
-**This project uses local tutor packages from `~/git/tutor` via `bun link`.**
-
-Before implementing ANY code, you MUST read and strictly follow:
-- `~/git/tutor/AGENTS.md` - The authoritative source for all coding standards
-
-### Non-Negotiable Rules (from tutor AGENTS.md)
+### Non-Negotiable Rules
 
 **TypeScript:**
 - **No `any`** — Use `unknown` and narrow with type guards
@@ -48,8 +43,7 @@ import { Option } from "effect"          // ❌ Wrong
 ## Phase 0: Orient
 
 Study with subagents:
-- `~/git/tutor/AGENTS.md` (CRITICAL - authoritative coding standards)
-- @CLAUDE.md (project-specific context)
+- @CLAUDE.md (project-specific context and coding standards)
 - @specs/* (requirements)
 - @IMPLEMENTATION_PLAN.md (current state)
 
@@ -70,17 +64,6 @@ grep -c "^\- \[ \]" IMPLEMENTATION_PLAN.md || echo 0
 4. **Validate** — Run `bun run typecheck && bun run lint && bun run build`, must pass before continuing
 
 If stuck, use extended thinking to debug. Add extra logging if needed.
-
-### Local Tutor Packages
-
-The tutor packages are linked locally for active development:
-
-```bash
-# If packages need re-linking after changes:
-cd ~/git/tutor && bun link
-cd ~/git/toolkata/packages/web && bun link @hmemcpy/tutor-config @hmemcpy/tutor-content-core
-cd ~/git/toolkata/packages/sandbox-api && bun link @hmemcpy/tutor-config
-```
 
 ## Phase 2: Update & Learn
 
@@ -110,7 +93,7 @@ grep -c "^\- \[ \]" IMPLEMENTATION_PLAN.md || echo 0
 
 ## Guardrails
 
-99999. **STRICTLY FOLLOW ~/git/tutor/AGENTS.md** — This is non-negotiable. Read it before coding.
+99999. **STRICTLY FOLLOW code style guidelines** — This is non-negotiable.
 999999. When authoring documentation, capture the why — tests and implementation importance.
 9999999. Single sources of truth, no migrations/adapters. If tests unrelated to your work fail, resolve them as part of the increment.
 99999999. Implement functionality completely. Placeholders and stubs waste time redoing the same work.

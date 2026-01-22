@@ -74,14 +74,19 @@ interface TabsProps {
 export function Tabs({ defaultTab, persistKey, children }: TabsProps) {
   // Extract tab info from children
   const tabs = Children.toArray(children)
-    .filter((child): child is React.ReactElement<TabProps> =>
-      isValidElement(child) && typeof child.props.id === "string"
-    )
-    .map((child) => ({
-      id: child.props.id,
-      label: child.props.label,
-      content: child.props.children,
-    }))
+    .filter((child): child is React.ReactElement<TabProps> => {
+      if (!isValidElement(child)) return false
+      const props = child.props as Partial<TabProps>
+      return typeof props.id === "string"
+    })
+    .map((child) => {
+      const props = child.props as TabProps
+      return {
+        id: props.id,
+        label: props.label,
+        content: props.children,
+      }
+    })
 
   const [activeTab, setActiveTab] = useState<string>(() => {
     // Will be updated in useEffect for SSR safety

@@ -1,6 +1,5 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-  "extends": ["./node_modules/@hmemcpy/tutor-config/biome.base.json"],
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -10,19 +9,43 @@
     "enabled": true
   },
   "linter": {
+    "enabled": true,
     "rules": {
+      "recommended": true,
       "complexity": {
-        "useOptionalChain": "error"
+        "noForEach": "error",
+        "useOptionalChain": "error",
+        "useLiteralKeys": "off"
       },
       "style": {
+        "noNonNullAssertion": "error",
+        "useImportType": "error",
         "useForOf": "error"
       },
+      "suspicious": {
+        "noExplicitAny": "error"
+      },
       "correctness": {
+        "noUnusedImports": "error",
         "noUnusedVariables": "error"
       },
       "a11y": {
-        "useSemanticElements": "off"
+        "useSemanticElements": "off",
+        "noNoninteractiveTabindex": "off"
       }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "semicolons": "asNeeded",
+      "quoteStyle": "double",
+      "trailingCommas": "all"
     }
   },
   "json": {

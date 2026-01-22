@@ -69,7 +69,6 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
       onClick={onClose}
       aria-hidden="true"
     >
-      {/* biome-ignore lint/a11y/useSemanticElements: Using role="dialog" for consistent cross-browser styling */}
       <div
         role="dialog"
         aria-modal="true"

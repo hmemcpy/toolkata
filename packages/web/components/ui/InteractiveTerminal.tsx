@@ -459,7 +459,6 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
       setError(null)
 
       try {
-        // biome-ignore lint/complexity/useLiteralKeys: Required for TypeScript strictness
         const apiUrl = process.env["NEXT_PUBLIC_SANDBOX_API_URL"] ?? "ws://localhost:3001"
         const httpUrl = apiUrl.replace(/^wss?:\/\//, "http://").replace(/:\d+/, ":3001")
 
@@ -718,7 +717,6 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
           ) : (
             <div
               ref={terminalRef}
-              // biome-ignore lint/a11y/noNoninteractiveTabindex: Terminal container needs focus for keyboard input
               tabIndex={0}
               className="min-h-[200px] max-h-[400px] overflow-hidden outline-none"
               aria-label="Interactive terminal sandbox. Press Escape to exit terminal focus."
