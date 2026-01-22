@@ -15,7 +15,6 @@
  *   title="Your First Commits"
  *   nextHref="/jj-git/4"
  *   previousHref="/jj-git/2"
- *   suggestedCommands={["jj status", "jj log"]}
  * >
  *   <StepContent />
  * </StepPageClientWrapper>
@@ -29,7 +28,6 @@ import { useKeyboardNavigation, useKeyboardShortcutsModal } from "../../hooks/us
 import { KeyboardShortcutsModal } from "./KeyboardShortcutsModal"
 import { NavigationWrapper } from "./NavigationWrapper"
 import { StepProgressWrapper } from "./StepProgressWrapper"
-import { TerminalWithSuggestionsWrapper } from "./TerminalWithSuggestionsWrapper"
 
 export interface StepPageClientWrapperProps {
   /**
@@ -63,11 +61,6 @@ export interface StepPageClientWrapperProps {
   readonly nextHref: string | null
 
   /**
-   * Suggested commands to display with the terminal.
-   */
-  readonly suggestedCommands: readonly string[]
-
-  /**
    * Child components (the actual step content).
    */
   readonly children: React.ReactNode
@@ -81,7 +74,9 @@ export interface StepPageClientWrapperProps {
  * - Keyboard shortcuts modal
  * - Progress tracking
  * - Navigation (prev/next buttons)
- * - Interactive terminal with command suggestions
+ *
+ * Note: The terminal has been moved to a collapsible sidebar (TerminalProvider),
+ * accessible via the FAB toggle button or TryIt components in MDX content.
  */
 export function StepPageClientWrapper({
   toolPair,
@@ -90,7 +85,6 @@ export function StepPageClientWrapper({
   title,
   previousHref,
   nextHref,
-  suggestedCommands,
   children,
 }: StepPageClientWrapperProps) {
   const router = useRouter()
@@ -134,20 +128,6 @@ export function StepPageClientWrapper({
       <article className="my-8 prose prose-invert max-w-none prose-a:text-[var(--color-accent)] prose-a:hover:text-[var(--color-accent-hover)] prose-code:bg-[var(--color-surface)] prose-code:text-[var(--color-accent)] prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-[var(--color-surface)]">
         {children}
       </article>
-
-      {/* Interactive Terminal with Command Suggestions */}
-      {suggestedCommands.length > 0 ? (
-        <section className="my-12">
-          <h2 className="mb-6 text-xl font-mono font-medium text-[var(--color-text)]">
-            Try It Yourself
-          </h2>
-          <TerminalWithSuggestionsWrapper
-            toolPair={toolPair}
-            stepId={currentStep.toString()}
-            suggestedCommands={suggestedCommands}
-          />
-        </section>
-      ) : null}
 
       {/* Navigation Footer */}
       <NavigationWrapper toolPair={toolPair} currentStep={currentStep} totalSteps={totalSteps} />

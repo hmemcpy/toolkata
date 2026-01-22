@@ -253,11 +253,12 @@ Two related efforts:
   - Expose session time remaining via callback
   - **Completed 2026-01-22** - Added callback props with useEffect for change detection, exported TerminalState type for TerminalContext to use
 
-- [ ] **3.3** Remove terminal from StepPageClientWrapper
+- [x] **3.3** Remove terminal from StepPageClientWrapper
   - Remove `suggestedCommands` prop from StepPageClientWrapper
   - Remove `TerminalWithSuggestionsWrapper` from step page render
   - Remove "Try It Yourself" section heading
   - Clean up unused imports
+  - **Completed 2026-01-22**
 
 ---
 
