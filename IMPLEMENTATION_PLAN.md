@@ -3,11 +3,11 @@
 > **Status**: Core MVP complete, Phase 12 partially verified (tests written), Phase 13 (Bidirectional) - 13.1.1-13.1.2 complete
 > **Validation**: `bun run typecheck`, `bun run lint`, `bun run build`, Playwright tests
 > **Priority Legend**: P0 = Blocking, P1 = Core MVP, P2 = Polish/Enhancement
-> **Last Updated**: 2026-01-22 (13.1.2 useDirection hook complete. Next: 13.1.3 DirectionContext)
+> **Last Updated**: 2026-01-22 (13.1.3 DirectionContext complete. Next: 13.2.1 DirectionToggle component)
 
 ### Current Priority: Phase 13 (Bidirectional Comparison)
 
-**Recommended starting point**: Task 13.1.3 (DirectionContext) - depends on completed 13.1.2 useDirection hook
+**Recommended starting point**: Task 13.2.1 (DirectionToggle component) - depends on completed 13.1.1-13.1.3 state management
 
 ### Phase 12 Remaining Items
 
@@ -18,17 +18,17 @@ Phase 12 Playwright tests are written but some need manual verification:
 
 ### Immediate Next Tasks (in order)
 
-1. **13.1.1** Create `PreferencesStore` at `packages/web/core/PreferencesStore.ts`
-   - Copy ProgressStore structure, simplify to `{ version: 1, direction: "default" | "reversed" }`
-   - ~80 lines estimated
-
-2. **13.1.2** Create `useDirection` hook at `packages/web/hooks/useDirection.ts`
-   - Follow useStepProgress pattern with `isLoading` SSR guard
+1. **13.2.1** Create `DirectionToggle` component at `packages/web/components/ui/DirectionToggle.tsx`
+   - Visual: `[git ↔ jj]` terminal bracket style
+   - `role="switch"`, `aria-checked`, keyboard accessible
    - ~60 lines estimated
 
-3. **13.1.3** Create `DirectionContext` at `packages/web/contexts/DirectionContext.tsx`
-   - Create `contexts/` directory (doesn't exist)
-   - Provider + consumer hook pattern
+2. **13.2.2** Add DirectionToggle slot to `StepProgress.tsx`
+   - Optional `directionToggle?: React.ReactNode` prop
+   - ~5 lines estimated
+
+3. **13.2.3** Create `StepProgressWithDirection.tsx` wrapper
+   - Client component wrapper with DirectionProvider
    - ~40 lines estimated
 
 4. **13.4.1** Extract glossary data to `packages/web/content/glossary/jj-git.ts`
@@ -71,22 +71,22 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 | Deployment | **Complete** | Vercel config + systemd service |
 | Accessibility (Phase 11) | **Complete** | Keyboard nav, focus, contrast, ARIA |
 | Verification (Phase 12) | **Tests Written** | 33 Playwright tests, run `bun run test` to verify |
-| **Bidirectional (Phase 13)** | **Not started** | Direction toggle + glossary page |
+| **Bidirectional (Phase 13)** | **In Progress** | Direction toggle + glossary page (13.1.1-13.1.3 complete) |
 
 ### Phase 13 Gap Analysis (Detailed via 10 Parallel Subagents)
 
 | Component | Exists? | Location | Notes |
 |-----------|---------|----------|-------|
-| PreferencesStore | ❌ No | - | Needs: `core/PreferencesStore.ts` following ProgressStore pattern (264 lines) |
-| useDirection hook | ❌ No | - | Needs: `hooks/useDirection.ts` following useStepProgress pattern (107 lines) |
-| DirectionContext | ❌ No | - | Needs: `contexts/DirectoryContext.tsx` (no `contexts/` dir exists) |
+| PreferencesStore | ✅ Yes | `core/PreferencesStore.ts` | Complete (192 lines), follows ProgressStore pattern |
+| useDirection hook | ✅ Yes | `hooks/useDirection.ts` | Complete (77 lines), follows useStepProgress pattern |
+| DirectionContext | ✅ Yes | `contexts/DirectionContext.tsx` | Complete (94 lines), provider + consumer hook |
 | DirectionToggle | ❌ No | - | Needs: `components/ui/DirectionToggle.tsx` |
 | SideBySide.isReversed | ❌ No | `components/ui/SideBySide.tsx` (158 lines) | Has `fromLabel`/`toLabel` but no `isReversed` prop, hardcoded git left (orange), jj right (green) |
 | Glossary data module | ❌ No | - | Cheatsheet data inline in page (42 entries at `app/[toolPair]/cheatsheet/page.tsx` lines 33-252) |
 | Glossary page | ❌ No | - | Route `/[toolPair]/glossary` doesn't exist (only 16 routes currently) |
-| DirectionProvider | ❌ No | - | Not in layout.tsx, no React Context patterns exist anywhere |
+| DirectionProvider | ✅ Yes | `contexts/DirectionContext.tsx` | Exported from DirectionContext, not yet in layout.tsx |
 | Playwright tests (Phase 13) | ❌ No | - | Only `browser.spec.ts` exists (453 lines, 33 tests) |
-| contexts/ directory | ❌ No | - | No React Context usage anywhere in codebase |
+| contexts/ directory | ✅ Yes | `contexts/` | Created with DirectionContext.tsx (94 lines) |
 
 **Verified 2026-01-22 via 10 parallel subagents - Detailed Findings**:
 
@@ -945,7 +945,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
     ```
   - `fromTool`/`toTool` computed from `toolPair` param + direction
 
-- [ ] **13.1.3** Create `DirectionContext` at `packages/web/contexts/DirectionContext.tsx`
+- [x] **13.1.3** Create `DirectionContext` at `packages/web/contexts/DirectionContext.tsx`
   - Context provider wrapping `useDirection`
   - Export `DirectionProvider` component (accepts `toolPair` prop)
   - Export `useDirectionContext()` hook for consumers
@@ -1374,11 +1374,11 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 - **Confirmed: NO backend changes needed for Phase 13**
 
 *Context/Provider Status:*
-- **No contexts/ directory exists anywhere in packages/web/**
-- **No React Context usage anywhere** (no createContext, useContext imports found)
-- Current state management: localStorage via singleton pattern (ProgressStore)
-- All components are server components or client wrappers (no global providers)
-- **Phase 13 will introduce first React Context patterns to this codebase**
+- **contexts/ directory created**: `contexts/DirectionContext.tsx` (94 lines)
+- **React Context usage introduced**: DirectionContext with DirectionProvider and useDirectionContext()
+- Current state management: localStorage via singleton pattern (ProgressStore, PreferencesStore)
+- Most components are server components or client wrappers
+- **Phase 13 first React Context patterns now in place** (DirectionContext)
 
 ### Phase 13 Implementation Notes
 
