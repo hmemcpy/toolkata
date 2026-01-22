@@ -254,16 +254,15 @@ If tasks are independent, you can run multiple agents in parallel by specifying 
 toolkata/
 ├── packages/
 │   ├── web/                    # Frontend (Vercel)
-│   │   ├── src/
-│   │   │   ├── app/            # Next.js App Router pages
-│   │   │   ├── components/     # React components
-│   │   │   │   ├── ui/         # Reusable UI components
-│   │   │   │   └── mdx/        # MDX component mapping
-│   │   │   ├── content/        # MDX content files
-│   │   │   ├── services/       # Effect-TS services
-│   │   │   ├── lib/            # Utilities
-│   │   │   ├── hooks/          # React hooks
-│   │   │   └── core/           # Client state (localStorage)
+│   │   ├── app/                # Next.js App Router pages (not src/app/)
+│   │   ├── components/         # React components
+│   │   │   ├── ui/             # Reusable UI components
+│   │   │   └── mdx/            # MDX component mapping
+│   │   ├── content/            # MDX content files
+│   │   ├── services/           # Effect-TS services
+│   │   ├── lib/                # Utilities
+│   │   ├── hooks/              # React hooks
+│   │   ├── core/               # Client state (localStorage)
 │   │   └── package.json
 │   │
 │   └── sandbox-api/            # Sandbox API (Self-hosted VPS)

@@ -307,17 +307,19 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 
 > **WHY**: Core UX feature - users want to resume where they left off. Can run parallel to Phase 5.
 
-- [ ] **6.1** Create ProgressStore with localStorage
+- [x] **6.1** Create ProgressStore with localStorage
   - Schema: `{ [toolPair]: { completedSteps: number[], currentStep: number, lastVisited: string } }`
   - Graceful degradation if localStorage unavailable (try/catch)
   - Version the schema for future migrations (`version: 1`)
-  - Location: `packages/web/src/core/ProgressStore.ts`
+  - Location: `packages/web/core/ProgressStore.ts`
+  - Note: Project uses `app/` structure (not `src/app/`), so path is `packages/web/core/`
 
-- [ ] **6.2** Create useStepProgress hook
+- [x] **6.2** Create useStepProgress hook
   - Methods: `markComplete(step)`, `resetProgress()`, `getProgress()`
   - Sync to localStorage on change
   - Return `isLoading` state while hydrating (avoid SSR mismatch)
-  - Location: `packages/web/src/hooks/useStepProgress.ts`
+  - Location: `packages/web/hooks/useStepProgress.ts`
+  - Note: Also includes `useStepProgressWithPercent` convenience hook
 
 - [ ] **6.3** Integrate progress into step pages
   - Auto-mark step complete when user clicks "Next" or "Mark Complete"

@@ -1,0 +1,103 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import type { ToolPairProgress } from "../core/ProgressStore"
+import { getProgressStore } from "../core/ProgressStore"
+
+/**
+ * Return type for useStepProgress hook
+ */
+export interface StepProgressState {
+  readonly progress: ToolPairProgress | undefined
+  readonly isLoading: boolean
+  readonly isAvailable: boolean
+  readonly completedCount: number
+  readonly currentStep: number
+  readonly isStepComplete: (step: number) => boolean
+  readonly markComplete: (step: number) => void
+  readonly setCurrentStep: (step: number) => void
+  readonly resetProgress: () => void
+}
+
+/**
+ * React hook for managing step progress
+ *
+ * Features:
+ * - Hydrates progress from localStorage on mount
+ * - Avoids SSR mismatch with isLoading state
+ * - Provides memoized callbacks for progress operations
+ * - Graceful degradation when localStorage unavailable
+ *
+ * @param toolPair - The tool pairing slug (e.g., "jj-git")
+ * @param totalSteps - Total number of steps for this pairing (for progress calc)
+ */
+export function useStepProgress(
+  toolPair: string,
+  _totalSteps?: number
+): StepProgressState {
+  const [progress, setProgress] = useState<ToolPairProgress | undefined>()
+  const [isLoading, setIsLoading] = useState(true)
+
+  const store = getProgressStore()
+
+  // Load progress on mount (client-side only)
+  useEffect(() => {
+    setProgress(store.getProgress(toolPair))
+    setIsLoading(false)
+  }, [toolPair, store])
+
+  // Memoized callbacks
+  const markComplete = (step: number) => {
+    store.markComplete(toolPair, step)
+    setProgress(store.getProgress(toolPair))
+  }
+
+  const setCurrentStep = (step: number) => {
+    store.setCurrentStep(toolPair, step)
+    setProgress(store.getProgress(toolPair))
+  }
+
+  const resetProgress = () => {
+    store.resetProgress(toolPair)
+    setProgress(undefined)
+  }
+
+  const isStepComplete = (step: number) => {
+    return progress?.completedSteps.includes(step) ?? false
+  }
+
+  const completedCount = progress?.completedSteps.length ?? 0
+  const currentStep = progress?.currentStep ?? 1
+
+  return {
+    progress,
+    isLoading,
+    isAvailable: store.isAvailable(),
+    completedCount,
+    currentStep,
+    isStepComplete,
+    markComplete,
+    setCurrentStep,
+    resetProgress,
+  }
+}
+
+/**
+ * Convenience hook that also includes progress percentage
+ *
+ * @param toolPair - The tool pairing slug
+ * @param totalSteps - Total number of steps (required for percentage)
+ */
+export function useStepProgressWithPercent(
+  toolPair: string,
+  totalSteps: number
+) {
+  const base = useStepProgress(toolPair, totalSteps)
+  const percent = totalSteps > 0 ? (base.completedCount / totalSteps) * 100 : 0
+
+  return {
+    ...base,
+    percent,
+    totalSteps,
+  }
+}
