@@ -10,6 +10,10 @@ import { SessionService, SessionServiceLive } from "./services/session.js"
 import { RateLimitServiceLive } from "./services/rate-limit.js"
 import { WebSocketServiceLive } from "./services/websocket.js"
 
+// Module-level reference to SessionService for health checks
+// This is set when the server starts and allows the health endpoint to access session stats
+let sessionServiceForHealth: SessionService | null = null
+
 // Error types with Data.TaggedClass
 export class ServerError extends Data.TaggedClass("ServerError")<{
   readonly cause: "StartupFailed" | "PortInUse" | "InvalidConfig"
@@ -43,6 +47,7 @@ export interface HealthResponse {
   readonly status: "ok"
   readonly timestamp: string
   readonly uptime: number
+  readonly containers: number
 }
 
 // Create Hono app with CORS and health check
@@ -60,12 +65,25 @@ const createApp = (config: ServerConfig) => {
     }),
   )
 
-  // Health check endpoint
+  // Health check endpoint with session stats
   app.get("/health", (c) => {
+    let containers = 0
+
+    // Get session stats if session service is available
+    if (sessionServiceForHealth !== null) {
+      const statsResult = Effect.runSync(
+        Effect.either(sessionServiceForHealth.getStats),
+      )
+      if (statsResult._tag === "Right") {
+        containers = statsResult.right.total
+      }
+    }
+
     return c.json<HealthResponse>({
       status: "ok",
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
+      containers,
     })
   })
 
@@ -78,11 +96,15 @@ const createApp = (config: ServerConfig) => {
 // Service implementation
 const make = Effect.gen(function* () {
   const config = yield* ServerConfig
+  const sessionService = yield* SessionService
 
   let httpServer: NodeHttpServer | null = null
   const app = createApp(config)
 
   const start = Effect.sync(() => {
+    // Store session service reference for health checks
+    sessionServiceForHealth = sessionService
+
     // Create Node.js HTTP server for WebSocket upgrade support
     httpServer = createHttpServer({
       // Use Hono's fetch handler as the request handler
@@ -133,6 +155,9 @@ const make = Effect.gen(function* () {
   })
 
   const stop = Effect.sync(() => {
+    // Clear session service reference
+    sessionServiceForHealth = null
+
     // Close all WebSocket connections first
     Effect.runSync(closeAllConnections)
 
@@ -205,8 +230,23 @@ if (import.meta.main) {
 }
 
 // Export health check for testing (legacy)
-export const healthCheck = (): HealthResponse => ({
-  status: "ok",
-  timestamp: new Date().toISOString(),
-  uptime: process.uptime(),
-})
+export const healthCheck = (): HealthResponse => {
+  let containers = 0
+
+  // Get session stats if session service is available
+  if (sessionServiceForHealth !== null) {
+    const statsResult = Effect.runSync(
+      Effect.either(sessionServiceForHealth.getStats),
+    )
+    if (statsResult._tag === "Right") {
+      containers = statsResult.right.total
+    }
+  }
+
+  return {
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    containers,
+  }
+}

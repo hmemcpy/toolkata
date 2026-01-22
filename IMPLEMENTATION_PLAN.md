@@ -590,9 +590,10 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Test isolation: container cannot access host
   - Location: `packages/sandbox-api/README.md`
 
-- [ ] **10.5** Add health check endpoint improvements
+- [x] **10.5** Add health check endpoint improvements
   - `GET /health` returns: `{ status: "ok", containers: N, uptime: X }`
   - Can be used for uptime monitoring
+  - Note: Added SessionService.getStats() method and updated health endpoint to include active container count
 
 - [ ] **10.6** Configure environment variables
   - Frontend: `NEXT_PUBLIC_SANDBOX_API_URL=https://sandbox.toolkata.dev`

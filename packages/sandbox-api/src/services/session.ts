@@ -42,6 +42,7 @@ export interface SessionServiceShape {
   readonly updateActivity: (sessionId: string) => Effect.Effect<void, SessionError>
   readonly checkExpired: (sessionId: string) => Effect.Effect<boolean, SessionError>
   readonly startCleanupScheduler: Effect.Effect<void, never>
+  readonly getStats: Effect.Effect<SessionStats, never>
 }
 
 // Service tag
@@ -49,6 +50,15 @@ export class SessionService extends Context.Tag("SessionService")<
   SessionService,
   SessionServiceShape
 >() {}
+
+// Session statistics
+export interface SessionStats {
+  readonly total: number
+  readonly running: number
+  readonly starting: number
+  readonly idle: number
+  readonly destroying: number
+}
 
 // Session store type (using Ref for thread-safe mutable state)
 interface SessionStore {
@@ -330,6 +340,25 @@ const make = Effect.gen(function* () {
     return interval
   })
 
+  // Get session statistics
+  const getStats = Ref.get(storeRef).pipe(
+    Effect.flatMap((store) =>
+      Effect.gen(function* () {
+        const sessions = yield* MutableHashMap.values(store.sessions)
+
+        const stats: SessionStats = {
+          total: sessions.length,
+          running: sessions.filter((s) => s.state === "RUNNING").length,
+          starting: sessions.filter((s) => s.state === "STARTING").length,
+          idle: sessions.filter((s) => s.state === "IDLE").length,
+          destroying: sessions.filter((s) => s.state === "DESTROYING").length,
+        }
+
+        return stats
+      }),
+    ),
+  )
+
   return {
     create,
     get,
@@ -337,6 +366,7 @@ const make = Effect.gen(function* () {
     updateActivity,
     checkExpired,
     startCleanupScheduler,
+    getStats,
   }
 })
 
