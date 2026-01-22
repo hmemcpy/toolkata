@@ -1,0 +1,152 @@
+/**
+ * SideBySide - Two-column command comparison component.
+ *
+ * Displays git commands on the left and jj commands on the right,
+ * with subtle color-coded backgrounds for visual distinction.
+ *
+ * Features:
+ * - Two-column layout (git left, jj right)
+ * - Subtle background tint for each column
+ * - Mobile: stacks vertically with arrow indicator
+ * - Semantic table for accessibility
+ *
+ * @example
+ * ```tsx
+ * <SideBySide
+ *   fromCommands={["git add .", "git commit -m 'message'"]}
+ *   toCommands={["jj describe -m 'message'", "jj new"]}
+ *   fromLabel="git"
+ *   toLabel="jj"
+ * />
+ * ```
+ */
+
+interface SideBySideProps {
+  /**
+   * Commands to show on the left (from tool, e.g., git).
+   */
+  readonly fromCommands: readonly string[]
+
+  /**
+   * Commands to show on the right (to tool, e.g., jj).
+   */
+  readonly toCommands: readonly string[]
+
+  /**
+   * Label for the left column.
+   * @default "git"
+   */
+  readonly fromLabel?: string
+
+  /**
+   * Label for the right column.
+   * @default "jj"
+   */
+  readonly toLabel?: string
+
+  /**
+   * Optional comment or explanation to show alongside a command.
+   * Maps index to comment text. Use empty string or skip index for no comment.
+   */
+  readonly fromComments?: readonly string[]
+  readonly toComments?: readonly string[]
+}
+
+/**
+ * SideBySide component for comparing commands side-by-side.
+ */
+export function SideBySide({
+  fromCommands,
+  toCommands,
+  fromLabel = "git",
+  toLabel = "jj",
+  fromComments = [],
+  toComments = [],
+}: SideBySideProps) {
+  return (
+    <div className="my-6 overflow-x-auto">
+      {/* Desktop: side-by-side, Mobile: stacked */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {/* Left column (from tool - git) */}
+        <div className="overflow-hidden rounded border border-[var(--color-border)] bg-[rgba(249, 115, 22, 0.05)]">
+          <div className="border-b border-[var(--color-border)] px-4 py-2">
+            <span className="text-xs font-semibold text-[var(--color-text-muted)]">{fromLabel}</span>
+          </div>
+          <div className="p-4">
+            {fromCommands.map((cmd, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: Commands are static and order won't change
+              <div key={i} className="mb-3 last:mb-0">
+                <code className="block text-sm text-[var(--color-text)]">{cmd}</code>
+                {fromComments[i] && (
+                  <span className="mt-1 block text-xs text-[var(--color-text-dim)]">{fromComments[i]}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Mobile: arrow indicator */}
+        <div className="flex items-center justify-center md:hidden">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-6 w-6 text-[var(--color-accent)]"
+            aria-hidden="true"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <polyline points="19 12 12 19 5 12" />
+          </svg>
+        </div>
+
+        {/* Right column (to tool - jj) */}
+        <div className="overflow-hidden rounded border border-[var(--color-border)] bg-[rgba(34, 197, 94, 0.05)]">
+          <div className="border-b border-[var(--color-border)] px-4 py-2">
+            <span className="text-xs font-semibold text-[var(--color-text-muted)]">{toLabel}</span>
+          </div>
+          <div className="p-4">
+            {toCommands.map((cmd, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: Commands are static and order won't change
+              <div key={i} className="mb-3 last:mb-0">
+                <code className="block text-sm text-[var(--color-text)]">{cmd}</code>
+                {toComments[i] && (
+                  <span className="mt-1 block text-xs text-[var(--color-text-dim)]">{toComments[i]}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Accessible table for screen readers (visually hidden) */}
+      <table
+        className="sr-only"
+        aria-label={`Command comparison: ${fromLabel} vs ${toLabel}`}
+        summary={`Side-by-side comparison of ${fromLabel} and ${toLabel} commands`}
+      >
+        <caption className="sr-only">
+          Command comparison: {fromLabel} commands on the left, {toLabel} commands on the right
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">{fromLabel}</th>
+            <th scope="col">{toLabel}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {fromCommands.map((fromCmd, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: Commands are static and order won't change
+            <tr key={i}>
+              <td>{fromCmd}</td>
+              <td>{toCommands[i] ?? ""}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}

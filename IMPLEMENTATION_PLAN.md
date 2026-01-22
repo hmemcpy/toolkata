@@ -191,12 +191,13 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Line numbers optional via prop
   - Location: `packages/web/components/ui/CodeBlock.tsx`
 
-- [ ] **4.2** Build SideBySide comparison component
+- [x] **4.2** Build SideBySide comparison component
   - Two-column layout (git left, jj right)
   - Subtle background tint: `rgba(f97316, 0.05)` for git, `rgba(22c55e, 0.05)` for jj
   - Mobile: stack vertically with ↓ arrow indicator between
   - Use proper `<table>` semantics for accessibility
-  - Location: `packages/web/src/components/ui/SideBySide.tsx`
+  - Location: `packages/web/components/ui/SideBySide.tsx`
+  - Note: Location uses `components/` not `src/components/` (project uses `app/` not `src/app/`)
 
 - [ ] **4.3** Build Callout component
   - Variants: TIP (green), WARNING (yellow), NOTE (gray)
