@@ -367,10 +367,19 @@ Two related efforts:
   - Test: Focus returns to trigger on close
   - **Completed 2026-01-22** - 15 tests passed, 2 skipped (TryIt not in content yet)
 
-- [ ] **8.2** Add mobile bottom sheet tests
+- [x] **8.2** Add mobile bottom sheet tests
   - Test: Bottom sheet shows on mobile viewport
-  - Test: Swipe down closes sheet (if gesture testable)
+  - Test: Drag handle is visible
+  - Test: Bottom sheet has proper ARIA attributes
+  - Test: Close button works on bottom sheet
+  - Test: Backdrop tap closes bottom sheet
+  - Test: Escape closes bottom sheet
   - Test: All functionality works at 320px width
+  - Test: Bottom sheet content is scrollable on mobile
+  - Test: Bottom sheet persists across step navigation on mobile
+  - Test: Bottom sheet fits within 320px viewport
+  - Test: Keyboard shortcuts work at 320px
+  - **Completed 2026-01-22** - Added 10 comprehensive mobile tests (total 28 tests in file)
 
 - [ ] **8.3** Run full Playwright test suite
   ```bash

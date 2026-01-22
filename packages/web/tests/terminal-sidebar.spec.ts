@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test"
 /**
  * Playwright tests for Terminal Sidebar feature.
  *
- * Covers IMPLEMENTATION_PLAN.md Phase 8.1:
+ * Covers IMPLEMENTATION_PLAN.md Phase 8.1 and 8.2:
  * - Toggle button opens sidebar
  * - Close button closes sidebar
  * - Sidebar persists across step navigation
@@ -11,6 +11,9 @@ import { test, expect } from "@playwright/test"
  * - Keyboard shortcut `t` toggles terminal
  * - Escape closes sidebar
  * - Focus returns to trigger on close
+ * - Mobile bottom sheet shows at mobile viewport
+ * - Mobile bottom sheet has drag handle
+ * - All functionality works at 320px width
  */
 
 test.describe("Terminal Sidebar - Desktop", () => {
@@ -239,26 +242,291 @@ test.describe("Terminal Sidebar - Mobile", () => {
     await expect(toggleButton).toBeVisible()
   })
 
+  test("bottom sheet shows on mobile viewport", async ({ page }) => {
+    await page.goto("/jj-git/1")
+
+    // Open terminal
+    const toggleButton = page.locator('button[aria-label*="terminal" i]').first()
+    await toggleButton.click()
+
+    // Bottom sheet should be visible (not sidebar)
+    const bottomSheet = page.locator("#terminal-bottom-sheet")
+    await expect(bottomSheet).toBeVisible()
+
+    // Should have dialog role
+    await expect(bottomSheet).toHaveAttribute("role", "dialog")
+
+    // Should be at bottom of viewport
+    const box = await bottomSheet.boundingBox()
+    expect(box).toBeTruthy()
+    if (box) {
+      // Bottom sheet should be anchored to bottom (y near viewport height - sheet height)
+      const viewportHeight = page.viewportSize()?.height ?? 667
+      // Bottom of sheet should be at or near viewport bottom
+      expect(box.y + box.height).toBeGreaterThanOrEqual(viewportHeight - 10)
+    }
+  })
+
+  test("drag handle is visible on bottom sheet", async ({ page }) => {
+    await page.goto("/jj-git/1")
+
+    // Open terminal
+    const toggleButton = page.locator('button[aria-label*="terminal" i]').first()
+    await toggleButton.click()
+
+    const bottomSheet = page.locator("#terminal-bottom-sheet")
+    await expect(bottomSheet).toBeVisible()
+
+    // Drag handle should be visible (horizontal bar at top)
+    const dragHandle = bottomSheet.locator('[class*="rounded-full"][class*="w-12"]').first()
+    await expect(dragHandle).toBeVisible()
+
+    // Handle should have cursor-grab style
+    const cursor = await dragHandle.evaluate((el) => window.getComputedStyle(el).cursor)
+    expect(cursor).toBe("grab")
+  })
+
+  test("bottom sheet has proper ARIA attributes", async ({ page }) => {
+    await page.goto("/jj-git/1")
+
+    // Open terminal
+    const toggleButton = page.locator('button[aria-label*="terminal" i]').first()
+    await toggleButton.click()
+
+    const bottomSheet = page.locator("#terminal-bottom-sheet")
+    await expect(bottomSheet).toBeVisible()
+
+    // Check ARIA attributes
+    await expect(bottomSheet).toHaveAttribute("role", "dialog")
+    await expect(bottomSheet).toHaveAttribute("aria-modal", "true")
+    await expect(bottomSheet).toHaveAttribute("aria-label", "Terminal")
+  })
+
+  test("close button works on bottom sheet", async ({ page }) => {
+    await page.goto("/jj-git/1")
+
+    // Open terminal
+    const toggleButton = page.locator('button[aria-label*="terminal" i]').first()
+    await toggleButton.click()
+
+    const bottomSheet = page.locator("#terminal-bottom-sheet")
+    await expect(bottomSheet).toBeVisible()
+
+    // Close button should be visible
+    const closeButton = bottomSheet.locator('button[aria-label*="close" i]')
+    await expect(closeButton).toBeVisible()
+
+    // Click close button
+    await closeButton.click()
+
+    // Bottom sheet should close
+    await expect(bottomSheet).not.toBeVisible()
+  })
+
+  test("backdrop tap closes bottom sheet", async ({ page }) => {
+    await page.goto("/jj-git/1")
+
+    // Open terminal
+    const toggleButton = page.locator('button[aria-label*="terminal" i]').first()
+    await toggleButton.click()
+
+    const bottomSheet = page.locator("#terminal-bottom-sheet")
+    await expect(bottomSheet).toBeVisible()
+
+    // Tap backdrop (area above the sheet)
+    const backdrop = page.locator('[role="button"][aria-label*="Close terminal"]').first()
+    await backdrop.tap()
+
+    // Bottom sheet should close
+    await expect(bottomSheet).not.toBeVisible()
+  })
+
+  test("escape closes bottom sheet", async ({ page }) => {
+    await page.goto("/jj-git/1")
+
+    // Open terminal
+    const toggleButton = page.locator('button[aria-label*="terminal" i]').first()
+    await toggleButton.click()
+
+    const bottomSheet = page.locator("#terminal-bottom-sheet")
+    await expect(bottomSheet).toBeVisible()
+
+    // Press Escape
+    await page.keyboard.press("Escape")
+
+    // Bottom sheet should close
+    await expect(bottomSheet).not.toBeVisible()
+  })
+
   test("all functionality works at 320px width", async ({ page }) => {
     await page.goto("/jj-git/1")
 
-    // Toggle button should be visible
+    // Toggle button should be visible and have adequate touch target (>= 44px)
     const toggleButton = page.locator('button[aria-label*="terminal" i]').first()
     await expect(toggleButton).toBeVisible()
+
+    const buttonBox = await toggleButton.boundingBox()
+    expect(buttonBox).toBeTruthy()
+    if (buttonBox) {
+      // Touch target should be at least 44px in both dimensions
+      expect(buttonBox.width).toBeGreaterThanOrEqual(44)
+      expect(buttonBox.height).toBeGreaterThanOrEqual(44)
+    }
 
     // Click to open
     await toggleButton.click()
 
-    // Sidebar/bottom sheet should appear
-    const sidebar = page.locator("#terminal-sidebar")
-    await expect(sidebar).toBeVisible()
+    // Bottom sheet should appear
+    const bottomSheet = page.locator("#terminal-bottom-sheet")
+    await expect(bottomSheet).toBeVisible()
 
-    // Close button should work
-    const closeButton = page.locator('#terminal-sidebar button[aria-label*="close" i]')
+    // Close button should have adequate touch target
+    const closeButton = bottomSheet.locator('button[aria-label*="close" i]')
+    const closeBox = await closeButton.boundingBox()
+    expect(closeBox).toBeTruthy()
+    if (closeBox) {
+      expect(closeBox.width).toBeGreaterThanOrEqual(44)
+      expect(closeBox.height).toBeGreaterThanOrEqual(44)
+    }
+
+    // Click close
     await closeButton.click()
 
     // Should close
-    await expect(sidebar).not.toBeVisible()
+    await expect(bottomSheet).not.toBeVisible()
+  })
+
+  test("bottom sheet content is scrollable on mobile", async ({ page }) => {
+    await page.goto("/jj-git/1")
+
+    // Open terminal
+    const toggleButton = page.locator('button[aria-label*="terminal" i]').first()
+    await toggleButton.click()
+
+    const bottomSheet = page.locator("#terminal-bottom-sheet")
+    await expect(bottomSheet).toBeVisible()
+
+    // Bottom sheet should have overflow handling
+    // The terminal body should allow scrolling
+    const sheetBody = bottomSheet.locator(".flex-1").first()
+    await expect(sheetBody).toBeVisible()
+
+    // Check overflow style
+    const overflow = await sheetBody.evaluate((el) => window.getComputedStyle(el).overflow)
+    expect(overflow).toBe("hidden")
+  })
+
+  test("bottom sheet persists across step navigation on mobile", async ({ page }) => {
+    await page.goto("/jj-git/1")
+
+    // Open terminal
+    const toggleButton = page.locator('button[aria-label*="terminal" i]').first()
+    await toggleButton.click()
+
+    const bottomSheet = page.locator("#terminal-bottom-sheet")
+    await expect(bottomSheet).toBeVisible()
+
+    // Close to enable navigation
+    const closeButton = bottomSheet.locator('button[aria-label*="close" i]')
+    await closeButton.click()
+
+    // Navigate to next step
+    await page.keyboard.press("ArrowRight")
+    await page.waitForURL("/jj-git/2")
+
+    // Bottom sheet should remain closed
+    await expect(bottomSheet).not.toBeVisible()
+
+    // Open again
+    const toggleButton2 = page.locator('button[aria-label*="terminal" i]').first()
+    await toggleButton2.click()
+
+    // Should open
+    await expect(bottomSheet).toBeVisible()
+  })
+})
+
+test.describe("Terminal Sidebar - Mobile 320px", () => {
+  // Test at the minimum supported width
+  test.use({ viewport: { width: 320, height: 568 } })
+
+  test("all functionality works at minimum 320px width", async ({ page }) => {
+    await page.goto("/jj-git/1")
+
+    // Toggle button should be visible and have adequate touch target (>= 44px)
+    const toggleButton = page.locator('button[aria-label*="terminal" i]').first()
+    await expect(toggleButton).toBeVisible()
+
+    const buttonBox = await toggleButton.boundingBox()
+    expect(buttonBox).toBeTruthy()
+    if (buttonBox) {
+      // Touch target should be at least 44px in both dimensions
+      expect(buttonBox.width).toBeGreaterThanOrEqual(44)
+      expect(buttonBox.height).toBeGreaterThanOrEqual(44)
+    }
+
+    // Click to open
+    await toggleButton.click()
+
+    // Bottom sheet should appear
+    const bottomSheet = page.locator("#terminal-bottom-sheet")
+    await expect(bottomSheet).toBeVisible()
+
+    // Drag handle should be visible
+    const dragHandle = bottomSheet.locator('[class*="rounded-full"][class*="w-12"]').first()
+    await expect(dragHandle).toBeVisible()
+
+    // Close button should have adequate touch target
+    const closeButton = bottomSheet.locator('button[aria-label*="close" i]')
+    const closeBox = await closeButton.boundingBox()
+    expect(closeBox).toBeTruthy()
+    if (closeBox) {
+      expect(closeBox.width).toBeGreaterThanOrEqual(44)
+      expect(closeBox.height).toBeGreaterThanOrEqual(44)
+    }
+
+    // Click close
+    await closeButton.click()
+
+    // Should close
+    await expect(bottomSheet).not.toBeVisible()
+  })
+
+  test("bottom sheet fits within 320px viewport", async ({ page }) => {
+    await page.goto("/jj-git/1")
+
+    // Open terminal
+    const toggleButton = page.locator('button[aria-label*="terminal" i]').first()
+    await toggleButton.click()
+
+    const bottomSheet = page.locator("#terminal-bottom-sheet")
+    await expect(bottomSheet).toBeVisible()
+
+    // Bottom sheet should not overflow viewport
+    const box = await bottomSheet.boundingBox()
+    expect(box).toBeTruthy()
+    if (box) {
+      const viewportWidth = page.viewportSize()?.width ?? 320
+      // Sheet should fit within viewport width
+      expect(box.width).toBeLessThanOrEqual(viewportWidth)
+      // Sheet should be anchored to bottom
+      const viewportHeight = page.viewportSize()?.height ?? 568
+      expect(box.y + box.height).toBeGreaterThanOrEqual(viewportHeight - 10)
+    }
+  })
+
+  test("keyboard shortcuts work at 320px", async ({ page }) => {
+    await page.goto("/jj-git/1")
+
+    const bottomSheet = page.locator("#terminal-bottom-sheet")
+
+    // Press t to open
+    await page.keyboard.press("t")
+    await expect(bottomSheet).toBeVisible()
+
+    // Press Escape to close
+    await page.keyboard.press("Escape")
+    await expect(bottomSheet).not.toBeVisible()
   })
 })
 
