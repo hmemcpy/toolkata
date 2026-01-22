@@ -2,7 +2,7 @@
 
 Interactive tutorials for learning developer tools through hands-on practice.
 
-**Live site:** https://toolkata.vercel.app
+**Live site:** https://toolkata.com
 
 ## Available Tutorials
 

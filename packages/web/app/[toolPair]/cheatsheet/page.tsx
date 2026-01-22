@@ -456,7 +456,7 @@ export default function CheatSheetPage({
           <p>
             Cheat sheet for {pairing.to.name} if you already know {pairing.from.name}.
           </p>
-          <p className="mt-2">Visit toolkata.dev for interactive tutorials.</p>
+          <p className="mt-2">Visit toolkata.com for interactive tutorials.</p>
         </div>
       </main>
 
