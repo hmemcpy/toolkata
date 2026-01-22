@@ -405,3 +405,51 @@ test.describe("All Routes Load (12.4)", () => {
     })
   }
 })
+
+test.describe("Content Validation", () => {
+  // Check for unexpected CJK characters that indicate LLM errors
+  // Allow: 形 (kata), 改善 (kaizen) - intentional Japanese terms
+  // Flag: Random Chinese mixed with English text
+
+  const contentRoutes = [
+    "/jj-git/1",
+    "/jj-git/2",
+    "/jj-git/3",
+    "/jj-git/4",
+    "/jj-git/5",
+    "/jj-git/6",
+    "/jj-git/7",
+    "/jj-git/8",
+    "/jj-git/9",
+    "/jj-git/10",
+    "/jj-git/11",
+    "/jj-git/12",
+  ]
+
+  // Allowlist of intentional CJK characters (kata, kaizen, etc.)
+  const allowedCJK = ["形", "改善", "道", "術"]
+
+  for (const route of contentRoutes) {
+    test(`${route} has no unexpected CJK characters`, async ({ page }) => {
+      await page.goto(route)
+      await page.waitForLoadState("domcontentloaded")
+
+      const mainContent = await page.locator("main").textContent()
+
+      if (mainContent) {
+        // Find all CJK characters
+        const cjkMatches = mainContent.match(/[\u4e00-\u9fff\u3040-\u30ff]/g)
+
+        if (cjkMatches) {
+          // Filter out allowed characters
+          const unexpected = cjkMatches.filter((char) => !allowedCJK.includes(char))
+
+          expect(
+            unexpected.length === 0 ? null : unexpected,
+            `Found unexpected CJK characters: ${unexpected.join("")}`,
+          ).toBeNull()
+        }
+      }
+    })
+  }
+})

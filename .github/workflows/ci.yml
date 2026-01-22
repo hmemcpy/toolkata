@@ -25,6 +25,11 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
+      - name: Validate content (check for LLM Unicode errors)
+        run: ./scripts/validate-content.sh
+        # Note: This warns but doesn't fail. Use --strict to fail on findings.
+        # Some non-ASCII is legitimate (loan words, names, diacritics).
+
   build:
     runs-on: ubuntu-latest
     steps:
