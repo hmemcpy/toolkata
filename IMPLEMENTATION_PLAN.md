@@ -627,10 +627,21 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
   - Targets `<main id="main">` element
   - Styled to appear on focus only (sr-only until focused)
 
-- [ ] **11.4** Test keyboard-only navigation
+- [x] **11.4** Test keyboard-only navigation
   - Complete entire tutorial without mouse
   - Document any gaps in navigation
   - Fix any focus traps (especially in terminal)
+  - Note: Fixed Escape key handling conflict in useKeyboardNavigation hook - removed global Escape handler to avoid conflicts with modal and terminal handlers
+  - Note: Added Escape key handler to InteractiveTerminal to allow exiting terminal focus trap
+  - Note: Updated keyboard shortcuts modal to document terminal Escape behavior
+  - Note: Full keyboard navigation works:
+    - Home page: Tab through cards and links
+    - Overview page: Tab through steps and links
+    - Step pages: Arrow keys (←/→) for navigation, ? for help, Esc to exit terminal
+    - Cheat sheet: Tab through table and copy buttons
+    - All interactive elements have visible focus indicators
+    - Skip link works correctly
+    - No focus traps (terminal can be exited with Escape)
 
 - [x] **11.5** Verify contrast ratios (AAA target)
   - All text >= 7:1 contrast (AAA)

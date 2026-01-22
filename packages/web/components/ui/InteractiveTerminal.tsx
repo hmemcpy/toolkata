@@ -687,8 +687,15 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
             // biome-ignore lint/a11y/noNoninteractiveTabindex: Terminal container needs focus for keyboard input
             tabIndex={0}
             className="min-h-[200px] max-h-[400px] overflow-hidden outline-none"
-            aria-label="Interactive terminal sandbox"
+            aria-label="Interactive terminal sandbox. Press Escape to exit terminal focus."
             role="application"
+            onKeyDown={(e) => {
+              // Allow Escape to exit terminal focus (resolves focus trap)
+              if (e.key === "Escape") {
+                e.preventDefault()
+                e.currentTarget.blur()
+              }
+            }}
           />
         )}
 

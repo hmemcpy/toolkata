@@ -5,7 +5,11 @@
  * - Left Arrow (←) - Previous step
  * - Right Arrow (→) - Next step
  * - Question Mark (?) - Show keyboard shortcuts modal
- * - Escape (Esc) - Close modals, exit terminal focus
+ *
+ * Note: Escape (Esc) is NOT handled by this hook to avoid conflicts.
+ * Each component (modals, terminal) handles its own Escape behavior:
+ * - KeyboardShortcutsModal: Closes modal
+ * - InteractiveTerminal: Blurs terminal (exits focus trap)
  *
  * @example
  * ```tsx
@@ -128,7 +132,8 @@ export function useKeyboardShortcutsModal(): KeyboardShortcutsModalOptions & {
  * Adds keyboard shortcuts for:
  * - Arrow navigation (←/→ for prev/next step)
  * - Help modal (?)
- * - Escape handling
+ *
+ * Escape key is NOT handled here - individual components handle it.
  */
 export function useKeyboardNavigation({
   currentStep,
@@ -174,16 +179,9 @@ export function useKeyboardNavigation({
           event.preventDefault()
           onShowHelp()
         }
-      } else if (event.key === "Escape") {
-        // Let other handlers deal with Escape (modals, terminal, etc.)
-        // This is just a fallback
-        event.preventDefault()
-        // Focus on the main content area
-        const main = document.getElementById("main")
-        if (main) {
-          main.focus()
-        }
       }
+      // Note: Escape key is intentionally NOT handled here to avoid conflicts
+      // Each component (modals, terminal) handles its own Escape behavior
     }
 
     document.addEventListener("keydown", handleKeyDown)

@@ -121,10 +121,21 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
           </div>
 
           <div>
+            <h3 className="mb-2 text-sm font-semibold text-[var(--color-text-muted)]">Terminal</h3>
+            <div className="space-y-2">
+              <Shortcut
+                keyName="Exit terminal"
+                shortcut="Esc"
+                description="Exit terminal focus (when terminal is active)"
+              />
+            </div>
+          </div>
+
+          <div>
             <h3 className="mb-2 text-sm font-semibold text-[var(--color-text-muted)]">Other</h3>
             <div className="space-y-2">
               <Shortcut keyName="Show help" shortcut="?" description="Show this help modal" />
-              <Shortcut keyName="Close modal" shortcut="Esc" description="Close modal or exit terminal" />
+              <Shortcut keyName="Close modal" shortcut="Esc" description="Close this modal" />
             </div>
           </div>
         </div>
