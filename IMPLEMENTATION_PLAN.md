@@ -347,7 +347,7 @@ Initial content: **jj ← git** comparison with 12 tutorial steps.
 
 > **WHY**: Interactive terminal is a key differentiator. API must exist before frontend integration. Can develop in parallel with Phase 5-6.
 
-- [ ] **7.1** Create sandbox-api entry point
+- [x] **7.1** Create sandbox-api entry point
   - HTTP server with Bun.serve or Hono
   - Health check endpoint: `GET /health` → `{ status: "ok", timestamp }`
   - CORS configuration for frontend origin (toolkata.dev, localhost:3000)

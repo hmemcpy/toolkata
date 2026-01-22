@@ -3,8 +3,9 @@
   "compilerOptions": {
     "lib": ["ES2022"],
     "module": "ESNext",
-    "target": "ES2022"
+    "target": "ES2022",
+    "types": ["bun-types"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/**/*.d.ts"],
   "exclude": ["node_modules", "dist"]
 }
