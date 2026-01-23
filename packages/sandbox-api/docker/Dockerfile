@@ -24,9 +24,8 @@ RUN JJ_VERSION="0.25.0" && \
 # Verify installations
 RUN git --version && jj --version
 
-# Create non-root user for running commands
-RUN useradd -m -s /bin/bash sandbox && \
-    usermod -aG sudo sandbox
+# Create non-root user for running commands (no sudo access)
+RUN useradd -m -s /bin/bash sandbox
 
 # Create workspace directory
 RUN mkdir -p /home/sandbox/workspace && \

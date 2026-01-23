@@ -523,11 +523,11 @@ Begin the audit by reading each file listed above and systematically evaluating 
 
 #### Priority 1: Critical (Do before production)
 
-- [ ] **8.1** Remove sudo group membership from container user
+- [x] **8.1** Remove sudo group membership from container user
   - Location: `packages/sandbox-api/docker/Dockerfile` lines 28-29
-  - Change `usermod -aG sudo sandbox` to remove sudo access
+  - Removed `usermod -aG sudo sandbox` - sandbox user now has no sudo access
   - User doesn't need sudo for git/jj operations
-  - **Vulnerability**: V-001 (Critical)
+  - **Vulnerability**: V-001 (Critical) - FIXED
 
 - [ ] **8.2** Implement API authentication
   - Location: `packages/sandbox-api/src/routes/sessions.ts`, `src/index.ts`
