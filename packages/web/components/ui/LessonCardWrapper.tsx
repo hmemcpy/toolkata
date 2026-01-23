@@ -19,10 +19,10 @@ export interface LessonCardWrapperProps {
 export function LessonCardWrapper({ pairing, className = "" }: LessonCardWrapperProps) {
   const { completedCount, currentStep, isLoading } = useStepProgress(pairing.slug, pairing.steps)
 
-  // During SSR/hydration, show default state (no progress)
-  // This prevents hydration mismatch
+  // During SSR/hydration, show skeleton state
+  // This prevents content flicker when localStorage loads
   if (isLoading) {
-    return <LessonCard pairing={pairing} className={className} />
+    return <LessonCard pairing={pairing} className={className} skeleton />
   }
 
   return (
