@@ -1,7 +1,7 @@
 import type { Server as HttpServer } from "node:http"
 import { Data, Effect } from "effect"
 import { WebSocketServer } from "ws"
-import { validateApiKey } from "../config.js"
+import { validateApiKey, validateOrigin } from "../config.js"
 import type { SessionServiceShape } from "../services/session.js"
 import { type WebSocketServiceShape, parseMessage } from "../services/websocket.js"
 
@@ -48,6 +48,17 @@ export const createWebSocketServer = (
     const sessionId = getSessionId(pathname ?? "")
     if (!sessionId) {
       socket.write("HTTP/1.1 400 Bad Request\r\n\r\nInvalid session path\r\n")
+      socket.destroy()
+      return
+    }
+
+    // Validate Origin header to prevent CSRF attacks
+    const originHeader = request.headers["origin"] as string | null
+    const originResult = await Effect.runPromise(Effect.either(validateOrigin(originHeader)))
+    if (originResult._tag === "Left") {
+      const originError = originResult.left
+      const statusCode = originError.cause === "OriginRequired" ? 403 : 403
+      socket.write(`HTTP/1.1 ${statusCode} Forbidden\r\n\r\n${originError.message}\r\n`)
       socket.destroy()
       return
     }

@@ -562,11 +562,12 @@ Begin the audit by reading each file listed above and systematically evaluating 
   - Fixed all `process.env` access patterns to use bracket notation
   - **Vulnerability**: V-004 (Medium) - FIXED
 
-- [ ] **8.6** Validate Origin header on WebSocket upgrade
+- [x] **8.6** Validate Origin header on WebSocket upgrade
   - Location: `packages/sandbox-api/src/routes/websocket.ts` line 39-58
   - Add Origin header validation
   - Reject connections from unexpected origins
   - **Vulnerability**: V-020 (Low but important for CSRF)
+  - **DONE**: Added `getAllowedOrigins()` and `validateOrigin()` to config.ts, integrated into WebSocket upgrade handler
 
 #### Priority 3: Medium (Do within first month)
 

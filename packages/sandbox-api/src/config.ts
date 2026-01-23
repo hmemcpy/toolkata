@@ -58,6 +58,39 @@ export const SandboxConfig = {
 } as const
 
 /**
+ * Allowed origins for WebSocket connections
+ *
+ * @remarks
+ * - Origins are validated during WebSocket upgrade to prevent CSRF attacks
+ * - Set via `SANDBOX_ALLOWED_ORIGINS` env var (comma-separated)
+ * - Empty string means allow any origin (development only)
+ * - Production should explicitly set allowed origins
+ *
+ * @example
+ * ```bash
+ * # Allow specific origins
+ * SANDBOX_ALLOWED_ORIGINS=https://toolkata.com,https://www.toolkata.com
+ *
+ * # Allow localhost for development
+ * SANDBOX_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
+ * ```
+ */
+export const getAllowedOrigins = (): readonly string[] => {
+  const envValue = process.env["SANDBOX_ALLOWED_ORIGINS"] ?? ""
+
+  // Empty means allow any origin (development)
+  if (envValue === "") {
+    return []
+  }
+
+  // Split by comma and trim whitespace
+  return envValue
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0)
+}
+
+/**
  * TypeScript type for gVisor configuration
  */
 export type GvisorConfig = typeof SandboxConfig
@@ -175,4 +208,59 @@ export const validateApiKey = (apiKey: string | null): Effect.Effect<void, AuthE
  */
 export const isAuthRequired = (): boolean => {
   return SandboxConfig.apiKey !== ""
+}
+
+/**
+ * Origin validation error type
+ */
+export class OriginValidationError extends Data.TaggedClass("OriginValidationError")<{
+  readonly cause: "InvalidOrigin" | "OriginRequired"
+  readonly message: string
+  readonly origin?: string
+}> {}
+
+/**
+ * Validate Origin header for WebSocket upgrade
+ *
+ * @param origin - Origin header value from request
+ * @returns Validation result - true if valid, throws OriginValidationError if invalid
+ *
+ * @remarks
+ * - If no allowed origins configured (empty list), allow any origin (development)
+ * - If allowed origins configured, the provided origin must match exactly
+ * - Throws OriginValidationError for missing or invalid origins (when restricted)
+ */
+export const validateOrigin = (
+  origin: string | null | undefined,
+): Effect.Effect<void, OriginValidationError> => {
+  const allowedOrigins = getAllowedOrigins()
+
+  // No restrictions configured (development mode)
+  if (allowedOrigins.length === 0) {
+    return Effect.void
+  }
+
+  // Origin required but not provided
+  if (origin === null || origin === undefined || origin === "") {
+    return Effect.fail(
+      new OriginValidationError({
+        cause: "OriginRequired",
+        message: "Origin header is required",
+      }),
+    )
+  }
+
+  // Check if origin is in allowed list
+  const isAllowed = allowedOrigins.includes(origin)
+  if (!isAllowed) {
+    return Effect.fail(
+      new OriginValidationError({
+        cause: "InvalidOrigin",
+        message: `Origin not allowed: ${origin}`,
+        origin,
+      }),
+    )
+  }
+
+  return Effect.void
 }
