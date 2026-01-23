@@ -173,10 +173,10 @@ function getWebSocketUrl(session: Session): string {
     return session.wsUrl
   }
 
-  // Otherwise, construct it from the base URL
+  // Otherwise, construct it from the base URL (with /api/v1 prefix)
   const baseUrl = SANDBOX_API_URL.replace(/^https?:\/\//, "")
   const protocol = SANDBOX_API_URL.startsWith("https") ? "wss" : "ws"
-  return `${protocol}://${baseUrl}/sessions/${session.sessionId}/ws`
+  return `${protocol}://${baseUrl}/api/v1/sessions/${session.sessionId}/ws`
 }
 
 /**
@@ -196,7 +196,7 @@ const make = Effect.succeed<SandboxClientShape>({
           headers["X-API-Key"] = SANDBOX_API_KEY
         }
 
-        const response = await fetch(`${apiUrl}/sessions`, {
+        const response = await fetch(`${apiUrl}/api/v1/sessions`, {
           method: "POST",
           headers,
           body: JSON.stringify({
@@ -238,7 +238,7 @@ const make = Effect.succeed<SandboxClientShape>({
           headers["X-API-Key"] = SANDBOX_API_KEY
         }
 
-        const response = await fetch(`${apiUrl}/sessions/${sessionId}`, {
+        const response = await fetch(`${apiUrl}/api/v1/sessions/${sessionId}`, {
           method: "DELETE",
           headers,
         })
@@ -266,7 +266,7 @@ const make = Effect.succeed<SandboxClientShape>({
           headers["X-API-Key"] = SANDBOX_API_KEY
         }
 
-        const response = await fetch(`${apiUrl}/sessions/${sessionId}`, {
+        const response = await fetch(`${apiUrl}/api/v1/sessions/${sessionId}`, {
           headers,
         })
 
@@ -292,7 +292,7 @@ const make = Effect.succeed<SandboxClientShape>({
 
   connectWebSocket: (sessionId: string, options: CreateSessionOptions) =>
     Effect.sync(() => {
-      const wsUrl = `${SANDBOX_API_URL}/sessions/${sessionId}/ws`
+      const wsUrl = `${SANDBOX_API_URL}/api/v1/sessions/${sessionId}/ws`
 
       // Build WebSocket protocols array - browser WebSocket API doesn't support custom headers
       // The API key will be sent via query parameter as a fallback

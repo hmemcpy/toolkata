@@ -162,7 +162,7 @@ const errorToResponse = (error: unknown): { statusCode: number; body: ErrorRespo
 const getWsUrl = (request: Request, sessionId: string): string => {
   const protocol = request.headers.get("x-forwarded-proto") ?? "ws"
   const host = request.headers.get("host") ?? "localhost:3001"
-  return `${protocol === "https" ? "wss" : "ws"}://${host}/sessions/${sessionId}/ws`
+  return `${protocol === "https" ? "wss" : "ws"}://${host}/api/v1/sessions/${sessionId}/ws`
 }
 
 // Create session routes with service instances

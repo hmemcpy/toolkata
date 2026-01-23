@@ -87,7 +87,7 @@ const createApp = (
     }),
   )
 
-  // Health check endpoint with session stats and gVisor status
+  // Health check endpoint with session stats and gVisor status (no version prefix)
   app.get("/health", (c) => {
     let containers = 0
 
@@ -119,8 +119,8 @@ const createApp = (
     })
   })
 
-  // Mount session routes
-  app.route("/", createSessionRoutes(sessionService, rateLimitService))
+  // Mount session routes under /api/v1
+  app.route("/api/v1", createSessionRoutes(sessionService, rateLimitService))
 
   return app
 }
@@ -188,7 +188,8 @@ const make = Effect.gen(function* () {
     httpServer.listen(config.port, config.host, () => {
       console.log(`Sandbox API listening on http://${config.host}:${config.port}`)
       console.log(`Health check: http://${config.host}:${config.port}/health`)
-      console.log(`WebSocket: ws://${config.host}:${config.port}/sessions/:id/ws`)
+      console.log(`API v1: http://${config.host}:${config.port}/api/v1`)
+      console.log(`WebSocket: ws://${config.host}:${config.port}/api/v1/sessions/:id/ws`)
       console.log(`CORS origin: ${config.frontendOrigin}`)
     })
 

@@ -24,8 +24,8 @@ const connections = new Map<string, ActiveConnection>()
 
 // Helper: Extract session ID from WebSocket path
 const getSessionId = (url: string): string | null => {
-  // Path format: /sessions/:sessionId/ws
-  const match = url.match(/^\/sessions\/([^/]+)\/ws$/)
+  // Path format: /api/v1/sessions/:sessionId/ws
+  const match = url.match(/^\/api\/v1\/sessions\/([^/]+)\/ws$/)
   return match?.[1] ?? null
 }
 
@@ -42,8 +42,8 @@ export const createWebSocketServer = (
   httpServer.on("upgrade", async (request, socket, head) => {
     const { pathname, searchParams } = new URL(request.url ?? "", `http://${request.headers.host}`)
 
-    // Only handle /sessions/:id/ws paths
-    if (!pathname?.startsWith("/sessions/")) {
+    // Only handle /api/v1/sessions/:id/ws paths
+    if (!pathname?.startsWith("/api/v1/sessions/")) {
       return
     }
 

@@ -628,10 +628,13 @@ Begin the audit by reading each file listed above and systematically evaluating 
   - **DONE**: Added `SANITIZED_MESSAGES` constant with generic error messages, replaced `error.message` with sanitized messages for `AuthError`, `RateLimitError`, and `SessionError`
   - **Vulnerability**: V-009 (Medium) - FIXED
 
-- [ ] **8.12** Add API versioning
-  - Location: `packages/sandbox-api/src/index.ts`, `routes/`
+- [x] **8.12** Add API versioning
+  - Location: `packages/sandbox-api/src/index.ts`, `routes/`, `packages/web/services/sandbox-client.ts`
   - Add `/api/v1` prefix to all routes
-  - **Vulnerability**: V-018 (Low)
+  - Updated `/api/v1/sessions` for REST endpoints
+  - Updated `/api/v1/sessions/:id/ws` for WebSocket endpoint
+  - Updated frontend sandbox-client to use new versioned paths
+  - **Vulnerability**: V-018 (Low) - FIXED
 
 - [ ] **8.13** Validate and whitelist CORS origins
   - Location: `packages/sandbox-api/src/index.ts` line 80-88
