@@ -571,10 +571,16 @@ Begin the audit by reading each file listed above and systematically evaluating 
 
 #### Priority 3: Medium (Do within first month)
 
-- [ ] **8.7** Add WebSocket message size limits
+- [x] **8.7** Add WebSocket message size limits
   - Location: `packages/sandbox-api/src/routes/websocket.ts` line 109
   - Limit messages to 1KB for terminal input
   - **Vulnerability**: V-011 (Medium)
+  - **DONE**:
+    * Added `maxWebSocketMessageSize` config (default 1024 bytes) to `SandboxConfig`
+    * Added `validateMessageSize()` function with `MessageSizeError` type
+    * Integrated validation in WebSocket message handler
+    * Rejects oversized messages with WebSocket close code 1009 (Message Too Big)
+    * Added config validation on startup
 
 - [ ] **8.8** Implement terminal input sanitization
   - Location: `packages/sandbox-api/src/routes/websocket.ts`

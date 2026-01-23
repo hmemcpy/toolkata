@@ -21,6 +21,10 @@ import { Data, Effect } from "effect"
  *   - Defaults to empty string (no auth required in development)
  *   - Set `SANDBOX_API_KEY` in production to require authentication
  *   - Frontend must send `X-API-Key` header with this value
+ * - `maxWebSocketMessageSize`: Maximum size in bytes for WebSocket messages
+ *   - Defaults to `1024` (1KB)
+ *   - Prevents DoS via large message payloads
+ *   - Can be overridden via `SANDBOX_MAX_WS_MESSAGE_SIZE` env var
  *
  * @example
  * ```bash
@@ -35,6 +39,9 @@ import { Data, Effect } from "effect"
  *
  * # Set API key for production
  * SANDBOX_API_KEY=your-secret-key-here
+ *
+ * # Increase max WebSocket message size (not recommended)
+ * SANDBOX_MAX_WS_MESSAGE_SIZE=2048
  * ```
  */
 export const SandboxConfig = {
@@ -55,6 +62,12 @@ export const SandboxConfig = {
    * @default "" (no authentication required)
    */
   apiKey: (process.env["SANDBOX_API_KEY"] ?? "") as string,
+
+  /**
+   * Maximum WebSocket message size in bytes
+   * @default 1024 (1KB)
+   */
+  maxWebSocketMessageSize: Number.parseInt(process.env["SANDBOX_MAX_WS_MESSAGE_SIZE"] ?? "1024", 10) as number,
 } as const
 
 /**
@@ -117,6 +130,7 @@ export const isProduction = (): boolean => {
  * - In production mode, gVisor MUST be enabled for security
  * - In development, gVisor can be disabled for debugging
  * - Runtime name must be non-empty and contain no whitespace
+ * - WebSocket message size limit must be positive and reasonable
  */
 export const validateGvisorConfig = (): {
   readonly valid: boolean
@@ -148,6 +162,22 @@ export const validateGvisorConfig = (): {
       }
     }
   }
+
+  // Validate WebSocket message size limit
+  const maxSize = SandboxConfig.maxWebSocketMessageSize
+  if (!Number.isFinite(maxSize) || maxSize <= 0) {
+    return {
+      valid: false,
+      message: "SANDBOX_MAX_WS_MESSAGE_SIZE must be a positive number",
+    }
+  }
+  if (maxSize > 10240) {
+    // Warn but don't fail if size is > 10KB
+    console.warn(
+      `[config] SANDBOX_MAX_WS_MESSAGE_SIZE is ${maxSize} bytes, which is unusually large. Consider using 1024 (1KB) or less.`,
+    )
+  }
+
   return { valid: true }
 }
 
@@ -258,6 +288,44 @@ export const validateOrigin = (
         cause: "InvalidOrigin",
         message: `Origin not allowed: ${origin}`,
         origin,
+      }),
+    )
+  }
+
+  return Effect.void
+}
+
+/**
+ * Message size validation error type
+ */
+export class MessageSizeError extends Data.TaggedClass("MessageSizeError")<{
+  readonly cause: "MessageTooLarge"
+  readonly message: string
+  readonly size: number
+  readonly maxSize: number
+}> {}
+
+/**
+ * Validate WebSocket message size
+ *
+ * @param size - Message size in bytes
+ * @returns Validation result - true if valid, throws MessageSizeError if too large
+ *
+ * @remarks
+ * - Messages are limited to prevent DoS via large payloads
+ * - Default limit is 1KB (1024 bytes)
+ * - Can be overridden via SANDBOX_MAX_WS_MESSAGE_SIZE env var
+ */
+export const validateMessageSize = (size: number): Effect.Effect<void, MessageSizeError> => {
+  const maxSize = SandboxConfig.maxWebSocketMessageSize
+
+  if (size > maxSize) {
+    return Effect.fail(
+      new MessageSizeError({
+        cause: "MessageTooLarge",
+        message: `Message size ${size} bytes exceeds maximum ${maxSize} bytes`,
+        size,
+        maxSize,
       }),
     )
   }

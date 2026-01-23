@@ -1,7 +1,7 @@
 import type { Server as HttpServer } from "node:http"
 import { Data, Effect } from "effect"
 import { WebSocketServer } from "ws"
-import { validateApiKey, validateOrigin } from "../config.js"
+import { validateApiKey, validateMessageSize, validateOrigin } from "../config.js"
 import type { SessionServiceShape } from "../services/session.js"
 import { type WebSocketServiceShape, parseMessage } from "../services/websocket.js"
 
@@ -134,6 +134,25 @@ export const createWebSocketServer = (
 
         // Set up message handler from client - use captured service values
         ws.on("message", async (data: Buffer) => {
+          // Validate message size to prevent DoS
+          const sizeResult = await Effect.runPromise(Effect.either(validateMessageSize(data.length)))
+          if (sizeResult._tag === "Left") {
+            const sizeError = sizeResult.left
+            console.error(
+              `[WebSocket] Message too large for ${sessionId}: ${sizeError.size} bytes (max ${sizeError.maxSize})`,
+            )
+            if (ws.readyState === ws.OPEN) {
+              ws.send(
+                JSON.stringify({
+                  type: "error",
+                  message: `Message size ${sizeError.size} bytes exceeds maximum ${sizeError.maxSize} bytes`,
+                }),
+              )
+              ws.close(1009, sizeError.message)
+            }
+            return
+          }
+
           // Update activity on each message
           const updateResult = await Effect.runPromise(
             Effect.either(sessionService.updateActivity(sessionId)),
