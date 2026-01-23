@@ -736,15 +736,15 @@ Begin the audit by reading each file listed above and systematically evaluating 
 | `packages/sandbox-api/src/routes/websocket.ts` | ✓ Added audit logging for WS lifecycle, input validation, errors |
 | `packages/sandbox-api/src/index.ts` | ✓ Wire AuditService into app layer composition |
 
-### Modified Files - Pending (5)
+### Modified Files - Completed ✓
 
 | File | Changes |
 |------|---------|
-| `packages/web/components/ui/TryIt.tsx` | Add `expectedOutput` and `editable` props |
-| `packages/sandbox-api/src/services/container.ts` | Add gVisor runtime to HostConfig |
-| `packages/sandbox-api/src/index.ts` | Health endpoint gVisor status |
-| `packages/web/tests/browser.spec.ts` | Update for shrinking layout, add TryIt tests |
-| `packages/web/.env.local` | Create or set NEXT_PUBLIC_SANDBOX_API_URL for production |
+| `packages/web/components/ui/TryIt.tsx` | ✓ Added `expectedOutput` and `editable` props |
+| `packages/sandbox-api/src/services/container.ts` | ✓ Added gVisor runtime to HostConfig |
+| `packages/sandbox-api/src/index.ts` | ✓ Added gVisor status to health endpoint |
+| `packages/web/tests/browser.spec.ts` | ✓ Added shrinking layout tests, TryIt enhancement tests |
+| `packages/web/.env.local` | N/A - Local environment file (not committed) |
 
 ### Deleted Files (0)
 
@@ -769,18 +769,24 @@ Single Dockerfile kept - multi-image split deferred.
 
 ### Immediate Next Step
 
-Configure frontend to use production sandbox:
+All implementation tasks complete. The sandbox API is live at https://sandbox.toolkata.com.
+
+For local development with the production sandbox:
 ```bash
-# In packages/web/.env.local or environment
+# In packages/web/.env.local (not committed)
 NEXT_PUBLIC_SANDBOX_API_URL=https://sandbox.toolkata.com
+NEXT_PUBLIC_SANDBOX_API_KEY=<your-api-key>
 ```
 
+The optional task 4.5 (dynamic image selection) is deferred until a second tool pair is added.
+
 ### Dependencies
-- **Phase 1 MUST complete first** - state wiring is foundation for all UI
-- **Phases 2-3 can run in parallel** - independent UI changes
-- **Phase 5 remaining tasks** - integrate gVisor in code
-- **Phase 6 runs after implementation phases** - validates everything together
-- **Phase 7 can run anytime** - manual LLM audit, independent of code changes
+- **Phase 1 MUST complete first** - state wiring is foundation for all UI ✓
+- **Phases 2-3 can run in parallel** - independent UI changes ✓
+- **Phase 5** - integrate gVisor in code ✓
+- **Phase 6 runs after implementation phases** - validates everything together ✓
+- **Phase 7** - manual LLM audit, independent of code changes ✓
+- **Phase 8** - security remediation from audit findings ✓
 
 ### Validation Command (use throughout)
 ```bash
@@ -804,23 +810,75 @@ bun run --cwd packages/web dev
 
 ## Task Count
 
-| Phase | Tasks | Priority | Description |
-|-------|-------|----------|-------------|
-| 1 | 7 | P0 | Terminal state wiring + reset button |
-| 2 | 6 | P1 | Shrinking layout |
-| 3 | 4 | P1 | TryIt enhancement |
-| 4 | 7 | P2 | Docker reorganization |
-| 5 | 5 | P2 | gVisor integration |
-| 6 | 4 | P3 | Validation & testing |
-| 7 | 1 | P3 | Security & integration audit |
-| 8 | 17 | P0-P2 | Security remediation (from audit findings) |
-| **Total** | **51** | | **(52 unchecked sub-items remain)** |
+| Phase | Tasks | Priority | Description | Status |
+|-------|-------|----------|-------------|--------|
+| 1 | 7 | P0 | Terminal state wiring + reset button | ✓ Complete |
+| 2 | 6 | P1 | Shrinking layout | ✓ Complete |
+| 3 | 4 | P1 | TryIt enhancement | ✓ Complete |
+| 4 | 7 | P2 | Docker reorganization | ✓ Complete |
+| 5 | 5 | P2 | gVisor integration | ✓ Complete |
+| 6 | 4 | P3 | Validation & testing | ✓ Complete |
+| 7 | 1 | P3 | Security & integration audit | ✓ Complete |
+| 8 | 17 | P0-P2 | Security remediation (from audit findings) | ✓ Complete |
+| 4.5 | 1 | Optional | Dynamic image selection (deferred) | ⏸️ Deferred |
+| **Total** | **52** | | **All implementation tasks complete** | |
 
 ## Priority Summary
 
-| Priority | Phases | Description |
-|----------|--------|-------------|
-| **P0** | 1, 8 (tasks 8.1-8.3) | Terminal state wiring + Critical security fixes |
-| **P1** | 2, 3, 8 (tasks 8.4-8.6) | UI changes + High priority security |
-| **P2** | 4, 5, 8 (tasks 8.7-8.14) | Backend changes + Medium priority security |
-| **P3** | 6, 7, 8 (tasks 8.15-8.17) | Validation, testing, audit, infrastructure |
+| Priority | Phases | Description | Status |
+|----------|--------|-------------|--------|
+| **P0** | 1, 8 (tasks 8.1-8.3) | Terminal state wiring + Critical security fixes | ✓ Complete |
+| **P1** | 2, 3, 8 (tasks 8.4-8.6) | UI changes + High priority security | ✓ Complete |
+| **P2** | 4, 5, 8 (tasks 8.7-8.14) | Backend changes + Medium priority security | ✓ Complete |
+| **P3** | 6, 7, 8 (tasks 8.15-8.17) | Validation, testing, audit, infrastructure | ✓ Complete |
+
+---
+
+## Completion Status (2026-01-23)
+
+**All implementation tasks are complete.** The sandbox integration is fully functional and deployed to production.
+
+### Summary of Completed Work
+
+**Frontend Changes:**
+- Terminal state callbacks wired up (state, session time display)
+- Reset button functional in sidebar and mobile bottom sheet
+- Shrinking layout enables side-by-side TryIt interaction
+- TryIt component supports editable commands and expected output display
+
+**Backend Changes:**
+- gVisor runtime integrated for defense-in-depth security
+- API authentication with configurable keys
+- Cryptographically secure session IDs
+- WebSocket message size limits
+- Terminal input sanitization
+- Per-IP concurrent connection limits
+- Container destroy timeouts
+- Sanitized error messages
+- API versioning (/api/v1)
+- CORS origin whitelisting
+- Structured audit logging
+
+**Infrastructure:**
+- Hetzner CAX11 server deployed and running
+- ufw firewall configured
+- unattended-upgrades enabled
+- log rotation configured
+- fail2ban for SSH protection
+- Caddy reverse proxy with auto-SSL
+
+### Note on Remaining "Unchecked" Items
+
+The 48 unchecked items in this file are **not implementation tasks** - they are checklist questions in the Phase 7 security audit prompt template (lines 389-482). The security audit was completed and all findings were addressed in Phase 8.
+
+### Deferred Items
+
+- **Task 4.5** (Optional): Dynamic image selection - deferred until a second tool pair is added. Current single-image approach works fine for the jj-git tool pair.
+
+### Production Deployment
+
+**Sandbox API:** https://sandbox.toolkata.com (Hetzner CAX11 ARM64)
+- Docker 29.1.5 with gVisor runsc
+- TLS via Caddy + Let's Encrypt
+- systemd-managed service
+- Health check: https://sandbox.toolkata.com/health
