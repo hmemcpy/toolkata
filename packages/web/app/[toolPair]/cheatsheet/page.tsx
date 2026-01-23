@@ -1,11 +1,11 @@
 /**
- * Diff page - Searchable command comparison for tool pairings.
+ * Cheat Sheet page - Searchable command comparison for tool pairings.
  *
  * Features:
  * - Server component for static generation and SEO
  * - generateStaticParams for known pairings
  * - generateMetadata for SEO
- * - Route: /{toolPair}/diff (e.g., /jj-git/diff)
+ * - Route: /{toolPair}/cheatsheet (e.g., /jj-git/cheatsheet)
  *
  * This page provides a searchable, filterable command comparison
  * that respects the user's direction preference (git→jj or jj→git).
@@ -39,32 +39,32 @@ export async function generateMetadata({
 
   if (!pairing) {
     return {
-      title: "Diff Not Found",
+      title: "Cheat Sheet Not Found",
     }
   }
 
   return {
-    title: `Diff: ${pairing.to.name} ← ${pairing.from.name}`,
-    description: `Command comparison for ${pairing.to.name} vs ${pairing.from.name}. Find equivalent commands and compare syntax.`,
+    title: `Cheat Sheet: ${pairing.to.name} ← ${pairing.from.name}`,
+    description: `Command cheat sheet for ${pairing.to.name} vs ${pairing.from.name}. Find equivalent commands and compare syntax.`,
     openGraph: {
-      title: `${pairing.to.name} ← ${pairing.from.name} Command Diff`,
+      title: `${pairing.to.name} ← ${pairing.from.name} Cheat Sheet`,
       description: `Compare commands between ${pairing.to.name} and ${pairing.from.name}`,
       type: "website",
     },
     twitter: {
       card: "summary",
-      title: `${pairing.to.name} ← ${pairing.from.name} Command Diff`,
+      title: `${pairing.to.name} ← ${pairing.from.name} Cheat Sheet`,
       description: `Compare commands between ${pairing.to.name} and ${pairing.from.name}`,
     },
   }
 }
 
 /**
- * Diff page component.
+ * Cheat Sheet page component.
  *
  * Displays a searchable, filterable command comparison table.
  */
-export default async function DiffPage({
+export default async function CheatSheetPage({
   params,
 }: {
   readonly params: Promise<{ readonly toolPair: string }>
@@ -96,16 +96,15 @@ export default async function DiffPage({
         </div>
 
         {/* Title */}
-        <h1 className="text-2xl font-bold font-mono text-[var(--color-text)]">Diff</h1>
+        <h1 className="text-2xl font-bold font-mono text-[var(--color-text)]">Cheat Sheet</h1>
 
-        {/* Client wrapper for interactive diff */}
+        {/* Client wrapper for interactive cheat sheet */}
         <GlossaryClientWrapper
           entries={jjGitGlossary}
           toolPair={toolPair}
           pairingFrom={pairing.from.name}
           pairingTo={pairing.to.name}
         />
-
       </main>
 
       <Footer />

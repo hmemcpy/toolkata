@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next"
-import { JetBrains_Mono } from "next/font/google"
+import { IBM_Plex_Mono } from "next/font/google"
 import "./globals.css"
 
-const jetbrainsMono = JetBrains_Mono({
+const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
+  weight: ["400", "500", "700"],
   display: "swap",
-  variable: "--font-jetbrains-mono",
+  variable: "--font-ibm-plex-mono",
 })
 
 export const metadata: Metadata = {
@@ -55,7 +56,7 @@ export default function RootLayout({
     process.env["NEXT_PUBLIC_SANDBOX_API_URL"]?.replace(/^wss?:\/\//, "") ?? "localhost:3001"
 
   return (
-    <html lang="en" className={jetbrainsMono.variable}>
+    <html lang="en" className={ibmPlexMono.variable}>
       <head>
         {/* Preconnect to sandbox API for faster WebSocket connections */}
         <link rel="preconnect" href={`http://${sandboxApiUrl}`} crossOrigin="anonymous" />

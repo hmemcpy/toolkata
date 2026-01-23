@@ -92,7 +92,7 @@ function StepIcon({ state }: { readonly state: StepCompletionState }): JSX.Eleme
       )
     case "pending":
       return (
-        <span className="text-[var(--color-text-muted)]" aria-label="Not started" role="img">
+        <span className="text-[#d1d5dc]" aria-label="Not started" role="img">
           ○
         </span>
       )
@@ -128,7 +128,7 @@ export function StepList({
 
   return (
     <div className={className}>
-      <h2 className="text-sm font-mono font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
+      <h2 className="text-sm font-mono font-medium text-[#d1d5dc] uppercase tracking-wide">
         Steps
       </h2>
       <div className="mt-4 space-y-6">
@@ -143,7 +143,7 @@ export function StepList({
 
           return (
             <section key={section.name}>
-              <h3 className="mb-3 text-sm font-mono font-medium text-[var(--color-text)] border-b border-[var(--color-border)] pb-1">
+              <h3 className="mb-3 text-sm font-mono font-medium text-white border-b border-[var(--color-border)] pb-1">
                 {section.name}
               </h3>
               <ul className="space-y-2">
@@ -179,10 +179,10 @@ export function StepList({
                               text-sm font-mono
                               ${
                                 isCurrent
-                                  ? "text-[var(--color-text)]"
+                                  ? "text-white"
                                   : state === "completed"
-                                    ? "text-[var(--color-text-muted)] group-hover:text-[var(--color-text)]"
-                                    : "text-[var(--color-text-muted)] group-hover:text-[var(--color-text)]"
+                                    ? "text-[#d1d5dc] group-hover:text-white"
+                                    : "text-[#d1d5dc] group-hover:text-white"
                               }
                               transition-colors duration-[var(--transition-fast)]
                             `}
@@ -202,7 +202,7 @@ export function StepList({
                         {/* Estimated time */}
                         {estimatedTimes?.get(step.step) && (
                           <span
-                            className="flex-shrink-0 text-xs font-mono text-[var(--color-text-muted)]"
+                            className="flex-shrink-0 text-xs font-mono text-[#d1d5dc]"
                             aria-label={`Estimated time: ${estimatedTimes.get(step.step)}`}
                           >
                             {estimatedTimes.get(step.step)}

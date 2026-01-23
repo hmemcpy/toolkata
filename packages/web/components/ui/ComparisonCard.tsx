@@ -1,7 +1,6 @@
 import Link from "next/link"
 import type { JSX } from "react"
 import type { ToolPairing } from "../../content/pairings"
-import { ProgressBar } from "./ProgressBar"
 
 export interface ComparisonCardProps {
   readonly pairing: ToolPairing
@@ -18,79 +17,110 @@ export function ComparisonCard({
 }: ComparisonCardProps): JSX.Element {
   const isPublished = pairing.status === "published"
   const hasProgress = completedSteps > 0
+  const progressPercent = Math.round((completedSteps / pairing.steps) * 100)
 
   return (
     <Link
       href={`/${pairing.slug}`}
       className={`
-        group block
+        group block relative
         bg-[var(--color-surface)]
         border border-[var(--color-border)]
-        rounded-[var(--radius-md)]
-        p-6
-        transition-all duration-[var(--transition-normal)]
-        hover:border-[var(--color-border-focus)]
-        hover:bg-[var(--color-surface-hover)]
+        p-0
+        transition-all duration-300
+        hover:border-[var(--color-accent)]
         focus:outline-none
-        focus-visible:[var(--focus-ring)]
-        ${!isPublished ? "opacity-60" : ""}
+        focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]
+        card-glow
+        ${!isPublished ? "opacity-50 pointer-events-none" : ""}
         ${className}
       `}
       tabIndex={isPublished ? 0 : -1}
       aria-label={`${pairing.to.name} if you know ${pairing.from.name}${!isPublished ? " (coming soon)" : ""}`}
     >
-      {/* Header: Tool names */}
-      <div className="mb-3">
-        <h2 className="text-xl font-bold font-mono text-[var(--color-text)]">
-          {pairing.to.name} ← {pairing.from.name}
-        </h2>
+      {/* Terminal window header */}
+      <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-bg)] border-b border-[var(--color-border)]">
+        <div className="flex gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-error)] opacity-60" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-warning)] opacity-60" />
+          <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-accent)] opacity-60" />
+        </div>
+        <span className="text-[10px] text-[var(--color-text-dim)] font-mono ml-auto">
+          {pairing.slug}.sh
+        </span>
       </div>
 
-      {/* Description */}
-      <p className="text-sm text-[var(--color-text-muted)] mb-4 font-mono">
-        {pairing.to.description}
-      </p>
+      {/* Card content */}
+      <div className="p-5">
+        {/* Tool names with arrow */}
+        <div className="mb-3">
+          <h2 className="text-lg font-bold font-mono flex items-center gap-2">
+            <span className="text-[var(--color-accent)]">{pairing.to.name}</span>
+            <span className="text-[var(--color-text-dim)]">←</span>
+            <span className="text-[var(--color-accent-alt)]">{pairing.from.name}</span>
+          </h2>
+        </div>
 
-      {/* Progress or step count */}
-      {isPublished ? (
-        <div className="space-y-3">
-          {hasProgress ? (
-            <ProgressBar current={completedSteps} total={pairing.steps} />
-          ) : (
-            <div className="text-sm text-[var(--color-text-muted)] font-mono">
-              {pairing.steps} steps · {pairing.estimatedTime}
-            </div>
-          )}
+        {/* Description as comment */}
+        <p className="text-xs text-[var(--color-text-muted)] mb-4 font-mono">
+          <span className="text-[var(--color-text-dim)]"># </span>
+          {pairing.to.description}
+        </p>
 
-          {/* CTA button */}
-          <div
-            className={`
-              text-sm font-mono font-medium
-              ${hasProgress ? "text-[var(--color-accent)]" : "text-[var(--color-text)]"}
-              group-hover:text-[var(--color-accent-hover)]
-            `}
-          >
-            {hasProgress && currentStep ? (
-              <span>Continue Step {currentStep} →</span>
+        {/* Progress or step count */}
+        {isPublished ? (
+          <div className="space-y-3">
+            {hasProgress ? (
+              <div className="space-y-2">
+                {/* ASCII-style progress bar */}
+                <div className="font-mono text-xs">
+                  <span className="text-[var(--color-text-dim)]">[</span>
+                  <span className="text-[var(--color-accent)]">
+                    {"█".repeat(Math.round(progressPercent / 10))}
+                  </span>
+                  <span className="text-[var(--color-border)]">
+                    {"░".repeat(10 - Math.round(progressPercent / 10))}
+                  </span>
+                  <span className="text-[var(--color-text-dim)]">]</span>
+                  <span className="text-[var(--color-text-muted)] ml-2">
+                    {completedSteps}/{pairing.steps}
+                  </span>
+                </div>
+              </div>
             ) : (
-              <span>Start Learning →</span>
+              <div className="text-xs text-[var(--color-text-muted)] font-mono flex items-center gap-2">
+                <span className="text-[var(--color-text-dim)]">$</span>
+                <span>{pairing.steps} steps</span>
+                <span className="text-[var(--color-text-dim)]">·</span>
+                <span>{pairing.estimatedTime}</span>
+              </div>
             )}
+
+            {/* CTA */}
+            <div className="font-mono text-sm text-[var(--color-accent)] group-hover:text-[var(--color-accent-hover)]">
+              {hasProgress && currentStep ? (
+                <>→ continue step {currentStep}</>
+              ) : (
+                <>→ start learning</>
+              )}
+            </div>
           </div>
-        </div>
-      ) : (
-        <div
-          className="
-            text-sm font-mono
-            text-[var(--color-text-muted)]
-            py-2 px-3
-            bg-[var(--color-bg)]
-            rounded-[var(--radius-sm)]
-            inline-block
-          "
-        >
-          Coming soon
-        </div>
-      )}
+        ) : (
+          <div className="font-mono text-xs text-[var(--color-text-dim)]">
+            <span className="text-[var(--color-warning)]"># </span>
+            coming soon...
+          </div>
+        )}
+      </div>
+
+      {/* Hover glow effect overlay */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, var(--color-accent-glow) 0%, transparent 70%)",
+        }}
+      />
     </Link>
   )
 }

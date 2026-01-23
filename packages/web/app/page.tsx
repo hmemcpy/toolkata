@@ -13,29 +13,65 @@ export default function HomePage() {
   const pairingsByCategory = getPairingsByCategory()
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)]">
+    <div className="bg-[var(--color-bg)] min-h-screen flex flex-col">
       <Header />
 
-      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        {/* Hero Section */}
-        <section className="mb-16 text-center">
-          <h1 className="mb-4 text-4xl font-bold font-mono text-[var(--color-text)] sm:text-5xl">
-            Learn X if you already know Y
-          </h1>
-          <p className="mx-auto max-w-2xl text-base text-[var(--color-text-muted)] font-mono sm:text-lg">
-            Hands-on tutorials for developers switching tools. No fluff. Just the commands you need.
-          </p>
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 flex-1">
+        {/* Hero Section - Terminal Style */}
+        <section className="mb-10 relative">
+          {/* Simple bold title */}
+          <div className="text-center mb-8">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold font-mono mb-4">
+              <span className="text-[var(--color-text)]">tool</span>
+              <span className="text-[var(--color-accent)]">kata</span>
+              <span
+                className="text-[var(--color-text-dim)]"
+                style={{ animation: "blink 1s infinite" }}
+              >
+                _
+              </span>
+            </h1>
+          </div>
+
+          {/* Tagline as terminal output */}
+          <div className="max-w-2xl mx-auto text-center space-y-4">
+            <div className="inline-block text-left bg-[var(--color-surface)] border border-[var(--color-border)] p-4 sm:p-6">
+              <div className="font-mono text-sm sm:text-base space-y-2">
+                <p className="text-[var(--color-text-muted)]">
+                  <span className="text-[var(--color-accent)]">$</span> cat README.md
+                </p>
+                <div className="border-l-2 border-[var(--color-accent)] pl-4 mt-3">
+                  <p className="text-[var(--color-text)] text-lg sm:text-xl font-medium mb-2">
+                    Learn X if you already know Y
+                  </p>
+                  <p className="text-[var(--color-text-muted)] text-sm">
+                    Hands-on tutorials for developers switching tools.
+                    <br />
+                    No fluff. Just the commands you need.
+                  </p>
+                </div>
+                <p className="text-[var(--color-text-muted)] mt-4 pt-2 border-t border-[var(--color-border)]">
+                  <span className="text-[var(--color-accent)]">$</span>
+                  <span className="text-[var(--color-text-dim)]"> # scroll down to begin</span>
+                </p>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* Comparison Grid Grouped by Category */}
         <section className="space-y-12">
           {Object.entries(pairingsByCategory).map(([category, pairings]) => (
             <div key={category}>
-              <h2 className="mb-6 text-xl font-bold font-mono text-[var(--color-text)]">
-                {category}
-              </h2>
+              {/* Category header styled as section comment */}
+              <div className="mb-6 flex items-center gap-4">
+                <span className="text-[var(--color-text-dim)] font-mono text-sm">{"/*"}</span>
+                <h2 className="text-lg font-bold font-mono text-[var(--color-text)]">{category}</h2>
+                <div className="flex-1 border-t border-[var(--color-border)]" />
+                <span className="text-[var(--color-text-dim)] font-mono text-sm">{"*/"}</span>
+              </div>
 
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {pairings.map((pairing) => (
                   <ComparisonCardWrapper key={pairing.slug} pairing={pairing} />
                 ))}

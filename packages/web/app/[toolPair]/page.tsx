@@ -129,41 +129,37 @@ export default async function ComparisonOverviewPage(props: {
       <Header />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Breadcrumb / Back link */}
-        <div className="mb-8">
+        {/* Breadcrumb / Back link and Quick Links */}
+        <div className="mb-8 flex items-center justify-between">
           <Link
             href="/"
-            className="inline-flex items-center text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
+            className="inline-flex items-center text-sm text-[#d1d5dc] hover:text-white focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
           >
             ← All comparisons
+          </Link>
+          <Link
+            href={`/${toolPair}/cheatsheet`}
+            className="inline-flex items-center text-sm font-mono text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
+          >
+            [Cheat Sheet →]
           </Link>
         </div>
 
         {/* Header */}
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold font-mono text-[var(--color-text)] sm:text-4xl">
-              {pairing.to.name} ← {pairing.from.name}
-            </h1>
-            {pairing.toUrl && (
-              <a
-                href={pairing.toUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block mt-2 text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
-              >
-                [{pairing.to.name} documentation →]
-              </a>
-            )}
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href={`/${toolPair}/diff`}
-              className="inline-flex items-center px-4 py-2 text-sm font-mono text-[var(--color-text)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md hover:bg-[var(--color-surface-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-all duration-[var(--transition-fast)]"
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold font-mono text-white sm:text-4xl">
+            {pairing.to.name} ← {pairing.from.name}
+          </h1>
+          {pairing.toUrl && (
+            <a
+              href={pairing.toUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-2 text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
             >
-              [Diff →]
-            </Link>
-          </div>
+              [{pairing.to.name} documentation →]
+            </a>
+          )}
         </div>
 
         {/* Main content with progress sidebar */}
@@ -172,15 +168,15 @@ export default async function ComparisonOverviewPage(props: {
           <div className="lg:col-span-2">
             {/* Why {tool}? Section */}
             <section>
-              <h2 className="mb-4 text-2xl font-bold font-mono text-[var(--color-text)]">
+              <h2 className="mb-4 text-2xl font-bold font-mono text-white">
                 Why {pairing.to.name}?
               </h2>
               <div className="prose prose-invert max-w-none">
-                <p className="text-base text-[var(--color-text-muted)] leading-relaxed mb-4">
+                <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
                   {pairing.to.name} ({pairing.to.description}) rethinks version control from first
                   principles. Built for developers who want a safer, more intuitive workflow.
                 </p>
-                <ul className="space-y-2 text-sm text-[var(--color-text-muted)]">
+                <ul className="space-y-2 text-sm text-[#d1d5dc]">
                   <li className="flex items-start gap-2">
                     <span className="text-[var(--color-accent)] mt-0.5">•</span>
                     <span>Working copy IS a commit (no staging area complexity)</span>

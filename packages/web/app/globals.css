@@ -26,34 +26,40 @@
 }
 
 @theme {
-  /* Colors */
-  --color-bg: #0a0a0a;
-  --color-surface: #141414;
-  --color-surface-hover: #1a1a1a;
-  --color-border: #262626;
-  --color-border-focus: #404040;
+  /* Colors - CRT Phosphor Palette */
+  --color-bg: #050505;
+  --color-surface: #0a0a0a;
+  --color-surface-hover: #0f0f0f;
+  --color-border: #1a1a1a;
+  --color-border-focus: #2a2a2a;
 
-  --color-text: #fafafa;
-  --color-text-muted: #a1a1a1;
-  --color-text-dim: #737373;
+  --color-text: #d4e8d4;
+  --color-text-muted: #7a9f7a;
+  --color-text-dim: #4a6b4a;
 
-  --color-accent: #22c55e;
-  --color-accent-hover: #16a34a;
-  --color-accent-alt: #f97316;
-  --color-accent-alt-hover: #ea580c;
+  /* Primary phosphor green */
+  --color-accent: #39d96c;
+  --color-accent-hover: #2cb85a;
+  --color-accent-glow: rgba(57, 217, 108, 0.15);
+  --color-accent-glow-strong: rgba(57, 217, 108, 0.25);
 
-  --color-error: #f87171;
-  --color-warning: #eab308;
+  /* Secondary amber (for git/from tool) */
+  --color-accent-alt: #ffb000;
+  --color-accent-alt-hover: #cc8c00;
+  --color-accent-alt-glow: rgba(255, 176, 0, 0.15);
+
+  --color-error: #ff4136;
+  --color-warning: #ffdc00;
 
   /* Typography */
-  --font-mono: var(--font-jetbrains-mono), "Fira Code", ui-monospace, SFMono-Regular, monospace;
-  --font-sans: var(--font-jetbrains-mono), system-ui, sans-serif;
-  --font-size-xs: 12px;
-  --font-size-sm: 14px;
-  --font-size-base: 16px;
-  --font-size-lg: 20px;
-  --font-size-xl: 24px;
-  --font-size-2xl: 32px;
+  --font-mono: var(--font-ibm-plex-mono), "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: var(--font-ibm-plex-mono), system-ui, sans-serif;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 20px;
+  --text-xl: 24px;
+  --text-2xl: 32px;
 
   --line-height-tight: 1.3;
   --line-height-normal: 1.6;
@@ -71,16 +77,19 @@
   --space-16: 64px;
 
   /* Borders */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
 
-  /* Shadows (subtle, terminal-like) */
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
-  --shadow-md: 0 2px 4px rgb(0 0 0 / 0.4);
+  /* CRT Glow Effects */
+  --glow-text: 0 0 8px var(--color-accent-glow-strong), 0 0 20px var(--color-accent-glow);
+  --glow-text-alt: 0 0 8px var(--color-accent-alt-glow), 0 0 20px rgba(255, 176, 0, 0.1);
+  --glow-box: 0 0 20px var(--color-accent-glow), 0 0 40px var(--color-accent-glow), inset 0 0 30px
+    rgba(0, 255, 65, 0.03);
+  --glow-border: 0 0 10px var(--color-accent-glow);
 
   /* Focus ring */
-  --focus-ring: 0 0 0 2px var(--color-accent);
+  --focus-ring: 0 0 0 2px var(--color-accent), var(--glow-border);
 
   /* Transitions */
   --transition-fast: 100ms ease;
@@ -94,6 +103,75 @@
   --toggle-z-index: 50;
 }
 
+/* Base body styles */
+body {
+  background: var(--color-bg);
+}
+
+/* Typing animation */
+@keyframes typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/* Blinking cursor */
+@keyframes blink {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* ASCII border decorations */
+.ascii-border {
+  position: relative;
+}
+
+.ascii-border::before {
+  content: "┌" attr(data-title)
+    "─────────────────────────────────────────────────────────────────────┐";
+  position: absolute;
+  top: -1.5em;
+  left: 0;
+  font-size: 0.75em;
+  color: var(--color-text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Terminal prompt styling */
+.prompt::before {
+  content: "$ ";
+  color: var(--color-accent);
+}
+
+/* Block progress bar - retro style */
+.progress-blocks {
+  display: flex;
+  gap: 2px;
+}
+
+.progress-block {
+  width: 8px;
+  height: 16px;
+  background: var(--color-border);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.progress-block.filled {
+  background: var(--color-accent);
+  box-shadow: 0 0 8px var(--color-accent-glow-strong);
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -104,4 +182,45 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  body {
+    background: var(--color-bg);
+  }
+}
+
+/* Selection styling */
+::selection {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-dim);
+}
+
+/* Card hover glow */
+.card-glow:hover {
+  box-shadow: var(--glow-box);
+}
+
+/* Input focus glow */
+input:focus,
+textarea:focus,
+select:focus {
+  box-shadow: var(--focus-ring);
 }
