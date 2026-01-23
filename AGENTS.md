@@ -109,7 +109,7 @@ packages/sandbox-api/src/services/
 ```
 /frontend-design Build the InteractiveTerminal component with xterm.js
 /frontend-design Create the SideBySide command comparison component
-/frontend-design Implement the ComparisonCard with progress indicator
+/frontend-design Implement the LessonCard with progress indicator
 ```
 
 ---
@@ -330,7 +330,7 @@ toolkata/
 | `InteractiveTerminal` | xterm.js-based sandbox terminal |
 | `SideBySide` | Two-column command comparison (git vs jj) |
 | `CodeBlock` | Syntax-highlighted code with copy button |
-| `ComparisonCard` | Home page tool pairing selector |
+| `LessonCard` | Home page tool pairing selector |
 | `StepProgress` | Step navigation header |
 | `Callout` | Tips, warnings, notes |
 

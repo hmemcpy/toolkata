@@ -1,4 +1,4 @@
-import { ComparisonCardWrapper } from "../components/ui/ComparisonCardWrapper"
+import { LessonCardWrapper } from "../components/ui/LessonCardWrapper"
 import { Footer } from "../components/ui/Footer"
 import { Header } from "../components/ui/Header"
 import { TerminalSearch } from "../components/ui/TerminalSearch"
@@ -7,7 +7,7 @@ import { getPairingsByCategory } from "../content/pairings"
 /**
  * Home page - Tool pairing discovery.
  *
- * Shows all available tool comparisons (X if you know Y) grouped by category.
+ * Shows all available lessons (X if you know Y) grouped by category.
  * Displays progress indicators for returning users via localStorage.
  */
 export default function HomePage() {
@@ -59,7 +59,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Comparison Grid Grouped by Category */}
+        {/* Lesson Grid Grouped by Category */}
         <section className="space-y-12">
           {Object.entries(pairingsByCategory).map(([category, pairings]) => (
             <div key={category}>
@@ -76,7 +76,7 @@ export default function HomePage() {
 
               <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {pairings.map((pairing) => (
-                  <ComparisonCardWrapper key={pairing.slug} pairing={pairing} />
+                  <LessonCardWrapper key={pairing.slug} pairing={pairing} />
                 ))}
               </div>
             </div>

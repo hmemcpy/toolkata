@@ -609,7 +609,7 @@ Legend:
 
 ### 4.2 Component Specifications
 
-#### ComparisonCard
+#### LessonCard
 
 ```
 ┌────────────────────────────┐
@@ -753,7 +753,7 @@ Desktop: 1024px+          (full layout, max-width 1200px)
 
 | Component | Mobile | Tablet | Desktop |
 |-----------|--------|--------|---------|
-| ComparisonCard | Full width, stacked | 2 columns | 3 columns |
+| LessonCard | Full width, stacked | 2 columns | 3 columns |
 | SideBySide | Stacked (git above jj) | Side-by-side | Side-by-side |
 | Terminal | Full width, 200px min height | Full width, 300px | 400px max |
 | Navigation | Icons only, bottom fixed | Text + icons | Full text |
@@ -987,7 +987,7 @@ Touch: Same as click
 ### No Progress Yet
 
 ```
-On ComparisonCard:
+On LessonCard:
 ┌────────────────────────────┐
 │                            │
 │  jj ← git                  │

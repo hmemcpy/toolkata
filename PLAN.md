@@ -147,7 +147,7 @@ Includes summary, key differences, and link to **Cheat Sheet** page.
 
 ### Components
 
-1. **ComparisonCard** - Home page tool pairing selector
+1. **LessonCard** - Home page tool pairing selector
 2. **StepProgress** - Shows current step / total
 3. **SideBySide** - Two-column command comparison
 4. **CodeBlock** - Syntax-highlighted code with copy button
@@ -206,7 +206,7 @@ toolkata/
 │   │   │   │   │   ├── SideBySide.tsx
 │   │   │   │   │   ├── Callout.tsx
 │   │   │   │   │   ├── StepProgress.tsx
-│   │   │   │   │   ├── ComparisonCard.tsx
+│   │   │   │   │   ├── LessonCard.tsx
 │   │   │   │   │   └── InteractiveTerminal.tsx # xterm.js component
 │   │   │   │   └── mdx/
 │   │   │   │       └── MDXComponents.tsx
@@ -650,7 +650,7 @@ If sandbox is unavailable or rate-limited, show static code blocks with:
 - [ ] Build SideBySide comparison component
 - [ ] Build Callout component
 - [ ] Build StepProgress indicator
-- [ ] Build ComparisonCard for home page
+- [ ] Build LessonCard for home page
 - [ ] Build Navigation (prev/next)
 - [ ] Build InteractiveTerminal component (xterm.js)
 

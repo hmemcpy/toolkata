@@ -2,19 +2,19 @@ import Link from "next/link"
 import type { JSX } from "react"
 import type { ToolPairing } from "../../content/pairings"
 
-export interface ComparisonCardProps {
+export interface LessonCardProps {
   readonly pairing: ToolPairing
   readonly completedSteps?: number
   readonly currentStep?: number
   readonly className?: string
 }
 
-export function ComparisonCard({
+export function LessonCard({
   pairing,
   completedSteps = 0,
   currentStep,
   className = "",
-}: ComparisonCardProps): JSX.Element {
+}: LessonCardProps): JSX.Element {
   const isPublished = pairing.status === "published"
   const hasProgress = completedSteps > 0
   const progressPercent = Math.round((completedSteps / pairing.steps) * 100)
@@ -67,9 +67,9 @@ export function ComparisonCard({
           {pairing.to.description}
         </p>
 
-        {/* Progress or step count */}
+        {/* Progress or step count - min-h ensures consistent card height during hydration */}
         {isPublished ? (
-          <div className="space-y-3">
+          <div className="space-y-3 min-h-[52px]">
             {hasProgress ? (
               <div className="space-y-2">
                 {/* ASCII-style progress bar */}
