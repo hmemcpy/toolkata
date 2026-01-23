@@ -553,11 +553,14 @@ Begin the audit by reading each file listed above and systematically evaluating 
   - Protect SSH from brute force attacks
   - **Vulnerability**: V-003 (High)
 
-- [ ] **8.5** Force gVisor in production mode
-  - Location: `packages/sandbox-api/src/config.ts`
-  - Add production mode check that enforces gVisor
-  - Throw error if gVisor disabled in production
-  - **Vulnerability**: V-004 (Medium)
+- [x] **8.5** Force gVisor in production mode
+  - Location: `packages/sandbox-api/src/config.ts`, `src/index.ts`
+  - Added `isProduction()` function that checks `NODE_ENV === "production"`
+  - Updated `validateGvisorConfig()` to enforce gVisor in production mode
+  - Added validation to server startup in `mainProgram` (fails with ConfigError)
+  - Fixed TypeScript `exactOptionalPropertyTypes` issue in GvisorHealthStatus
+  - Fixed all `process.env` access patterns to use bracket notation
+  - **Vulnerability**: V-004 (Medium) - FIXED
 
 - [ ] **8.6** Validate Origin header on WebSocket upgrade
   - Location: `packages/sandbox-api/src/routes/websocket.ts` line 39-58

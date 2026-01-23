@@ -18,7 +18,7 @@ import {
 } from "./services/rate-limit.js"
 import { SessionService, SessionServiceLive, type SessionServiceShape } from "./services/session.js"
 import { WebSocketService, WebSocketServiceLive } from "./services/websocket.js"
-import { SandboxConfig } from "./config.js"
+import { SandboxConfig, validateGvisorConfig } from "./config.js"
 
 // Module-level reference to SessionService for health checks
 // This is set when the server starts and allows the health endpoint to access session stats
@@ -56,7 +56,7 @@ export const HttpServer = Context.GenericTag<HttpServerShape>("HttpServer")
 export interface GvisorHealthStatus {
   readonly requested: boolean
   readonly available: boolean
-  readonly runtime?: string
+  readonly runtime: string | undefined
 }
 
 // Health check response type
@@ -246,6 +246,17 @@ export const ServerConfigLive = Layer.effect(ServerConfig, defaultConfig)
 
 // Main function for Bun runtime
 const mainProgram = Effect.gen(function* () {
+  // Validate gVisor configuration before starting server
+  const gvisorValidation = validateGvisorConfig()
+  if (!gvisorValidation.valid) {
+    return yield* Effect.fail(
+      new ConfigError({
+        cause: "InvalidValue",
+        message: gvisorValidation.message ?? "Invalid gVisor configuration",
+      }),
+    )
+  }
+
   const http = yield* HttpServer
   const sessionService = yield* SessionService
 

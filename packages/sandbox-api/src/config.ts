@@ -42,19 +42,19 @@ export const SandboxConfig = {
    * Whether to use gVisor runtime for container isolation
    * @default true
    */
-  useGvisor: process.env.SANDBOX_USE_GVISOR !== "false",
+  useGvisor: process.env["SANDBOX_USE_GVISOR"] !== "false",
 
   /**
    * Docker runtime name for gVisor
    * @default "runsc"
    */
-  gvisorRuntime: (process.env.SANDBOX_GVISOR_RUNTIME ?? "runsc") as string,
+  gvisorRuntime: (process.env["SANDBOX_GVISOR_RUNTIME"] ?? "runsc") as string,
 
   /**
    * API key for authentication
    * @default "" (no authentication required)
    */
-  apiKey: (process.env.SANDBOX_API_KEY ?? "") as string,
+  apiKey: (process.env["SANDBOX_API_KEY"] ?? "") as string,
 } as const
 
 /**
@@ -63,14 +63,43 @@ export const SandboxConfig = {
 export type GvisorConfig = typeof SandboxConfig
 
 /**
+ * Check if running in production mode
+ *
+ * @returns true if NODE_ENV === "production"
+ *
+ * @remarks
+ * Production mode is determined by the NODE_ENV environment variable.
+ * This is the standard convention across Node.js ecosystems.
+ */
+export const isProduction = (): boolean => {
+  return process.env["NODE_ENV"] === "production"
+}
+
+/**
  * Validate gVisor configuration at startup
  *
  * @returns Validation result with optional error message
+ *
+ * @remarks
+ * - In production mode, gVisor MUST be enabled for security
+ * - In development, gVisor can be disabled for debugging
+ * - Runtime name must be non-empty and contain no whitespace
  */
 export const validateGvisorConfig = (): {
   readonly valid: boolean
   readonly message?: string
 } => {
+  const production = isProduction()
+
+  // In production, gVisor must be enabled
+  if (production && !SandboxConfig.useGvisor) {
+    return {
+      valid: false,
+      message:
+        "gVisor runtime is required in production mode. Set SANDBOX_USE_GVISOR=true or NODE_ENV=development for local testing.",
+    }
+  }
+
   if (SandboxConfig.useGvisor) {
     const runtime = SandboxConfig.gvisorRuntime
     if (runtime.length === 0) {
