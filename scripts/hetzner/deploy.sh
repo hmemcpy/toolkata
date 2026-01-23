@@ -75,7 +75,33 @@ REMOTE
 success "Dependencies installed and Docker image built"
 
 # ============================================================
-# 3. CONFIGURE CADDY
+# 3. SETUP USER AND LOG DIRECTORY
+# ============================================================
+info "Setting up sandboxapi user and log directory..."
+
+ssh "$SSH_USER@$SERVER_IP" 'bash -s' << 'REMOTE'
+set -euo pipefail
+
+# Create sandboxapi user if it doesn't exist
+if ! id "sandboxapi" &>/dev/null; then
+    useradd -r -s /bin/false -d /opt/sandbox-api sandboxapi
+    echo "Created sandboxapi user"
+else
+    echo "sandboxapi user already exists"
+fi
+
+# Create and configure log directory
+mkdir -p /var/log/sandbox-api
+chown sandboxapi:sandboxapi /var/log/sandbox-api
+chmod 0755 /var/log/sandbox-api
+
+echo "Log directory configured"
+REMOTE
+
+success "User and log directory configured"
+
+# ============================================================
+# 4. CONFIGURE CADDY
 # ============================================================
 info "Configuring Caddy reverse proxy..."
 
@@ -89,7 +115,7 @@ systemctl reload caddy"
 success "Caddy configured for $DOMAIN"
 
 # ============================================================
-# 4. CREATE SYSTEMD SERVICE
+# 5. CREATE SYSTEMD SERVICE
 # ============================================================
 info "Setting up systemd service..."
 
@@ -121,7 +147,7 @@ REMOTE
 success "Systemd service configured"
 
 # ============================================================
-# 5. VERIFY
+# 6. VERIFY
 # ============================================================
 info "Verifying deployment..."
 sleep 3

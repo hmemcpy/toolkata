@@ -689,17 +689,23 @@ Begin the audit by reading each file listed above and systematically evaluating 
     * Auto-reboot disabled by default (can be enabled if needed)
   - **Vulnerability**: V-013 (Low) - FIXED
 
-- [ ] **8.17** Configure log rotation
+- [x] **8.17** Configure log rotation
   - Location: `packages/sandbox-api/deploy/sandbox-api.service`
   - Add logrotate for application logs
   - Configure Docker log size limits
-  - **Vulnerability**: V-015 (Low)
+  - **DONE**:
+    * Created `packages/sandbox-api/deploy/logrotate-sandbox-api` configuration file
+    * Added Docker log rotation to daemon.json (max-size: 10m, max-file: 3)
+    * Added logrotate installation and configuration in provision.sh
+    * Added sandboxapi user creation and log directory setup in deploy.sh
+    * Log rotation: daily, keep 30 days, compress with gzip, max 100MB per file
+  - **Vulnerability**: V-015 (Low) - FIXED
 
 ---
 
 ## File Summary
 
-### New Files Created (8) ✓
+### New Files Created (9) ✓
 
 | File | Purpose | Status |
 |------|---------|--------|
@@ -711,11 +717,14 @@ Begin the audit by reading each file listed above and systematically evaluating 
 | `packages/sandbox-api/src/config.ts` | Centralized sandbox configuration (gVisor, etc.) | ✓ Done |
 | `packages/sandbox-api/src/services/audit.ts` | Structured audit logging service (V-019) | ✓ Done |
 | `SECURITY_AUDIT.md` | Security audit findings and recommendations | ✓ Done |
+| `packages/sandbox-api/deploy/logrotate-sandbox-api` | Logrotate configuration for sandbox-api logs | ✓ Done |
 
-### Modified Files - Done (10) ✓
+### Modified Files - Done (12) ✓
 
 | File | Changes |
 |------|---------|
+| `scripts/hetzner/provision.sh` | ✓ Added ufw firewall configuration, logrotate setup, Docker log limits |
+| `scripts/hetzner/deploy.sh` | ✓ Added sandboxapi user creation, log directory setup, section renumbering |
 | `sandbox-api/docker/Dockerfile` | ✓ Uses pre-built jj binaries from GitHub releases (12s vs 10+ min) |
 | `scripts/oracle/provision.sh` | ✓ Updated to use Ubuntu 24.04 and fixed tenancy lookup |
 | `packages/web/components/ui/InteractiveTerminal.tsx` | ✓ Expose `reset` function via useImperativeHandle |

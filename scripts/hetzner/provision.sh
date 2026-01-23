@@ -164,13 +164,18 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/gviso
 apt-get update
 apt-get install -y runsc
 
-# Configure Docker to use runsc
+# Configure Docker to use runsc and log rotation
 cat > /etc/docker/daemon.json << 'EOF'
 {
   "runtimes": {
     "runsc": {
       "path": "/usr/bin/runsc"
     }
+  },
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
   }
 }
 EOF
@@ -309,6 +314,35 @@ ufw --force enable
 echo "=== ufw configured and enabled ==="
 echo "=== Active rules ==="
 ufw status verbose
+
+echo "=== Configuring logrotate for sandbox-api ==="
+# Install logrotate if not present
+apt-get install -y logrotate
+
+# Create logrotate configuration for sandbox-api
+cat > /etc/logrotate.d/sandbox-api << 'EOF'
+# toolkata Sandbox API - logrotate configuration
+/var/log/sandbox-api/*.log {
+  daily
+  rotate 30
+  notifempty
+  create 0644 sandboxapi sandboxapi
+  compress
+  delaycompress
+  size 1k
+  dateext
+  dateformat -%Y-%m-%d
+  missingok
+  copytruncate
+  maxsize 100M
+  minage 1d
+}
+EOF
+
+# Create log directory for sandbox-api
+mkdir -p /var/log/sandbox-api
+
+echo "=== logrotate configured ==="
 
 echo "=== Testing gVisor ==="
 docker run --runtime=runsc --rm hello-world

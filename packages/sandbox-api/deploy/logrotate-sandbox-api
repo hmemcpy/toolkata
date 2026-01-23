@@ -1,0 +1,53 @@
+# toolkata Sandbox API - logrotate configuration
+#
+# Install instructions:
+# 1. Copy this file to /etc/logrotate.d/sandbox-api
+# 2. Ensure log directory exists: sudo mkdir -p /var/log/sandbox-api
+# 3. Ensure user owns log dir: sudo chown sandboxapi:sandboxapi /var/log/sandbox-api
+#
+# Test configuration: sudo logrotate -d /etc/logrotate.d/sandbox-api
+# Force rotation: sudo logrotate -f /etc/logrotate.d/sandbox-api
+
+/var/log/sandbox-api/*.log {
+  # Rotate daily
+  daily
+
+  # Keep logs for 30 days
+  rotate 30
+
+  # Don't rotate if log file is empty
+  notifempty
+
+  # Create new log file with 644 permissions (user writable, group/others read-only)
+  create 0644 sandboxapi sandboxapi
+
+  # Compress rotated logs with gzip
+  compress
+
+  # Delay compression by one day (allows inspection of most recent log)
+  delaycompress
+
+  # Don't compress if log file is too small (<1K)
+  size 1k
+
+  # Use date as suffix instead of number (e.g., sandbox-api.log.2024-01-23.gz)
+  dateext
+
+  # Date format for rotation
+  dateformat -%Y-%m-%d
+
+  # Missing log files are OK (don't error on first run)
+  missingok
+
+  # Truncate log file instead of creating new one (preserves inodes)
+  # Note: This is useful for files opened by the process
+  # For Node.js/Bun, we typically want copytruncate to handle file handle issues
+  copytruncate
+
+  # Maximum log file size before rotation (100MB)
+  maxsize 100M
+
+  # Don't rotate if log file is less than 1 day old (unless size exceeds maxsize)
+  # This prevents too frequent rotations
+  minage 1d
+}
