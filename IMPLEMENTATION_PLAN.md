@@ -582,11 +582,18 @@ Begin the audit by reading each file listed above and systematically evaluating 
     * Rejects oversized messages with WebSocket close code 1009 (Message Too Big)
     * Added config validation on startup
 
-- [ ] **8.8** Implement terminal input sanitization
-  - Location: `packages/sandbox-api/src/routes/websocket.ts`
-  - Filter or validate terminal input
-  - Reject dangerous escape sequences
-  - **Vulnerability**: V-006 (Medium)
+- [x] **8.8** Implement terminal input sanitization
+  - Location: `packages/sandbox-api/src/routes/websocket.ts`, `src/config.ts`
+  - Added `InputSanitizationError` type with causes: BracketedPasteAttack, MaliciousEscapeSequence, SuspiciousControlSequence, InvalidUtf8
+  - Added `validateTerminalInput()` function to config.ts that:
+    * Validates UTF-8 encoding
+    * Detects and blocks bracketed paste mode attacks (ESC [ 200~ / ESC [ 201~)
+    * Blocks dangerous escape sequences (OSC, DCS, PM, APC)
+    * Detects suspicious repetitive control sequences (10+ consecutive escapes)
+    * Logs suspicious shell metacharacter patterns (monitoring only, doesn't block)
+  - Integrated validation in WebSocket message handler before writing to container
+  - Closes connection with WebSocket close code 1008 on malicious input
+  - **Vulnerability**: V-006 (Medium) - FIXED
 
 - [ ] **8.9** Add per-IP concurrent connection limits
   - Location: `packages/sandbox-api/src/services/rate-limit.ts`

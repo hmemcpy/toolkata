@@ -1,7 +1,7 @@
 import type { Server as HttpServer } from "node:http"
 import { Data, Effect } from "effect"
 import { WebSocketServer } from "ws"
-import { validateApiKey, validateMessageSize, validateOrigin } from "../config.js"
+import { validateApiKey, validateMessageSize, validateOrigin, validateTerminalInput } from "../config.js"
 import type { SessionServiceShape } from "../services/session.js"
 import { type WebSocketServiceShape, parseMessage } from "../services/websocket.js"
 
@@ -165,6 +165,26 @@ export const createWebSocketServer = (
           const message = parseMessage(data)
 
           if (message.type === "input") {
+            // Validate terminal input for security
+            const sanitizeResult = await Effect.runPromise(Effect.either(validateTerminalInput(message.data)))
+            if (sanitizeResult._tag === "Left") {
+              const sanitizeError = sanitizeResult.left
+              console.error(
+                `[WebSocket] Input sanitization failed for ${sessionId}: ${sanitizeError.message} (input: ${JSON.stringify(sanitizeError.input)})`,
+              )
+              if (ws.readyState === ws.OPEN) {
+                ws.send(
+                  JSON.stringify({
+                    type: "error",
+                    message: sanitizeError.message,
+                  }),
+                )
+                // Close connection on malicious input
+                ws.close(1008, sanitizeError.message)
+              }
+              return
+            }
+
             // Write input to container
             const writeResult = await Effect.runPromise(
               Effect.either(

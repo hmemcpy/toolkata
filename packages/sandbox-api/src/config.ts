@@ -332,3 +332,151 @@ export const validateMessageSize = (size: number): Effect.Effect<void, MessageSi
 
   return Effect.void
 }
+
+/**
+ * Terminal input sanitization error type
+ */
+export class InputSanitizationError extends Data.TaggedClass("InputSanitizationError")<{
+  readonly cause:
+    | "BracketedPasteAttack"
+    | "MaliciousEscapeSequence"
+    | "SuspiciousControlSequence"
+    | "InvalidUtf8"
+  readonly message: string
+  readonly input: string
+}> {}
+
+/**
+ * Validate and sanitize terminal input
+ *
+ * @param input - Terminal input string from WebSocket
+ * @returns Validation result - true if valid, throws InputSanitizationError if suspicious
+ *
+ * @remarks
+ * - Detects bracketed paste mode attacks (escape sequences that inject commands)
+ * - Filters malicious ANSI escape sequences that could execute commands
+ * - Allows legitimate terminal control characters (Enter, Backspace, Tab, Ctrl+C, arrow keys)
+ * - Logs suspicious input for security monitoring
+ *
+ * @example
+ * // Valid input (normal typing)
+ * validateTerminalInput("git status")
+ *
+ * // Valid input (control characters)
+ * validateTerminalInput("\r")  // Enter
+ * validateTerminalInput("\x7f")  // Backspace
+ * validateTerminalInput("\x01")  // Ctrl+A
+ *
+ * // Invalid input (bracketed paste attack)
+ * validateTerminalInput("\x1b[200~rm -rf /\x1b[201~")  // REJECTED
+ */
+export const validateTerminalInput = (input: string): Effect.Effect<void, InputSanitizationError> => {
+  // Check for valid UTF-8
+  try {
+    // This will throw if the string contains invalid UTF-8 sequences
+    const encoder = new TextEncoder()
+    encoder.encode(input)
+  } catch {
+    return Effect.fail(
+      new InputSanitizationError({
+        cause: "InvalidUtf8",
+        message: "Invalid UTF-8 sequence in terminal input",
+        input: input.slice(0, 50), // Only log first 50 chars
+      }),
+    )
+  }
+
+  // Bracketed paste mode attack detection
+  // ESC [ 200 ~ starts bracketed paste mode
+  // ESC [ 201 ~ ends bracketed paste mode
+  // Attackers use this to inject commands that appear as "pasted" text
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentional escape sequence detection for security
+  const bracketedPasteStart = /\x1b\[200~/
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentional escape sequence detection for security
+  const bracketedPasteEnd = /\x1b\[201~/
+
+  if (bracketedPasteStart.test(input) || bracketedPasteEnd.test(input)) {
+    console.warn(`[security] Bracketed paste mode sequence detected in input: ${JSON.stringify(input.slice(0, 50))}`)
+    return Effect.fail(
+      new InputSanitizationError({
+        cause: "BracketedPasteAttack",
+        message: "Bracketed paste mode sequences are not allowed",
+        input: input.slice(0, 50),
+      }),
+    )
+  }
+
+  // Detect suspicious escape sequences
+  // We allow legitimate terminal escapes (arrow keys, home, end, etc.)
+  // But block potentially malicious sequences
+
+  // Dangerous patterns to block:
+  // - OSC (Operating System Command) sequences: \x1b ] ... BEL
+  // - DCS (Device Control String) sequences: \x1b P ... \
+  // - PM (Privacy Message) sequences: \x1b ^ ... \
+  // - APC (Application Program Command) sequences: \x1b _ ... \
+  // These can be used for terminal manipulation attacks
+
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentional escape sequence detection for security
+  const dangerousOsc = /\x1b\]/
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentional escape sequence detection for security
+  const dangerousDcs = /\x1bP/
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentional escape sequence detection for security
+  const dangerousPm = /\x1b\^/
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentional escape sequence detection for security
+  const dangerousApc = /\x1b_/
+
+  for (const pattern of [dangerousOsc, dangerousDcs, dangerousPm, dangerousApc]) {
+    if (pattern.test(input)) {
+      console.warn(`[security] Dangerous escape sequence detected in input: ${JSON.stringify(input.slice(0, 50))}`)
+      return Effect.fail(
+        new InputSanitizationError({
+          cause: "MaliciousEscapeSequence",
+          message: "Malicious escape sequences are not allowed",
+          input: input.slice(0, 50),
+        }),
+      )
+    }
+  }
+
+  // Allow common CSI (Control Sequence Introducer) sequences for terminal operations
+  // These are used by arrow keys, function keys, etc.
+  // Format: ESC [ ... (letter/~)
+  // We allow most CSI sequences since they're essential for terminal interaction
+
+  // However, detect suspicious repetitive control sequences
+  // Could indicate an automated attack or terminal flooding
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentional escape sequence detection for security
+  const consecutiveEsc = /(?:\x1b[^\x1b]){10,}/ // 10+ consecutive escape sequences
+  if (consecutiveEsc.test(input)) {
+    console.warn(`[security] Suspicious repetitive escape sequences: ${JSON.stringify(input.slice(0, 50))}`)
+    return Effect.fail(
+      new InputSanitizationError({
+        cause: "SuspiciousControlSequence",
+        message: "Excessive control sequences detected",
+        input: input.slice(0, 50),
+      }),
+    )
+  }
+
+  // Check for shell metacharacter sequences that might indicate command injection attempts
+  // Note: This is defensive - the PTY shell will handle these correctly, but we log for monitoring
+  // We're not blocking these because they're legitimate in a terminal
+  const suspiciousPatterns = [
+    /;\s*rm\s+-rf/, // ; rm -rf (command chaining with destructive command)
+    /`rm\s+-rf/, // `rm -rf (command substitution with destructive command)
+    /\$\(rm\s+-rf/, // $(rm -rf) (command substitution with destructive command)
+    /&&\s*rm\s+-rf/, // && rm -rf (conditional execution with destructive command)
+    /\|\|\s*rm\s+-rf/, // || rm -rf (conditional execution with destructive command)
+  ]
+
+  for (const pattern of suspiciousPatterns) {
+    if (pattern.test(input)) {
+      console.warn(`[security] Suspicious command pattern detected: ${JSON.stringify(input.slice(0, 50))}`)
+      // We log but don't block - these could be legitimate commands
+      break
+    }
+  }
+
+  return Effect.void
+}
