@@ -7,7 +7,6 @@ export interface LessonCardProps {
   readonly completedSteps?: number
   readonly currentStep?: number
   readonly className?: string
-  readonly skeleton?: boolean
 }
 
 export function LessonCard({
@@ -15,7 +14,6 @@ export function LessonCard({
   completedSteps = 0,
   currentStep,
   className = "",
-  skeleton = false,
 }: LessonCardProps): JSX.Element {
   const isPublished = pairing.status === "published"
   const hasProgress = completedSteps > 0
@@ -54,80 +52,52 @@ export function LessonCard({
 
       {/* Card content */}
       <div className="p-5">
-        {skeleton ? (
-          /* Full skeleton loading state - matches card content dimensions */
+        {/* Tool names with arrow */}
+        <div className="mb-3">
+          <h2 className="text-lg font-bold font-mono flex items-center gap-2">
+            <span className="text-[var(--color-accent)]">{pairing.to.name}</span>
+            <span className="text-[var(--color-text-dim)]">←</span>
+            <span className="text-[var(--color-accent-alt)]">{pairing.from.name}</span>
+          </h2>
+        </div>
+
+        {/* Description as comment */}
+        <p className="text-xs text-[var(--color-text-muted)] mb-4 font-mono">
+          <span className="text-[var(--color-text-dim)]"># </span>
+          {pairing.to.description}
+        </p>
+
+        {/* Progress bar - always rendered for consistent width */}
+        {isPublished ? (
           <div className="space-y-3">
-            {/* Title skeleton */}
-            <div className="h-6 w-28 bg-[var(--color-border)] rounded animate-pulse" />
-            {/* Description skeleton */}
-            <div className="h-4 w-36 bg-[var(--color-border)] rounded animate-pulse" />
-            {/* Progress skeleton */}
-            <div className="h-4 w-32 bg-[var(--color-border)] rounded animate-pulse" />
-            {/* CTA skeleton */}
-            <div className="h-5 w-24 bg-[var(--color-border)] rounded animate-pulse" />
-          </div>
-        ) : (
-          <>
-            {/* Tool names with arrow */}
-            <div className="mb-3">
-              <h2 className="text-lg font-bold font-mono flex items-center gap-2">
-                <span className="text-[var(--color-accent)]">{pairing.to.name}</span>
-                <span className="text-[var(--color-text-dim)]">←</span>
-                <span className="text-[var(--color-accent-alt)]">{pairing.from.name}</span>
-              </h2>
+            <div className="font-mono text-xs">
+              <span className="text-[var(--color-text-dim)]">[</span>
+              <span className="text-[var(--color-accent)]">
+                {"█".repeat(Math.round(progressPercent / 10))}
+              </span>
+              <span className="text-[var(--color-border)]">
+                {"░".repeat(10 - Math.round(progressPercent / 10))}
+              </span>
+              <span className="text-[var(--color-text-dim)]">]</span>
+              <span className="text-[var(--color-text-muted)] ml-2">
+                {completedSteps}/{pairing.steps}
+              </span>
             </div>
 
-            {/* Description as comment */}
-            <p className="text-xs text-[var(--color-text-muted)] mb-4 font-mono">
-              <span className="text-[var(--color-text-dim)]"># </span>
-              {pairing.to.description}
-            </p>
-
-            {/* Progress or step count */}
-            {isPublished ? (
-              <div className="space-y-3">
-                {hasProgress ? (
-                  <div className="space-y-2">
-                    {/* ASCII-style progress bar */}
-                    <div className="font-mono text-xs">
-                      <span className="text-[var(--color-text-dim)]">[</span>
-                      <span className="text-[var(--color-accent)]">
-                        {"█".repeat(Math.round(progressPercent / 10))}
-                      </span>
-                      <span className="text-[var(--color-border)]">
-                        {"░".repeat(10 - Math.round(progressPercent / 10))}
-                      </span>
-                      <span className="text-[var(--color-text-dim)]">]</span>
-                      <span className="text-[var(--color-text-muted)] ml-2">
-                        {completedSteps}/{pairing.steps}
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-xs text-[var(--color-text-muted)] font-mono flex items-center gap-2">
-                    <span className="text-[var(--color-text-dim)]">$</span>
-                    <span>{pairing.steps} steps</span>
-                    <span className="text-[var(--color-text-dim)]">·</span>
-                    <span>{pairing.estimatedTime}</span>
-                  </div>
-                )}
-
-                {/* CTA */}
-                <div className="font-mono text-sm text-[var(--color-accent)] group-hover:text-[var(--color-accent-hover)]">
-                  {hasProgress && currentStep ? (
-                    <>→ continue step {currentStep}</>
-                  ) : (
-                    <>→ start learning</>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="font-mono text-xs text-[var(--color-text-dim)]">
-                <span className="text-[var(--color-warning)]"># </span>
-                coming soon...
-              </div>
-            )}
-          </>
+            {/* CTA */}
+            <div className="font-mono text-sm text-[var(--color-accent)] group-hover:text-[var(--color-accent-hover)]">
+              {hasProgress && currentStep ? (
+                <>→ continue step {currentStep}</>
+              ) : (
+                <>→ start learning</>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="font-mono text-xs text-[var(--color-text-dim)]">
+            <span className="text-[var(--color-warning)]"># </span>
+            coming soon...
+          </div>
         )}
       </div>
 

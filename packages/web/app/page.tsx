@@ -1,6 +1,6 @@
-import { LessonCardWrapper } from "../components/ui/LessonCardWrapper"
 import { Footer } from "../components/ui/Footer"
 import { Header } from "../components/ui/Header"
+import { LessonSectionWrapper } from "../components/ui/LessonSectionWrapper"
 import { TerminalSearch } from "../components/ui/TerminalSearch"
 import { getPairingsByCategory } from "../content/pairings"
 
@@ -60,28 +60,7 @@ export default function HomePage() {
         </section>
 
         {/* Lesson Grid Grouped by Category */}
-        <section className="space-y-12">
-          {Object.entries(pairingsByCategory).map(([category, pairings]) => (
-            <div key={category}>
-              {/* Category header styled as section comment */}
-              <div className="mb-6 flex items-center gap-4">
-                <span className="text-[var(--color-text-dim)] font-mono text-sm">{"/*"}</span>
-                <h2 className="text-lg font-bold font-mono text-[var(--color-text)]">{category}</h2>
-                <div className="flex-1 border-t border-[var(--color-border)]" />
-                <span className="text-[var(--color-text-dim)] font-mono text-xs">
-                  {pairings.length} {pairings.length === 1 ? "lesson" : "lessons"}
-                </span>
-                <span className="text-[var(--color-text-dim)] font-mono text-sm">{"*/"}</span>
-              </div>
-
-              <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {pairings.map((pairing) => (
-                  <LessonCardWrapper key={pairing.slug} pairing={pairing} />
-                ))}
-              </div>
-            </div>
-          ))}
-        </section>
+        <LessonSectionWrapper pairingsByCategory={pairingsByCategory} />
       </main>
 
       <Footer />
