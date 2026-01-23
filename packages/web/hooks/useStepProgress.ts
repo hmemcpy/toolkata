@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import type { ToolPairProgress } from "../core/ProgressStore"
 import { getProgressStore } from "../core/ProgressStore"
+import { updateProgressInCookieSync } from "../core/progress-cookie"
 
 /**
  * Return type for useStepProgress hook
@@ -43,26 +44,41 @@ export function useStepProgress(toolPair: string, _totalSteps?: number): StepPro
     setIsLoading(false)
   }, [toolPair, store])
 
+  // Sync progress to cookie whenever it changes
+  const syncToCookie = useCallback(
+    (newProgress: ToolPairProgress | undefined) => {
+      if (newProgress) {
+        updateProgressInCookieSync(toolPair, newProgress.completedSteps, newProgress.currentStep)
+      }
+    },
+    [toolPair],
+  )
+
   // Memoized callbacks
   const markComplete = useCallback(
     (step: number) => {
       store.markComplete(toolPair, step)
-      setProgress(store.getProgress(toolPair))
+      const newProgress = store.getProgress(toolPair)
+      setProgress(newProgress)
+      syncToCookie(newProgress)
     },
-    [store, toolPair],
+    [store, toolPair, syncToCookie],
   )
 
   const setCurrentStep = useCallback(
     (step: number) => {
       store.setCurrentStep(toolPair, step)
-      setProgress(store.getProgress(toolPair))
+      const newProgress = store.getProgress(toolPair)
+      setProgress(newProgress)
+      syncToCookie(newProgress)
     },
-    [store, toolPair],
+    [store, toolPair, syncToCookie],
   )
 
   const resetProgress = useCallback(() => {
     store.resetProgress(toolPair)
     setProgress(undefined)
+    updateProgressInCookieSync(toolPair, [], 1)
   }, [store, toolPair])
 
   const isStepComplete = useCallback(

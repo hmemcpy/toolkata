@@ -4,11 +4,20 @@ import type { ToolPairing } from "../../content/pairings"
 
 export interface LessonCardProps {
   readonly pairing: ToolPairing
-  readonly className?: string
+  readonly completedSteps?: number | undefined
+  readonly currentStep?: number | undefined
+  readonly className?: string | undefined
 }
 
-export function LessonCard({ pairing, className = "" }: LessonCardProps): JSX.Element {
+export function LessonCard({
+  pairing,
+  completedSteps = 0,
+  currentStep,
+  className = "",
+}: LessonCardProps): JSX.Element {
   const isPublished = pairing.status === "published"
+  const hasProgress = completedSteps > 0
+  const progressPercent = Math.round((completedSteps / pairing.steps) * 100)
 
   return (
     <Link
@@ -58,18 +67,34 @@ export function LessonCard({ pairing, className = "" }: LessonCardProps): JSX.El
           {pairing.to.description}
         </p>
 
-        {/* Step count and CTA - static content, no client-side state */}
+        {/* Progress bar and CTA - data from server-side cookies */}
         {isPublished ? (
           <div className="space-y-3">
-            <div className="text-xs text-[var(--color-text-muted)] font-mono flex items-center gap-2">
-              <span className="text-[var(--color-text-dim)]">$</span>
-              <span>{pairing.steps} steps</span>
-              <span className="text-[var(--color-text-dim)]">·</span>
-              <span>{pairing.estimatedTime}</span>
-            </div>
+            {hasProgress ? (
+              <div className="font-mono text-xs">
+                <span className="text-[var(--color-text-dim)]">[</span>
+                <span className="text-[var(--color-accent)]">
+                  {"█".repeat(Math.round(progressPercent / 10))}
+                </span>
+                <span className="text-[var(--color-border)]">
+                  {"░".repeat(10 - Math.round(progressPercent / 10))}
+                </span>
+                <span className="text-[var(--color-text-dim)]">]</span>
+                <span className="text-[var(--color-text-muted)] ml-2">
+                  {completedSteps}/{pairing.steps}
+                </span>
+              </div>
+            ) : (
+              <div className="text-xs text-[var(--color-text-muted)] font-mono flex items-center gap-2">
+                <span className="text-[var(--color-text-dim)]">$</span>
+                <span>{pairing.steps} steps</span>
+                <span className="text-[var(--color-text-dim)]">·</span>
+                <span>{pairing.estimatedTime}</span>
+              </div>
+            )}
 
             <div className="font-mono text-sm text-[var(--color-accent)] group-hover:text-[var(--color-accent-hover)]">
-              → start learning
+              {hasProgress && currentStep ? `→ continue step ${currentStep}` : "→ start learning"}
             </div>
           </div>
         ) : (

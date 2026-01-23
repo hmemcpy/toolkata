@@ -3,15 +3,20 @@ import { Header } from "../components/ui/Header"
 import { LessonCard } from "../components/ui/LessonCard"
 import { TerminalSearch } from "../components/ui/TerminalSearch"
 import { getPairingsByCategory } from "../content/pairings"
+import { getServerProgressAsync } from "../core/progress-server"
+
+// Page uses cookies for progress, so it must be dynamic
+export const dynamic = "force-dynamic"
 
 /**
  * Home page - Tool pairing discovery.
  *
  * Shows all available lessons (X if you know Y) grouped by category.
- * Progress is shown on the lesson overview page, not here (to avoid hydration flicker).
+ * Progress is read from cookies during SSR - no hydration flicker.
  */
-export default function HomePage() {
+export default async function HomePage() {
   const pairingsByCategory = getPairingsByCategory()
+  const progress = await getServerProgressAsync()
 
   return (
     <div className="bg-[var(--color-bg)] min-h-screen flex flex-col">
@@ -74,9 +79,17 @@ export default function HomePage() {
               </div>
 
               <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {pairings.map((pairing) => (
-                  <LessonCard key={pairing.slug} pairing={pairing} />
-                ))}
+                {pairings.map((pairing) => {
+                  const pairingProgress = progress[pairing.slug]
+                  return (
+                    <LessonCard
+                      key={pairing.slug}
+                      pairing={pairing}
+                      completedSteps={pairingProgress?.completedSteps.length ?? 0}
+                      currentStep={pairingProgress?.currentStep}
+                    />
+                  )
+                })}
               </div>
             </div>
           ))}
