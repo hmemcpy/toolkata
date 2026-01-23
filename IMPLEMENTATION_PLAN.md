@@ -270,7 +270,7 @@ The reset button in TerminalSidebar and MobileBottomSheet has an empty onClick h
   - Docker configured with runsc runtime in `/etc/docker/daemon.json`
   - Verified working: `docker run --runtime=runsc --rm hello-world`
 
-- [ ] **5.2** Create sandbox config module
+- [x] **5.2** Create sandbox config module
   - Location: `packages/sandbox-api/src/config.ts` (new file)
   - Export typed config object:
     ```typescript
@@ -279,6 +279,7 @@ The reset button in TerminalSidebar and MobileBottomSheet has an empty onClick h
       gvisorRuntime: process.env.SANDBOX_GVISOR_RUNTIME ?? "runsc",
     } as const
     ```
+  - Added `validateGvisorConfig()` function for startup validation
 
 - [ ] **5.3** Add gVisor runtime to ContainerService
   - Location: `packages/sandbox-api/src/services/container.ts` lines 116-133 (HostConfig)
@@ -500,7 +501,7 @@ Begin the audit by reading each file listed above and systematically evaluating 
 
 ## File Summary
 
-### New Files Created (5) ✓
+### New Files Created (6) ✓
 
 | File | Purpose | Status |
 |------|---------|--------|
@@ -509,12 +510,12 @@ Begin the audit by reading each file listed above and systematically evaluating 
 | `scripts/hetzner/sandbox.env` | Server configuration (IP, type, location) | ✓ Done |
 | `scripts/hetzner/README.md` | Hetzner deployment documentation | ✓ Done |
 | `packages/web/components/ui/ShrinkingLayout.tsx` | Client wrapper for content margin when sidebar open | ✓ Done |
+| `packages/sandbox-api/src/config.ts` | Centralized sandbox configuration (gVisor, etc.) | ✓ Done |
 
-### New Files To Create (2)
+### New Files To Create (1)
 
 | File | Purpose |
 |------|---------|
-| `sandbox-api/src/config.ts` | Centralized sandbox configuration (gVisor, etc.) |
 | `SECURITY_AUDIT.md` | Deliverable from Phase 7 security audit (findings, recommendations) |
 
 ### Modified Files - Done (7) ✓
