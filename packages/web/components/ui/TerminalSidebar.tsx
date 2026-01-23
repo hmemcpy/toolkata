@@ -149,23 +149,6 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
     }
   }, [isOpen])
 
-  // Set inert on page content when sidebar is open (focus trap)
-  useEffect(() => {
-    const pageContent = document.getElementById("main-content")
-    if (!pageContent) return
-
-    if (isOpen) {
-      pageContent.setAttribute("inert", "")
-    } else {
-      pageContent.removeAttribute("inert")
-    }
-
-    // Cleanup on unmount
-    return () => {
-      pageContent.removeAttribute("inert")
-    }
-  }, [isOpen])
-
   // Handle Escape key to close sidebar
   useEffect(() => {
     if (!isOpen) return
@@ -187,20 +170,6 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
 
   return (
     <>
-      {/* Backdrop - sibling to sidebar, not nested */}
-      <div
-        className="fixed inset-0 z-[var(--backdrop-z-index)] bg-black/50 transition-opacity duration-[var(--transition-sidebar)]"
-        onClick={closeSidebar}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            closeSidebar()
-          }
-        }}
-        role="button"
-        tabIndex={0}
-        aria-label="Close terminal sidebar"
-      />
-
       {/* Sidebar */}
       <div
         className="fixed right-0 top-0 z-[var(--sidebar-z-index)] h-screen w-[var(--sidebar-width)] border-l border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg transition-transform duration-[var(--transition-sidebar)] ease-in-out lg:translate-x-0"

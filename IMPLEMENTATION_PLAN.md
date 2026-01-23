@@ -165,23 +165,23 @@ The reset button in TerminalSidebar and MobileBottomSheet has an empty onClick h
 
 > **WHY**: Current blocking overlay prevents TryIt interaction while sidebar is open. Shrinking layout enables side-by-side workflow.
 
-- [ ] **2.1** Remove backdrop from TerminalSidebar
+- [x] **2.1** Remove backdrop from TerminalSidebar
   - Location: `packages/web/components/ui/TerminalSidebar.tsx` lines 188-199
   - Delete the backdrop `<div>` element entirely
   - Keep Escape key handling (lines 167-178)
 
-- [ ] **2.2** Remove inert attribute from TerminalSidebar
+- [x] **2.2** Remove inert attribute from TerminalSidebar
   - Location: `packages/web/components/ui/TerminalSidebar.tsx` lines 149-164
   - Delete the entire `useEffect` that sets/removes `inert` on `#main-content`
   - Content should remain interactive when sidebar is open
 
-- [ ] **2.3** Remove backdrop and inert from MobileBottomSheet
+- [x] **2.3** Remove backdrop and inert from MobileBottomSheet
   - Location: `packages/web/components/ui/MobileBottomSheet.tsx`
   - Remove backdrop div (lines 226-238)
   - Remove inert useEffect (lines 146-160)
   - Keep swipe-to-close gesture handling
 
-- [ ] **2.4** Create ShrinkingLayout client component
+- [x] **2.4** Create ShrinkingLayout client component
   - Location: `packages/web/components/ui/ShrinkingLayout.tsx` (new file)
   - Client component that wraps children
   - Reads `isOpen` from `useTerminalContext()`
@@ -189,12 +189,12 @@ The reset button in TerminalSidebar and MobileBottomSheet has an empty onClick h
   - Uses `transition-[margin]` for smooth animation
   - Respects `prefers-reduced-motion`
 
-- [ ] **2.5** Update step page to use ShrinkingLayout
+- [x] **2.5** Update step page to use ShrinkingLayout
   - Location: `packages/web/app/[toolPair]/[step]/page.tsx`
   - Wrap main content with `<ShrinkingLayout>`
   - Preserve `id="main-content"` for accessibility skip link
 
-- [ ] **2.6** Test shrinking layout
+- [x] **2.6** Test shrinking layout
   - TryIt buttons work while sidebar is open
   - Content scrolling works independently
   - No layout thrashing on rapid open/close
@@ -500,7 +500,7 @@ Begin the audit by reading each file listed above and systematically evaluating 
 
 ## File Summary
 
-### New Files Created (4) ✓
+### New Files Created (5) ✓
 
 | File | Purpose | Status |
 |------|---------|--------|
@@ -508,35 +508,36 @@ Begin the audit by reading each file listed above and systematically evaluating 
 | `scripts/hetzner/deploy.sh` | Sync code, build image, start service | ✓ Done |
 | `scripts/hetzner/sandbox.env` | Server configuration (IP, type, location) | ✓ Done |
 | `scripts/hetzner/README.md` | Hetzner deployment documentation | ✓ Done |
+| `packages/web/components/ui/ShrinkingLayout.tsx` | Client wrapper for content margin when sidebar open | ✓ Done |
 
-### New Files To Create (3)
+### New Files To Create (2)
 
 | File | Purpose |
 |------|---------|
-| `components/ui/ShrinkingLayout.tsx` | Client wrapper for content margin when sidebar open |
 | `sandbox-api/src/config.ts` | Centralized sandbox configuration (gVisor, etc.) |
 | `SECURITY_AUDIT.md` | Deliverable from Phase 7 security audit (findings, recommendations) |
 
-### Modified Files - Done (2) ✓
+### Modified Files - Done (7) ✓
 
 | File | Changes |
 |------|---------|
 | `sandbox-api/docker/Dockerfile` | ✓ Uses pre-built jj binaries from GitHub releases (12s vs 10+ min) |
 | `scripts/oracle/provision.sh` | ✓ Updated to use Ubuntu 24.04 and fixed tenancy lookup |
+| `packages/web/components/ui/InteractiveTerminal.tsx` | ✓ Expose `reset` function via useImperativeHandle |
+| `packages/web/contexts/TerminalContext.tsx` | ✓ Expose `onTerminalStateChange` and `onTerminalTimeChange` callbacks |
+| `packages/web/components/ui/TerminalSidebar.tsx` | ✓ Remove backdrop/inert, pass callbacks to InteractiveTerminal, wire reset button |
+| `packages/web/components/ui/MobileBottomSheet.tsx` | ✓ Remove backdrop/inert, pass callbacks to InteractiveTerminal, wire reset button |
+| `packages/web/app/[toolPair]/[step]/page.tsx` | ✓ Wrap with ShrinkingLayout |
 
-### Modified Files - Pending (9)
+### Modified Files - Pending (5)
 
 | File | Changes |
 |------|---------|
-| `components/ui/InteractiveTerminal.tsx` | Expose `reset` function via useImperativeHandle |
-| `contexts/TerminalContext.tsx` | Expose `setState` and `setSessionTimeRemaining` (remove underscore) |
-| `components/ui/TerminalSidebar.tsx` | Remove backdrop/inert, pass callbacks to InteractiveTerminal, wire reset button |
-| `components/ui/MobileBottomSheet.tsx` | Remove backdrop/inert, pass callbacks to InteractiveTerminal, wire reset button |
-| `components/ui/TryIt.tsx` | Add `expectedOutput` and `editable` props |
-| `app/[toolPair]/[step]/page.tsx` | Wrap with ShrinkingLayout |
-| `sandbox-api/src/services/container.ts` | Add gVisor runtime to HostConfig |
-| `sandbox-api/src/index.ts` | Health endpoint gVisor status |
-| `tests/browser.spec.ts` | Update for shrinking layout, add TryIt tests |
+| `packages/web/components/ui/TryIt.tsx` | Add `expectedOutput` and `editable` props |
+| `packages/sandbox-api/src/services/container.ts` | Add gVisor runtime to HostConfig |
+| `packages/sandbox-api/src/index.ts` | Health endpoint gVisor status |
+| `packages/web/tests/browser.spec.ts` | Update for shrinking layout, add TryIt tests |
+| `packages/web/.env.local` | Create or set NEXT_PUBLIC_SANDBOX_API_URL for production |
 
 ### Deleted Files (0)
 

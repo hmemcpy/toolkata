@@ -146,22 +146,6 @@ export function MobileBottomSheet({ toolPair }: MobileBottomSheetProps): ReactNo
   const [startY, setStartY] = useState(0)
   const [currentY, setCurrentY] = useState(0)
 
-  // Set inert on page content when sheet is open (focus trap)
-  useEffect(() => {
-    const pageContent = document.getElementById("main-content")
-    if (!pageContent) return
-
-    if (isOpen) {
-      pageContent.setAttribute("inert", "")
-    } else {
-      pageContent.removeAttribute("inert")
-    }
-
-    return () => {
-      pageContent.removeAttribute("inert")
-    }
-  }, [isOpen])
-
   // Handle Escape key to close sheet
   useEffect(() => {
     if (!isOpen) return
@@ -226,20 +210,6 @@ export function MobileBottomSheet({ toolPair }: MobileBottomSheetProps): ReactNo
 
   return (
     <>
-      {/* Backdrop - sibling to sheet, not nested */}
-      <div
-        className="fixed inset-0 z-[var(--backdrop-z-index)] bg-black/50 transition-opacity duration-[var(--transition-sidebar)]"
-        onClick={closeSidebar}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            closeSidebar()
-          }
-        }}
-        role="button"
-        tabIndex={0}
-        aria-label="Close terminal"
-      />
-
       {/* Bottom Sheet */}
       <div
         ref={sheetRef}

@@ -2,6 +2,7 @@ import { MDXRemote } from "next-mdx-remote/rsc"
 import { notFound } from "next/navigation"
 import { Footer } from "../../../components/ui/Footer"
 import { Header } from "../../../components/ui/Header"
+import { ShrinkingLayout } from "../../../components/ui/ShrinkingLayout"
 import { StepPageClientWrapper } from "../../../components/ui/StepPageClientWrapper"
 import { getPairing, isValidPairingSlug } from "../../../content/pairings"
 import { mdxComponents } from "../../../components/mdx/MDXComponents"
@@ -91,8 +92,9 @@ export default async function StepPage(props: {
     <div className="min-h-screen bg-[var(--color-bg)]">
       <Header />
 
-      <main id="main-content" className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <StepPageClientWrapper
+      <ShrinkingLayout>
+        <main id="main-content" className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+          <StepPageClientWrapper
           toolPair={toolPair}
           currentStep={stepNum}
           totalSteps={pairing.steps}
@@ -108,6 +110,7 @@ export default async function StepPage(props: {
       </main>
 
       <Footer />
+    </ShrinkingLayout>
     </div>
   )
 }
