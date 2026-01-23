@@ -144,7 +144,10 @@ export function StepList({
           return (
             <section key={section.name}>
               <h3 className="mb-3 text-sm font-mono font-medium text-white border-b border-[var(--color-border)] pb-1">
-                {section.name}
+                {section.name}{" "}
+                <span className="text-[var(--color-text-dim)]">
+                  ({sectionSteps.length} {sectionSteps.length === 1 ? "lesson" : "lessons"})
+                </span>
               </h3>
               <ul className="space-y-2">
                 {sectionSteps.map((step) => {

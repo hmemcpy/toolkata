@@ -68,6 +68,9 @@ export default function HomePage() {
                 <span className="text-[var(--color-text-dim)] font-mono text-sm">{"/*"}</span>
                 <h2 className="text-lg font-bold font-mono text-[var(--color-text)]">{category}</h2>
                 <div className="flex-1 border-t border-[var(--color-border)]" />
+                <span className="text-[var(--color-text-dim)] font-mono text-xs">
+                  {pairings.length} {pairings.length === 1 ? "lesson" : "lessons"}
+                </span>
                 <span className="text-[var(--color-text-dim)] font-mono text-sm">{"*/"}</span>
               </div>
 
