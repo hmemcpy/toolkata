@@ -1,11 +1,16 @@
 import { Context, Data, Effect, Layer, MutableHashMap, Option, Ref } from "effect"
 
-// Rate limit configuration (from PLAN.md specs)
+// Check if rate limiting should be disabled (development mode)
+const isDevMode =
+  process.env["NODE_ENV"] === "development" || process.env["DISABLE_RATE_LIMIT"] === "true"
+
+// Rate limit configuration (from env or defaults from PLAN.md specs)
+// In dev mode, use very high limits to effectively disable rate limiting
 const RATE_LIMITS = {
-  sessionsPerHour: 10, // Max new sessions per hour per IP
-  maxConcurrentSessions: 2, // Max concurrent sessions per IP
-  commandsPerMinute: 60, // Max commands per minute (optional, for future use)
-  maxConcurrentWebSockets: 3, // Max concurrent WebSocket connections per IP (V-007)
+  sessionsPerHour: isDevMode ? 999999 : Number(process.env["MAX_SESSIONS_PER_HOUR"]) || 10,
+  maxConcurrentSessions: isDevMode ? 999999 : Number(process.env["MAX_CONCURRENT_PER_IP"]) || 2,
+  commandsPerMinute: isDevMode ? 999999 : 60,
+  maxConcurrentWebSockets: isDevMode ? 999999 : Number(process.env["MAX_WEBSOCKETS_PER_IP"]) || 3,
 } as const
 
 // Per-IP tracking data
@@ -39,9 +44,17 @@ export interface RateLimitServiceShape {
   readonly checkCommandLimit: (ipAddress: string) => Effect.Effect<RateLimitResult, RateLimitError>
   readonly recordCommand: (ipAddress: string) => Effect.Effect<void, never>
   readonly getActiveSessionCount: (ipAddress: string) => Effect.Effect<number, never>
-  readonly checkWebSocketLimit: (ipAddress: string) => Effect.Effect<RateLimitResult, RateLimitError> // V-007
-  readonly registerWebSocket: (ipAddress: string, connectionId: string) => Effect.Effect<void, never> // V-007
-  readonly unregisterWebSocket: (ipAddress: string, connectionId: string) => Effect.Effect<void, never> // V-007
+  readonly checkWebSocketLimit: (
+    ipAddress: string,
+  ) => Effect.Effect<RateLimitResult, RateLimitError> // V-007
+  readonly registerWebSocket: (
+    ipAddress: string,
+    connectionId: string,
+  ) => Effect.Effect<void, never> // V-007
+  readonly unregisterWebSocket: (
+    ipAddress: string,
+    connectionId: string,
+  ) => Effect.Effect<void, never> // V-007
 }
 
 // Service tag
@@ -288,7 +301,9 @@ const make = Effect.gen(function* () {
       }
 
       const tracking = trackingOption.value
-      const updatedWebSocketIds = tracking.activeWebSocketIds.filter((id: string) => id !== connectionId)
+      const updatedWebSocketIds = tracking.activeWebSocketIds.filter(
+        (id: string) => id !== connectionId,
+      )
 
       const updatedTracking: IpTracking = {
         ...tracking,

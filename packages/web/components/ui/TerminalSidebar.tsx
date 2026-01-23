@@ -26,10 +26,13 @@
 
 "use client"
 
-import { useEffect, useRef, type ReactNode } from "react"
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import dynamic from "next/dynamic"
 import { useTerminalContext } from "../../contexts/TerminalContext"
 import type { InteractiveTerminalRef } from "./InteractiveTerminal"
+
+const MIN_SIDEBAR_WIDTH = 300
+const MAX_SIDEBAR_WIDTH = 800
 
 /**
  * Lazy-load InteractiveTerminal to reduce initial bundle size.
@@ -133,14 +136,28 @@ function StatusIndicator(): ReactNode {
  * Renders a fixed right sidebar containing the interactive terminal.
  * Only visible on desktop viewports (lg+, 1024px+).
  *
- * Uses inert attribute for focus trap - when sidebar is open,
- * the rest of the page becomes inert (non-interactive).
+ * Features:
+ * - Collapsible without disconnecting the session
+ * - Resizable via drag handle on left edge
+ * - Width persisted to localStorage
  */
 export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
-  const { isOpen, closeSidebar, state, sessionTimeRemaining, onTerminalStateChange, onTerminalTimeChange } =
-    useTerminalContext()
+  const {
+    isOpen,
+    closeSidebar,
+    state,
+    sessionTimeRemaining,
+    sidebarWidth,
+    setSidebarWidth,
+    onTerminalStateChange,
+    onTerminalTimeChange,
+  } = useTerminalContext()
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const terminalRef = useRef<InteractiveTerminalRef>(null)
+  const sidebarRef = useRef<HTMLDivElement>(null)
+
+  // Resizing state
+  const [isResizing, setIsResizing] = useState(false)
 
   // Focus close button when sidebar opens
   useEffect(() => {
@@ -163,21 +180,57 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
     return () => document.removeEventListener("keydown", handleEscape)
   }, [isOpen, closeSidebar])
 
-  // Don't render if closed (desktop only)
-  if (!isOpen) {
-    return null
-  }
+  // Handle resize drag
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsResizing(true)
+  }, [])
+
+  useEffect(() => {
+    if (!isResizing) return
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const newWidth = window.innerWidth - e.clientX
+      setSidebarWidth(Math.min(Math.max(newWidth, MIN_SIDEBAR_WIDTH), MAX_SIDEBAR_WIDTH))
+    }
+
+    const handleMouseUp = () => {
+      setIsResizing(false)
+    }
+
+    document.addEventListener("mousemove", handleMouseMove)
+    document.addEventListener("mouseup", handleMouseUp)
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove)
+      document.removeEventListener("mouseup", handleMouseUp)
+    }
+  }, [isResizing, setSidebarWidth])
 
   return (
     <>
-      {/* Sidebar */}
+      {/* Sidebar - always mounted, hidden via transform when closed */}
       <div
-        className="fixed right-0 top-0 z-[var(--sidebar-z-index)] h-screen w-[var(--sidebar-width)] border-l border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg transition-transform duration-[var(--transition-sidebar)] ease-in-out lg:translate-x-0"
+        ref={sidebarRef}
+        className={`fixed right-0 top-0 z-[var(--sidebar-z-index)] hidden h-screen border-l border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg transition-transform duration-[var(--transition-sidebar)] ease-in-out lg:block ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        } ${isResizing ? "select-none" : ""}`}
+        style={{ width: `${sidebarWidth}px` }}
         id="terminal-sidebar"
         role="dialog"
-        aria-modal="true"
+        aria-modal={isOpen}
+        aria-hidden={!isOpen}
         aria-label="Terminal sidebar"
       >
+        {/* Resize handle */}
+        <div
+          className="absolute left-0 top-0 h-full w-1 cursor-ew-resize hover:bg-[var(--color-accent)] transition-colors"
+          onMouseDown={handleMouseDown}
+          role="separator"
+          aria-label="Resize sidebar"
+          aria-orientation="vertical"
+          tabIndex={0}
+        />
         <div className="flex h-full flex-col">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">

@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -78,6 +79,16 @@ export interface TerminalContextValue {
    * Whether the sidebar (or bottom sheet on mobile) is open.
    */
   readonly isOpen: boolean
+
+  /**
+   * Current sidebar width in pixels.
+   */
+  readonly sidebarWidth: number
+
+  /**
+   * Set the sidebar width.
+   */
+  readonly setSidebarWidth: (width: number) => void
 
   /**
    * Session time remaining in seconds, or null if no active session.
@@ -183,9 +194,28 @@ export interface TerminalProviderProps {
  * }
  * ```
  */
+const DEFAULT_SIDEBAR_WIDTH = 400
+
 export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProviderProps) {
   // Sidebar open/closed state
   const [isOpen, setIsOpen] = useState(false)
+
+  // Sidebar width state with localStorage persistence
+  const [sidebarWidth, setSidebarWidthState] = useState(DEFAULT_SIDEBAR_WIDTH)
+
+  // Load width from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem("terminal-sidebar-width")
+    if (stored) {
+      setSidebarWidthState(Number(stored))
+    }
+  }, [])
+
+  // Wrapper to save to localStorage
+  const setSidebarWidth = useCallback((width: number) => {
+    setSidebarWidthState(width)
+    localStorage.setItem("terminal-sidebar-width", String(width))
+  }, [])
 
   // Terminal connection state (managed by InteractiveTerminal via callbacks)
   const [state, setState] = useState<TerminalState>("IDLE")
@@ -293,6 +323,8 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
     () => ({
       state,
       isOpen,
+      sidebarWidth,
+      setSidebarWidth,
       sessionTimeRemaining,
       openSidebar,
       closeSidebar,
@@ -305,6 +337,8 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
     [
       state,
       isOpen,
+      sidebarWidth,
+      setSidebarWidth,
       sessionTimeRemaining,
       openSidebar,
       closeSidebar,

@@ -23,8 +23,8 @@
 
 "use client"
 
+import "@xterm/xterm/css/xterm.css"
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
-import type { TerminalMessage } from "../../services/sandbox-client"
 
 /**
  * Terminal connection states.
@@ -93,14 +93,6 @@ export interface InteractiveTerminalProps {
   readonly onCommandInsert?: (command: string) => void
 
   /**
-   * Optional preloaded commands to display as suggestions.
-   *
-   * If provided, commands are shown as buttons below the terminal.
-   * This is used by the sidebar TryIt functionality.
-   */
-  readonly preloadCommands?: readonly string[]
-
-  /**
    * Optional callback when terminal state changes.
    *
    * Called when the terminal transitions between states:
@@ -122,20 +114,12 @@ export interface InteractiveTerminalProps {
 }
 
 /**
- * Format seconds as MM:SS.
- */
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  return `${mins}:${secs.toString().padStart(2, "0")}`
-}
-
-/**
  * Terminal interface for xterm.js (avoiding any types).
  */
 interface ITerminal {
   write: (data: string) => void
   clear: () => void
+  focus: () => void
   onData: (listener: (data: string) => void) => void
   onResize: (listener: (size: { readonly cols: number; readonly rows: number }) => void) => void
   dispose: () => void
@@ -146,57 +130,6 @@ interface ITerminal {
  */
 interface IFitAddon {
   fit: () => void
-}
-
-/**
- * Status indicator component.
- */
-function StatusIndicator({ state }: { readonly state: TerminalState }) {
-  const getStatusColor = () => {
-    switch (state) {
-      case "CONNECTED":
-        return "bg-[var(--color-accent)]"
-      case "CONNECTING":
-      case "TIMEOUT_WARNING":
-        return "bg-[var(--color-warning)]"
-      case "ERROR":
-      case "EXPIRED":
-        return "bg-[var(--color-error)]"
-      default:
-        return "bg-[var(--color-text-dim)]"
-    }
-  }
-
-  const getStatusText = () => {
-    switch (state) {
-      case "CONNECTED":
-        return "Connected"
-      case "CONNECTING":
-        return "Starting..."
-      case "TIMEOUT_WARNING":
-        return "Expires soon"
-      case "EXPIRED":
-        return "Expired"
-      case "ERROR":
-        return "Error"
-      case "STATIC":
-        return "Static Mode"
-      default:
-        return "Idle"
-    }
-  }
-
-  return (
-    <div className="flex items-center gap-2">
-      <div
-        className={`h-2 w-2 rounded-full ${getStatusColor()} ${
-          state === "CONNECTING" ? "animate-pulse" : ""
-        }`}
-        aria-hidden="true"
-      />
-      <span className="text-xs text-[var(--color-text-muted)]">{getStatusText()}</span>
-    </div>
-  )
 }
 
 /**
@@ -371,7 +304,6 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
       toolPair,
       stepId: _stepId,
       onCommandInsert,
-      preloadCommands = [],
       onStateChange,
       onSessionTimeChange,
     }: InteractiveTerminalProps,
@@ -382,6 +314,10 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
     const fitAddonRef = useRef<IFitAddon | null>(null)
     const wsRef = useRef<WebSocket | null>(null)
     const reconnectTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
+    const messageBufferRef = useRef<string[]>([]) // Buffer for messages before terminal ready
+    const isResettingRef = useRef(false) // Flag to prevent EXPIRED state during reset
+    const retryCountRef = useRef(0) // Counter to prevent infinite retry loops
+    const hasErrorRef = useRef(false) // Flag to prevent EXPIRED after ERROR
 
     const [state, setState] = useState<TerminalState>("IDLE")
     const [error, setError] = useState<string | null>(null)
@@ -454,56 +390,143 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
       }
     }, [])
 
+    // Storage key for persisting session
+    const sessionStorageKey = `sandbox-session-${toolPair}`
+
     // Start the sandbox session
     const startSession = useCallback(async () => {
       setState("CONNECTING")
       setError(null)
+      hasErrorRef.current = false // Clear error flag for new connection attempt
 
       try {
         const apiUrl = process.env["NEXT_PUBLIC_SANDBOX_API_URL"] ?? "ws://localhost:3001"
         const httpUrl = apiUrl.replace(/^wss?:\/\//, "http://").replace(/:\d+/, ":3001")
 
-        // Create session
-        const response = await fetch(`${httpUrl}/sessions`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ toolPair }),
-        })
-
-        if (!response.ok) {
-          const errorData = await response
-            .json()
-            .catch(() => ({ message: "Failed to create session" }))
-          throw new Error(errorData.message ?? "Failed to create session")
+        // Check for existing session in localStorage
+        let sessionId: string | null = null
+        const stored = localStorage.getItem(sessionStorageKey)
+        if (stored) {
+          try {
+            const { sessionId: storedId, expiresAt } = JSON.parse(stored) as {
+              sessionId: string
+              expiresAt: string
+            }
+            // Check if session hasn't expired (with 1 minute buffer)
+            if (new Date(expiresAt).getTime() > Date.now() + 60000) {
+              sessionId = storedId
+            } else {
+              localStorage.removeItem(sessionStorageKey)
+            }
+          } catch {
+            localStorage.removeItem(sessionStorageKey)
+          }
         }
 
-        const session = await response.json()
-        const wsUrl = `${apiUrl}/sessions/${session.sessionId}/ws`
+        // Create new session if no valid stored session
+        if (!sessionId) {
+          const response = await fetch(`${httpUrl}/api/v1/sessions`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ toolPair }),
+          })
+
+          if (!response.ok) {
+            const errorData = await response
+              .json()
+              .catch(() => ({ message: "Failed to create session" }))
+            throw new Error(errorData.message ?? "Failed to create session")
+          }
+
+          const session = await response.json()
+          sessionId = session.sessionId
+
+          // Store session in localStorage
+          localStorage.setItem(
+            sessionStorageKey,
+            JSON.stringify({
+              sessionId: session.sessionId,
+              expiresAt: session.expiresAt,
+            }),
+          )
+        }
+
+        const wsUrl = `${apiUrl}/api/v1/sessions/${sessionId}/ws`
 
         // Connect WebSocket
         const ws = new WebSocket(wsUrl)
 
         ws.onopen = () => {
+          retryCountRef.current = 0 // Reset retry counter on successful connection
+          isResettingRef.current = false // Clear reset flag on successful connection
+          hasErrorRef.current = false // Clear error flag on successful connection
           setState("CONNECTED")
           setTimeRemaining(300) // Reset timer
         }
 
-        ws.onmessage = (event: MessageEvent) => {
+        ws.onmessage = async (event: MessageEvent) => {
+          // Handle both string and binary (Blob) data
+          let data: string
+          if (typeof event.data === "string") {
+            data = event.data
+          } else if (event.data instanceof Blob) {
+            data = await event.data.text()
+          } else {
+            return // Unknown data type
+          }
+
+          // Filter out JSON control messages (they start with { and are valid JSON)
+          if (data.startsWith("{")) {
+            try {
+              const msg = JSON.parse(data) as Record<string, unknown>
+              // Skip control messages like {"type":"connected",...}
+              if (msg["type"] === "connected" || msg["type"] === "error") {
+                return
+              }
+            } catch {
+              // Not valid JSON, treat as terminal output
+            }
+          }
+
           const terminal = terminalInstanceRef.current
           if (terminal) {
-            const data = typeof event.data === "string" ? event.data : ""
+            // Flush any buffered messages first
+            if (messageBufferRef.current.length > 0) {
+              for (const msg of messageBufferRef.current) {
+                terminal.write(msg)
+              }
+              messageBufferRef.current = []
+            }
             terminal.write(data)
+          } else {
+            // Buffer message until terminal is ready
+            messageBufferRef.current.push(data)
           }
         }
 
         ws.onerror = (event: Event) => {
           console.error("WebSocket error:", event)
+          // Clear stored session on error (it may be invalid)
+          localStorage.removeItem(sessionStorageKey)
+
+          // Auto-retry once with a fresh session
+          if (retryCountRef.current < 1) {
+            retryCountRef.current++
+            startSession()
+            return
+          }
+
+          // Give up after retry
+          retryCountRef.current = 0
+          isResettingRef.current = false // Clear reset flag when giving up
+          hasErrorRef.current = true // Prevent onclose from showing EXPIRED
           setState("ERROR")
           setError("Connection error. Try again or use static mode.")
         }
 
         ws.onclose = (_event: CloseEvent) => {
-          if (state !== "ERROR" && state !== "EXPIRED") {
+          // Don't show EXPIRED if we're intentionally resetting or already in error state
+          if (!isResettingRef.current && !hasErrorRef.current) {
             setState("EXPIRED")
             setError("Session expired. Click to restart.")
           }
@@ -514,18 +537,22 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
         setState("ERROR")
         setError(err instanceof Error ? err.message : "Failed to connect to sandbox")
       }
-    }, [toolPair, state])
+    }, [toolPair, sessionStorageKey])
 
-    // Reset the terminal
+    // Reset the terminal (reconnects to existing session, doesn't create new one)
     const reset = useCallback(() => {
+      // Set flag to prevent EXPIRED state during reset (cleared in ws.onopen)
+      isResettingRef.current = true
+
       cleanup()
 
-      // Clear terminal
+      // Clear terminal display
       const terminal = terminalInstanceRef.current
       if (terminal) {
         terminal.clear()
       }
 
+      // Reconnect to existing session (don't clear localStorage)
       startSession()
     }, [cleanup, startSession])
 
@@ -544,9 +571,10 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
       [insertCommand, focus, reset],
     )
 
-    // Initialize xterm.js on mount
+    // Initialize xterm.js when terminal container is available
     useEffect(() => {
-      if (!terminalRef.current) return
+      // Only initialize when terminal div is rendered and not already initialized
+      if (!terminalRef.current || terminalInstanceRef.current) return
 
       // Dynamic import for SSR safety
       const initTerminal = async () => {
@@ -578,7 +606,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
           },
           fontFamily: '"JetBrains Mono", "Fira Code", monospace',
           fontSize: 14,
-          lineHeight: 1.4,
+          lineHeight: 1.0,
           cursorBlink: true,
           cursorStyle: "block",
           scrollback: 1000,
@@ -595,9 +623,32 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
 
         terminal.open(container)
         fitAddon.fit()
+        terminal.focus() // Auto-focus the terminal when it opens
 
         terminalInstanceRef.current = terminal
         fitAddonRef.current = fitAddon
+
+        // Send initial terminal size to server
+        const ws = wsRef.current
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(
+            JSON.stringify({
+              type: "resize",
+              rows: terminal.rows,
+              cols: terminal.cols,
+            }),
+          )
+        }
+
+        // Flush any buffered messages that arrived before terminal was ready
+        if (messageBufferRef.current.length > 0) {
+          for (const msg of messageBufferRef.current) {
+            terminal.write(msg)
+          }
+          messageBufferRef.current = []
+          // Re-fit after flushing to ensure proper display
+          fitAddon.fit()
+        }
 
         // Handle user input
         terminal.onData((data: string) => {
@@ -614,8 +665,9 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
             ws.send(
               JSON.stringify({
                 type: "resize",
-                data: { rows: size.rows, cols: size.cols },
-              } satisfies TerminalMessage),
+                rows: size.rows,
+                cols: size.cols,
+              }),
             )
           }
         })
@@ -637,6 +689,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
         window.removeEventListener("resize", handleResize)
         if (terminalInstanceRef.current) {
           terminalInstanceRef.current.dispose()
+          terminalInstanceRef.current = null
         }
       }
     }, [cleanup])
@@ -664,77 +717,62 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
     }, [state, cleanup])
 
     return (
-      <div className="my-4">
-        <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface)]">
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-2">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-[var(--color-text)]">SANDBOX</span>
-              <StatusIndicator state={state} />
-            </div>
-            {state === "CONNECTED" || state === "TIMEOUT_WARNING" ? (
-              <span className="text-xs text-[var(--color-text-muted)]">
-                Session: {formatTime(timeRemaining)} / 5:00
-              </span>
-            ) : null}
+      <div className="flex h-full flex-col">
+        {/* Terminal container */}
+        {state === "IDLE" ? (
+          <div className="flex flex-1 flex-col items-center justify-center p-8">
+            <p className="mb-4 text-sm text-[var(--color-text-muted)]">
+              Click below to start the interactive sandbox
+            </p>
+            <button
+              type="button"
+              onClick={startSession}
+              className="rounded bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-bg)] transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+            >
+              Start Terminal
+            </button>
           </div>
-
-          {/* Terminal container */}
-          {state === "IDLE" ? (
-            <div className="flex min-h-[200px] flex-col items-center justify-center p-8">
-              <p className="mb-4 text-sm text-[var(--color-text-muted)]">
-                Click below to start the interactive sandbox
-              </p>
+        ) : state === "CONNECTING" ? (
+          <div className="flex flex-1 items-center justify-center p-8">
+            <div className="text-center">
+              <div
+                className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-[var(--color-border)] border-t-[var(--color-accent)]"
+                aria-hidden="true"
+              />
+              <p className="text-sm text-[var(--color-text-muted)]">Starting sandbox...</p>
+            </div>
+          </div>
+        ) : state === "ERROR" || state === "EXPIRED" ? (
+          <div className="flex flex-1 flex-col items-center justify-center p-8">
+            <p className="mb-2 text-sm text-[var(--color-error)]">{error ?? "An error occurred"}</p>
+            <div className="flex gap-2">
               <button
                 type="button"
-                onClick={startSession}
+                onClick={reset}
                 className="rounded bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-bg)] transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
               >
-                Start Terminal
+                Retry
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setState("STATIC")
+                  setError(null)
+                }}
+                className="rounded border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+              >
+                Use Static Mode
               </button>
             </div>
-          ) : state === "CONNECTING" ? (
-            <div className="flex min-h-[200px] items-center justify-center p-8">
-              <div className="text-center">
-                <div
-                  className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-[var(--color-border)] border-t-[var(--color-accent)]"
-                  aria-hidden="true"
-                />
-                <p className="text-sm text-[var(--color-text-muted)]">Starting sandbox...</p>
-              </div>
-            </div>
-          ) : state === "ERROR" || state === "EXPIRED" ? (
-            <div className="flex min-h-[200px] flex-col items-center justify-center p-8">
-              <p className="mb-2 text-sm text-[var(--color-error)]">
-                {error ?? "An error occurred"}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={reset}
-                  className="rounded bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-bg)] transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                >
-                  Retry
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setState("STATIC")
-                    setError(null)
-                  }}
-                  className="rounded border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                >
-                  Use Static Mode
-                </button>
-              </div>
-            </div>
-          ) : state === "STATIC" ? (
-            <StaticModeContent toolPair={toolPair} onTryInteractive={() => setState("IDLE")} />
-          ) : (
+          </div>
+        ) : state === "STATIC" ? (
+          <StaticModeContent toolPair={toolPair} onTryInteractive={() => setState("IDLE")} />
+        ) : (
+          <div className="flex-1 p-3">
             <div
               ref={terminalRef}
               tabIndex={0}
-              className="min-h-[200px] max-h-[400px] overflow-hidden outline-none"
+              className="h-full overflow-hidden outline-none"
               aria-label="Interactive terminal sandbox. Press Escape to exit terminal focus."
               role="application"
               onKeyDown={(e) => {
@@ -745,44 +783,8 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
                 }
               }}
             />
-          )}
-
-          {/* Footer */}
-          {state === "CONNECTED" || state === "TIMEOUT_WARNING" ? (
-            <div className="flex items-center justify-between border-t border-[var(--color-border)] px-4 py-2">
-              <button
-                type="button"
-                onClick={reset}
-                className="text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-              >
-                Reset
-              </button>
-              <span className="text-xs text-[var(--color-text-muted)]">
-                Session: {formatTime(timeRemaining)} / 5:00
-              </span>
-            </div>
-          ) : null}
-        </div>
-
-        {/* Suggested commands */}
-        {preloadCommands.length > 0 && (state === "CONNECTED" || state === "TIMEOUT_WARNING") ? (
-          <div className="mt-2">
-            <p className="mb-2 text-xs text-[var(--color-text-muted)]">Tap to run:</p>
-            <div className="flex flex-col gap-2">
-              {preloadCommands.map((command, index) => (
-                <button
-                  // biome-ignore lint/suspicious/noArrayIndexKey: Commands are static and order matters
-                  key={index}
-                  type="button"
-                  onClick={() => insertCommand(command)}
-                  className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-left text-sm font-mono text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-                >
-                  {command}
-                </button>
-              ))}
-            </div>
           </div>
-        ) : null}
+        )}
       </div>
     )
   },

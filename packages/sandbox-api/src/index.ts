@@ -11,7 +11,11 @@ import { cors } from "hono/cors"
 import { createSessionRoutes } from "./routes/sessions.js"
 import { closeAllConnections, createWebSocketServer } from "./routes/websocket.js"
 import { AuditService, AuditServiceLive, type AuditServiceShape } from "./services/audit.js"
-import { ContainerServiceLive, DockerClientLive, checkGvisorAvailable } from "./services/container.js"
+import {
+  ContainerServiceLive,
+  DockerClientLive,
+  checkGvisorAvailable,
+} from "./services/container.js"
 import {
   RateLimitService,
   RateLimitServiceLive,
@@ -199,7 +203,13 @@ const make = Effect.gen(function* () {
     })
 
     // Attach WebSocket server to HTTP server with services for connection handling
-    createWebSocketServer(httpServer, sessionService, webSocketService, rateLimitService, auditService)
+    createWebSocketServer(
+      httpServer,
+      sessionService,
+      webSocketService,
+      rateLimitService,
+      auditService,
+    )
 
     // Start listening
     httpServer.listen(config.port, config.host, () => {
@@ -208,6 +218,12 @@ const make = Effect.gen(function* () {
       console.log(`API v1: http://${config.host}:${config.port}/api/v1`)
       console.log(`WebSocket: ws://${config.host}:${config.port}/api/v1/sessions/:id/ws`)
       console.log(`CORS origin: ${config.frontendOrigin}`)
+      if (
+        process.env["NODE_ENV"] === "development" ||
+        process.env["DISABLE_RATE_LIMIT"] === "true"
+      ) {
+        console.log("Rate limiting: DISABLED (development mode)")
+      }
     })
 
     httpServer.on("error", (error) => {
@@ -290,7 +306,12 @@ const mainProgram = Effect.gen(function* () {
 if (import.meta.main) {
   // Build the complete application layer with proper dependency resolution
   // Base layers (no dependencies)
-  const baseLayer = Layer.mergeAll(ServerConfigLive, DockerClientLive, RateLimitServiceLive, AuditServiceLive)
+  const baseLayer = Layer.mergeAll(
+    ServerConfigLive,
+    DockerClientLive,
+    RateLimitServiceLive,
+    AuditServiceLive,
+  )
 
   // Container service depends on DockerClient
   const containerLayer = ContainerServiceLive.pipe(Layer.provide(DockerClientLive))
@@ -305,7 +326,15 @@ if (import.meta.main) {
 
   // HTTP server depends on ServerConfig, SessionService, RateLimitService, WebSocketService, AuditService
   const httpLayer = HttpServerLive.pipe(
-    Layer.provide(Layer.mergeAll(ServerConfigLive, sessionLayer, RateLimitServiceLive, wsLayer, AuditServiceLive)),
+    Layer.provide(
+      Layer.mergeAll(
+        ServerConfigLive,
+        sessionLayer,
+        RateLimitServiceLive,
+        wsLayer,
+        AuditServiceLive,
+      ),
+    ),
   )
 
   // Merge all layers for the final app

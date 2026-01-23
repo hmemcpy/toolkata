@@ -28,25 +28,39 @@ RUN git --version && jj --version
 RUN useradd -m -s /bin/bash sandbox
 
 # Create workspace directory
-RUN mkdir -p /home/sandbox/workspace && \
-    chown -R sandbox:sandbox /home/sandbox
+RUN mkdir -p /home/toolkata && \
+    chown -R sandbox:sandbox /home/sandbox /home/toolkata
 
-# Configure git for sandbox user (default config)
+# Switch to sandbox user BEFORE configuring git (so configs go to correct user)
+USER sandbox
+
+# Configure git for sandbox user
 RUN git config --global user.name "Sandbox User" && \
     git config --global user.email "sandbox@toolkata.com" && \
     git config --global init.defaultBranch main && \
     git config --global core.editor "vim"
 
-# Configure jj for sandbox user (default config)
+# Configure jj for sandbox user
 RUN mkdir -p /home/sandbox/.config/jj && \
-    printf '[user]\nname = "Sandbox User"\nemail = "sandbox@toolkata.com"\n' > /home/sandbox/.config/jj/config.toml && \
-    chown -R sandbox:sandbox /home/sandbox/.config
+    printf '[user]\nname = "Sandbox User"\nemail = "sandbox@toolkata.com"\n' > /home/sandbox/.config/jj/config.toml
+
+# Create .bashrc with colored prompt and aliases
+# Set HOME to /home/toolkata so ~ shows correctly in prompt
+# PS1 shows relative path (blue) followed by $ (green)
+RUN printf 'export TERM=xterm-256color\n' > /home/sandbox/.bashrc && \
+    printf 'export HOME=/home/toolkata\n' >> /home/sandbox/.bashrc && \
+    printf 'export PS1="\\[\\033[34m\\]\\w\\[\\033[0m\\] \\[\\033[32m\\]$\\[\\033[0m\\] "\n' >> /home/sandbox/.bashrc && \
+    printf 'alias ls="ls --color=auto"\n' >> /home/sandbox/.bashrc && \
+    printf 'alias grep="grep --color=auto"\n' >> /home/sandbox/.bashrc
+
+# Enable git colors
+RUN git config --global color.ui auto
+
+# Enable jj colors (auto-enabled when TERM is set, but be explicit)
+RUN printf '[ui]\ncolor = "auto"\n' >> /home/sandbox/.config/jj/config.toml
 
 # Set working directory
-WORKDIR /home/sandbox/workspace
-
-# Switch to sandbox user
-USER sandbox
+WORKDIR /home/toolkata
 
 # Keep container alive with entrypoint script
 COPY --chown=sandbox:sandbox entrypoint.sh /usr/local/bin/entrypoint.sh

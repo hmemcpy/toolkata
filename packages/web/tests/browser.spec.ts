@@ -599,8 +599,8 @@ test.describe("TryIt Enhancements (3.1-3.4)", () => {
       // either static code OR input should be present
       const inputField = tryItSection.locator("input[type='text']")
 
-      const hasStaticCode = await staticCodeBlock.count() > 0
-      const hasInput = await inputField.count() > 0
+      const hasStaticCode = (await staticCodeBlock.count()) > 0
+      const hasInput = (await inputField.count()) > 0
 
       // At least one should be present for valid TryIt component
       expect(hasStaticCode || hasInput).toBe(true)
@@ -724,7 +724,9 @@ test.describe("Shrinking Layout (2.6)", () => {
       await expect(contentLink).toBeEnabled()
 
       // Main element should not have inert attribute
-      const hasInert = await page.evaluate(() => document.querySelector("main")?.hasAttribute("inert"))
+      const hasInert = await page.evaluate(() =>
+        document.querySelector("main")?.hasAttribute("inert"),
+      )
       expect(hasInert).toBe(false)
     }
   })

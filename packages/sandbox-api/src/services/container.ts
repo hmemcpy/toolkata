@@ -43,9 +43,10 @@ const CONTAINER_SECURITY = {
   network: "none",
 
   // Read-only root filesystem (tmpfs for writable areas)
+  // uid=1000,gid=1000 corresponds to the sandbox user created in Dockerfile
   readonly: true,
   tmpfs: {
-    "/home/sandbox/workspace": "size=50M",
+    "/home/toolkata": "size=50M,uid=1000,gid=1000",
     "/tmp": "size=10M",
   },
 
@@ -268,7 +269,8 @@ const make = Effect.gen(function* () {
         Effect.fail(
           new ContainerError({
             cause: "DestroyFailed",
-            message: "Container destroy timed out after 10 seconds. Container may be in an inconsistent state.",
+            message:
+              "Container destroy timed out after 10 seconds. Container may be in an inconsistent state.",
           }),
         ),
       ),

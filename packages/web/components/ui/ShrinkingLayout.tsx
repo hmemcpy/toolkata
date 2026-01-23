@@ -50,13 +50,12 @@ export interface ShrinkingLayoutProps {
  * while remaining interactive.
  */
 export function ShrinkingLayout({ children }: ShrinkingLayoutProps): ReactNode {
-  const { isOpen } = useTerminalContext()
+  const { isOpen, sidebarWidth } = useTerminalContext()
 
   return (
     <div
-      className={`transition-[margin] duration-[var(--transition-sidebar)] ease-in-out ${
-        isOpen ? "lg:mr-[var(--sidebar-width)]" : ""
-      }`}
+      className="transition-[margin] duration-[var(--transition-sidebar)] ease-in-out"
+      style={{ marginRight: isOpen ? `${sidebarWidth}px` : 0 }}
     >
       {children}
     </div>

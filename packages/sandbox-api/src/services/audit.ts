@@ -105,10 +105,7 @@ export interface AuditServiceShape {
 }
 
 // Service tag
-export class AuditService extends Context.Tag("AuditService")<
-  AuditService,
-  AuditServiceShape
->() {}
+export class AuditService extends Context.Tag("AuditService")<AuditService, AuditServiceShape>() {}
 
 // Helper: Format metadata as JSON string for console output
 const _formatMetadata = (metadata: AuditMetadata): string => {
@@ -118,7 +115,8 @@ const _formatMetadata = (metadata: AuditMetadata): string => {
   // Redact any fields that might contain sensitive data
   if (sanitized.input !== undefined) {
     // Truncate input to 100 chars
-    sanitized.input = String(sanitized.input).slice(0, 100) + (String(sanitized.input).length > 100 ? "..." : "")
+    sanitized.input =
+      String(sanitized.input).slice(0, 100) + (String(sanitized.input).length > 100 ? "..." : "")
   }
 
   return JSON.stringify(sanitized)
@@ -173,47 +171,37 @@ const make = Effect.gen(function* () {
     clientIp: string,
     expiresAt: Date,
   ) =>
-    log(
-      "info",
-      AuditEventType.SESSION_CREATED,
-      `Session created for tool pair: ${toolPair}`,
-      {
-        sessionId,
-        toolPair,
-        clientIp,
-        expiresAt: expiresAt.toISOString(),
-      },
-    )
+    log("info", AuditEventType.SESSION_CREATED, `Session created for tool pair: ${toolPair}`, {
+      sessionId,
+      toolPair,
+      clientIp,
+      expiresAt: expiresAt.toISOString(),
+    })
 
   const logSessionDestroyed = (
     sessionId: string,
     clientIp: string,
     reason: "user_request" | "expired" | "error" = "user_request",
   ) =>
-    log(
-      "info",
-      AuditEventType.SESSION_DESTROYED,
-      `Session destroyed (reason: ${reason})`,
-      {
-        sessionId,
-        clientIp,
-        reason,
-      },
-    )
+    log("info", AuditEventType.SESSION_DESTROYED, `Session destroyed (reason: ${reason})`, {
+      sessionId,
+      clientIp,
+      reason,
+    })
 
   const logAuthFailure = (reason: string, clientIp: string, sessionId?: string) =>
-    log(
-      "warn",
-      AuditEventType.AUTH_FAILURE,
-      `Authentication failed: ${reason}`,
-      {
-        sessionId,
-        clientIp,
-        reason,
-      },
-    )
+    log("warn", AuditEventType.AUTH_FAILURE, `Authentication failed: ${reason}`, {
+      sessionId,
+      clientIp,
+      reason,
+    })
 
-  const logRateLimitHit = (type: "session" | "websocket", clientIp: string, limit: number, window: string) =>
+  const logRateLimitHit = (
+    type: "session" | "websocket",
+    clientIp: string,
+    limit: number,
+    window: string,
+  ) =>
     log(
       "warn",
       type === "session" ? AuditEventType.RATE_LIMIT_SESSION : AuditEventType.RATE_LIMIT_WEBSOCKET,
@@ -226,17 +214,12 @@ const make = Effect.gen(function* () {
     )
 
   const logInputInvalid = (sessionId: string, clientIp: string, reason: string, input?: string) =>
-    log(
-      "warn",
-      AuditEventType.INPUT_INVALID,
-      `Invalid input rejected: ${reason}`,
-      {
-        sessionId,
-        clientIp,
-        reason,
-        ...(input !== undefined ? { input } : {}),
-      },
-    )
+    log("warn", AuditEventType.INPUT_INVALID, `Invalid input rejected: ${reason}`, {
+      sessionId,
+      clientIp,
+      reason,
+      ...(input !== undefined ? { input } : {}),
+    })
 
   const logError = (errorType: string, message: string, metadata: AuditMetadata) =>
     log(
@@ -246,7 +229,15 @@ const make = Effect.gen(function* () {
       metadata,
     )
 
-  return { log, logSessionCreated, logSessionDestroyed, logAuthFailure, logRateLimitHit, logInputInvalid, logError }
+  return {
+    log,
+    logSessionCreated,
+    logSessionDestroyed,
+    logAuthFailure,
+    logRateLimitHit,
+    logInputInvalid,
+    logError,
+  }
 })
 
 // Live layer

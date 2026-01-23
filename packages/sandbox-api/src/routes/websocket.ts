@@ -1,7 +1,12 @@
 import type { Server as HttpServer } from "node:http"
 import { Data, Effect } from "effect"
 import { WebSocketServer } from "ws"
-import { validateApiKey, validateMessageSize, validateOrigin, validateTerminalInput } from "../config.js"
+import {
+  validateApiKey,
+  validateMessageSize,
+  validateOrigin,
+  validateTerminalInput,
+} from "../config.js"
 import type { AuditServiceShape } from "../services/audit.js"
 import type { SessionServiceShape } from "../services/session.js"
 import type { RateLimitServiceShape } from "../services/rate-limit.js"
@@ -130,7 +135,16 @@ export const createWebSocketServer = (
       ;(ws as unknown as Record<string, unknown>).__connectionId = connectionId
       ;(ws as unknown as Record<string, unknown>).__clientIp = clientIp
 
-      wss.emit("connection", ws, request, sessionId, connectionId, clientIp, rateLimitService, auditService)
+      wss.emit(
+        "connection",
+        ws,
+        request,
+        sessionId,
+        connectionId,
+        clientIp,
+        rateLimitService,
+        auditService,
+      )
     })
   })
 
@@ -188,17 +202,24 @@ export const createWebSocketServer = (
         console.log(`[WebSocket] Connected for session: ${sessionId}`)
         // Log WebSocket connection success (fire and forget - don't block connection setup)
         Effect.runPromise(
-          auditService.log("info", "websocket.connected", `WebSocket connected for session: ${sessionId}`, {
-            sessionId,
-            clientIp,
-            connectionId,
-          }),
+          auditService.log(
+            "info",
+            "websocket.connected",
+            `WebSocket connected for session: ${sessionId}`,
+            {
+              sessionId,
+              clientIp,
+              connectionId,
+            },
+          ),
         )
 
         // Set up message handler from client - use captured service values
         ws.on("message", async (data: Buffer) => {
           // Validate message size to prevent DoS
-          const sizeResult = await Effect.runPromise(Effect.either(validateMessageSize(data.length)))
+          const sizeResult = await Effect.runPromise(
+            Effect.either(validateMessageSize(data.length)),
+          )
           if (sizeResult._tag === "Left") {
             const sizeError = sizeResult.left
             console.error(
@@ -229,12 +250,19 @@ export const createWebSocketServer = (
 
           if (message.type === "input") {
             // Validate terminal input for security
-            const sanitizeResult = await Effect.runPromise(Effect.either(validateTerminalInput(message.data)))
+            const sanitizeResult = await Effect.runPromise(
+              Effect.either(validateTerminalInput(message.data)),
+            )
             if (sanitizeResult._tag === "Left") {
               const sanitizeError = sanitizeResult.left
               // Log invalid input
               await Effect.runPromise(
-                auditService.logInputInvalid(sessionId, clientIp, sanitizeError.cause, message.data),
+                auditService.logInputInvalid(
+                  sessionId,
+                  clientIp,
+                  sanitizeError.cause,
+                  message.data,
+                ),
               )
               console.error(
                 `[WebSocket] Input sanitization failed for ${sessionId}: ${sanitizeError.message} (input: ${JSON.stringify(sanitizeError.input)})`,
@@ -278,10 +306,15 @@ export const createWebSocketServer = (
           console.log(`[WebSocket] Disconnected: ${sessionId}`)
           // Log WebSocket disconnection
           await Effect.runPromise(
-            auditService.log("info", "websocket.disconnected", `WebSocket disconnected for session: ${sessionId}`, {
-              sessionId,
-              clientIp,
-            }),
+            auditService.log(
+              "info",
+              "websocket.disconnected",
+              `WebSocket disconnected for session: ${sessionId}`,
+              {
+                sessionId,
+                clientIp,
+              },
+            ),
           )
           connections.delete(sessionId)
 

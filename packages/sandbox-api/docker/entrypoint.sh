@@ -14,19 +14,8 @@ echo "jj version: $(jj --version)"
 echo "=========================="
 echo ""
 
-# Create a default .gitconfig if not exists (for colocated repos)
-if [ ! -f "/home/sandbox/.gitconfig" ]; then
-  echo "Initializing git config..."
-  git config --global user.name "Sandbox User"
-  git config --global user.email "sandbox@toolkata.com"
-  git config --global init.defaultBranch main
-fi
-
-# Create jj config directory if not exists
-if [ ! -d "/home/sandbox/.config/jj" ]; then
-  mkdir -p /home/sandbox/.config/jj
-  printf '[user]\nname = "Sandbox User"\nemail = "sandbox@toolkata.com"\n' > /home/sandbox/.config/jj/config.toml
-fi
+# Git and jj configs are pre-configured in the Docker image
+# No runtime initialization needed (filesystem is read-only)
 
 # If command provided, execute it; otherwise keep alive
 if [ $# -gt 0 ]; then

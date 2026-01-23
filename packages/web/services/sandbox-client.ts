@@ -297,9 +297,8 @@ const make = Effect.succeed<SandboxClientShape>({
       // Build WebSocket protocols array - browser WebSocket API doesn't support custom headers
       // The API key will be sent via query parameter as a fallback
       const protocols: string | string[] = []
-      const finalWsUrl = SANDBOX_API_KEY !== ""
-        ? `${wsUrl}?api_key=${encodeURIComponent(SANDBOX_API_KEY)}`
-        : wsUrl
+      const finalWsUrl =
+        SANDBOX_API_KEY !== "" ? `${wsUrl}?api_key=${encodeURIComponent(SANDBOX_API_KEY)}` : wsUrl
 
       const ws = new WebSocket(finalWsUrl, protocols)
 

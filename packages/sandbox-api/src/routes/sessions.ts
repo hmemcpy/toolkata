@@ -232,7 +232,9 @@ const createSessionRoutes = (
       const session = await Effect.runPromise(sessionService.create(toolPair))
 
       // Log session creation
-      await Effect.runPromise(auditService.logSessionCreated(session.id, toolPair, clientIp, session.expiresAt))
+      await Effect.runPromise(
+        auditService.logSessionCreated(session.id, toolPair, clientIp, session.expiresAt),
+      )
 
       // Record the session for rate limiting
       await Effect.runPromise(rateLimitService.recordSession(clientIp, session.id))
@@ -331,14 +333,20 @@ const createSessionRoutes = (
 
       // Log session destruction
       if (destroyResult._tag === "Right") {
-        await Effect.runPromise(auditService.logSessionDestroyed(sessionId, clientIp, "user_request"))
+        await Effect.runPromise(
+          auditService.logSessionDestroyed(sessionId, clientIp, "user_request"),
+        )
       } else if (destroyResult.left.cause !== "NotFound") {
         // Log error if destruction failed (but not NotFound - that's normal)
         await Effect.runPromise(
-          auditService.logError("container", `Session destroy failed: ${destroyResult.left.message}`, {
-            sessionId,
-            clientIp,
-          }),
+          auditService.logError(
+            "container",
+            `Session destroy failed: ${destroyResult.left.message}`,
+            {
+              sessionId,
+              clientIp,
+            },
+          ),
         )
       }
 

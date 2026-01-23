@@ -1,7 +1,17 @@
-import type Docker from "dockerode"
 import { Context, Data, Effect, Layer } from "effect"
 import { WebSocket } from "ws"
-import { ContainerError, ContainerService, DockerClient } from "./container.js"
+import { ContainerError, ContainerService } from "./container.js"
+
+// Bun subprocess with terminal
+interface BunTerminalProcess {
+  readonly terminal: {
+    write(data: string): number
+    resize(cols: number, rows: number): void
+    close(): void
+  }
+  readonly exited: Promise<number>
+  kill(signal?: number): void
+}
 
 // Terminal resize event from client
 export interface TerminalResize {
@@ -24,8 +34,7 @@ export interface ConnectionState {
   readonly sessionId: string
   readonly containerId: string
   readonly socket: WebSocket
-  readonly exec: Docker.Exec
-  readonly stream: NodeJS.ReadWriteStream
+  readonly bunProcess: BunTerminalProcess
   readonly isConnected: boolean
 }
 
@@ -109,85 +118,46 @@ const _parseMessage = (data: string): WebSocketMessage => {
 // Service implementation
 const make = Effect.gen(function* () {
   const containerService = yield* ContainerService
-  const dockerClient = yield* DockerClient
+  // Note: dockerClient not needed with CLI approach
 
-  // Handle a new WebSocket connection
+  // Handle a new WebSocket connection using docker exec CLI
   const handleConnection = (sessionId: string, containerId: string, socket: WebSocket) =>
     Effect.gen(function* () {
       // Verify container exists before connecting
       yield* containerService.get(containerId)
 
-      const docker = dockerClient.docker
-      const container = docker.getContainer(containerId)
-
-      // Create exec for interactive shell in container
-      const exec = yield* Effect.tryPromise({
-        try: async () =>
-          container.exec({
-            AttachStdin: true,
-            AttachStdout: true,
-            AttachStderr: true,
-            Tty: true,
-            Cmd: ["/bin/bash"],
-            Env: ["TERM=xterm-256color"],
-          }),
-        catch: (error: unknown) => {
-          return new WebSocketError({
-            cause: "ExecCreateFailed",
-            message: error instanceof Error ? error.message : "Failed to create exec",
-            originalError: error,
-          })
+      // Use Bun's native PTY support
+      const bunProcess = Bun.spawn(["docker", "exec", "-it", containerId, "/bin/bash"], {
+        env: { ...process.env, TERM: "xterm-256color" },
+        terminal: {
+          cols: 80,
+          rows: 24,
+          data(_terminal, data) {
+            if (socket.readyState === WebSocket.OPEN) {
+              socket.send(data)
+            }
+          },
+          exit(_terminal, exitCode) {
+            console.log(`[WebSocketService] PTY exited for ${sessionId} with code ${exitCode}`)
+            if (socket.readyState === WebSocket.OPEN) {
+              socket.close(1000, "Container process exited")
+            }
+          },
         },
-      })
+      }) as unknown as BunTerminalProcess
 
-      // Start the exec and get the stream
-      const stream = yield* Effect.tryPromise({
-        try: async () => {
-          const execStream = await exec.start({
-            Detach: false,
-            Tty: true,
-          })
-          return execStream as NodeJS.ReadWriteStream
-        },
-        catch: (error: unknown) => {
-          return new WebSocketError({
-            cause: "ExecStartFailed",
-            message: error instanceof Error ? error.message : "Failed to start exec",
-            originalError: error,
-          })
-        },
-      })
+      console.log(`[WebSocketService] Spawned Bun PTY for ${sessionId}`)
 
-      // Set up pipe from container output to WebSocket
-      // Use a FIFO (fake) to avoid blocking issues
-      stream.on("data", (chunk: Buffer) => {
-        if (socket.readyState === WebSocket.OPEN) {
-          socket.send(chunk.toString("utf-8"))
-        }
-      })
-
-      // Handle stream errors
-      stream.on("error", (error) => {
-        console.error(`[WebSocketService] Stream error for ${sessionId}:`, error)
-        if (socket.readyState === WebSocket.OPEN) {
-          socket.close(1011, "Container stream error")
-        }
-      })
-
-      // Handle stream close
-      stream.on("close", () => {
-        console.log(`[WebSocketService] Stream closed for ${sessionId}`)
-        if (socket.readyState === WebSocket.OPEN) {
-          socket.close(1000, "Container process exited")
-        }
+      // Handle process exit
+      bunProcess.exited.then((code) => {
+        console.log(`[WebSocketService] Process exited for ${sessionId} with code ${code}`)
       })
 
       return {
         sessionId,
         containerId,
         socket,
-        exec,
-        stream,
+        bunProcess,
         isConnected: true,
       } satisfies ConnectionState
     }).pipe(
@@ -233,52 +203,33 @@ const make = Effect.gen(function* () {
       },
     })
 
-  // Write input to container exec stream
+  // Write input to terminal
   const writeInput = (connection: ConnectionState, data: Buffer) =>
-    Effect.tryPromise({
-      try: async () => {
-        if (!connection.stream.writable) {
-          throw new Error("Stream is not writable")
-        }
-        connection.stream.write(data)
-      },
-      catch: (error) => {
-        return new WebSocketError({
-          cause: "WriteFailed",
-          message: error instanceof Error ? error.message : "Failed to write to stream",
-          originalError: error,
-        })
-      },
+    Effect.sync(() => {
+      connection.bunProcess.terminal.write(data.toString("utf-8"))
     })
 
   // Resize terminal
   const resize = (connection: ConnectionState, rows: number, cols: number) =>
-    Effect.tryPromise({
-      try: async () => {
-        await connection.exec.resize({ h: rows, w: cols })
-      },
-      catch: (error) => {
-        return new WebSocketError({
-          cause: "WriteFailed",
-          message: error instanceof Error ? error.message : "Failed to resize terminal",
-          originalError: error,
-        })
-      },
+    Effect.sync(() => {
+      connection.bunProcess.terminal.resize(cols, rows)
     })
 
   // Close connection gracefully
   const close = (connection: ConnectionState) =>
     Effect.sync(() => {
-      // Close the stream first
-      const stream = connection.stream as NodeJS.ReadWriteStream & {
-        destroy?: () => void
-        destroyed?: boolean
+      // Close the PTY terminal
+      try {
+        connection.bunProcess.terminal.close()
+      } catch {
+        // Terminal may already be closed
       }
-      if (stream && typeof stream.destroy === "function" && !stream.destroyed) {
-        stream.destroy()
-      } else if (stream && typeof stream.end === "function") {
-        // Fallback to end() if destroy is not available
-        stream.end()
+
+      // Kill the process if still running
+      try {
+        connection.bunProcess.kill()
+      } catch {
+        // Process may already be exited
       }
 
       // Close the WebSocket

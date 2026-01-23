@@ -137,8 +137,14 @@ const SWIPE_THRESHOLD = 100
  * Slides up from bottom, includes drag handle and swipe-to-close gesture.
  */
 export function MobileBottomSheet({ toolPair }: MobileBottomSheetProps): ReactNode {
-  const { isOpen, closeSidebar, state, sessionTimeRemaining, onTerminalStateChange, onTerminalTimeChange } =
-    useTerminalContext()
+  const {
+    isOpen,
+    closeSidebar,
+    state,
+    sessionTimeRemaining,
+    onTerminalStateChange,
+    onTerminalTimeChange,
+  } = useTerminalContext()
   const sheetRef = useRef<HTMLDivElement>(null)
   const handleRef = useRef<HTMLDivElement>(null)
   const terminalRef = useRef<InteractiveTerminalRef>(null)

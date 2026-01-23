@@ -67,7 +67,10 @@ export const SandboxConfig = {
    * Maximum WebSocket message size in bytes
    * @default 1024 (1KB)
    */
-  maxWebSocketMessageSize: Number.parseInt(process.env["SANDBOX_MAX_WS_MESSAGE_SIZE"] ?? "1024", 10) as number,
+  maxWebSocketMessageSize: Number.parseInt(
+    process.env["SANDBOX_MAX_WS_MESSAGE_SIZE"] ?? "1024",
+    10,
+  ) as number,
 } as const
 
 /**
@@ -370,7 +373,9 @@ export class InputSanitizationError extends Data.TaggedClass("InputSanitizationE
  * // Invalid input (bracketed paste attack)
  * validateTerminalInput("\x1b[200~rm -rf /\x1b[201~")  // REJECTED
  */
-export const validateTerminalInput = (input: string): Effect.Effect<void, InputSanitizationError> => {
+export const validateTerminalInput = (
+  input: string,
+): Effect.Effect<void, InputSanitizationError> => {
   // Check for valid UTF-8
   try {
     // This will throw if the string contains invalid UTF-8 sequences
@@ -396,7 +401,9 @@ export const validateTerminalInput = (input: string): Effect.Effect<void, InputS
   const bracketedPasteEnd = /\x1b\[201~/
 
   if (bracketedPasteStart.test(input) || bracketedPasteEnd.test(input)) {
-    console.warn(`[security] Bracketed paste mode sequence detected in input: ${JSON.stringify(input.slice(0, 50))}`)
+    console.warn(
+      `[security] Bracketed paste mode sequence detected in input: ${JSON.stringify(input.slice(0, 50))}`,
+    )
     return Effect.fail(
       new InputSanitizationError({
         cause: "BracketedPasteAttack",
@@ -428,7 +435,9 @@ export const validateTerminalInput = (input: string): Effect.Effect<void, InputS
 
   for (const pattern of [dangerousOsc, dangerousDcs, dangerousPm, dangerousApc]) {
     if (pattern.test(input)) {
-      console.warn(`[security] Dangerous escape sequence detected in input: ${JSON.stringify(input.slice(0, 50))}`)
+      console.warn(
+        `[security] Dangerous escape sequence detected in input: ${JSON.stringify(input.slice(0, 50))}`,
+      )
       return Effect.fail(
         new InputSanitizationError({
           cause: "MaliciousEscapeSequence",
@@ -449,7 +458,9 @@ export const validateTerminalInput = (input: string): Effect.Effect<void, InputS
   // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentional escape sequence detection for security
   const consecutiveEsc = /(?:\x1b[^\x1b]){10,}/ // 10+ consecutive escape sequences
   if (consecutiveEsc.test(input)) {
-    console.warn(`[security] Suspicious repetitive escape sequences: ${JSON.stringify(input.slice(0, 50))}`)
+    console.warn(
+      `[security] Suspicious repetitive escape sequences: ${JSON.stringify(input.slice(0, 50))}`,
+    )
     return Effect.fail(
       new InputSanitizationError({
         cause: "SuspiciousControlSequence",
@@ -472,7 +483,9 @@ export const validateTerminalInput = (input: string): Effect.Effect<void, InputS
 
   for (const pattern of suspiciousPatterns) {
     if (pattern.test(input)) {
-      console.warn(`[security] Suspicious command pattern detected: ${JSON.stringify(input.slice(0, 50))}`)
+      console.warn(
+        `[security] Suspicious command pattern detected: ${JSON.stringify(input.slice(0, 50))}`,
+      )
       // We log but don't block - these could be legitimate commands
       break
     }

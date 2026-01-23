@@ -95,22 +95,22 @@ export default async function StepPage(props: {
       <ShrinkingLayout>
         <main id="main-content" className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
           <StepPageClientWrapper
-          toolPair={toolPair}
-          currentStep={stepNum}
-          totalSteps={pairing.steps}
-          title={frontmatter.title}
-          previousHref={stepNum > 1 ? `/${toolPair}/${stepNum - 1}` : `/${toolPair}`}
-          nextHref={stepNum < pairing.steps ? `/${toolPair}/${stepNum + 1}` : null}
-        >
-          {/* MDX Content */}
-          <article className="prose prose-invert max-w-none">
-            <MDXRemote source={content} components={mdxComponents} />
-          </article>
-        </StepPageClientWrapper>
-      </main>
+            toolPair={toolPair}
+            currentStep={stepNum}
+            totalSteps={pairing.steps}
+            title={frontmatter.title}
+            previousHref={stepNum > 1 ? `/${toolPair}/${stepNum - 1}` : `/${toolPair}`}
+            nextHref={stepNum < pairing.steps ? `/${toolPair}/${stepNum + 1}` : null}
+          >
+            {/* MDX Content */}
+            <article className="prose prose-invert max-w-none">
+              <MDXRemote source={content} components={mdxComponents} />
+            </article>
+          </StepPageClientWrapper>
+        </main>
 
-      <Footer />
-    </ShrinkingLayout>
+        <Footer />
+      </ShrinkingLayout>
     </div>
   )
 }
