@@ -79,6 +79,30 @@ journalctl -u caddy -f
 
 ## Security
 
+### Service Hardening
+
+The sandbox-api service runs with defense-in-depth:
+- **Dedicated user** - Runs as `sandboxapi` user (not root)
+- **Docker group** - Only permission needed for container management
+- **systemd hardening** - NoNewPrivileges, ProtectSystem, PrivateTmp, etc.
+- **Resource limits** - 512MB RAM, 1 CPU core max
+
+### Caddy Reverse Proxy
+
+Caddy is configured with a strict route allowlist:
+- `/health` - Health check endpoint
+- `/api/v1/*` - API endpoints only
+- All other paths return 404
+
+Security headers applied:
+- `X-Frame-Options: DENY`
+- `X-Content-Type-Options: nosniff`
+- `X-XSS-Protection: 1; mode=block`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- Server header removed
+
+### Container Isolation
+
 Each sandbox container runs with:
 - **gVisor (runsc)** - Kernel-level syscall filtering
 - **No network** - `NetworkMode: none`

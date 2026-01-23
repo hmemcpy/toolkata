@@ -72,18 +72,23 @@ The toolkata sandbox system demonstrates **strong security fundamentals** with m
 - `ProtectHome=true` - home directory isolation
 - `PrivateTmp=true` - isolated `/tmp`
 - `ReadOnlyPaths=/` with specific `ReadWritePaths` - good least-privilege
-- `MemoryMax=512M`, `CPUQuota=1.0` - resource limits
-- **Note**: Service references `User=sandboxapi` but provision script doesn't create this user
-  - Deploy script (deploy.sh) installs with root user
-  - **Recommendation**: Create dedicated user in provision.sh
+- `MemoryMax=512M`, `CPUQuota=100%` - resource limits
+- `SupplementaryGroups=docker` - Docker access for container management
+- **Status**: ✅ FIXED - Service now runs as `sandboxapi` user with Docker group membership
+  - deploy.sh creates sandboxapi user and adds to docker group
+  - Hardened service file copied from repo (not inline)
 
 #### Caddy TLS Configuration
-- **File**: `packages/sandbox-api/deploy/Caddyfile`
+- **File**: `scripts/hetzner/deploy.sh` (Caddyfile generated inline)
 - **Status**: ✅ EXCELLENT
 - Automatic Let's Encrypt certificate management
-- HSTS header with preload
-- Strong security headers (X-Content-Type-Options, X-Frame-Options, CSP-like headers)
-- HTTP to HTTPS redirect
+- **Route allowlist**: Only `/health` and `/api/v1/*` proxied, all other paths return 404
+- Strong security headers:
+  - `X-Frame-Options: DENY`
+  - `X-Content-Type-Options: nosniff`
+  - `X-XSS-Protection: 1; mode=block`
+  - `Referrer-Policy: strict-origin-when-cross-origin`
+  - Server header removed (no version disclosure)
 
 #### Secret Management
 - **File**: `scripts/hetzner/provision.sh`, `deploy.sh`
