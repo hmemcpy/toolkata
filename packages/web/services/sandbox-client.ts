@@ -24,6 +24,12 @@ import { Context, Data, Effect, Layer } from "effect"
 const SANDBOX_API_URL = process.env["NEXT_PUBLIC_SANDBOX_API_URL"] ?? "ws://localhost:3001"
 
 /**
+ * Sandbox API key from environment.
+ * Only required in production when SANDBOX_API_KEY is set on the server.
+ */
+const SANDBOX_API_KEY = process.env["NEXT_PUBLIC_SANDBOX_API_KEY"] ?? ""
+
+/**
  * Error types for sandbox operations.
  */
 export class SandboxClientError extends Data.TaggedClass("SandboxClientError")<{
@@ -182,11 +188,17 @@ const make = Effect.succeed<SandboxClientShape>({
       try: async () => {
         const apiUrl = SANDBOX_API_URL.replace(/^wss?:\/\//, "http://").replace(/:\d+/, ":3001")
 
+        // Build headers, including API key if configured
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        }
+        if (SANDBOX_API_KEY !== "") {
+          headers["X-API-Key"] = SANDBOX_API_KEY
+        }
+
         const response = await fetch(`${apiUrl}/sessions`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers,
           body: JSON.stringify({
             toolPair: options.toolPair,
           } satisfies CreateSessionRequest),
@@ -220,8 +232,15 @@ const make = Effect.succeed<SandboxClientShape>({
       try: async () => {
         const apiUrl = SANDBOX_API_URL.replace(/^wss?:\/\//, "http://").replace(/:\d+/, ":3001")
 
+        // Build headers, including API key if configured
+        const headers: Record<string, string> = {}
+        if (SANDBOX_API_KEY !== "") {
+          headers["X-API-Key"] = SANDBOX_API_KEY
+        }
+
         const response = await fetch(`${apiUrl}/sessions/${sessionId}`, {
           method: "DELETE",
+          headers,
         })
 
         if (!response.ok && response.status !== 404) {
@@ -241,7 +260,15 @@ const make = Effect.succeed<SandboxClientShape>({
       try: async () => {
         const apiUrl = SANDBOX_API_URL.replace(/^wss?:\/\//, "http://").replace(/:\d+/, ":3001")
 
-        const response = await fetch(`${apiUrl}/sessions/${sessionId}`)
+        // Build headers, including API key if configured
+        const headers: Record<string, string> = {}
+        if (SANDBOX_API_KEY !== "") {
+          headers["X-API-Key"] = SANDBOX_API_KEY
+        }
+
+        const response = await fetch(`${apiUrl}/sessions/${sessionId}`, {
+          headers,
+        })
 
         if (!response.ok) {
           throw new Error(`Failed to get session status: ${response.status}`)
@@ -267,7 +294,14 @@ const make = Effect.succeed<SandboxClientShape>({
     Effect.sync(() => {
       const wsUrl = `${SANDBOX_API_URL}/sessions/${sessionId}/ws`
 
-      const ws = new WebSocket(wsUrl)
+      // Build WebSocket protocols array - browser WebSocket API doesn't support custom headers
+      // The API key will be sent via query parameter as a fallback
+      const protocols: string | string[] = []
+      const finalWsUrl = SANDBOX_API_KEY !== ""
+        ? `${wsUrl}?api_key=${encodeURIComponent(SANDBOX_API_KEY)}`
+        : wsUrl
+
+      const ws = new WebSocket(finalWsUrl, protocols)
 
       const send = (data: string): Effect.Effect<void, SandboxClientError> =>
         Effect.try({

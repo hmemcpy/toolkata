@@ -1,3 +1,5 @@
+import { Data, Effect } from "effect"
+
 /**
  * Sandbox configuration module
  *
@@ -15,6 +17,10 @@
  * - `gvisorRuntime`: The Docker runtime name for gVisor
  *   - Defaults to `runsc` (standard gVisor runtime)
  *   - Can be overridden via `SANDBOX_GVISOR_RUNTIME` env var
+ * - `apiKey`: Shared secret for API authentication
+ *   - Defaults to empty string (no auth required in development)
+ *   - Set `SANDBOX_API_KEY` in production to require authentication
+ *   - Frontend must send `X-API-Key` header with this value
  *
  * @example
  * ```bash
@@ -26,6 +32,9 @@
  *
  * # Custom runtime name
  * SANDBOX_GVISOR_RUNTIME=runsc-custom
+ *
+ * # Set API key for production
+ * SANDBOX_API_KEY=your-secret-key-here
  * ```
  */
 export const SandboxConfig = {
@@ -40,6 +49,12 @@ export const SandboxConfig = {
    * @default "runsc"
    */
   gvisorRuntime: (process.env.SANDBOX_GVISOR_RUNTIME ?? "runsc") as string,
+
+  /**
+   * API key for authentication
+   * @default "" (no authentication required)
+   */
+  apiKey: (process.env.SANDBOX_API_KEY ?? "") as string,
 } as const
 
 /**
@@ -72,4 +87,63 @@ export const validateGvisorConfig = (): {
     }
   }
   return { valid: true }
+}
+
+/**
+ * Authentication error type
+ */
+export class AuthError extends Data.TaggedClass("AuthError")<{
+  readonly cause: "MissingApiKey" | "InvalidApiKey" | "AuthRequired"
+  readonly message: string
+}> {}
+
+/**
+ * Validate API key from request headers
+ *
+ * @param apiKey - API key from X-API-Key header
+ * @returns Validation result - true if auth valid, throws AuthError if invalid
+ *
+ * @remarks
+ * - If `SANDBOX_API_KEY` is empty (development), no auth required
+ * - If `SANDBOX_API_KEY` is set, the provided key must match exactly
+ * - Throws AuthError for missing or invalid keys
+ */
+export const validateApiKey = (apiKey: string | null): Effect.Effect<void, AuthError> => {
+  const expectedKey = SandboxConfig.apiKey
+
+  // No auth required in development
+  if (expectedKey === "") {
+    return Effect.void
+  }
+
+  // Auth required: check if key was provided
+  if (apiKey === null || apiKey === "") {
+    return Effect.fail(
+      new AuthError({
+        cause: "MissingApiKey",
+        message: "X-API-Key header is required",
+      }),
+    )
+  }
+
+  // Auth required: check if key matches
+  if (apiKey !== expectedKey) {
+    return Effect.fail(
+      new AuthError({
+        cause: "InvalidApiKey",
+        message: "Invalid API key",
+      }),
+    )
+  }
+
+  return Effect.void
+}
+
+/**
+ * Check if authentication is required
+ *
+ * @returns true if API key is configured and required
+ */
+export const isAuthRequired = (): boolean => {
+  return SandboxConfig.apiKey !== ""
 }

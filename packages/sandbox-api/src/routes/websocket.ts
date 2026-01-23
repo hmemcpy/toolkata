@@ -1,6 +1,7 @@
 import type { Server as HttpServer } from "node:http"
 import { Data, Effect } from "effect"
 import { WebSocketServer } from "ws"
+import { validateApiKey } from "../config.js"
 import type { SessionServiceShape } from "../services/session.js"
 import { type WebSocketServiceShape, parseMessage } from "../services/websocket.js"
 
@@ -36,8 +37,8 @@ export const createWebSocketServer = (
   const wss = new WebSocketServer({ noServer: true })
 
   // Handle WebSocket upgrade requests
-  httpServer.on("upgrade", (request, socket, head) => {
-    const { pathname } = new URL(request.url ?? "", `http://${request.headers.host}`)
+  httpServer.on("upgrade", async (request, socket, head) => {
+    const { pathname, searchParams } = new URL(request.url ?? "", `http://${request.headers.host}`)
 
     // Only handle /sessions/:id/ws paths
     if (!pathname?.startsWith("/sessions/")) {
@@ -47,6 +48,21 @@ export const createWebSocketServer = (
     const sessionId = getSessionId(pathname ?? "")
     if (!sessionId) {
       socket.write("HTTP/1.1 400 Bad Request\r\n\r\nInvalid session path\r\n")
+      socket.destroy()
+      return
+    }
+
+    // Validate API key before upgrading
+    // Check header first, then query parameter (for browser WebSocket fallback)
+    let apiKey = request.headers["x-api-key"] as string | null
+    if (!apiKey || apiKey === "") {
+      apiKey = searchParams.get("api_key")
+    }
+    const authResult = await Effect.runPromise(Effect.either(validateApiKey(apiKey)))
+    if (authResult._tag === "Left") {
+      const authError = authResult.left
+      const statusCode = authError.cause === "MissingApiKey" ? 401 : 401
+      socket.write(`HTTP/1.1 ${statusCode} Unauthorized\r\n\r\n${authError.message}\r\n`)
       socket.destroy()
       return
     }

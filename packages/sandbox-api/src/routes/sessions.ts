@@ -1,6 +1,7 @@
 import { Data, Effect } from "effect"
 import { Hono } from "hono"
 import type { Env } from "hono"
+import { AuthError, validateApiKey } from "../config.js"
 import type { RateLimitServiceShape } from "../services/rate-limit.js"
 import { RateLimitError } from "../services/rate-limit.js"
 import type { SessionServiceShape } from "../services/session.js"
@@ -21,6 +22,11 @@ export class HttpRouteError extends Data.TaggedClass("HttpRouteError")<{
   readonly statusCode: number
   readonly originalError?: unknown
 }> {}
+
+// Helper: Get API key from request headers
+const getApiKey = (request: Request): string | null => {
+  return request.headers.get("x-api-key")
+}
 
 // Request body types
 export interface CreateSessionRequest {
@@ -75,6 +81,13 @@ const getClientIp = (request: Request): string => {
 
 // Helper: Convert errors to HTTP responses
 const errorToResponse = (error: unknown): { statusCode: number; body: ErrorResponse } => {
+  if (error instanceof AuthError) {
+    return {
+      statusCode: 401,
+      body: { error: error.cause, message: error.message },
+    }
+  }
+
   if (error instanceof RateLimitError) {
     const bodyObj: {
       error: string
@@ -149,6 +162,14 @@ const createSessionRoutes = (
   // POST /sessions - Create a new session
   app.post("/sessions", async (c) => {
     try {
+      // Validate API key first
+      const apiKey = getApiKey(c.req.raw)
+      const authResult = await Effect.runPromise(Effect.either(validateApiKey(apiKey)))
+      if (authResult._tag === "Left") {
+        const { statusCode, body } = errorToResponse(authResult.left)
+        return c.json<ErrorResponse>(body, toStatusCode(statusCode))
+      }
+
       // Parse request body
       const body = (await c.req.json()) as CreateSessionRequest
       const toolPair = body?.toolPair
@@ -215,6 +236,14 @@ const createSessionRoutes = (
   // GET /sessions/:id - Get session status
   app.get("/sessions/:id", async (c) => {
     try {
+      // Validate API key first
+      const apiKey = getApiKey(c.req.raw)
+      const authResult = await Effect.runPromise(Effect.either(validateApiKey(apiKey)))
+      if (authResult._tag === "Left") {
+        const { statusCode, body } = errorToResponse(authResult.left)
+        return c.json<ErrorResponse>(body, toStatusCode(statusCode))
+      }
+
       const sessionId = c.req.param("id")
       if (!sessionId) {
         const error = new HttpRouteError({
@@ -244,6 +273,14 @@ const createSessionRoutes = (
   // DELETE /sessions/:id - Destroy a session
   app.delete("/sessions/:id", async (c) => {
     try {
+      // Validate API key first
+      const apiKey = getApiKey(c.req.raw)
+      const authResult = await Effect.runPromise(Effect.either(validateApiKey(apiKey)))
+      if (authResult._tag === "Left") {
+        const { statusCode, body } = errorToResponse(authResult.left)
+        return c.json<ErrorResponse>(body, toStatusCode(statusCode))
+      }
+
       const sessionId = c.req.param("id")
       if (!sessionId) {
         const error = new HttpRouteError({

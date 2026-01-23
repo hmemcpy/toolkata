@@ -529,12 +529,15 @@ Begin the audit by reading each file listed above and systematically evaluating 
   - User doesn't need sudo for git/jj operations
   - **Vulnerability**: V-001 (Critical) - FIXED
 
-- [ ] **8.2** Implement API authentication
-  - Location: `packages/sandbox-api/src/routes/sessions.ts`, `src/index.ts`
-  - Add shared secret authentication (X-API-Key header)
-  - Require SANDBOX_API_KEY in production
-  - Add `validateAuth()` function to session routes
-  - **Vulnerability**: V-002 (High)
+- [x] **8.2** Implement API authentication
+  - Location: `packages/sandbox-api/src/routes/sessions.ts`, `src/index.ts`, `src/config.ts`, `src/routes/websocket.ts`, `packages/web/services/sandbox-client.ts`
+  - Added `apiKey` config to `SandboxConfig` (empty string = no auth required in development)
+  - Created `AuthError` and `validateApiKey()` function in config.ts
+  - Added authentication to POST /sessions, GET /sessions/:id, DELETE /sessions/:id
+  - Added authentication to WebSocket upgrade handler (supports both header and query param)
+  - Updated frontend sandbox client to send `X-API-Key` header (or query param for WebSocket)
+  - Frontend reads `NEXT_PUBLIC_SANDBOX_API_KEY` env var
+  - **Vulnerability**: V-002 (High) - FIXED
 
 - [x] **8.3** Use cryptographically secure session IDs
   - Location: `packages/sandbox-api/src/services/session.ts` line 69-74
