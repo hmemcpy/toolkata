@@ -97,11 +97,11 @@ export function SideBySide({
   const leftLabel = isReversed ? toLabel : fromLabel
   const rightLabel = isReversed ? fromLabel : toLabel
   const leftBg = isReversed
-    ? "bg-[rgba(34, 197, 94, 0.05)]" // jj/green
-    : "bg-[rgba(249, 115, 22, 0.05)]" // git/orange
+    ? "bg-[rgba(57,217,108,0.08)]" // jj/green
+    : "bg-[rgba(255,176,0,0.08)]" // git/amber
   const rightBg = isReversed
-    ? "bg-[rgba(249, 115, 22, 0.05)]" // git/orange
-    : "bg-[rgba(34, 197, 94, 0.05)]" // jj/green
+    ? "bg-[rgba(255,176,0,0.08)]" // git/amber
+    : "bg-[rgba(57,217,108,0.08)]" // jj/green
 
   return (
     <div className="my-6 overflow-x-auto">
@@ -118,7 +118,9 @@ export function SideBySide({
             {leftCommands.map((cmd, i) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: Commands are static and order won't change
               <div key={i} className="mb-3 last:mb-0">
-                <code className="block text-sm text-[var(--color-text)]">{cmd}</code>
+                <code className="block text-sm text-[var(--color-text)] !bg-transparent !p-0">
+                  {cmd}
+                </code>
                 {leftComments[i] && (
                   <span className="mt-1 block text-xs text-[var(--color-text-muted)]">
                     {leftComments[i]}
@@ -158,7 +160,9 @@ export function SideBySide({
             {rightCommands.map((cmd, i) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: Commands are static and order won't change
               <div key={i} className="mb-3 last:mb-0">
-                <code className="block text-sm text-[var(--color-text)]">{cmd}</code>
+                <code className="block text-sm text-[var(--color-text)] !bg-transparent !p-0">
+                  {cmd}
+                </code>
                 {rightComments[i] && (
                   <span className="mt-1 block text-xs text-[var(--color-text-muted)]">
                     {rightComments[i]}

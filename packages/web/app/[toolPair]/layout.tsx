@@ -12,7 +12,7 @@ import { isValidPairingSlug } from "../../content/pairings"
  * This includes:
  * - Overview page: /jj-git
  * - Step pages: /jj-git/1, /jj-git/2, etc.
- * - Diff: /jj-git/diff
+ * - Cheat Sheet: /jj-git/cheatsheet
  *
  * Why a layout instead of per-page providers?
  * - Single provider instance for all pages in the toolPair section

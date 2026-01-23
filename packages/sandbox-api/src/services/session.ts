@@ -81,7 +81,6 @@ const isSessionExpired = (session: Session): boolean => {
   return idleTime >= TIMEOUTS.idle || lifetime >= TIMEOUTS.maxLifetime
 }
 
-
 // Service implementation
 const make = Effect.gen(function* () {
   const containerService = yield* ContainerService

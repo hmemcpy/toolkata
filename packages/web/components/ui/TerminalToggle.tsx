@@ -147,9 +147,7 @@ export function TerminalToggle({ className = "" }: TerminalToggleProps): ReactNo
       />
 
       {/* Keyboard shortcut hint (visible on focus) */}
-      <span className="sr-only group-focus/sr-only:not-sr-only">
-        Press T to toggle
-      </span>
+      <span className="sr-only group-focus/sr-only:not-sr-only">Press T to toggle</span>
     </button>
   )
 }

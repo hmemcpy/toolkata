@@ -19,7 +19,7 @@ describe("content service", () => {
       expect(step?.frontmatter.title).toBe("Installation & Setup")
       expect(step?.frontmatter.step).toBe(1)
       expect(step?.frontmatter.description).toBe(
-        "Installing jj and setting up a colocated repository"
+        "Installing jj and setting up a colocated repository",
       )
       expect(step?.frontmatter.gitCommands).toEqual(["git init", "git clone"])
       expect(step?.frontmatter.jjCommands).toEqual(["jj git init", "jj git clone"])
@@ -58,9 +58,7 @@ describe("content service", () => {
 
       expect(index).not.toBeNull()
       expect(index?.frontmatter.title).toBe("Why jj over git?")
-      expect(index?.frontmatter.description).toContain(
-        "Learn why jj (Jujutsu) is a safer"
-      )
+      expect(index?.frontmatter.description).toContain("Learn why jj (Jujutsu) is a safer")
       expect(index?.frontmatter.estimatedTime).toBe("~40 min")
     })
 
@@ -139,9 +137,7 @@ describe("content service", () => {
     it("handles step without optional description", async () => {
       // Find a step without description if one exists
       const steps = await listSteps("jj-git")
-      const stepWithoutDescription = steps.find(
-        (s) => s.frontmatter.description === undefined
-      )
+      const stepWithoutDescription = steps.find((s) => s.frontmatter.description === undefined)
 
       // If such a step exists, verify it loads correctly
       if (stepWithoutDescription !== undefined) {

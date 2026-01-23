@@ -183,20 +183,23 @@ export function MobileBottomSheet({ toolPair }: MobileBottomSheetProps): ReactNo
     }
   }, [])
 
-  const handleTouchMove = useCallback((event: React.TouchEvent) => {
-    if (!isDragging) return
+  const handleTouchMove = useCallback(
+    (event: React.TouchEvent) => {
+      if (!isDragging) return
 
-    const touch = event.touches[0]
-    if (touch) {
-      const deltaY = touch.clientY - startY
+      const touch = event.touches[0]
+      if (touch) {
+        const deltaY = touch.clientY - startY
 
-      // Only track downward swipes
-      if (deltaY > 0) {
-        setCurrentY(deltaY)
-        event.preventDefault()
+        // Only track downward swipes
+        if (deltaY > 0) {
+          setCurrentY(deltaY)
+          event.preventDefault()
+        }
       }
-    }
-  }, [isDragging, startY])
+    },
+    [isDragging, startY],
+  )
 
   const handleTouchEnd = useCallback(() => {
     if (!isDragging) return

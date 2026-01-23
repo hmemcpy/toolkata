@@ -33,6 +33,8 @@ export interface ToolPairing {
   readonly from: {
     readonly name: string
     readonly description: string
+    readonly color?: string
+    readonly icon?: string
   }
 
   /**
@@ -41,6 +43,8 @@ export interface ToolPairing {
   readonly to: {
     readonly name: string
     readonly description: string
+    readonly color?: string
+    readonly icon?: string
   }
 
   /**
@@ -80,10 +84,14 @@ export const toolPairings = [
     from: {
       name: "git",
       description: "Distributed VCS",
+      color: "#f05032",
+      icon: "git-branch",
     },
     to: {
       name: "jj",
-      description: "Jujutsu VCS",
+      description: "jj for git experts",
+      color: "#39d96c",
+      icon: "arrows-clockwise",
     },
     category: "Version Control" as const,
     steps: 12,

@@ -1,6 +1,14 @@
 "use client"
 
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react"
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react"
 import type { TerminalState } from "../components/ui/InteractiveTerminal"
 
 // Re-export TerminalState from InteractiveTerminal for convenience
@@ -246,7 +254,16 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       executeCommand,
       registerTerminal,
     }),
-    [state, isOpen, sessionTimeRemaining, openSidebar, closeSidebar, toggleSidebar, executeCommand, registerTerminal],
+    [
+      state,
+      isOpen,
+      sessionTimeRemaining,
+      openSidebar,
+      closeSidebar,
+      toggleSidebar,
+      executeCommand,
+      registerTerminal,
+    ],
   )
 
   return <TerminalContext.Provider value={value}>{children}</TerminalContext.Provider>

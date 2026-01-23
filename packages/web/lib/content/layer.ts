@@ -5,11 +5,7 @@
  * Used by page components to load MDX content.
  */
 
-import {
-  CacheServiceLive,
-  ContentConfigLive,
-  ContentServiceLive,
-} from "../content-core"
+import { CacheServiceLive, ContentConfigLive, ContentServiceLive } from "../content-core"
 import { Layer } from "effect"
 
 /**

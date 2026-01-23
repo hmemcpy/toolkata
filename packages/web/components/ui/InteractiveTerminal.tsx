@@ -258,10 +258,10 @@ function StaticModeContent({ toolPair, onTryInteractive }: StaticModeContentProp
           Interactive sandbox unavailable. Copy commands to try locally.
         </p>
         <a
-          href={`/${toolPair}/diff`}
+          href={`/${toolPair}/cheatsheet`}
           className="text-sm text-[var(--color-accent)] transition-colors hover:text-[var(--color-accent-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
         >
-          View diff →
+          Cheat Sheet →
         </a>
       </div>
 
@@ -359,7 +359,14 @@ function StaticModeContent({ toolPair, onTryInteractive }: StaticModeContentProp
  */
 export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, InteractiveTerminalProps>(
   function InteractiveTerminal(
-    { toolPair, stepId: _stepId, onCommandInsert, preloadCommands = [], onStateChange, onSessionTimeChange }: InteractiveTerminalProps,
+    {
+      toolPair,
+      stepId: _stepId,
+      onCommandInsert,
+      preloadCommands = [],
+      onStateChange,
+      onSessionTimeChange,
+    }: InteractiveTerminalProps,
     ref,
   ) {
     const terminalRef = useRef<HTMLDivElement>(null)

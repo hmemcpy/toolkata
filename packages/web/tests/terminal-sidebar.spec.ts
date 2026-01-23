@@ -23,7 +23,9 @@ test.describe("Terminal Sidebar - Desktop", () => {
     await page.goto("/jj-git/1")
 
     // Terminal toggle button should be visible
-    const toggleButton = page.locator('button[aria-label*="Open terminal"], button[aria-label*="Terminal connected"]')
+    const toggleButton = page.locator(
+      'button[aria-label*="Open terminal"], button[aria-label*="Terminal connected"]',
+    )
     await expect(toggleButton).toBeVisible()
 
     // Button should be fixed in bottom-right
@@ -225,7 +227,9 @@ test.describe("Terminal Sidebar - Desktop", () => {
     // Toggle button should be hidden (component returns null)
     // The button in the DOM should be gone (TerminalToggle returns null when isOpen)
     // Check that we can't find a visible toggle button with that aria-controls
-    const visibleToggle = page.locator('button[aria-controls="terminal-sidebar"]').filter({ hasText: /terminal/i })
+    const visibleToggle = page
+      .locator('button[aria-controls="terminal-sidebar"]')
+      .filter({ hasText: /terminal/i })
     const isVisible = await visibleToggle.isVisible().catch(() => false)
     expect(isVisible).toBe(false)
   })
