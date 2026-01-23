@@ -668,10 +668,18 @@ Begin the audit by reading each file listed above and systematically evaluating 
   - Only allow ports 80, 443, and 22 from specific IPs
   - **Vulnerability**: V-014 (Low)
 
-- [ ] **8.16** Enable unattended-upgrades
+- [x] **8.16** Enable unattended-upgrades
   - Location: `scripts/hetzner/provision.sh`
   - Automatic security patches
-  - **Vulnerability**: V-013 (Low)
+  - **DONE**:
+    * Added unattended-upgrades installation
+    * Configured /etc/apt/apt.conf.d/50unattended-upgrades for security repo only
+    * Configured /etc/apt/apt.conf.d/20auto-upgrades for daily update checks
+    * Enabled systemd timer service
+    * Auto-cleanup of unused dependencies and kernel packages enabled
+    * Email alerts on error (requires mail setup, configured but won't send)
+    * Auto-reboot disabled by default (can be enabled if needed)
+  - **Vulnerability**: V-013 (Low) - FIXED
 
 - [ ] **8.17** Configure log rotation
   - Location: `packages/sandbox-api/deploy/sandbox-api.service`

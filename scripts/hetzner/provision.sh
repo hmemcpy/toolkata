@@ -188,6 +188,57 @@ curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /
 apt-get update
 apt-get install -y caddy
 
+echo "=== Installing unattended-upgrades for automatic security patches ==="
+apt-get install -y unattended-upgrades
+
+# Configure unattended-upgrades
+cat > /etc/apt/apt.conf.d/50unattended-upgrades << 'EOF'
+Unattended-Upgrade::Allowed-Origins {
+    "${distro_id}:${distro_codename}";
+    "${distro_id}:${distro_codename}-security";
+    // "${distro_id}:${distro_codename}-updates";
+    // "${distro_id}:${distro_codename}-proposed";
+    // "${distro_id}:${distro_codename}-backports";
+};
+
+// Auto clean unused dependencies
+Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
+Unattended-Upgrade::Remove-Unused-Dependencies "true";
+Unattended-Upgrade::AutoFixInterruptedDpkg "true";
+
+// Send email to root on errors (requires mail setup)
+Unattended-Upgrade::Mail "root";
+Unattended-Upgrade::MailOnlyOnError "true";
+
+// Reboot automatically if needed (set to "true" to enable)
+Unattended-Upgrade::Automatic-Reboot "false";
+Unattended-Upgrade::Automatic-Reboot-Time "02:00";
+
+// Log all upgrades
+Unattended-Upgrade::Verbose "false";
+Unattended-Upgrade::Debug "false";
+EOF
+
+# Enable auto-updates via apt-periodic
+cat > /etc/apt/apt.conf.d/20auto-upgrades << 'EOF'
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Download-Upgradeable-Packages "1";
+APT::Periodic::AutocleanInterval "7";
+APT::Periodic::Unattended-Upgrade "1";
+// Check for updates daily
+APT::Periodic::Update-Package-Lists "1";
+// Download upgrades daily
+APT::Periodic::Download-Upgradeable-Packages "1";
+// Install upgrades daily
+APT::Periodic::Unattended-Upgrade "1";
+// Clean apt cache weekly
+APT::Periodic::AutocleanInterval "7";
+EOF
+
+# Enable and start unattended-upgrades timer
+systemctl enable unattended-upgrades
+systemctl start unattended-upgrades
+
 echo "=== Installing fail2ban for SSH protection ==="
 apt-get install -y fail2ban
 
