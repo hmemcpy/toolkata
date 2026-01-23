@@ -8,42 +8,80 @@
 
 ## Executive Summary
 
-The toolkata sandbox system demonstrates **strong security fundamentals** with multiple defense-in-depth layers including gVisor kernel isolation, network-less containers, rate limiting, and proper capability dropping. However, several **medium and high severity issues** were identified that should be addressed before production use.
+The toolkata sandbox system demonstrates **strong security fundamentals** with multiple defense-in-depth layers including gVisor kernel isolation, network-less containers, rate limiting, and proper capability dropping.
 
-**Key Findings**:
-- 1 Critical severity issue
-- 2 High severity issues
-- 9 Medium severity issues
-- 8 Low severity issues
+**Remediation Status** (as of 2026-01-23):
+- ✅ 17 of 20 findings fixed
+- ⚠️ 3 findings open (accepted risk or needs testing)
 
-**Overall Posture**: Production-viable with immediate remediation of Critical/High issues.
+**Key Improvements Implemented**:
+- API authentication with configurable keys
+- Service runs as dedicated `sandboxapi` user (not root)
+- gVisor enforced in production
+- Caddy route allowlist (only /health and /api/v1/*)
+- Input sanitization, message size limits, connection limits
+- Comprehensive audit logging
+
+**Overall Posture**: Production-ready for educational use.
 
 ---
 
 ## Findings Table
 
-| ID | Severity | Category | Title | File:Line | Description | Recommendation |
-|----|----------|----------|-------|-----------|-------------|----------------|
-| V-001 | **Critical** | Container Isolation | User in sudo group without password | docker/Dockerfile:28-29 | Container user `sandbox` is added to sudo group. While sudo requires password by default, this is unnecessary privilege escalation surface. | Remove `usermod -aG sudo sandbox` - user doesn't need sudo access for git/jj operations |
-| V-002 | **High** | API Security | No authentication/authorization on API | src/index.ts:80-88, routes/sessions.ts | Anyone who can reach the API can create containers and execute commands. No API keys, tokens, or origin validation beyond CORS. | Implement API key authentication for production. Use shared secret or JWT between frontend and backend. |
-| V-003 | **High** | Infrastructure | Root SSH access without rate limiting | scripts/hetzner/provision.sh:134 | SSH on port 22 allows root login with SSH key. No fail2ban or rate limiting. | Install fail2ban, consider non-standard SSH port, require bastion host for production |
-| V-004 | **Medium** | Container Isolation | No gVisor runtime enforcement | src/services/container.ts:174-176 | gVisor is installed but runtime is conditionally added. If `SANDBOX_USE_GVISOR=false` is set, containers run with runc (less isolation). | Force gVisor in production by removing environment variable toggle or validating in production mode |
-| V-005 | **Medium** | Rate Limiting | IP-based rate limiting bypassable | src/services/rate-limit.ts:54-74 | Rate limits tracked per IP. Attackers can use proxies/VPNs to bypass. No device fingerprinting or account-based limits. | Add CAPTCHA for high-volume requests. Implement account-based limits for authenticated users. |
-| V-006 | **Medium** | Command Injection | No input sanitization on WebSocket | src/routes/websocket.ts:109-141 | WebSocket input is written directly to container exec stream without validation. | Implement allowlist for terminal input. Reject control characters and shell metacharacters. |
-| V-007 | **Medium** | DoS | No connection limits per IP | src/index.ts:142-198 | No limit on concurrent WebSocket connections per IP. Each connection spawns a container. | Add max concurrent connections per IP (enforce in rate-limit service) |
-| V-008 | **Medium** | Session Management | Session IDs guessable | src/services/session.ts:69-73 | Session IDs use `timestamp` + `random(6 chars)` - only ~36^6 = ~2B combinations, not cryptographically secure. | Use crypto.randomBytes(16) encoded as hex for session IDs (128-bit entropy) |
-| V-009 | **Medium** | Error Handling | Errors leak internal information | routes/sessions.ts:77-133 | Error messages include container IDs, internal state details. | Sanitize error messages before returning to clients. Use generic messages for unexpected errors. |
-| V-010 | **Medium** | Container Cleanup | No timeout on container destroy | src/services/container.ts:213-244 | Container destroy has no timeout - could hang indefinitely. | Add timeout to container.kill() and container.remove() operations |
-| V-011 | **Medium** | WebSocket Security | No message size limits | src/routes/websocket.ts:109 | WebSocket messages have no size limit - could cause memory exhaustion. | Add max message size limit (e.g., 1KB for terminal input) |
-| V-012 | **Medium** | Frontend Integration | WebSocket URL constructed from env | services/sandbox-client.ts:164-174 | WebSocket URL uses `process.env.NEXT_PUBLIC_SANDBOX_API_URL` without validation. | Validate URL format and protocol (ws/wss) before constructing WebSocket |
-| V-013 | **Low** | Infrastructure | No automated security updates | scripts/hetzner/provision.sh | Ubuntu packages installed but no unattended-upgrades configured. | Enable unattended-upgrades for automatic security patches |
-| V-014 | **Low** | Infrastructure | No firewall configuration | scripts/hetzner/provision.sh | Hetzner server has no explicit firewall (ufw/iptables) configured. | Configure ufw to only allow necessary ports (80, 443, 22 from specific IPs) |
-| V-015 | **Low** | Infrastructure | No disk space monitoring | deploy/sandbox-api.service | Container images and logs could fill disk - no monitoring or log rotation. | Add logrotate, configure Docker log size limits, set up disk space alerts |
-| V-016 | **Low** | Container Isolation | tmpfs size not enforced | src/services/container.ts:47-49 | tmpfs size is configured but Docker may not enforce strictly on all platforms. | Verify tmpfs limits work as expected. Add disk quota enforcement if needed. |
-| V-017 | **Low** | API Security | CORS allows arbitrary origin | src/index.ts:80-88 | CORS origin from config but no validation against whitelist. | Validate origin against explicit whitelist in production |
-| V-018 | **Low** | API Security | No API versioning | src/index.ts, routes/ | No version prefix on routes - breaking changes will affect all clients. | Add `/api/v1` prefix to all routes before public release |
-| V-019 | **Low** | Operational Security | No audit logging | - | No logging of who created sessions, what commands were run. | Add structured logging (session ID, IP, timestamp, action) for security audits |
-| V-020 | **Low** | WebSocket Security | No Origin header validation | src/routes/websocket.ts:39-58 | WebSocket upgrade doesn't validate Origin header - CSRF risk. | Validate Origin header matches expected frontend origin |
+| ID | Severity | Category | Title | Status |
+|----|----------|----------|-------|--------|
+| V-001 | **Critical** | Container Isolation | User in sudo group without password | ✅ FIXED |
+| V-002 | **High** | API Security | No authentication/authorization on API | ✅ FIXED |
+| V-003 | **High** | Infrastructure | Root SSH access without rate limiting | ✅ FIXED |
+| V-004 | **Medium** | Container Isolation | No gVisor runtime enforcement | ✅ FIXED |
+| V-005 | **Medium** | Rate Limiting | IP-based rate limiting bypassable | ⚠️ OPEN (accepted risk) |
+| V-006 | **Medium** | Command Injection | No input sanitization on WebSocket | ✅ FIXED |
+| V-007 | **Medium** | DoS | No connection limits per IP | ✅ FIXED |
+| V-008 | **Medium** | Session Management | Session IDs guessable | ✅ FIXED |
+| V-009 | **Medium** | Error Handling | Errors leak internal information | ✅ FIXED |
+| V-010 | **Medium** | Container Cleanup | No timeout on container destroy | ✅ FIXED |
+| V-011 | **Medium** | WebSocket Security | No message size limits | ✅ FIXED |
+| V-012 | **Medium** | Frontend Integration | WebSocket URL constructed from env | ⚠️ OPEN (low risk) |
+| V-013 | **Low** | Infrastructure | No automated security updates | ✅ FIXED |
+| V-014 | **Low** | Infrastructure | No firewall configuration | ✅ FIXED |
+| V-015 | **Low** | Infrastructure | No disk space monitoring | ✅ FIXED |
+| V-016 | **Low** | Container Isolation | tmpfs size not enforced | ⚠️ OPEN (needs testing) |
+| V-017 | **Low** | API Security | CORS allows arbitrary origin | ✅ FIXED |
+| V-018 | **Low** | API Security | No API versioning | ✅ FIXED |
+| V-019 | **Low** | Operational Security | No audit logging | ✅ FIXED |
+| V-020 | **Low** | WebSocket Security | No Origin header validation | ✅ FIXED |
+
+### Remediation Summary
+
+**Fixed (17/20):**
+- V-001: Removed sudo group from container user
+- V-002: API key authentication implemented
+- V-003: fail2ban configured for SSH
+- V-004: gVisor enforced in production mode
+- V-006: Terminal input sanitization (escape sequences, control chars)
+- V-007: Per-IP WebSocket connection limits (max 3)
+- V-008: Cryptographic session IDs (128-bit entropy)
+- V-009: Sanitized error messages
+- V-010: Container destroy timeout (10s)
+- V-011: WebSocket message size limit (1KB)
+- V-013: unattended-upgrades enabled
+- V-014: ufw firewall configured
+- V-015: Log rotation configured (Docker + app logs)
+- V-017: CORS origin whitelist
+- V-018: API versioning (/api/v1)
+- V-019: Structured audit logging
+- V-020: WebSocket Origin header validation
+
+**Additional Hardening (not in original audit):**
+- sandbox-api runs as dedicated `sandboxapi` user (not root)
+- Caddy route allowlist (only /health and /api/v1/*)
+- Security headers (X-Frame-Options, X-Content-Type-Options, etc.)
+- Server header removed
+
+**Open (3/20):**
+- V-005: IP-based rate limiting bypassable - accepted risk for MVP
+- V-012: WebSocket URL validation - low risk, frontend-only
+- V-016: tmpfs size enforcement - needs production testing
 
 ---
 
@@ -59,10 +97,10 @@ The toolkata sandbox system demonstrates **strong security fundamentals** with m
 
 #### Firewall Configuration
 - **File**: `scripts/hetzner/provision.sh`
-- **Status**: ⚠️ NEEDS IMPROVEMENT (V-014)
-- No explicit firewall rules configured
-- Hetzner's default firewall allows all inbound traffic
-- **Recommendation**: Configure ufw to restrict to ports 80, 443, and 22 from specific IPs
+- **Status**: ✅ FIXED (V-014)
+- ufw configured with deny-by-default policy
+- Only ports 22 (rate-limited), 80, and 443 allowed
+- Docker bridge networks allowed for container communication
 
 #### systemd Service Hardening
 - **File**: `packages/sandbox-api/deploy/sandbox-api.service`
@@ -92,16 +130,17 @@ The toolkata sandbox system demonstrates **strong security fundamentals** with m
 
 #### Secret Management
 - **File**: `scripts/hetzner/provision.sh`, `deploy.sh`
-- **Status**: ⚠️ NEEDS IMPROVEMENT (V-003)
-- No secrets needed for current architecture (good!)
-- Server IP stored in `sandbox.env` (committed to git)
-- **Recommendation**: Use environment variables or secret management for sensitive config
+- **Status**: ✅ IMPROVED
+- API key stored in `/opt/sandbox-api/.env` with restricted permissions (0600)
+- fail2ban configured for SSH protection (V-003 FIXED)
+- Server IP in `sandbox.env` is not sensitive (public DNS)
 
 #### Server Update Strategy
 - **File**: `scripts/hetzner/provision.sh`
-- **Status**: ⚠️ NEEDS IMPROVEMENT (V-013)
-- Initial `apt-get update` but no ongoing security update mechanism
-- **Recommendation**: Enable unattended-upgrades
+- **Status**: ✅ FIXED (V-013)
+- unattended-upgrades enabled for automatic security patches
+- Configured for security repository only
+- Daily update checks enabled
 
 ---
 
@@ -206,43 +245,15 @@ if (isProduction && !SandboxConfig.useGvisor) {
 ### 3. API Security
 
 #### Authentication/Authorization
-- **File**: `src/index.ts`, `routes/sessions.ts`
-- **Status**: ❌ **CRITICAL GAP** (V-002)
+- **File**: `src/index.ts`, `routes/sessions.ts`, `src/config.ts`
+- **Status**: ✅ FIXED (V-002)
 
-**Current State**:
-- No authentication required
-- No API keys
-- No authorization checks
-- CORS is only access control
-
-**Risk**: Anyone who can reach the API endpoint can:
-- Create unlimited containers (subject to rate limiting)
-- Execute arbitrary commands in containers
-- Exhaust server resources
-
-**Recommendation**: Implement at least one of:
-1. **Shared Secret**: Frontend sends `X-API-Key` header
-2. **JWT**: Short-lived tokens signed with shared secret
-3. **Mutual TLS**: Client certificate validation
-
-Example implementation:
-```typescript
-// Add to routes/sessions.ts
-const API_KEY = process.env.SANDBOX_API_KEY
-const validateAuth = (request: Request) => {
-  const key = request.headers.get("X-API-Key")
-  if (!key || key !== API_KEY) {
-    throw new HttpRouteError({
-      cause: "Unauthorized",
-      message: "Invalid or missing API key",
-      statusCode: 401,
-    })
-  }
-}
-
-// In POST /sessions:
-validateAuth(c.req.raw)
-```
+**Implementation**:
+- API key authentication via `X-API-Key` header
+- WebSocket supports both header and query param for auth
+- Empty API key in development allows unauthenticated access
+- Production requires `SANDBOX_API_KEY` environment variable
+- Frontend sends key from `NEXT_PUBLIC_SANDBOX_API_KEY`
 
 #### Rate Limiting
 - **File**: `src/services/rate-limit.ts`
@@ -454,15 +465,11 @@ maxConcurrentConnections: 3 // per IP
 ### 6. Operational Security
 
 #### Monitoring & Alerting
-- **Status**: ❌ NOT IMPLEMENTED (V-019)
-- No structured logging
-- No alerting on suspicious activity
-- No metrics collection
-
-**Recommendation**:
-- Add structured logging (pino, winston)
-- Log: session creation, commands run, errors, rate limit hits
-- Set up alerts for: high failure rates, unusual patterns, resource exhaustion
+- **Status**: ✅ FIXED (V-019)
+- Structured audit logging implemented via `AuditService`
+- Logs: session creation/destruction, auth failures, rate limit hits
+- Logs: WebSocket connect/disconnect, input validation failures
+- JSON format for easy parsing by log aggregators
 
 #### Incident Response
 - **Status**: ⚠️ BASIC
@@ -477,10 +484,10 @@ maxConcurrentConnections: 3 // per IP
 - WebSocket connection triggers cleanup
 
 #### Log Retention
-- **Status**: ⚠️ NEEDS IMPROVEMENT (V-015)
-- Caddy logs configured (100MB roll, keep 5)
-- No application log rotation
-- **Recommendation**: Configure journald log rotation
+- **Status**: ✅ FIXED (V-015)
+- Docker log rotation: 10MB max, 3 files
+- Application logrotate: daily, 30 days retention, gzip compression
+- Caddy logs: 100MB roll, keep 5
 
 #### Cost Controls
 - **Status**: ✅ GOOD
@@ -518,15 +525,10 @@ maxConcurrentConnections: 3 // per IP
 - **Recommendation**: Add Docker health check for container monitoring
 
 #### Version Compatibility
-- **Status**: ⚠️ NEEDS IMPROVEMENT (V-018)
-- No API versioning
-- Breaking changes will require coordinated deployment
-
-**Recommendation**:
-```typescript
-// Add version prefix to routes
-app.route("/api/v1/sessions", sessionRoutes)
-```
+- **Status**: ✅ FIXED (V-018)
+- All routes prefixed with `/api/v1`
+- WebSocket endpoint: `/api/v1/sessions/:id/ws`
+- Health endpoint remains at `/health` (no version needed)
 
 ---
 
@@ -656,13 +658,21 @@ app.route("/api/v1/sessions", sessionRoutes)
 
 The toolkata sandbox system demonstrates **strong security fundamentals** with defense-in-depth layers including gVisor kernel isolation, network-less containers, capability dropping, and rate limiting. The container isolation is particularly well-designed.
 
-However, **immediate action is required** on:
-- Container user privilege reduction (V-001)
-- API authentication implementation (V-002)
-- Session ID randomness improvement (V-008)
+**All Critical and High severity issues have been remediated**:
+- ✅ V-001: Container user no longer in sudo group
+- ✅ V-002: API authentication implemented
+- ✅ V-003: fail2ban configured for SSH protection
 
-After addressing the Critical and High severity issues, the system will be **production-ready** for educational use. The Medium and Low severity issues should be addressed incrementally to further harden the system.
+**Additional hardening beyond original audit**:
+- Service runs as dedicated `sandboxapi` user (not root)
+- Caddy configured with strict route allowlist
+- Security headers added (X-Frame-Options, X-Content-Type-Options, etc.)
 
-**Overall Risk Assessment**: Medium-High (before remediation), Medium (after Critical/High fixes)
+**Remaining open items** (3/20):
+- V-005: IP-based rate limiting bypassable - accepted risk, would need CAPTCHA
+- V-012: WebSocket URL validation - low risk, frontend-only issue
+- V-016: tmpfs size enforcement - needs production load testing
 
-**Recommendation**: Address Critical/High issues before public production launch. Consider staging environment for penetration testing.
+**Overall Risk Assessment**: Low (after remediation)
+
+**Recommendation**: System is production-ready for educational use. Consider penetration testing before handling sensitive data.
