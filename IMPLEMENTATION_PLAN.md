@@ -536,11 +536,11 @@ Begin the audit by reading each file listed above and systematically evaluating 
   - Add `validateAuth()` function to session routes
   - **Vulnerability**: V-002 (High)
 
-- [ ] **8.3** Use cryptographically secure session IDs
-  - Location: `packages/sandbox-api/src/services/session.ts` line 69-73
-  - Replace `Math.random()` with `crypto.randomBytes(16)`
-  - Use 128-bit entropy (hex encoded)
-  - **Vulnerability**: V-008 (Medium but easy fix)
+- [x] **8.3** Use cryptographically secure session IDs
+  - Location: `packages/sandbox-api/src/services/session.ts` line 69-74
+  - Replaced `Math.random()` with `crypto.randomBytes(16)`
+  - Using 128-bit entropy (hex encoded)
+  - **Vulnerability**: V-008 (Medium) - FIXED
 
 #### Priority 2: High (Do within first week)
 

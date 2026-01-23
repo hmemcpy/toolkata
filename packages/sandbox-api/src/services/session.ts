@@ -1,4 +1,5 @@
 import { Context, Data, Effect, Layer, MutableHashMap, Option, Ref } from "effect"
+import { randomBytes } from "node:crypto"
 import { ContainerService } from "./container.js"
 
 // Session states
@@ -65,11 +66,11 @@ interface SessionStore {
   readonly sessions: MutableHashMap.MutableHashMap<string, Session>
 }
 
-// Helper: Generate unique session ID
+// Helper: Generate unique session ID with 128-bit entropy
 const generateSessionId = (): string => {
-  const timestamp = Date.now().toString(36)
-  const random = Math.random().toString(36).substring(2, 10)
-  return `sess_${timestamp}_${random}`
+  const bytes = randomBytes(16)
+  const random = bytes.toString("hex")
+  return `sess_${random}`
 }
 
 // Helper: Check if session is expired
