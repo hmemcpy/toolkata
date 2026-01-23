@@ -2,6 +2,7 @@ import type { Server as HttpServer } from "node:http"
 import { Data, Effect } from "effect"
 import { WebSocketServer } from "ws"
 import { validateApiKey, validateMessageSize, validateOrigin, validateTerminalInput } from "../config.js"
+import type { AuditServiceShape } from "../services/audit.js"
 import type { SessionServiceShape } from "../services/session.js"
 import type { RateLimitServiceShape } from "../services/rate-limit.js"
 import { type WebSocketServiceShape, parseMessage } from "../services/websocket.js"
@@ -35,6 +36,7 @@ export const createWebSocketServer = (
   sessionService: SessionServiceShape,
   webSocketService: WebSocketServiceShape,
   rateLimitService: RateLimitServiceShape, // V-007: Add rate limit service
+  auditService: AuditServiceShape, // V-019: Add audit service
 ) => {
   const wss = new WebSocketServer({ noServer: true })
 
@@ -53,6 +55,9 @@ export const createWebSocketServer = (
       socket.destroy()
       return
     }
+
+    // Extract client IP early for logging
+    const clientIp = (request.socket.remoteAddress ?? "unknown").replace(/^::ffff:/, "")
 
     // Validate Origin header to prevent CSRF attacks
     const originHeader = request.headers["origin"] as string | null
@@ -74,6 +79,8 @@ export const createWebSocketServer = (
     const authResult = await Effect.runPromise(Effect.either(validateApiKey(apiKey)))
     if (authResult._tag === "Left") {
       const authError = authResult.left
+      // Log auth failure
+      await Effect.runPromise(auditService.logAuthFailure(authError.cause, clientIp, sessionId))
       const statusCode = authError.cause === "MissingApiKey" ? 401 : 401
       socket.write(`HTTP/1.1 ${statusCode} Unauthorized\r\n\r\n${authError.message}\r\n`)
       socket.destroy()
@@ -81,12 +88,13 @@ export const createWebSocketServer = (
     }
 
     // V-007: Check WebSocket connection limit per IP
-    const clientIp = (request.socket.remoteAddress ?? "unknown").replace(/^::ffff:/, "") // Strip IPv6 prefix
     const wsLimitResult = await Effect.runPromise(
       Effect.either(rateLimitService.checkWebSocketLimit(clientIp)),
     )
     if (wsLimitResult._tag === "Left") {
       const wsLimitError = wsLimitResult.left
+      // Log rate limit hit
+      await Effect.runPromise(auditService.logRateLimitHit("websocket", clientIp, 3, "concurrent"))
       console.error(
         `[WebSocket] Connection limit exceeded for ${clientIp}: ${wsLimitError.message}`,
       )
@@ -95,6 +103,8 @@ export const createWebSocketServer = (
       return
     }
     if (!wsLimitResult.right.allowed) {
+      // Log rate limit hit
+      await Effect.runPromise(auditService.logRateLimitHit("websocket", clientIp, 3, "concurrent"))
       console.error(`[WebSocket] Connection limit exceeded for ${clientIp}`)
       socket.write("HTTP/1.1 429 Too Many Requests\r\n\r\nToo many concurrent connections\r\n")
       socket.destroy()
@@ -120,7 +130,7 @@ export const createWebSocketServer = (
       ;(ws as unknown as Record<string, unknown>).__connectionId = connectionId
       ;(ws as unknown as Record<string, unknown>).__clientIp = clientIp
 
-      wss.emit("connection", ws, request, sessionId, connectionId, clientIp, rateLimitService)
+      wss.emit("connection", ws, request, sessionId, connectionId, clientIp, rateLimitService, auditService)
     })
   })
 
@@ -134,6 +144,7 @@ export const createWebSocketServer = (
       connectionId: string, // V-007: Connection ID for rate limit tracking
       clientIp: string, // V-007: Client IP for rate limit tracking
       rateLimitService: RateLimitServiceShape, // V-007: Rate limit service for cleanup
+      auditService: AuditServiceShape, // V-019: Audit service for logging
     ) => {
       console.log(`[WebSocket] Connection attempt for session: ${sessionId}`)
 
@@ -175,6 +186,14 @@ export const createWebSocketServer = (
         })
 
         console.log(`[WebSocket] Connected for session: ${sessionId}`)
+        // Log WebSocket connection success (fire and forget - don't block connection setup)
+        Effect.runPromise(
+          auditService.log("info", "websocket.connected", `WebSocket connected for session: ${sessionId}`, {
+            sessionId,
+            clientIp,
+            connectionId,
+          }),
+        )
 
         // Set up message handler from client - use captured service values
         ws.on("message", async (data: Buffer) => {
@@ -213,6 +232,10 @@ export const createWebSocketServer = (
             const sanitizeResult = await Effect.runPromise(Effect.either(validateTerminalInput(message.data)))
             if (sanitizeResult._tag === "Left") {
               const sanitizeError = sanitizeResult.left
+              // Log invalid input
+              await Effect.runPromise(
+                auditService.logInputInvalid(sessionId, clientIp, sanitizeError.cause, message.data),
+              )
               console.error(
                 `[WebSocket] Input sanitization failed for ${sessionId}: ${sanitizeError.message} (input: ${JSON.stringify(sanitizeError.input)})`,
               )
@@ -253,6 +276,13 @@ export const createWebSocketServer = (
         // Handle connection close
         ws.on("close", async () => {
           console.log(`[WebSocket] Disconnected: ${sessionId}`)
+          // Log WebSocket disconnection
+          await Effect.runPromise(
+            auditService.log("info", "websocket.disconnected", `WebSocket disconnected for session: ${sessionId}`, {
+              sessionId,
+              clientIp,
+            }),
+          )
           connections.delete(sessionId)
 
           // Run cleanup
@@ -275,6 +305,14 @@ export const createWebSocketServer = (
       if (result._tag === "Left") {
         const error = result.left
         console.error(`[WebSocket] Connection failed for ${sessionId}:`, error.message)
+        // Log WebSocket connection failure
+        await Effect.runPromise(
+          auditService.logError("websocket", `WebSocket connection failed: ${error.message}`, {
+            sessionId,
+            clientIp,
+            error: error.cause,
+          }),
+        )
 
         // Send error message and close
         if (ws.readyState === ws.OPEN) {

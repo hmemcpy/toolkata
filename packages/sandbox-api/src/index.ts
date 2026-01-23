@@ -10,6 +10,7 @@ import type { Env } from "hono"
 import { cors } from "hono/cors"
 import { createSessionRoutes } from "./routes/sessions.js"
 import { closeAllConnections, createWebSocketServer } from "./routes/websocket.js"
+import { AuditService, AuditServiceLive, type AuditServiceShape } from "./services/audit.js"
 import { ContainerServiceLive, DockerClientLive, checkGvisorAvailable } from "./services/container.js"
 import {
   RateLimitService,
@@ -73,6 +74,7 @@ const createApp = (
   _config: ServerConfig,
   sessionService: SessionServiceShape,
   rateLimitService: RateLimitServiceShape,
+  auditService: AuditServiceShape,
 ) => {
   const app = new Hono<{ Bindings: Env }>()
 
@@ -134,7 +136,7 @@ const createApp = (
   })
 
   // Mount session routes under /api/v1
-  app.route("/api/v1", createSessionRoutes(sessionService, rateLimitService))
+  app.route("/api/v1", createSessionRoutes(sessionService, rateLimitService, auditService))
 
   return app
 }
@@ -145,9 +147,10 @@ const make = Effect.gen(function* () {
   const sessionService = yield* SessionService
   const rateLimitService = yield* RateLimitService
   const webSocketService = yield* WebSocketService
+  const auditService = yield* AuditService
 
   let httpServer: NodeHttpServer | null = null
-  const app = createApp(config, sessionService, rateLimitService)
+  const app = createApp(config, sessionService, rateLimitService, auditService)
 
   const start = Effect.sync(() => {
     // Store session service reference for health checks
@@ -196,7 +199,7 @@ const make = Effect.gen(function* () {
     })
 
     // Attach WebSocket server to HTTP server with services for connection handling
-    createWebSocketServer(httpServer, sessionService, webSocketService, rateLimitService)
+    createWebSocketServer(httpServer, sessionService, webSocketService, rateLimitService, auditService)
 
     // Start listening
     httpServer.listen(config.port, config.host, () => {
@@ -238,6 +241,7 @@ export const HttpServerLive = Layer.effect(HttpServer, make)
 export const ServerLayer = Layer.mergeAll(
   DockerClientLive,
   RateLimitServiceLive,
+  AuditServiceLive,
   ContainerServiceLive,
   SessionServiceLive,
   WebSocketServiceLive,
@@ -286,7 +290,7 @@ const mainProgram = Effect.gen(function* () {
 if (import.meta.main) {
   // Build the complete application layer with proper dependency resolution
   // Base layers (no dependencies)
-  const baseLayer = Layer.mergeAll(ServerConfigLive, DockerClientLive, RateLimitServiceLive)
+  const baseLayer = Layer.mergeAll(ServerConfigLive, DockerClientLive, RateLimitServiceLive, AuditServiceLive)
 
   // Container service depends on DockerClient
   const containerLayer = ContainerServiceLive.pipe(Layer.provide(DockerClientLive))
@@ -299,9 +303,9 @@ if (import.meta.main) {
     Layer.provide(Layer.merge(containerLayer, DockerClientLive)),
   )
 
-  // HTTP server depends on ServerConfig, SessionService, RateLimitService, WebSocketService
+  // HTTP server depends on ServerConfig, SessionService, RateLimitService, WebSocketService, AuditService
   const httpLayer = HttpServerLive.pipe(
-    Layer.provide(Layer.mergeAll(ServerConfigLive, sessionLayer, RateLimitServiceLive, wsLayer)),
+    Layer.provide(Layer.mergeAll(ServerConfigLive, sessionLayer, RateLimitServiceLive, wsLayer, AuditServiceLive)),
   )
 
   // Merge all layers for the final app

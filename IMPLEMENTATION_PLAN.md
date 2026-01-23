@@ -647,10 +647,19 @@ Begin the audit by reading each file listed above and systematically evaluating 
     * Added `X-API-Key` to allowed headers for authentication
   - **Vulnerability**: V-017 (Low) - FIXED
 
-- [ ] **8.14** Add structured audit logging
-  - Location: `packages/sandbox-api/src/index.ts`
+- [x] **8.14** Add structured audit logging
+  - Location: `packages/sandbox-api/src/services/audit.ts` (new file)
   - Log: session creation, commands, errors, rate limit hits
-  - **Vulnerability**: V-019 (Low)
+  - **DONE**:
+    * Created `AuditService` with structured logging methods
+    * Added logging for session creation/destruction in sessions.ts
+    * Added logging for auth failures (both REST and WebSocket)
+    * Added logging for rate limit hits (sessions and WebSockets)
+    * Added logging for WebSocket connect/disconnect events
+    * Added logging for input validation failures
+    * Added logging for errors (container, internal)
+    * All logs use structured JSON format for easy parsing by log aggregators
+  - **Vulnerability**: V-019 (Low) - FIXED
 
 #### Priority 4: Infrastructure (Low priority but important)
 
@@ -674,7 +683,7 @@ Begin the audit by reading each file listed above and systematically evaluating 
 
 ## File Summary
 
-### New Files Created (6) ✓
+### New Files Created (8) ✓
 
 | File | Purpose | Status |
 |------|---------|--------|
@@ -684,20 +693,10 @@ Begin the audit by reading each file listed above and systematically evaluating 
 | `scripts/hetzner/README.md` | Hetzner deployment documentation | ✓ Done |
 | `packages/web/components/ui/ShrinkingLayout.tsx` | Client wrapper for content margin when sidebar open | ✓ Done |
 | `packages/sandbox-api/src/config.ts` | Centralized sandbox configuration (gVisor, etc.) | ✓ Done |
-
-### New Files Created (7) ✓
-
-| File | Purpose | Status |
-|------|---------|--------|
-| `scripts/hetzner/provision.sh` | Create Hetzner CAX11 server with Docker/gVisor/Bun/Caddy | ✓ Done |
-| `scripts/hetzner/deploy.sh` | Sync code, build image, start service | ✓ Done |
-| `scripts/hetzner/sandbox.env` | Server configuration (IP, type, location) | ✓ Done |
-| `scripts/hetzner/README.md` | Hetzner deployment documentation | ✓ Done |
-| `packages/web/components/ui/ShrinkingLayout.tsx` | Client wrapper for content margin when sidebar open | ✓ Done |
-| `packages/sandbox-api/src/config.ts` | Centralized sandbox configuration (gVisor, etc.) | ✓ Done |
+| `packages/sandbox-api/src/services/audit.ts` | Structured audit logging service (V-019) | ✓ Done |
 | `SECURITY_AUDIT.md` | Security audit findings and recommendations | ✓ Done |
 
-### Modified Files - Done (7) ✓
+### Modified Files - Done (10) ✓
 
 | File | Changes |
 |------|---------|
@@ -708,6 +707,9 @@ Begin the audit by reading each file listed above and systematically evaluating 
 | `packages/web/components/ui/TerminalSidebar.tsx` | ✓ Remove backdrop/inert, pass callbacks to InteractiveTerminal, wire reset button |
 | `packages/web/components/ui/MobileBottomSheet.tsx` | ✓ Remove backdrop/inert, pass callbacks to InteractiveTerminal, wire reset button |
 | `packages/web/app/[toolPair]/[step]/page.tsx` | ✓ Wrap with ShrinkingLayout |
+| `packages/sandbox-api/src/routes/sessions.ts` | ✓ Added audit logging for session lifecycle, auth failures, rate limit hits |
+| `packages/sandbox-api/src/routes/websocket.ts` | ✓ Added audit logging for WS lifecycle, input validation, errors |
+| `packages/sandbox-api/src/index.ts` | ✓ Wire AuditService into app layer composition |
 
 ### Modified Files - Pending (5)
 

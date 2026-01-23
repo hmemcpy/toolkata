@@ -2,6 +2,7 @@ import { Data, Effect } from "effect"
 import { Hono } from "hono"
 import type { Env } from "hono"
 import { AuthError, validateApiKey } from "../config.js"
+import type { AuditServiceShape } from "../services/audit.js"
 import type { RateLimitServiceShape } from "../services/rate-limit.js"
 import { RateLimitError } from "../services/rate-limit.js"
 import type { SessionServiceShape } from "../services/session.js"
@@ -169,6 +170,7 @@ const getWsUrl = (request: Request, sessionId: string): string => {
 const createSessionRoutes = (
   sessionService: SessionServiceShape,
   rateLimitService: RateLimitServiceShape,
+  auditService: AuditServiceShape,
 ) => {
   const app = new Hono<{ Bindings: Env }>()
 
@@ -179,6 +181,9 @@ const createSessionRoutes = (
       const apiKey = getApiKey(c.req.raw)
       const authResult = await Effect.runPromise(Effect.either(validateApiKey(apiKey)))
       if (authResult._tag === "Left") {
+        // Log auth failure
+        const clientIp = getClientIp(c.req.raw)
+        await Effect.runPromise(auditService.logAuthFailure(authResult.left.cause, clientIp))
         const { statusCode, body } = errorToResponse(authResult.left)
         return c.json<ErrorResponse>(body, toStatusCode(statusCode))
       }
@@ -203,6 +208,8 @@ const createSessionRoutes = (
       // Check rate limits
       const limitResult = await Effect.runPromise(rateLimitService.checkSessionLimit(clientIp))
       if (!limitResult.allowed) {
+        // Log rate limit hit
+        await Effect.runPromise(auditService.logRateLimitHit("session", clientIp, 10, "hour"))
         const errorData = {
           cause: "TooManySessions" as const,
           message: "Rate limit exceeded. Please try again later.",
@@ -223,6 +230,9 @@ const createSessionRoutes = (
 
       // Create the session
       const session = await Effect.runPromise(sessionService.create(toolPair))
+
+      // Log session creation
+      await Effect.runPromise(auditService.logSessionCreated(session.id, toolPair, clientIp, session.expiresAt))
 
       // Record the session for rate limiting
       await Effect.runPromise(rateLimitService.recordSession(clientIp, session.id))
@@ -253,6 +263,9 @@ const createSessionRoutes = (
       const apiKey = getApiKey(c.req.raw)
       const authResult = await Effect.runPromise(Effect.either(validateApiKey(apiKey)))
       if (authResult._tag === "Left") {
+        // Log auth failure
+        const clientIp = getClientIp(c.req.raw)
+        await Effect.runPromise(auditService.logAuthFailure(authResult.left.cause, clientIp))
         const { statusCode, body } = errorToResponse(authResult.left)
         return c.json<ErrorResponse>(body, toStatusCode(statusCode))
       }
@@ -290,6 +303,9 @@ const createSessionRoutes = (
       const apiKey = getApiKey(c.req.raw)
       const authResult = await Effect.runPromise(Effect.either(validateApiKey(apiKey)))
       if (authResult._tag === "Left") {
+        // Log auth failure
+        const clientIp = getClientIp(c.req.raw)
+        await Effect.runPromise(auditService.logAuthFailure(authResult.left.cause, clientIp))
         const { statusCode, body } = errorToResponse(authResult.left)
         return c.json<ErrorResponse>(body, toStatusCode(statusCode))
       }
@@ -312,6 +328,19 @@ const createSessionRoutes = (
       const destroyResult = await Effect.runPromise(
         Effect.either(sessionService.destroy(sessionId)),
       )
+
+      // Log session destruction
+      if (destroyResult._tag === "Right") {
+        await Effect.runPromise(auditService.logSessionDestroyed(sessionId, clientIp, "user_request"))
+      } else if (destroyResult.left.cause !== "NotFound") {
+        // Log error if destruction failed (but not NotFound - that's normal)
+        await Effect.runPromise(
+          auditService.logError("container", `Session destroy failed: ${destroyResult.left.message}`, {
+            sessionId,
+            clientIp,
+          }),
+        )
+      }
 
       // Remove from rate limit tracking regardless of destroy result
       await Effect.runPromise(rateLimitService.removeSession(clientIp, sessionId))
