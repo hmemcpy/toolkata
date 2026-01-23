@@ -54,7 +54,7 @@ export interface InteractiveTerminalRef {
    *
    * @param command - The command string to insert (e.g., "jj status")
    */
-  insertCommand: (command: string) => void
+  readonly insertCommand: (command: string) => void
 
   /**
    * Focus the terminal input.
@@ -62,7 +62,15 @@ export interface InteractiveTerminalRef {
    * Attempts to focus the terminal for keyboard input.
    * Note: xterm.js terminal focus is handled by the browser.
    */
-  focus: () => void
+  readonly focus: () => void
+
+  /**
+   * Reset the terminal session.
+   *
+   * Closes the WebSocket connection, clears the terminal display,
+   * and starts a new session.
+   */
+  readonly reset: () => void
 }
 
 /**
@@ -429,20 +437,6 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
       }
     }, [])
 
-    /**
-     * Expose imperative handle for external command insertion.
-     *
-     * Allows TryIt component (via TerminalContext) to insert commands into the terminal.
-     */
-    useImperativeHandle(
-      ref,
-      () => ({
-        insertCommand,
-        focus,
-      }),
-      [insertCommand, focus],
-    )
-
     // Clean up WebSocket connection
     const cleanup = useCallback(() => {
       if (wsRef.current) {
@@ -534,6 +528,21 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
 
       startSession()
     }, [cleanup, startSession])
+
+    /**
+     * Expose imperative handle for external command insertion.
+     *
+     * Allows TryIt component (via TerminalContext) to insert commands into the terminal.
+     */
+    useImperativeHandle(
+      ref,
+      () => ({
+        insertCommand,
+        focus,
+        reset,
+      }),
+      [insertCommand, focus, reset],
+    )
 
     // Initialize xterm.js on mount
     useEffect(() => {

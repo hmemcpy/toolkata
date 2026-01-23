@@ -122,38 +122,38 @@ The reset button in TerminalSidebar and MobileBottomSheet has an empty onClick h
 
 > **WHY**: Sidebar shows stale "IDLE" state because callbacks aren't connected. InteractiveTerminal already calls the callbacks - they just need to be wired up.
 
-- [ ] **1.1** Expose reset function from InteractiveTerminal
+- [x] **1.1** Expose reset function from InteractiveTerminal
   - Location: `packages/web/components/ui/InteractiveTerminal.tsx` lines 48-66, 437-444
   - Add `reset: () => void` to `InteractiveTerminalRef` interface
   - Add `reset` to the object returned by `useImperativeHandle`
   - Update dependency array to include `reset`
 
-- [ ] **1.2** Remove underscore prefix and expose state setters
+- [x] **1.2** Remove underscore prefix and expose state setters
   - Location: `packages/web/contexts/TerminalContext.tsx` lines 166, 170
   - Change `_setState` → rename variable or use directly
   - Change `_setSessionTimeRemaining` → rename variable or use directly
   - Add callback functions to context value: `onTerminalStateChange` and `onTerminalTimeChange`
   - Update useMemo dependency array to include new values
 
-- [ ] **1.3** Pass callbacks from TerminalSidebar to InteractiveTerminal
+- [x] **1.3** Pass callbacks from TerminalSidebar to InteractiveTerminal
   - Location: `packages/web/components/ui/TerminalSidebar.tsx` line 242
   - Get `onTerminalStateChange` and `onTerminalTimeChange` from `useTerminalContext()`
   - Pass to InteractiveTerminal: `<InteractiveTerminal ... onStateChange={onTerminalStateChange} onSessionTimeChange={onTerminalTimeChange} />`
 
-- [ ] **1.4** Wire reset button in TerminalSidebar
+- [x] **1.4** Wire reset button in TerminalSidebar
   - Location: `packages/web/components/ui/TerminalSidebar.tsx` lines 250-254
   - Get `terminalRef` from context or create local ref
   - Call `terminalRef.current?.reset()` in onClick handler
 
-- [ ] **1.5** Pass callbacks from MobileBottomSheet to InteractiveTerminal
+- [x] **1.5** Pass callbacks from MobileBottomSheet to InteractiveTerminal
   - Location: `packages/web/components/ui/MobileBottomSheet.tsx` line 297
   - Same pattern as TerminalSidebar
 
-- [ ] **1.6** Wire reset button in MobileBottomSheet
+- [x] **1.6** Wire reset button in MobileBottomSheet
   - Location: `packages/web/components/ui/MobileBottomSheet.tsx` lines 305-308
   - Same pattern as TerminalSidebar
 
-- [ ] **1.7** Validate state wiring
+- [x] **1.7** Validate state wiring
   - Run `bun run typecheck && bun run lint && bun run build`
   - Manual test: Open sidebar, verify status changes from "Idle" → "Starting..." → "Connected"
   - Manual test: Verify session timer counts down in footer

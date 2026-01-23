@@ -30,6 +30,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import dynamic from "next/dynamic"
 import { useTerminalContext } from "../../contexts/TerminalContext"
+import type { InteractiveTerminalRef } from "./InteractiveTerminal"
 
 /**
  * Lazy-load InteractiveTerminal to reduce initial bundle size.
@@ -136,9 +137,11 @@ const SWIPE_THRESHOLD = 100
  * Slides up from bottom, includes drag handle and swipe-to-close gesture.
  */
 export function MobileBottomSheet({ toolPair }: MobileBottomSheetProps): ReactNode {
-  const { isOpen, closeSidebar, state, sessionTimeRemaining } = useTerminalContext()
+  const { isOpen, closeSidebar, state, sessionTimeRemaining, onTerminalStateChange, onTerminalTimeChange } =
+    useTerminalContext()
   const sheetRef = useRef<HTMLDivElement>(null)
   const handleRef = useRef<HTMLDivElement>(null)
+  const terminalRef = useRef<InteractiveTerminalRef>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [startY, setStartY] = useState(0)
   const [currentY, setCurrentY] = useState(0)
@@ -294,7 +297,13 @@ export function MobileBottomSheet({ toolPair }: MobileBottomSheetProps): ReactNo
 
           {/* Body - Terminal */}
           <div className="flex-1 overflow-hidden">
-            <InteractiveTerminal toolPair={toolPair} stepId="mobile" />
+            <InteractiveTerminal
+              ref={terminalRef}
+              toolPair={toolPair}
+              stepId="mobile"
+              onStateChange={onTerminalStateChange}
+              onSessionTimeChange={onTerminalTimeChange}
+            />
           </div>
 
           {/* Footer */}
@@ -302,10 +311,7 @@ export function MobileBottomSheet({ toolPair }: MobileBottomSheetProps): ReactNo
             <div className="flex items-center justify-between border-t border-[var(--color-border)] px-4 py-3">
               <button
                 type="button"
-                onClick={() => {
-                  // Trigger reset via context or direct call
-                  // For now, the reset button inside InteractiveTerminal handles this
-                }}
+                onClick={() => terminalRef.current?.reset()}
                 className="text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
                 aria-label="Reset terminal session"
               >

@@ -29,14 +29,22 @@ export interface TerminalRef {
    *
    * @param command - The command string to execute (e.g., "jj status")
    */
-  insertCommand: (command: string) => void
+  readonly insertCommand: (command: string) => void
 
   /**
    * Focus the terminal input.
    *
    * Attempts to focus the terminal for keyboard input.
    */
-  focus: () => void
+  readonly focus: () => void
+
+  /**
+   * Reset the terminal session.
+   *
+   * Closes the WebSocket connection, clears the terminal display,
+   * and starts a new session.
+   */
+  readonly reset: () => void
 }
 
 /**
@@ -110,6 +118,24 @@ export interface TerminalContextValue {
    * @internal
    */
   readonly registerTerminal: (ref: TerminalRef | null) => void
+
+  /**
+   * Callback when terminal state changes.
+   *
+   * Called by InteractiveTerminal to notify the context of state changes.
+   *
+   * @internal
+   */
+  readonly onTerminalStateChange: (state: TerminalState) => void
+
+  /**
+   * Callback when session time remaining changes.
+   *
+   * Called by InteractiveTerminal to notify the context of timer changes.
+   *
+   * @internal
+   */
+  readonly onTerminalTimeChange: (remaining: number | null) => void
 }
 
 const TerminalContext = createContext<TerminalContextValue | null>(null)
@@ -162,12 +188,10 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
   const [isOpen, setIsOpen] = useState(false)
 
   // Terminal connection state (managed by InteractiveTerminal via callbacks)
-  // Note: setState will be used in Phase 3 when InteractiveTerminal calls onStateChange
-  const [state, _setState] = useState<TerminalState>("IDLE")
+  const [state, setState] = useState<TerminalState>("IDLE")
 
   // Session time remaining (managed by InteractiveTerminal via callbacks)
-  // Note: setSessionTimeRemaining will be used in Phase 3 when InteractiveTerminal calls onSessionTimeChange
-  const [sessionTimeRemaining, _setSessionTimeRemaining] = useState<number | null>(null)
+  const [sessionTimeRemaining, setSessionTimeRemaining] = useState<number | null>(null)
 
   // Ref to terminal for imperative operations
   const terminalRef = useRef<TerminalRef | null>(null)
@@ -242,6 +266,28 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
     [isOpen, state],
   )
 
+  /**
+   * Callback when terminal state changes.
+   *
+   * Called by InteractiveTerminal to notify the context of state changes.
+   *
+   * @internal
+   */
+  const onTerminalStateChange = useCallback((newState: TerminalState) => {
+    setState(newState)
+  }, [])
+
+  /**
+   * Callback when session time remaining changes.
+   *
+   * Called by InteractiveTerminal to notify the context of timer changes.
+   *
+   * @internal
+   */
+  const onTerminalTimeChange = useCallback((remaining: number | null) => {
+    setSessionTimeRemaining(remaining)
+  }, [])
+
   // Memoize context value to prevent unnecessary re-renders
   const value = useMemo<TerminalContextValue>(
     () => ({
@@ -253,6 +299,8 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       toggleSidebar,
       executeCommand,
       registerTerminal,
+      onTerminalStateChange,
+      onTerminalTimeChange,
     }),
     [
       state,
@@ -263,6 +311,8 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       toggleSidebar,
       executeCommand,
       registerTerminal,
+      onTerminalStateChange,
+      onTerminalTimeChange,
     ],
   )
 
