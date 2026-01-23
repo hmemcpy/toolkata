@@ -104,7 +104,7 @@ const createApp = (
   )
 
   // Health check endpoint with session stats and gVisor status (no version prefix)
-  app.get("/health", (c) => {
+  app.get("/health", async (c) => {
     let containers = 0
 
     // Get session stats if session service is available
@@ -116,9 +116,9 @@ const createApp = (
       }
     }
 
-    // Check gVisor availability
+    // Check gVisor availability (async - uses Docker API)
     const gvisorRequested = SandboxConfig.useGvisor
-    const gvisorAvailable = Effect.runSync(
+    const gvisorAvailable = await Effect.runPromise(
       checkGvisorAvailable.pipe(Effect.catchAll(() => Effect.succeed(false))),
     )
 
@@ -325,7 +325,7 @@ if (import.meta.main) {
 }
 
 // Export health check for testing (legacy)
-export const healthCheck = (): HealthResponse => {
+export const healthCheck = async (): Promise<HealthResponse> => {
   let containers = 0
 
   // Get session stats if session service is available
@@ -336,9 +336,9 @@ export const healthCheck = (): HealthResponse => {
     }
   }
 
-  // Check gVisor availability
+  // Check gVisor availability (async - uses Docker API)
   const gvisorRequested = SandboxConfig.useGvisor
-  const gvisorAvailable = Effect.runSync(
+  const gvisorAvailable = await Effect.runPromise(
     checkGvisorAvailable.pipe(Effect.catchAll(() => Effect.succeed(false))),
   )
 

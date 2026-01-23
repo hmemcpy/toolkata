@@ -20,14 +20,15 @@ Requires=docker.service
 Wants=docker.service
 
 [Service]
-# Type: notify for systemd status notifications (requires sd-notify)
-# Type: simple for basic foreground service
-Type=notify
+# Type: simple for basic foreground service (bun doesn't support sd-notify)
+Type=simple
 
 # User and group to run the service as
 # Create a dedicated user: sudo useradd -r -s /bin/false sandboxapi
 User=sandboxapi
 Group=sandboxapi
+# Docker group membership for container management
+SupplementaryGroups=docker
 
 # Working directory
 WorkingDirectory=/opt/sandbox-api

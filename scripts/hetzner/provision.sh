@@ -181,10 +181,11 @@ cat > /etc/docker/daemon.json << 'EOF'
 EOF
 systemctl restart docker
 
-echo "=== Installing Bun ==="
-curl -fsSL https://bun.sh/install | bash
-echo 'export BUN_INSTALL="$HOME/.bun"' >> /root/.bashrc
-echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> /root/.bashrc
+echo "=== Installing Bun (system-wide) ==="
+curl -fsSL https://bun.sh/install | BUN_INSTALL=/usr/local bash
+# Symlink to /usr/bin for fallback
+ln -sf /usr/local/bin/bun /usr/bin/bun
+echo "Bun installed to /usr/local/bin/bun"
 
 echo "=== Installing Caddy ==="
 apt-get install -y debian-keyring debian-archive-keyring apt-transport-https
