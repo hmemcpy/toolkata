@@ -13,22 +13,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install jj (Jujutsu VCS) from cargo package manager
-# Note: jj-cli 0.37.0 requires Rust 2024 edition, so we need rustup for a newer toolchain
-RUN JJ_VERSION="0.37.0" && \
-    apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    ca-certificates \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/* && \
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal && \
-    . /root/.cargo/env && \
-    cargo install jj-cli --version "${JJ_VERSION}" && \
-    mv /root/.cargo/bin/jj /usr/local/bin/jj && \
-    chmod +x /usr/local/bin/jj && \
-    rm -rf /root/.cargo/registry /root/.cargo/git && \
-    rm -rf /root/.rustup && \
-    rm /root/.cargo/env
+# Install jj (Jujutsu VCS) from pre-built GitHub release
+RUN JJ_VERSION="0.25.0" && \
+    ARCH=$(dpkg --print-architecture) && \
+    if [ "$ARCH" = "arm64" ]; then JJ_ARCH="aarch64"; else JJ_ARCH="x86_64"; fi && \
+    curl -fsSL "https://github.com/jj-vcs/jj/releases/download/v${JJ_VERSION}/jj-v${JJ_VERSION}-${JJ_ARCH}-unknown-linux-musl.tar.gz" | \
+    tar -xzf - --strip-components=0 -C /usr/local/bin ./jj && \
+    chmod +x /usr/local/bin/jj
 
 # Verify installations
 RUN git --version && jj --version

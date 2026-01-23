@@ -2,18 +2,6 @@
 
 You are in PLANNING mode. Analyze specifications against existing code and generate a prioritized implementation plan.
 
-## Code Style Guidelines
-
-All planned code must strictly follow these rules:
-- No `any`, no `!` assertions, no `as` assertions
-- Handle all index access (returns `T | undefined`)
-- Explicit return types on exported functions
-- `readonly` by default for all properties and parameters
-- Use `import * as Option from "effect/Option"` (not `import { Option }`)
-- Use `for...of` (not `forEach`)
-
----
-
 ## Phase 0: Orient
 
 ### 0a. Study specifications
@@ -21,18 +9,14 @@ Read all files in `specs/` directory using parallel subagents.
 
 ### 0b. Study existing implementation
 Use parallel subagents to analyze relevant source directories:
-- `packages/web/contexts/` - existing context patterns (DirectionContext)
-- `packages/web/components/ui/` - existing UI components, especially InteractiveTerminal.tsx
-- `packages/web/components/Providers.tsx` - how providers are composed
-- `packages/web/app/[toolPair]/layout.tsx` - current layout structure
-- `packages/web/hooks/useKeyboardNavigation.ts` - keyboard shortcut patterns
-- `packages/web/components/ui/StepPageClientWrapper.tsx` - current terminal integration
+- `packages/web/contexts/` - TerminalContext
+- `packages/web/components/ui/` - TerminalSidebar, TryIt, InteractiveTerminal, MobileBottomSheet
+- `packages/web/app/[toolPair]/` - Layout and step pages
+- `packages/sandbox-api/src/services/` - ContainerService, SessionService
+- `packages/sandbox-api/docker/` - Dockerfile structure
 
 ### 0c. Study the current plan
 Read `IMPLEMENTATION_PLAN.md` if it exists.
-
-### 0d. Study code style guidelines
-Review `CLAUDE.md` for coding standards that MUST be followed.
 
 ## Phase 1: Gap Analysis
 
@@ -43,21 +27,20 @@ Compare specs against implementation:
 
 **CRITICAL**: Don't assume something isn't implemented. Search the codebase first.
 
-Key questions to answer:
-1. Does TerminalContext exist? What state does it manage?
-2. Does TerminalSidebar exist? What UI does it provide?
-3. Does TryIt MDX component exist? Is it registered?
-4. Is the terminal currently embedded in step pages or in a sidebar?
-5. Are keyboard shortcuts for terminal toggle implemented?
+Key areas to verify:
+1. TerminalContext.tsx - Are `_setState` and `_setSessionTimeRemaining` still unused? (lines 166, 170)
+2. InteractiveTerminal.tsx - Is there a useEffect calling `onStateChange`?
+3. TerminalSidebar.tsx - Does it still have backdrop and inert?
+4. TryIt.tsx - Does it have `expectedOutput` and `editable` props?
+5. container.ts - Is there a `Runtime` field in HostConfig?
 
 ## Phase 2: Generate Plan
 
 Update `IMPLEMENTATION_PLAN.md` with:
 - Tasks sorted by priority (P0 → P1 → P2)
-- Clear descriptions with file locations
+- Clear descriptions with file locations and line numbers
 - Dependencies noted where relevant
 - Discoveries from gap analysis
-- Ensure all tasks follow code style guidelines
 
 Capture the WHY, not just the WHAT.
 
@@ -67,4 +50,3 @@ Capture the WHY, not just the WHAT.
 1000. Use up to 10 parallel subagents for analysis
 1001. Each task must be completable in ONE loop iteration
 1002. Ultrathink before finalizing priorities
-1003. **All planned code MUST follow code style guidelines in CLAUDE.md**
