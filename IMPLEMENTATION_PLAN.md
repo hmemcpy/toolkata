@@ -621,11 +621,12 @@ Begin the audit by reading each file listed above and systematically evaluating 
   - Returns clear error message if container is in inconsistent state
   - **Vulnerability**: V-010 (Medium) - FIXED
 
-- [ ] **8.11** Sanitize error messages for external responses
+- [x] **8.11** Sanitize error messages for external responses
   - Location: `packages/sandbox-api/src/routes/sessions.ts` line 77-133
   - Remove internal details from error responses
   - Use generic messages for unexpected errors
-  - **Vulnerability**: V-009 (Medium)
+  - **DONE**: Added `SANITIZED_MESSAGES` constant with generic error messages, replaced `error.message` with sanitized messages for `AuthError`, `RateLimitError`, and `SessionError`
+  - **Vulnerability**: V-009 (Medium) - FIXED
 
 - [ ] **8.12** Add API versioning
   - Location: `packages/sandbox-api/src/index.ts`, `routes/`

@@ -79,12 +79,24 @@ const getClientIp = (request: Request): string => {
   return "unknown"
 }
 
+// Sanitized error messages for external responses
+// Use generic messages to avoid leaking internal implementation details
+const SANITIZED_MESSAGES = {
+  NotFound: "Session not found",
+  Expired: "Session has expired",
+  InvalidState: "Session is in an invalid state",
+  InternalError: "An internal error occurred",
+  BadRequest: "Invalid request",
+  Unauthorized: "Unauthorized",
+  RateLimited: "Rate limit exceeded",
+} as const
+
 // Helper: Convert errors to HTTP responses
 const errorToResponse = (error: unknown): { statusCode: number; body: ErrorResponse } => {
   if (error instanceof AuthError) {
     return {
       statusCode: 401,
-      body: { error: error.cause, message: error.message },
+      body: { error: error.cause, message: SANITIZED_MESSAGES.Unauthorized },
     }
   }
 
@@ -95,7 +107,7 @@ const errorToResponse = (error: unknown): { statusCode: number; body: ErrorRespo
       retryAfter?: number
     } = {
       error: error.cause,
-      message: error.message,
+      message: SANITIZED_MESSAGES.RateLimited,
     }
     // Only include retryAfter if it's defined (for exactOptionalPropertyTypes)
     if (error.retryAfter !== undefined) {
@@ -112,27 +124,28 @@ const errorToResponse = (error: unknown): { statusCode: number; body: ErrorRespo
       case "NotFound":
         return {
           statusCode: 404,
-          body: { error: "NotFound", message: error.message },
+          body: { error: "NotFound", message: SANITIZED_MESSAGES.NotFound },
         }
       case "Expired":
         return {
           statusCode: 404,
-          body: { error: "Expired", message: error.message },
+          body: { error: "Expired", message: SANITIZED_MESSAGES.Expired },
         }
       case "InvalidState":
         return {
           statusCode: 409,
-          body: { error: "Conflict", message: error.message },
+          body: { error: "Conflict", message: SANITIZED_MESSAGES.InvalidState },
         }
       default:
         return {
           statusCode: 500,
-          body: { error: "InternalError", message: error.message },
+          body: { error: "InternalError", message: SANITIZED_MESSAGES.InternalError },
         }
     }
   }
 
   if (error instanceof HttpRouteError) {
+    // HttpRouteError messages are already controlled by us (not from external sources)
     return {
       statusCode: error.statusCode,
       body: { error: error.cause, message: error.message },
@@ -141,7 +154,7 @@ const errorToResponse = (error: unknown): { statusCode: number; body: ErrorRespo
 
   return {
     statusCode: 500,
-    body: { error: "InternalError", message: "An unexpected error occurred" },
+    body: { error: "InternalError", message: SANITIZED_MESSAGES.InternalError },
   }
 }
 
