@@ -188,6 +188,44 @@ curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /
 apt-get update
 apt-get install -y caddy
 
+echo "=== Installing fail2ban for SSH protection ==="
+apt-get install -y fail2ban
+
+# Create fail2ban local configuration for SSH
+cat > /etc/fail2ban/jail.local << 'EOF'
+[DEFAULT]
+# Ban IPs for 1 hour
+bantime = 3600
+# Find failures in last 10 minutes
+findtime = 600
+# Ban after 3 failed attempts
+maxretry = 3
+# Use iptables for firewall
+banaction = iptables-multiport
+
+[sshd]
+enabled = true
+port = ssh
+filter = sshd
+logpath = /var/log/auth.log
+maxretry = 3
+bantime = 3600
+
+[sshd-ddos]
+enabled = true
+port = ssh
+filter = sshd-ddos
+logpath = /var/log/auth.log
+maxretry = 2
+bantime = 7200
+EOF
+
+# Enable and start fail2ban
+systemctl enable fail2ban
+systemctl start fail2ban
+
+echo "=== fail2ban installed and configured ==="
+
 echo "=== Testing gVisor ==="
 docker run --runtime=runsc --rm hello-world
 
