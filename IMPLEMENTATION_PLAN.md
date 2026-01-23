@@ -307,11 +307,11 @@ The reset button in TerminalSidebar and MobileBottomSheet has an empty onClick h
 
 > **WHY**: Ensure all changes work together without regressions.
 
-- [ ] **6.1** Run full validation suite
+- [x] **6.1** Run full validation suite
   ```bash
-  bun run typecheck  # Zero errors
-  bun run lint       # Zero errors
-  bun run build      # All pages generate successfully
+  bun run typecheck  # Zero errors ✓
+  bun run lint       # Zero errors ✓
+  bun run build      # All pages generate successfully ✓
   ```
 
 - [ ] **6.2** Update Playwright tests for shrinking layout
@@ -607,7 +607,7 @@ bun run --cwd packages/web dev
 | 5 | 5 | P2 | gVisor integration |
 | 6 | 4 | P3 | Validation & testing |
 | 7 | 1 | P3 | Security & integration audit |
-| **Total** | **34** | | |
+| **Total** | **34** | | **(52 unchecked sub-items remain)** |
 
 ## Priority Summary
 
