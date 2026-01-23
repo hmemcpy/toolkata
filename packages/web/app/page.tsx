@@ -1,6 +1,7 @@
 import { ComparisonCardWrapper } from "../components/ui/ComparisonCardWrapper"
 import { Footer } from "../components/ui/Footer"
 import { Header } from "../components/ui/Header"
+import { TerminalSearch } from "../components/ui/TerminalSearch"
 import { getPairingsByCategory } from "../content/pairings"
 
 /**
@@ -50,10 +51,9 @@ export default function HomePage() {
                     No fluff. Just the commands you need.
                   </p>
                 </div>
-                <p className="text-[var(--color-text-muted)] mt-4 pt-2 border-t border-[var(--color-border)]">
-                  <span className="text-[var(--color-accent)]">$</span>
-                  <span className="text-[var(--color-text-dim)]"> # scroll down to begin</span>
-                </p>
+                <div className="mt-4 pt-2 border-t border-[var(--color-border)]">
+                  <TerminalSearch />
+                </div>
               </div>
             </div>
           </div>
