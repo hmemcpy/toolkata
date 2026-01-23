@@ -32,6 +32,18 @@ export interface TryItProps {
    * Optional description text to display below the command.
    */
   readonly description?: string
+
+  /**
+   * Optional expected output to display below the command.
+   * Shown in muted monospace styling.
+   */
+  readonly expectedOutput?: string
+
+  /**
+   * Whether the command input should be editable.
+   * Defaults to true.
+   */
+  readonly editable?: boolean
 }
 
 /**
@@ -44,23 +56,38 @@ type ButtonState = "idle" | "sending"
  *
  * Features:
  * - Monospace command display (same style as CodeBlock)
+ * - Editable command input (when editable is true, default)
  * - Green "Run" button (min 44px height, min 80px width)
  * - Optional description text
+ * - Optional expected output display
  * - "Sent" flash feedback (500ms)
  * - Debounced clicks (500ms)
  * - Accessibility: aria-label, keyboard navigation
  */
-export function TryIt({ command, description }: TryItProps): React.JSX.Element {
+export function TryIt({
+  command,
+  description,
+  expectedOutput,
+  editable = true,
+}: TryItProps): React.JSX.Element {
   const { executeCommand } = useTerminalContext()
   const [buttonState, setButtonState] = useState<ButtonState>("idle")
+  const [editedCommand, setEditedCommand] = useState(command)
   const debounceTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const feedbackTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+
+  // Update edited command when the original command prop changes
+  useEffect(() => {
+    setEditedCommand(command)
+  }, [command])
 
   /**
    * Handle Run button click.
    *
    * - Opens sidebar if closed
-   * - Sends command to terminal
+   * - Sends command to terminal (edited command if editable)
    * - Shows "Sent" feedback for 500ms
    * - Debounces subsequent clicks for 500ms
    */
@@ -74,7 +101,8 @@ export function TryIt({ command, description }: TryItProps): React.JSX.Element {
     setButtonState("sending")
 
     // Execute the command (opens sidebar, queues if needed)
-    executeCommand(command)
+    // Use editedCommand if editable, otherwise use original command
+    executeCommand(editable ? editedCommand : command)
 
     // Reset button state after 500ms
     if (feedbackTimeoutRef.current) {
@@ -88,7 +116,35 @@ export function TryIt({ command, description }: TryItProps): React.JSX.Element {
     debounceTimeoutRef.current = setTimeout(() => {
       debounceTimeoutRef.current = undefined
     }, 500)
-  }, [command, executeCommand])
+  }, [command, editedCommand, editable, executeCommand])
+
+  /**
+   * Reset the edited command to the original command.
+   */
+  const handleReset = useCallback(() => {
+    setEditedCommand(command)
+    inputRef.current?.focus()
+  }, [command])
+
+  /**
+   * Handle keyboard input in the editable field.
+   * - Enter: Run the command
+   * - Escape: Reset to original command
+   * - Tab: Move focus to Run button (default behavior)
+   */
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault()
+        handleRun()
+      } else if (e.key === "Escape") {
+        e.preventDefault()
+        handleReset()
+      }
+      // Tab key uses default browser behavior to move to next focusable element
+    },
+    [handleRun, handleReset],
+  )
 
   /**
    * Clean up timeouts on unmount.
@@ -114,9 +170,43 @@ export function TryIt({ command, description }: TryItProps): React.JSX.Element {
       </div>
 
       {/* Command display in monospace */}
-      <pre className="mb-4 overflow-x-auto rounded bg-[var(--color-bg)] p-3">
-        <code className="text-sm text-[var(--color-accent)]">{command}</code>
-      </pre>
+      {editable ? (
+        <div className="mb-4 rounded bg-[var(--color-bg)] p-3">
+          <input
+            ref={inputRef}
+            type="text"
+            value={editedCommand}
+            onChange={(e) => setEditedCommand(e.target.value)}
+            onKeyDown={handleKeyDown}
+            aria-label="Command to execute. Press Enter to run, Escape to reset."
+            className={`
+              w-full bg-transparent text-sm font-mono
+              text-[var(--color-accent)]
+              placeholder:text-[var(--color-text-dim)]
+              outline-none
+              focus:outline-none
+            `}
+          />
+        </div>
+      ) : (
+        <pre className="mb-4 overflow-x-auto rounded bg-[var(--color-bg)] p-3">
+          <code className="text-sm text-[var(--color-accent)]">{command}</code>
+        </pre>
+      )}
+
+      {/* Optional expected output */}
+      {expectedOutput ? (
+        <div className="mb-4 rounded bg-[var(--color-bg)] p-3">
+          <div className="mb-2 flex items-center">
+            <span className="text-xs text-[var(--color-text-muted)]">Expected output</span>
+          </div>
+          <pre className="overflow-x-auto">
+            <code className="text-sm text-[var(--color-text-dim)] whitespace-pre-wrap font-mono">
+              {expectedOutput}
+            </code>
+          </pre>
+        </div>
+      ) : null}
 
       {/* Optional description */}
       {description ? (
@@ -125,10 +215,11 @@ export function TryIt({ command, description }: TryItProps): React.JSX.Element {
 
       {/* Run button */}
       <button
+        ref={buttonRef}
         type="button"
         onClick={handleRun}
         disabled={isDisabled}
-        aria-label={`Run command: ${command}`}
+        aria-label={`Run command: ${editable ? editedCommand : command}`}
         className={`
           flex min-h-[44px] min-w-[80px] items-center justify-center
           rounded bg-[var(--color-accent)] px-6 py-2

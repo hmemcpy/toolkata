@@ -206,13 +206,13 @@ The reset button in TerminalSidebar and MobileBottomSheet has an empty onClick h
 
 > **WHY**: Users need to see expected output and optionally edit commands before running.
 
-- [ ] **3.1** Add expectedOutput prop to TryIt
+- [x] **3.1** Add expectedOutput prop to TryIt
   - Location: `packages/web/components/ui/TryIt.tsx` lines 25-35
   - Add `readonly expectedOutput?: string` to TryItProps interface
   - Display below command in muted monospace: `text-[var(--color-text-dim)] font-mono text-sm whitespace-pre-wrap`
   - Only render if prop is provided
 
-- [ ] **3.2** Add editable command input to TryIt
+- [x] **3.2** Add editable command input to TryIt
   - Location: `packages/web/components/ui/TryIt.tsx`
   - Add `readonly editable?: boolean` prop (default: `true`)
   - When editable: replace static `<code>` with controlled `<input type="text">`
@@ -220,12 +220,12 @@ The reset button in TerminalSidebar and MobileBottomSheet has an empty onClick h
   - Local state: `const [editedCommand, setEditedCommand] = useState(command)`
   - "Run" button sends `editedCommand` (not original `command`)
 
-- [ ] **3.3** Add keyboard handling to editable TryIt
+- [x] **3.3** Add keyboard handling to editable TryIt
   - Enter key in input triggers Run
   - Escape key resets to original command
   - Tab moves focus to Run button
 
-- [ ] **3.4** Test TryIt enhancements
+- [x] **3.4** Test TryIt enhancements
   - expectedOutput displays correctly with muted styling
   - Editable input allows modification before Run
   - Keyboard shortcuts work (Enter, Escape)
