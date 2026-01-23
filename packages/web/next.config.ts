@@ -4,7 +4,7 @@ import type { NextConfig } from "next"
 const nextConfig: NextConfig = {
   pageExtensions: ["js", "jsx", "mdx", "ts", "tsx"],
   env: {
-    NEXT_PUBLIC_GIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA ?? "dev",
+    NEXT_PUBLIC_GIT_SHA: process.env["VERCEL_GIT_COMMIT_SHA"] ?? "dev",
   },
 }
 

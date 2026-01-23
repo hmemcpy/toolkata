@@ -54,7 +54,7 @@ export function Header() {
           <NavLink href="/help">help</NavLink>
           <span className="text-[var(--color-text-dim)]">│</span>
           <span className="text-[10px] text-[var(--color-text-dim)] font-mono">
-            {process.env.NEXT_PUBLIC_GIT_SHA?.slice(0, 7) ?? "dev"}
+            {process.env["NEXT_PUBLIC_GIT_SHA"]?.slice(0, 7) ?? "dev"}
           </span>
         </div>
 
@@ -88,7 +88,7 @@ export function Header() {
             </MobileNavLink>
             <div className="pt-2 border-t border-[var(--color-border)] mt-2">
               <span className="text-[10px] text-[var(--color-text-dim)] font-mono">
-                toolkata {process.env.NEXT_PUBLIC_GIT_SHA?.slice(0, 7) ?? "dev"} · progress stored
+                toolkata {process.env["NEXT_PUBLIC_GIT_SHA"]?.slice(0, 7) ?? "dev"} · progress stored
                 locally
               </span>
             </div>
