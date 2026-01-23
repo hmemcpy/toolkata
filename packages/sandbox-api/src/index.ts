@@ -10,7 +10,7 @@ import type { Env } from "hono"
 import { cors } from "hono/cors"
 import { createSessionRoutes } from "./routes/sessions.js"
 import { closeAllConnections, createWebSocketServer } from "./routes/websocket.js"
-import { ContainerServiceLive, DockerClientLive } from "./services/container.js"
+import { ContainerServiceLive, DockerClientLive, checkGvisorAvailable } from "./services/container.js"
 import {
   RateLimitService,
   RateLimitServiceLive,
@@ -18,6 +18,7 @@ import {
 } from "./services/rate-limit.js"
 import { SessionService, SessionServiceLive, type SessionServiceShape } from "./services/session.js"
 import { WebSocketService, WebSocketServiceLive } from "./services/websocket.js"
+import { SandboxConfig } from "./config.js"
 
 // Module-level reference to SessionService for health checks
 // This is set when the server starts and allows the health endpoint to access session stats
@@ -51,12 +52,20 @@ export interface HttpServerShape {
 
 export const HttpServer = Context.GenericTag<HttpServerShape>("HttpServer")
 
+// gVisor health status
+export interface GvisorHealthStatus {
+  readonly requested: boolean
+  readonly available: boolean
+  readonly runtime?: string
+}
+
 // Health check response type
 export interface HealthResponse {
   readonly status: "ok"
   readonly timestamp: string
   readonly uptime: number
   readonly containers: number
+  readonly gvisor: GvisorHealthStatus
 }
 
 // Create Hono app with CORS and health check
@@ -78,7 +87,7 @@ const createApp = (
     }),
   )
 
-  // Health check endpoint with session stats
+  // Health check endpoint with session stats and gVisor status
   app.get("/health", (c) => {
     let containers = 0
 
@@ -91,11 +100,22 @@ const createApp = (
       }
     }
 
+    // Check gVisor availability
+    const gvisorRequested = SandboxConfig.useGvisor
+    const gvisorAvailable = Effect.runSync(
+      checkGvisorAvailable.pipe(Effect.catchAll(() => Effect.succeed(false))),
+    )
+
     return c.json<HealthResponse>({
       status: "ok",
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       containers,
+      gvisor: {
+        requested: gvisorRequested,
+        available: gvisorAvailable,
+        runtime: gvisorRequested ? SandboxConfig.gvisorRuntime : undefined,
+      },
     })
   })
 
@@ -286,10 +306,21 @@ export const healthCheck = (): HealthResponse => {
     }
   }
 
+  // Check gVisor availability
+  const gvisorRequested = SandboxConfig.useGvisor
+  const gvisorAvailable = Effect.runSync(
+    checkGvisorAvailable.pipe(Effect.catchAll(() => Effect.succeed(false))),
+  )
+
   return {
     status: "ok",
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     containers,
+    gvisor: {
+      requested: gvisorRequested,
+      available: gvisorAvailable,
+      runtime: gvisorRequested ? SandboxConfig.gvisorRuntime : undefined,
+    },
   }
 }

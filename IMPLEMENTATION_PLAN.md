@@ -281,20 +281,20 @@ The reset button in TerminalSidebar and MobileBottomSheet has an empty onClick h
     ```
   - Added `validateGvisorConfig()` function for startup validation
 
-- [ ] **5.3** Add gVisor runtime to ContainerService
+- [x] **5.3** Add gVisor runtime to ContainerService
   - Location: `packages/sandbox-api/src/services/container.ts` lines 116-133 (HostConfig)
   - Import `SandboxConfig`
   - Add to HostConfig: `Runtime: SandboxConfig.useGvisor ? SandboxConfig.gvisorRuntime : undefined`
   - TypeScript: Handle `undefined` runtime (Docker will use default)
 
-- [ ] **5.4** Add gVisor availability check with graceful fallback
+- [x] **5.4** Add gVisor availability check with graceful fallback
   - Location: `packages/sandbox-api/src/services/container.ts`
   - Create async function `checkGvisorAvailable(): Effect.Effect<boolean>`
   - Check via Docker runtime list or test container
   - Log warning if gVisor requested but unavailable
   - Fall back to runc silently in development
 
-- [ ] **5.5** Update health endpoint with gVisor status
+- [x] **5.5** Update health endpoint with gVisor status
   - Location: `packages/sandbox-api/src/index.ts`
   - Add to health response: `gvisor: { requested: boolean, available: boolean }`
   - Helps debug production deployment issues

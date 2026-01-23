@@ -1,5 +1,6 @@
 import Docker from "dockerode"
-import { Context, Data, Effect, Layer } from "effect"
+import { Context, Data, Effect, Layer, Console } from "effect"
+import { SandboxConfig } from "../config.js"
 
 // Error types with Data.TaggedClass
 export class ContainerError extends Data.TaggedClass("ContainerError")<{
@@ -80,6 +81,44 @@ const isValidToolPair = (toolPair: string): boolean => {
   return toolPair === "jj-git"
 }
 
+/**
+ * Check if gVisor runtime is available
+ *
+ * @returns Effect that resolves to true if gVisor is available, false otherwise
+ */
+export const checkGvisorAvailable = Effect.tryPromise({
+  try: async () => {
+    if (!SandboxConfig.useGvisor) {
+      return false
+    }
+
+    // Try to get Docker info and check for gVisor runtime
+    const docker = new Docker({
+      socketPath: process.env["DOCKER_HOST"] ?? "/var/run/docker.sock",
+    })
+
+    const info = await docker.info()
+
+    // Check if runsc is in the list of runtimes
+    const runtimes = info.Runtimes ?? {}
+    const runtimeName = SandboxConfig.gvisorRuntime
+
+    if (runtimeName in runtimes) {
+      Console.log(`gVisor runtime '${runtimeName}' is available`)
+      return true
+    }
+
+    Console.warn(
+      `gVisor runtime '${runtimeName}' requested but not found in Docker runtimes: ${Object.keys(runtimes).join(", ") || "none"}`,
+    )
+    return false
+  },
+  catch: (error) => {
+    Console.error("Failed to check gVisor availability", error)
+    return false
+  },
+})
+
 // Service implementation
 const make = Effect.gen(function* () {
   const dockerClient = yield* DockerClient
@@ -110,27 +149,36 @@ const make = Effect.gen(function* () {
 
         // Create container with security settings
         const containerName = generateContainerName(toolPair)
+
+        // Build HostConfig with optional gVisor runtime
+        const hostConfig: Docker.HostConfig = {
+          NetworkMode: CONTAINER_SECURITY.network,
+          ReadonlyRootfs: CONTAINER_SECURITY.readonly,
+          Tmpfs: CONTAINER_SECURITY.tmpfs,
+          Memory: CONTAINER_SECURITY.memory,
+          CpuQuota: CONTAINER_SECURITY.cpus * 100000, // Convert to CPU quota (100000 = 1 CPU)
+          PidsLimit: CONTAINER_SECURITY.pidsLimit,
+          CapDrop: CONTAINER_SECURITY.capDrop,
+          SecurityOpt: CONTAINER_SECURITY.securityOpt,
+          Ulimits: [
+            {
+              Name: "nofile",
+              Soft: CONTAINER_SECURITY.ulimit.nofile.soft,
+              Hard: CONTAINER_SECURITY.ulimit.nofile.hard,
+            },
+          ],
+          AutoRemove: false, // We'll manage cleanup explicitly
+        }
+
+        // Add gVisor runtime if enabled
+        if (SandboxConfig.useGvisor) {
+          hostConfig.Runtime = SandboxConfig.gvisorRuntime
+        }
+
         const container = await docker.createContainer({
           Image: SANDBOX_IMAGE,
           name: containerName,
-          HostConfig: {
-            NetworkMode: CONTAINER_SECURITY.network,
-            ReadonlyRootfs: CONTAINER_SECURITY.readonly,
-            Tmpfs: CONTAINER_SECURITY.tmpfs,
-            Memory: CONTAINER_SECURITY.memory,
-            CpuQuota: CONTAINER_SECURITY.cpus * 100000, // Convert to CPU quota (100000 = 1 CPU)
-            PidsLimit: CONTAINER_SECURITY.pidsLimit,
-            CapDrop: CONTAINER_SECURITY.capDrop,
-            SecurityOpt: CONTAINER_SECURITY.securityOpt,
-            Ulimits: [
-              {
-                Name: "nofile",
-                Soft: CONTAINER_SECURITY.ulimit.nofile.soft,
-                Hard: CONTAINER_SECURITY.ulimit.nofile.hard,
-              },
-            ],
-            AutoRemove: false, // We'll manage cleanup explicitly
-          },
+          HostConfig: hostConfig,
           Env: [`TOOL_PAIR=${toolPair}`],
           // Attach stdin/stdout/stderr for terminal interaction
           OpenStdin: true,
