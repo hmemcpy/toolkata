@@ -663,10 +663,18 @@ Begin the audit by reading each file listed above and systematically evaluating 
 
 #### Priority 4: Infrastructure (Low priority but important)
 
-- [ ] **8.15** Configure ufw firewall
+- [x] **8.15** Configure ufw firewall
   - Location: `scripts/hetzner/provision.sh`
   - Only allow ports 80, 443, and 22 from specific IPs
-  - **Vulnerability**: V-014 (Low)
+  - **DONE**:
+    * Added ufw installation and configuration in provision.sh
+    * Default policies: deny incoming, allow outgoing
+    * Allow SSH with rate limiting (`ufw limit 22/tcp`)
+    * Allow HTTP (80/tcp) and HTTPS (443/tcp)
+    * Allow Docker bridge network traffic (172.16.0.0/12, 192.168.0.0/16)
+    * Allow localhost (127.0.0.1)
+    * Firewall enabled with `ufw --force enable`
+  - **Vulnerability**: V-014 (Low) - FIXED
 
 - [x] **8.16** Enable unattended-upgrades
   - Location: `scripts/hetzner/provision.sh`

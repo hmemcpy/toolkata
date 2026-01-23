@@ -277,6 +277,39 @@ systemctl start fail2ban
 
 echo "=== fail2ban installed and configured ==="
 
+echo "=== Configuring ufw firewall ==="
+# Install ufw if not present
+apt-get install -y ufw
+
+# Reset any existing rules to known state
+ufw --force reset
+
+# Set default policies: deny incoming, allow outgoing
+ufw default deny incoming
+ufw default allow outgoing
+
+# Allow SSH (port 22) - rate limited to prevent brute force
+# Note: fail2ban provides additional protection
+ufw limit 22/tcp
+
+# Allow HTTP and HTTPS
+ufw allow 80/tcp comment 'HTTP'
+ufw allow 443/tcp comment 'HTTPS'
+
+# Allow Docker bridge network traffic (for container networking)
+ufw allow from 172.16.0.0/12
+ufw allow from 192.168.0.0/16
+
+# Allow localhost
+ufw allow from 127.0.0.1
+
+# Enable firewall (non-interactive)
+ufw --force enable
+
+echo "=== ufw configured and enabled ==="
+echo "=== Active rules ==="
+ufw status verbose
+
 echo "=== Testing gVisor ==="
 docker run --runtime=runsc --rm hello-world
 
