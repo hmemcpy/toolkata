@@ -88,8 +88,8 @@ export function Header() {
             </MobileNavLink>
             <div className="pt-2 border-t border-[var(--color-border)] mt-2">
               <span className="text-[10px] text-[var(--color-text-dim)] font-mono">
-                toolkata {process.env["NEXT_PUBLIC_GIT_SHA"]?.slice(0, 7) ?? "dev"} · progress stored
-                locally
+                toolkata {process.env["NEXT_PUBLIC_GIT_SHA"]?.slice(0, 7) ?? "dev"} · progress
+                stored locally
               </span>
             </div>
           </div>
