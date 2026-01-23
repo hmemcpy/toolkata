@@ -5,6 +5,7 @@ const RATE_LIMITS = {
   sessionsPerHour: 10, // Max new sessions per hour per IP
   maxConcurrentSessions: 2, // Max concurrent sessions per IP
   commandsPerMinute: 60, // Max commands per minute (optional, for future use)
+  maxConcurrentWebSockets: 3, // Max concurrent WebSocket connections per IP (V-007)
 } as const
 
 // Per-IP tracking data
@@ -14,6 +15,7 @@ export interface IpTracking {
   readonly activeSessions: readonly string[] // List of active session IDs
   readonly commandCount: number // Commands in current minute window
   readonly minuteWindowStart: number // Timestamp of minute window start
+  readonly activeWebSocketIds: readonly string[] // List of active WebSocket connection IDs (V-007)
 }
 
 // Rate limit check result
@@ -24,7 +26,7 @@ export interface RateLimitResult {
 
 // Error types
 export class RateLimitError extends Data.TaggedClass("RateLimitError")<{
-  readonly cause: "TooManySessions" | "TooManyConcurrent" | "TooManyCommands"
+  readonly cause: "TooManySessions" | "TooManyConcurrent" | "TooManyCommands" | "TooManyWebSockets"
   readonly message: string
   readonly retryAfter?: number
 }> {}
@@ -37,6 +39,9 @@ export interface RateLimitServiceShape {
   readonly checkCommandLimit: (ipAddress: string) => Effect.Effect<RateLimitResult, RateLimitError>
   readonly recordCommand: (ipAddress: string) => Effect.Effect<void, never>
   readonly getActiveSessionCount: (ipAddress: string) => Effect.Effect<number, never>
+  readonly checkWebSocketLimit: (ipAddress: string) => Effect.Effect<RateLimitResult, RateLimitError> // V-007
+  readonly registerWebSocket: (ipAddress: string, connectionId: string) => Effect.Effect<void, never> // V-007
+  readonly unregisterWebSocket: (ipAddress: string, connectionId: string) => Effect.Effect<void, never> // V-007
 }
 
 // Service tag
@@ -63,6 +68,7 @@ const getOrCreateTracking = (store: RateLimitStore, ipAddress: string, now: numb
       activeSessions: [],
       commandCount: 0,
       minuteWindowStart: now,
+      activeWebSocketIds: [],
     } satisfies IpTracking
   }
 
@@ -78,6 +84,7 @@ const getOrCreateTracking = (store: RateLimitStore, ipAddress: string, now: numb
       activeSessions: tracking.activeSessions,
       commandCount: 0,
       minuteWindowStart: now,
+      activeWebSocketIds: tracking.activeWebSocketIds,
     }
   }
 
@@ -235,6 +242,63 @@ const make = Effect.gen(function* () {
       }),
     )
 
+  // V-007: Check if IP can open a new WebSocket connection
+  const checkWebSocketLimit = (ipAddress: string) =>
+    Effect.gen(function* () {
+      const now = Date.now()
+      const store = yield* Ref.get(storeRef)
+      const tracking = getOrCreateTracking(store, ipAddress, now)
+
+      // Check concurrent WebSocket limit
+      if (tracking.activeWebSocketIds.length >= RATE_LIMITS.maxConcurrentWebSockets) {
+        return {
+          allowed: false,
+          // No retry time for concurrent - user must close a connection
+        } satisfies RateLimitResult
+      }
+
+      return { allowed: true } satisfies RateLimitResult
+    })
+
+  // V-007: Register a new WebSocket connection for an IP
+  const registerWebSocket = (ipAddress: string, connectionId: string) =>
+    Effect.gen(function* () {
+      const now = Date.now()
+      const store = yield* Ref.get(storeRef)
+      const tracking = getOrCreateTracking(store, ipAddress, now)
+
+      const updatedTracking: IpTracking = {
+        ...tracking,
+        activeWebSocketIds: [...tracking.activeWebSocketIds, connectionId],
+      }
+
+      // MutableHashMap.set is synchronous and mutates in place
+      MutableHashMap.set(store.ipTracking, ipAddress, updatedTracking)
+    })
+
+  // V-007: Unregister a WebSocket connection for an IP
+  const unregisterWebSocket = (ipAddress: string, connectionId: string) =>
+    Effect.gen(function* () {
+      const store = yield* Ref.get(storeRef)
+      const trackingOption = MutableHashMap.get(store.ipTracking, ipAddress)
+
+      if (Option.isNone(trackingOption)) {
+        // IP not tracked, nothing to do
+        return
+      }
+
+      const tracking = trackingOption.value
+      const updatedWebSocketIds = tracking.activeWebSocketIds.filter((id: string) => id !== connectionId)
+
+      const updatedTracking: IpTracking = {
+        ...tracking,
+        activeWebSocketIds: updatedWebSocketIds,
+      }
+
+      // MutableHashMap.set is synchronous and mutates in place
+      MutableHashMap.set(store.ipTracking, ipAddress, updatedTracking)
+    })
+
   return {
     checkSessionLimit,
     recordSession,
@@ -242,6 +306,9 @@ const make = Effect.gen(function* () {
     checkCommandLimit,
     recordCommand,
     getActiveSessionCount,
+    checkWebSocketLimit,
+    registerWebSocket,
+    unregisterWebSocket,
   }
 })
 

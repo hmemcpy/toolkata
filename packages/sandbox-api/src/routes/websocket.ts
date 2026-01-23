@@ -3,6 +3,7 @@ import { Data, Effect } from "effect"
 import { WebSocketServer } from "ws"
 import { validateApiKey, validateMessageSize, validateOrigin, validateTerminalInput } from "../config.js"
 import type { SessionServiceShape } from "../services/session.js"
+import type { RateLimitServiceShape } from "../services/rate-limit.js"
 import { type WebSocketServiceShape, parseMessage } from "../services/websocket.js"
 
 // Error types for WebSocket route
@@ -33,6 +34,7 @@ export const createWebSocketServer = (
   httpServer: HttpServer,
   sessionService: SessionServiceShape,
   webSocketService: WebSocketServiceShape,
+  rateLimitService: RateLimitServiceShape, // V-007: Add rate limit service
 ) => {
   const wss = new WebSocketServer({ noServer: true })
 
@@ -78,9 +80,47 @@ export const createWebSocketServer = (
       return
     }
 
+    // V-007: Check WebSocket connection limit per IP
+    const clientIp = (request.socket.remoteAddress ?? "unknown").replace(/^::ffff:/, "") // Strip IPv6 prefix
+    const wsLimitResult = await Effect.runPromise(
+      Effect.either(rateLimitService.checkWebSocketLimit(clientIp)),
+    )
+    if (wsLimitResult._tag === "Left") {
+      const wsLimitError = wsLimitResult.left
+      console.error(
+        `[WebSocket] Connection limit exceeded for ${clientIp}: ${wsLimitError.message}`,
+      )
+      socket.write("HTTP/1.1 429 Too Many Requests\r\n\r\nToo many concurrent connections\r\n")
+      socket.destroy()
+      return
+    }
+    if (!wsLimitResult.right.allowed) {
+      console.error(`[WebSocket] Connection limit exceeded for ${clientIp}`)
+      socket.write("HTTP/1.1 429 Too Many Requests\r\n\r\nToo many concurrent connections\r\n")
+      socket.destroy()
+      return
+    }
+
     // Upgrade the connection to WebSocket
     wss.handleUpgrade(request, socket, head, (ws) => {
-      wss.emit("connection", ws, request, sessionId)
+      // V-007: Generate unique connection ID for tracking
+      const connectionId = `${clientIp}-${sessionId}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+
+      // Register WebSocket connection
+      Effect.runPromise(
+        rateLimitService.registerWebSocket(clientIp, connectionId).pipe(
+          Effect.catchAll((error) => {
+            console.error("[WebSocket] Failed to register connection:", error)
+            return Effect.void
+          }),
+        ),
+      )
+
+      // Store connection ID on the WebSocket for cleanup
+      ;(ws as unknown as Record<string, unknown>).__connectionId = connectionId
+      ;(ws as unknown as Record<string, unknown>).__clientIp = clientIp
+
+      wss.emit("connection", ws, request, sessionId, connectionId, clientIp, rateLimitService)
     })
   })
 
@@ -91,6 +131,9 @@ export const createWebSocketServer = (
       ws: import("ws").WebSocket,
       _request: import("http").IncomingMessage,
       sessionId: string,
+      connectionId: string, // V-007: Connection ID for rate limit tracking
+      clientIp: string, // V-007: Client IP for rate limit tracking
+      rateLimitService: RateLimitServiceShape, // V-007: Rate limit service for cleanup
     ) => {
       console.log(`[WebSocket] Connection attempt for session: ${sessionId}`)
 
@@ -119,6 +162,7 @@ export const createWebSocketServer = (
         const closeEffect = Effect.all([
           webSocketService.close(connection),
           sessionService.updateActivity(sessionId),
+          rateLimitService.unregisterWebSocket(clientIp, connectionId), // V-007: Cleanup rate limit tracking
         ]).pipe(
           Effect.asVoid,
           Effect.catchAll(() => Effect.void),

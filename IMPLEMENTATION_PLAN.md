@@ -595,10 +595,23 @@ Begin the audit by reading each file listed above and systematically evaluating 
   - Closes connection with WebSocket close code 1008 on malicious input
   - **Vulnerability**: V-006 (Medium) - FIXED
 
-- [ ] **8.9** Add per-IP concurrent connection limits
+- [x] **8.9** Add per-IP concurrent connection limits
   - Location: `packages/sandbox-api/src/services/rate-limit.ts`
   - Max 3 concurrent WebSocket connections per IP
   - **Vulnerability**: V-007 (Medium)
+  - **DONE**:
+    * Added `maxConcurrentWebSockets: 3` to RATE_LIMITS config
+    * Added `activeWebSocketIds: readonly string[]` field to IpTracking interface
+    * Added "TooManyWebSockets" cause to RateLimitError
+    * Implemented `checkWebSocketLimit()`, `registerWebSocket()`, and `unregisterWebSocket()` methods in RateLimitService
+    * Integrated WebSocket limit check in upgrade handler (returns 429 if exceeded)
+    * Extract client IP from request.socket.remoteAddress with IPv6 prefix stripping
+    * Generated unique connection ID for tracking (ip-sessionId-timestamp-random)
+    * Stored connection metadata on WebSocket for cleanup
+    * Registered WebSocket on successful upgrade
+    * Unregistered WebSocket on close (added to closeEffect)
+    * Updated `createWebSocketServer()` signature to accept `rateLimitService: RateLimitServiceShape`
+    * Updated `index.ts` to pass rateLimitService to createWebSocketServer
 
 - [x] **8.10** Add timeout to container destroy operations
   - Location: `packages/sandbox-api/src/services/container.ts` line 212-275

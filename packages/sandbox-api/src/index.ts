@@ -182,7 +182,7 @@ const make = Effect.gen(function* () {
     })
 
     // Attach WebSocket server to HTTP server with services for connection handling
-    createWebSocketServer(httpServer, sessionService, webSocketService)
+    createWebSocketServer(httpServer, sessionService, webSocketService, rateLimitService)
 
     // Start listening
     httpServer.listen(config.port, config.host, () => {
