@@ -18,7 +18,7 @@ import {
 } from "./services/rate-limit.js"
 import { SessionService, SessionServiceLive, type SessionServiceShape } from "./services/session.js"
 import { WebSocketService, WebSocketServiceLive } from "./services/websocket.js"
-import { SandboxConfig, validateGvisorConfig } from "./config.js"
+import { getAllowedOrigins, SandboxConfig, validateGvisorConfig } from "./config.js"
 
 // Module-level reference to SessionService for health checks
 // This is set when the server starts and allows the health endpoint to access session stats
@@ -70,20 +70,34 @@ export interface HealthResponse {
 
 // Create Hono app with CORS and health check
 const createApp = (
-  config: ServerConfig,
+  _config: ServerConfig,
   sessionService: SessionServiceShape,
   rateLimitService: RateLimitServiceShape,
 ) => {
   const app = new Hono<{ Bindings: Env }>()
 
-  // CORS configuration
+  // Get allowed origins from environment configuration
+  const allowedOrigins = getAllowedOrigins()
+
+  // CORS configuration with origin whitelist validation
+  // If no origins configured (empty list), allow any origin (development mode)
+  // If origins configured, only allow those specific origins (production mode)
   app.use(
     "/*",
     cors({
-      origin: config.frontendOrigin,
+      origin: (origin) => {
+        // Empty whitelist means allow any origin (development)
+        if (allowedOrigins.length === 0) {
+          return origin ?? "*"
+        }
+
+        // Check if origin is in the whitelist
+        // Return the origin if allowed, false otherwise
+        return allowedOrigins.includes(origin) ? origin : false
+      },
       credentials: true,
       allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
-      allowHeaders: ["Content-Type", "Authorization"],
+      allowHeaders: ["Content-Type", "Authorization", "X-API-Key"],
     }),
   )
 

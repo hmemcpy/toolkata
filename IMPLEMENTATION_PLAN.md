@@ -636,10 +636,16 @@ Begin the audit by reading each file listed above and systematically evaluating 
   - Updated frontend sandbox-client to use new versioned paths
   - **Vulnerability**: V-018 (Low) - FIXED
 
-- [ ] **8.13** Validate and whitelist CORS origins
+- [x] **8.13** Validate and whitelist CORS origins
   - Location: `packages/sandbox-api/src/index.ts` line 80-88
   - Validate origin against explicit whitelist
-  - **Vulnerability**: V-017 (Low)
+  - **DONE**:
+    * Imported `getAllowedOrigins` from config.ts
+    * Updated CORS configuration to use origin whitelist function
+    * If no origins configured (empty list), allow any origin (development)
+    * If origins configured, only allow those specific origins (production)
+    * Added `X-API-Key` to allowed headers for authentication
+  - **Vulnerability**: V-017 (Low) - FIXED
 
 - [ ] **8.14** Add structured audit logging
   - Location: `packages/sandbox-api/src/index.ts`
