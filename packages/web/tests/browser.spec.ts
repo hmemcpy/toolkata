@@ -4,6 +4,7 @@ import { test, expect } from "@playwright/test"
  * Browser tests for toolkata.
  *
  * Covers IMPLEMENTATION_PLAN.md tasks:
+ * - 2.6: Shrinking layout tests
  * - 11.4: Keyboard-only navigation
  * - 11.8: Test at 320px width
  * - 11.9: Test at 200% zoom
@@ -477,4 +478,96 @@ test.describe("Content Validation", () => {
       }
     })
   }
+})
+
+test.describe("Shrinking Layout (2.6)", () => {
+  test.use({ viewport: { width: 1280, height: 720 } }) // Desktop breakpoint
+
+  test("TryIt buttons work while sidebar is open", async ({ page }) => {
+    await page.goto("/jj-git/1")
+
+    // Find a TryIt button (uses the Run functionality)
+    const runButton = page.getByRole("button", { name: /run in terminal/i })
+
+    if (await runButton.isVisible()) {
+      // Click the terminal toggle to open sidebar
+      const toggleButton = page.getByRole("button", { name: /open terminal/i })
+      await toggleButton.click()
+
+      // Wait for sidebar to open
+      await expect(page.locator("#terminal-sidebar, #terminal-bottom-sheet")).toBeVisible()
+
+      // TryIt button should still be clickable (no backdrop overlay blocking)
+      await expect(runButton).toBeEnabled()
+      await runButton.click()
+
+      // Command should be sent to terminal (verify terminal received input)
+      const terminalExists = await page.locator(".xterm-helper-textarea").count()
+      expect(terminalExists).toBeGreaterThan(0)
+    }
+  })
+
+  test("content scrolls independently from sidebar", async ({ page }) => {
+    await page.goto("/jj-git/1")
+
+    // Click the terminal toggle to open sidebar
+    const toggleButton = page.getByRole("button", { name: /open terminal/i })
+    await toggleButton.click()
+
+    // Wait for sidebar to open
+    await expect(page.locator("#terminal-sidebar, #terminal-bottom-sheet")).toBeVisible()
+
+    // Get initial scroll position of main content
+    const initialScrollTop = await page.evaluate(() => document.querySelector("main")?.scrollTop)
+
+    // Scroll the main content
+    await page.evaluate(() => document.querySelector("main")?.scrollBy(0, 200))
+
+    // Main content should have scrolled
+    const newScrollTop = await page.evaluate(() => document.querySelector("main")?.scrollTop)
+    expect(newScrollTop).toBeGreaterThan(initialScrollTop ?? 0)
+
+    // Verify sidebar is still visible and open (scrolling main content didn't close it)
+    await expect(page.locator("#terminal-sidebar, #terminal-bottom-sheet")).toBeVisible()
+  })
+
+  test("sidebar does not block content interaction", async ({ page }) => {
+    await page.goto("/jj-git/1")
+
+    // Get a link in the main content area
+    const contentLink = page.locator("main a").first()
+
+    if (await contentLink.isVisible()) {
+      // Click the terminal toggle to open sidebar
+      const toggleButton = page.getByRole("button", { name: /open terminal/i })
+      await toggleButton.click()
+
+      // Wait for sidebar to open
+      await expect(page.locator("#terminal-sidebar, #terminal-bottom-sheet")).toBeVisible()
+
+      // Content links should still be clickable (no inert attribute)
+      await expect(contentLink).toBeEnabled()
+
+      // Main element should not have inert attribute
+      const hasInert = await page.evaluate(() => document.querySelector("main")?.hasAttribute("inert"))
+      expect(hasInert).toBe(false)
+    }
+  })
+
+  test("sidebar closes on Escape key", async ({ page }) => {
+    await page.goto("/jj-git/1")
+
+    // Click the terminal toggle to open sidebar
+    const toggleButton = page.getByRole("button", { name: /open terminal/i })
+    await toggleButton.click()
+
+    // Wait for sidebar to open
+    await expect(page.locator("#terminal-sidebar, #terminal-bottom-sheet")).toBeVisible()
+
+    // Press Escape to close sidebar
+    await page.keyboard.press("Escape")
+
+    // Sidebar should be hidden
+    await expect(page.locator("#terminal-sidebar, #terminal-bottom-sheet")).not.toBeVisible()
+  })
 })

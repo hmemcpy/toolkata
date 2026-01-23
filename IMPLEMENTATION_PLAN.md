@@ -314,11 +314,16 @@ The reset button in TerminalSidebar and MobileBottomSheet has an empty onClick h
   bun run build      # All pages generate successfully ✓
   ```
 
-- [ ] **6.2** Update Playwright tests for shrinking layout
+- [x] **6.2** Update Playwright tests for shrinking layout
   - Location: `packages/web/tests/browser.spec.ts`
   - Remove/update tests that expect backdrop/inert behavior
   - Add test: TryIt button clickable while sidebar is open
   - Add test: Content scrolls independently from sidebar
+  - Tests added: "Shrinking Layout (2.6)" test suite with 4 tests:
+    * TryIt buttons work while sidebar is open
+    * Content scrolls independently from sidebar
+    * Sidebar does not block content interaction (no inert)
+    * Sidebar closes on Escape key
 
 - [ ] **6.3** Add tests for TryIt enhancements
   - Test: expectedOutput renders with correct styling
