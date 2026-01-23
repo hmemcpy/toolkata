@@ -352,11 +352,14 @@ The reset button in TerminalSidebar and MobileBottomSheet has an empty onClick h
 
 > **WHY**: Comprehensive review of the entire sandbox system before production use. This audit must be performed manually by an LLM to identify gaps, vulnerabilities, and architectural issues that automated tests cannot catch.
 
-- [ ] **7.1** Perform comprehensive sandbox security audit
+- [x] **7.1** Perform comprehensive sandbox security audit
   - Execute the audit prompt below
   - Document findings in `SECURITY_AUDIT.md`
   - Categorize issues by severity (Critical/High/Medium/Low)
   - Create follow-up tasks for any identified issues
+  - **DONE**: Security audit complete, documented in `SECURITY_AUDIT.md`
+  - Found 1 Critical, 2 High, 9 Medium, 8 Low severity issues
+  - All findings categorized with file:line references and recommendations
 
 ---
 
@@ -514,6 +517,115 @@ Begin the audit by reading each file listed above and systematically evaluating 
 
 ---
 
+### Phase 8: Security Remediation (P0-P2 - From Audit Findings)
+
+> **WHY**: Security audit identified 1 Critical, 2 High, 9 Medium, and 8 Low severity issues that should be addressed for production readiness.
+
+#### Priority 1: Critical (Do before production)
+
+- [ ] **8.1** Remove sudo group membership from container user
+  - Location: `packages/sandbox-api/docker/Dockerfile` lines 28-29
+  - Change `usermod -aG sudo sandbox` to remove sudo access
+  - User doesn't need sudo for git/jj operations
+  - **Vulnerability**: V-001 (Critical)
+
+- [ ] **8.2** Implement API authentication
+  - Location: `packages/sandbox-api/src/routes/sessions.ts`, `src/index.ts`
+  - Add shared secret authentication (X-API-Key header)
+  - Require SANDBOX_API_KEY in production
+  - Add `validateAuth()` function to session routes
+  - **Vulnerability**: V-002 (High)
+
+- [ ] **8.3** Use cryptographically secure session IDs
+  - Location: `packages/sandbox-api/src/services/session.ts` line 69-73
+  - Replace `Math.random()` with `crypto.randomBytes(16)`
+  - Use 128-bit entropy (hex encoded)
+  - **Vulnerability**: V-008 (Medium but easy fix)
+
+#### Priority 2: High (Do within first week)
+
+- [ ] **8.4** Configure fail2ban for SSH
+  - Location: `scripts/hetzner/provision.sh`
+  - Install and configure fail2ban
+  - Protect SSH from brute force attacks
+  - **Vulnerability**: V-003 (High)
+
+- [ ] **8.5** Force gVisor in production mode
+  - Location: `packages/sandbox-api/src/config.ts`
+  - Add production mode check that enforces gVisor
+  - Throw error if gVisor disabled in production
+  - **Vulnerability**: V-004 (Medium)
+
+- [ ] **8.6** Validate Origin header on WebSocket upgrade
+  - Location: `packages/sandbox-api/src/routes/websocket.ts` line 39-58
+  - Add Origin header validation
+  - Reject connections from unexpected origins
+  - **Vulnerability**: V-020 (Low but important for CSRF)
+
+#### Priority 3: Medium (Do within first month)
+
+- [ ] **8.7** Add WebSocket message size limits
+  - Location: `packages/sandbox-api/src/routes/websocket.ts` line 109
+  - Limit messages to 1KB for terminal input
+  - **Vulnerability**: V-011 (Medium)
+
+- [ ] **8.8** Implement terminal input sanitization
+  - Location: `packages/sandbox-api/src/routes/websocket.ts`
+  - Filter or validate terminal input
+  - Reject dangerous escape sequences
+  - **Vulnerability**: V-006 (Medium)
+
+- [ ] **8.9** Add per-IP concurrent connection limits
+  - Location: `packages/sandbox-api/src/services/rate-limit.ts`
+  - Max 3 concurrent WebSocket connections per IP
+  - **Vulnerability**: V-007 (Medium)
+
+- [ ] **8.10** Add timeout to container destroy operations
+  - Location: `packages/sandbox-api/src/services/container.ts` line 213-244
+  - Add timeout to `container.kill()` and `container.remove()`
+  - **Vulnerability**: V-010 (Medium)
+
+- [ ] **8.11** Sanitize error messages for external responses
+  - Location: `packages/sandbox-api/src/routes/sessions.ts` line 77-133
+  - Remove internal details from error responses
+  - Use generic messages for unexpected errors
+  - **Vulnerability**: V-009 (Medium)
+
+- [ ] **8.12** Add API versioning
+  - Location: `packages/sandbox-api/src/index.ts`, `routes/`
+  - Add `/api/v1` prefix to all routes
+  - **Vulnerability**: V-018 (Low)
+
+- [ ] **8.13** Validate and whitelist CORS origins
+  - Location: `packages/sandbox-api/src/index.ts` line 80-88
+  - Validate origin against explicit whitelist
+  - **Vulnerability**: V-017 (Low)
+
+- [ ] **8.14** Add structured audit logging
+  - Location: `packages/sandbox-api/src/index.ts`
+  - Log: session creation, commands, errors, rate limit hits
+  - **Vulnerability**: V-019 (Low)
+
+#### Priority 4: Infrastructure (Low priority but important)
+
+- [ ] **8.15** Configure ufw firewall
+  - Location: `scripts/hetzner/provision.sh`
+  - Only allow ports 80, 443, and 22 from specific IPs
+  - **Vulnerability**: V-014 (Low)
+
+- [ ] **8.16** Enable unattended-upgrades
+  - Location: `scripts/hetzner/provision.sh`
+  - Automatic security patches
+  - **Vulnerability**: V-013 (Low)
+
+- [ ] **8.17** Configure log rotation
+  - Location: `packages/sandbox-api/deploy/sandbox-api.service`
+  - Add logrotate for application logs
+  - Configure Docker log size limits
+  - **Vulnerability**: V-015 (Low)
+
+---
+
 ## File Summary
 
 ### New Files Created (6) ✓
@@ -527,11 +639,17 @@ Begin the audit by reading each file listed above and systematically evaluating 
 | `packages/web/components/ui/ShrinkingLayout.tsx` | Client wrapper for content margin when sidebar open | ✓ Done |
 | `packages/sandbox-api/src/config.ts` | Centralized sandbox configuration (gVisor, etc.) | ✓ Done |
 
-### New Files To Create (1)
+### New Files Created (7) ✓
 
-| File | Purpose |
-|------|---------|
-| `SECURITY_AUDIT.md` | Deliverable from Phase 7 security audit (findings, recommendations) |
+| File | Purpose | Status |
+|------|---------|--------|
+| `scripts/hetzner/provision.sh` | Create Hetzner CAX11 server with Docker/gVisor/Bun/Caddy | ✓ Done |
+| `scripts/hetzner/deploy.sh` | Sync code, build image, start service | ✓ Done |
+| `scripts/hetzner/sandbox.env` | Server configuration (IP, type, location) | ✓ Done |
+| `scripts/hetzner/README.md` | Hetzner deployment documentation | ✓ Done |
+| `packages/web/components/ui/ShrinkingLayout.tsx` | Client wrapper for content margin when sidebar open | ✓ Done |
+| `packages/sandbox-api/src/config.ts` | Centralized sandbox configuration (gVisor, etc.) | ✓ Done |
+| `SECURITY_AUDIT.md` | Security audit findings and recommendations | ✓ Done |
 
 ### Modified Files - Done (7) ✓
 
@@ -622,13 +740,14 @@ bun run --cwd packages/web dev
 | 5 | 5 | P2 | gVisor integration |
 | 6 | 4 | P3 | Validation & testing |
 | 7 | 1 | P3 | Security & integration audit |
-| **Total** | **34** | | **(52 unchecked sub-items remain)** |
+| 8 | 17 | P0-P2 | Security remediation (from audit findings) |
+| **Total** | **51** | | **(52 unchecked sub-items remain)** |
 
 ## Priority Summary
 
 | Priority | Phases | Description |
 |----------|--------|-------------|
-| **P0** | 1 | Terminal state wiring + reset (foundation - blocks everything) |
-| **P1** | 2, 3 | UI changes (shrinking layout, TryIt enhancements) |
-| **P2** | 4, 5 | Backend changes (Docker images, gVisor security) |
-| **P3** | 6, 7 | Validation, testing, and security audit |
+| **P0** | 1, 8 (tasks 8.1-8.3) | Terminal state wiring + Critical security fixes |
+| **P1** | 2, 3, 8 (tasks 8.4-8.6) | UI changes + High priority security |
+| **P2** | 4, 5, 8 (tasks 8.7-8.14) | Backend changes + Medium priority security |
+| **P3** | 6, 7, 8 (tasks 8.15-8.17) | Validation, testing, audit, infrastructure |
