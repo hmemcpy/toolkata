@@ -600,10 +600,13 @@ Begin the audit by reading each file listed above and systematically evaluating 
   - Max 3 concurrent WebSocket connections per IP
   - **Vulnerability**: V-007 (Medium)
 
-- [ ] **8.10** Add timeout to container destroy operations
-  - Location: `packages/sandbox-api/src/services/container.ts` line 213-244
+- [x] **8.10** Add timeout to container destroy operations
+  - Location: `packages/sandbox-api/src/services/container.ts` line 212-275
   - Add timeout to `container.kill()` and `container.remove()`
-  - **Vulnerability**: V-010 (Medium)
+  - Implemented using `Promise.race` with 10s timeout for each operation
+  - Added `Effect.timeout("10 seconds")` at the Effect layer as safety net
+  - Returns clear error message if container is in inconsistent state
+  - **Vulnerability**: V-010 (Medium) - FIXED
 
 - [ ] **8.11** Sanitize error messages for external responses
   - Location: `packages/sandbox-api/src/routes/sessions.ts` line 77-133

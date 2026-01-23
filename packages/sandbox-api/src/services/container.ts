@@ -210,38 +210,69 @@ const make = Effect.gen(function* () {
     })
 
   const destroy = (containerId: string) =>
-    Effect.tryPromise({
-      try: async () => {
-        const docker = dockerClient.docker
+    Effect.gen(function* () {
+      const result = yield* Effect.tryPromise({
+        try: async () => {
+          const docker = dockerClient.docker
 
-        try {
-          const container = docker.getContainer(containerId)
+          try {
+            const container = docker.getContainer(containerId)
 
-          // Get container info to check if it exists
-          await container.inspect()
+            // Get container info to check if it exists
+            await container.inspect()
 
-          // Kill and remove container
-          await container.kill()
-          await container.remove()
-        } catch (error) {
-          // If container doesn't exist (404), that's okay
-          if (error instanceof Error && "statusCode" in error && error.statusCode === 404) {
-            return // Container already gone
+            // Kill and remove container with timeout
+            await Promise.race([
+              container.kill(),
+              new Promise((_, reject) =>
+                setTimeout(
+                  () => reject(new Error("Container kill timed out after 10 seconds")),
+                  10000,
+                ),
+              ),
+            ])
+
+            await Promise.race([
+              container.remove(),
+              new Promise((_, reject) =>
+                setTimeout(
+                  () => reject(new Error("Container remove timed out after 10 seconds")),
+                  10000,
+                ),
+              ),
+            ])
+          } catch (error) {
+            // If container doesn't exist (404), that's okay
+            if (error instanceof Error && "statusCode" in error && error.statusCode === 404) {
+              return // Container already gone
+            }
+            throw error
           }
-          throw error
-        }
-      },
-      catch: (error) => {
-        return new ContainerError({
-          cause:
-            error instanceof Error && "statusCode" in error && error.statusCode === 404
-              ? "NotFoundError"
-              : "DestroyFailed",
-          message: error instanceof Error ? error.message : "Unknown error destroying container",
-          originalError: error,
-        })
-      },
-    })
+        },
+        catch: (error) => {
+          return new ContainerError({
+            cause:
+              error instanceof Error && "statusCode" in error && error.statusCode === 404
+                ? "NotFoundError"
+                : "DestroyFailed",
+            message: error instanceof Error ? error.message : "Unknown error destroying container",
+            originalError: error,
+          })
+        },
+      })
+
+      return result
+    }).pipe(
+      Effect.timeout("10 seconds"),
+      Effect.catchAll(() =>
+        Effect.fail(
+          new ContainerError({
+            cause: "DestroyFailed",
+            message: "Container destroy timed out after 10 seconds. Container may be in an inconsistent state.",
+          }),
+        ),
+      ),
+    )
 
   const get = (containerId: string) =>
     Effect.tryPromise({
