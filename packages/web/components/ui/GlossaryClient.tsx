@@ -3,7 +3,6 @@
  *
  * Features:
  * - Client-side component for interactive search and filtering
- * - Direction-aware display (respects DirectionContext)
  * - Category filter tabs (All + 8 categories)
  * - Debounced search input with aria-live result announcements
  * - Two-column table with copy buttons
@@ -12,12 +11,9 @@
  *
  * @example
  * ```tsx
- * import { DirectionProvider } from "@/contexts/DirectionContext"
  * import { GlossaryClient } from "@/components/ui/GlossaryClient"
  *
- * <DirectionProvider toolPair="jj-git">
- *   <GlossaryClient entries={jjGitGlossary} toolPair="jj-git" />
- * </DirectionProvider>
+ * <GlossaryClient entries={jjGitGlossary} toolPair="jj-git" />
  * ```
  */
 
@@ -27,14 +23,9 @@ import React from "react"
 import type { GlossaryEntry, GlossaryCategory } from "../../content/glossary/jj-git"
 import { getCategories } from "../../content/glossary/jj-git"
 import { useGlossarySearch } from "../../hooks/useGlossarySearch"
-import { useDirectionContext } from "../../contexts/DirectionContext"
 
 /**
  * Copy button component for individual commands.
- *
- * Copies the appropriate command based on current direction preference.
- * - Default (git→jj): copies the jj (to) command
- * - Reversed (jj→git): copies the git (from) command
  */
 function CopyButton({ text }: { readonly text: string }): React.JSX.Element {
   const [copied, setCopied] = React.useState(false)
@@ -97,20 +88,23 @@ export interface GlossaryClientProps {
   readonly entries: readonly GlossaryEntry[]
   /** The tool pairing slug */
   readonly toolPair: string
+  /** Label for the "from" tool (left column) */
+  readonly fromLabel?: string
+  /** Label for the "to" tool (right column) */
+  readonly toLabel?: string
 }
 
 /**
  * GlossaryClient component.
  *
  * Renders an interactive glossary with search and category filtering.
- * Must be used within a DirectionProvider.
  */
 export function GlossaryClient({
   entries,
   toolPair: _toolPair,
+  fromLabel = "git",
+  toLabel = "jj",
 }: GlossaryClientProps): React.JSX.Element {
-  const { isReversed, fromTool, toTool } = useDirectionContext()
-
   const { query, setQuery, category, setCategory, filteredEntries, resultCount } =
     useGlossarySearch(entries)
 
@@ -197,61 +191,40 @@ export function GlossaryClient({
           <div className="overflow-x-auto">
             {/* Table header */}
             <div className="grid grid-cols-2 gap-4 border-b border-[var(--color-border)] bg-[var(--color-bg)] px-6 py-3">
-              <div
-                className={[
-                  "text-xs font-mono font-medium uppercase tracking-wide",
-                  isReversed ? "text-[var(--color-accent)]" : "text-[var(--color-accent-alt)]",
-                ].join(" ")}
-              >
-                {fromTool}
+              <div className="text-xs font-mono font-medium uppercase tracking-wide text-[var(--color-accent-alt)]">
+                {fromLabel}
               </div>
-              <div
-                className={[
-                  "text-xs font-mono font-medium uppercase tracking-wide",
-                  isReversed ? "text-[var(--color-accent-alt)]" : "text-[var(--color-accent)]",
-                ].join(" ")}
-              >
-                {toTool}
+              <div className="text-xs font-mono font-medium uppercase tracking-wide text-[var(--color-accent)]">
+                {toLabel}
               </div>
             </div>
 
             {/* Command rows */}
-            {filteredEntries.map((entry) => {
-              const leftCommand = isReversed ? entry.toCommand : entry.fromCommand
-              const rightCommand = isReversed ? entry.fromCommand : entry.toCommand
-              const leftColor = isReversed
-                ? "text-[var(--color-accent)]"
-                : "text-[var(--color-accent-alt)]"
-              const rightColor = isReversed
-                ? "text-[var(--color-accent-alt)]"
-                : "text-[var(--color-accent)]"
-
-              return (
-                <div
-                  key={entry.id}
-                  className="grid grid-cols-2 gap-4 border-b border-[var(--color-border)] px-6 py-3 last:border-b-0 hover:bg-[var(--color-surface-hover)] transition-colors duration-[var(--transition-fast)]"
-                >
-                  <div className="flex items-center">
-                    <code className={["text-sm font-mono", leftColor].join(" ")}>
-                      {leftCommand}
-                    </code>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <code className={["text-sm font-mono", rightColor].join(" ")}>
-                        {rightCommand}
-                      </code>
-                      {entry.note && (
-                        <span className="text-xs text-[var(--color-text-muted)] italic hidden sm:inline">
-                          ({entry.note})
-                        </span>
-                      )}
-                    </div>
-                    <CopyButton text={rightCommand} />
-                  </div>
+            {filteredEntries.map((entry) => (
+              <div
+                key={entry.id}
+                className="grid grid-cols-2 gap-4 border-b border-[var(--color-border)] px-6 py-3 last:border-b-0 hover:bg-[var(--color-surface-hover)] transition-colors duration-[var(--transition-fast)]"
+              >
+                <div className="flex items-center">
+                  <code className="text-sm font-mono text-[var(--color-accent-alt)]">
+                    {entry.fromCommand}
+                  </code>
                 </div>
-              )
-            })}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <code className="text-sm font-mono text-[var(--color-accent)]">
+                      {entry.toCommand}
+                    </code>
+                    {entry.note && (
+                      <span className="text-xs text-[var(--color-text-muted)] italic hidden sm:inline">
+                        ({entry.note})
+                      </span>
+                    )}
+                  </div>
+                  <CopyButton text={entry.toCommand} />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

@@ -167,39 +167,16 @@ packages/sandbox-api/src/services/
 ---
 
 ### `/agent-browser`
-**Purpose:** Automates browser interactions for web testing, form filling, screenshots, and data extraction.
+**Purpose:** Complete browser automation with Playwright for web testing, form filling, screenshots, and data extraction.
 
 **Use for:**
 - End-to-end (E2E) testing with Playwright
-- Testing the sandbox terminal interaction
-- Taking screenshots for visual regression
-- Testing user flows (lesson progression, sandbox usage)
-
-**Examples:**
-```
-/agent-browser Test the complete lesson flow from home to step completion
-/agent-browser Verify the sandbox terminal connects and accepts input
-/agent-browser Take screenshots of all step pages at mobile breakpoint
-```
-
----
-
-### `/playwright-skill`
-**Purpose:** Complete browser automation with Playwright. Auto-detects dev servers, writes clean test scripts to /tmp.
-
-**Use for:**
 - Testing pages and user flows
 - Responsive design verification (multiple viewports)
+- Screenshot capture for visual regression
+- Testing the sandbox terminal interaction
 - Form filling and submission testing
-- Screenshot capture for visual verification
-- Login flow and navigation testing
 - Checking for broken links
-
-**Key Features:**
-- **Auto-detects dev servers** - Finds running localhost servers automatically
-- **Visible browser by default** - Shows browser window for debugging
-- **Scripts in /tmp** - Keeps project clean, OS auto-cleans
-- **Parameterized URLs** - Easy to switch between environments
 
 **toolkata Context:**
 - Use to verify responsive design at 320px, 768px, 1024px+
@@ -210,19 +187,12 @@ packages/sandbox-api/src/services/
 
 **Examples:**
 ```
-/playwright-skill Test the home page at mobile and desktop viewports
-/playwright-skill Verify keyboard navigation works on step pages
-/playwright-skill Take screenshots of all step pages for visual review
-/playwright-skill Test that progress persists after page refresh
-```
-
-**Execution Pattern:**
-```bash
-# 1. Detect dev servers first
-cd $SKILL_DIR && node -e "require('./lib/helpers').detectDevServers().then(s => console.log(JSON.stringify(s)))"
-
-# 2. Write test script to /tmp
-# 3. Execute via: cd $SKILL_DIR && node run.js /tmp/playwright-test-*.js
+/agent-browser Test the complete lesson flow from home to step completion
+/agent-browser Verify the sandbox terminal connects and accepts input
+/agent-browser Take screenshots of all step pages at mobile breakpoint
+/agent-browser Test the home page at mobile and desktop viewports
+/agent-browser Verify keyboard navigation works on step pages
+/agent-browser Test that progress persists after page refresh
 ```
 
 ---
@@ -482,8 +452,8 @@ jjCommands: ["jj describe", "jj new"]
 | Build Effect service | `/effect-ts`, `/typescript` |
 | Fix type errors | `/typescript`, `/effect-ts` |
 | Review accessibility | `/ux-designer` |
-| E2E testing | `/playwright-skill`, `/agent-browser` |
-| Browser automation | `/playwright-skill` |
+| E2E testing | `/agent-browser` |
+| Browser automation | `/agent-browser` |
 | Performance optimization | `/vercel-react-best-practices` |
 
 ### Commands
@@ -523,16 +493,16 @@ Tests cover (see `packages/web/tests/browser.spec.ts`):
 - Keyboard navigation (Tab, arrows, ?, Esc, skip link)
 - All 16 routes load successfully
 
-**Using `/playwright-skill` for Ad-hoc Testing:**
+**Using `/agent-browser` for Ad-hoc Testing:**
 ```bash
 # Use the skill for quick browser automation
-/playwright-skill Test responsive design at mobile viewport
-/playwright-skill Take screenshot of the cheatsheet page
-/playwright-skill Verify all navigation links work
+/agent-browser Test responsive design at mobile viewport
+/agent-browser Take screenshot of the cheatsheet page
+/agent-browser Verify all navigation links work
 ```
 
 **Manual Testing Checklist:**
-Use browser DevTools or `/playwright-skill` to verify:
+Use browser DevTools or `/agent-browser` to verify:
 - Touch targets >= 44px
 - Terminal states (connecting, connected, error, timeout)
 - Sandbox API integration (requires running sandbox-api)

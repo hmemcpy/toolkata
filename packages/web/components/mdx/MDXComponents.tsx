@@ -6,7 +6,7 @@
  */
 
 import { Callout } from "../ui/Callout"
-import { SideBySideWithDirection } from "../ui/SideBySideWithDirection"
+import { SideBySide } from "../ui/SideBySide"
 import { Tab, Tabs } from "../ui/Tabs"
 import { TryIt } from "../ui/TryIt"
 
@@ -17,13 +17,9 @@ import { TryIt } from "../ui/TryIt"
  *
  * Note: Code blocks (```bash etc) are NOT mapped - they use native
  * <pre><code> elements styled by prose classes in StepPageClientWrapper.
- *
- * Note: SideBySideWithDirection is used instead of SideBySide to support
- * bidirectional comparison (git→jj OR jj→git). The wrapper consumes
- * direction context and handles SSR hydration safety.
  */
 export const mdxComponents = {
-  SideBySide: SideBySideWithDirection,
+  SideBySide,
   Callout,
   Tabs,
   Tab,

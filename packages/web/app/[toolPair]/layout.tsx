@@ -7,7 +7,7 @@ import { isValidPairingSlug } from "../../content/pairings"
  * Layout for all tool comparison pages.
  *
  * This layout wraps all pages under /[toolPair] with necessary providers:
- * - DirectionProvider: For bidirectional comparison direction state
+ * - TerminalProvider: For terminal sidebar state and command execution
  *
  * This includes:
  * - Overview page: /jj-git
@@ -16,7 +16,7 @@ import { isValidPairingSlug } from "../../content/pairings"
  *
  * Why a layout instead of per-page providers?
  * - Single provider instance for all pages in the toolPair section
- * - Direction preference persists across navigation
+ * - Terminal state persists across navigation
  * - Cleaner than wrapping each page individually
  *
  * @param props - Props containing params and children.

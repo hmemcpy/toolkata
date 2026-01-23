@@ -21,26 +21,68 @@ export interface StepProgressState {
 }
 
 /**
+ * Options for useStepProgress hook
+ */
+export interface UseStepProgressOptions {
+  /**
+   * Initial progress from server-side cookie reading.
+   * When provided, eliminates hydration flicker by starting with correct state.
+   */
+  readonly initialProgress?:
+    | {
+        readonly completedSteps: readonly number[]
+        readonly currentStep: number
+      }
+    | undefined
+}
+
+/**
  * React hook for managing step progress
  *
  * Features:
+ * - Accepts initial progress from server to prevent hydration flicker
  * - Hydrates progress from localStorage on mount
- * - Avoids SSR mismatch with isLoading state
+ * - Syncs progress to cookie for SSR
  * - Provides memoized callbacks for progress operations
  * - Graceful degradation when localStorage unavailable
  *
  * @param toolPair - The tool pairing slug (e.g., "jj-git")
  * @param totalSteps - Total number of steps for this pairing (for progress calc)
+ * @param options - Optional configuration including initialProgress from server
  */
-export function useStepProgress(toolPair: string, _totalSteps?: number): StepProgressState {
-  const [progress, setProgress] = useState<ToolPairProgress | undefined>()
-  const [isLoading, setIsLoading] = useState(true)
+export function useStepProgress(
+  toolPair: string,
+  _totalSteps?: number,
+  options?: UseStepProgressOptions,
+): StepProgressState {
+  // Initialize with server-provided progress to prevent hydration flicker
+  const initialProgress: ToolPairProgress | undefined = options?.initialProgress
+    ? {
+        completedSteps: [...options.initialProgress.completedSteps],
+        currentStep: options.initialProgress.currentStep,
+        lastVisited: new Date().toISOString(),
+      }
+    : undefined
+
+  const [progress, setProgress] = useState<ToolPairProgress | undefined>(initialProgress)
+  // When we have initial progress from server, no loading needed
+  const [isLoading, setIsLoading] = useState(options?.initialProgress === undefined)
 
   const store = getProgressStore()
 
-  // Load progress on mount (client-side only)
+  // Sync from localStorage on mount (client-side only)
+  // This handles the case where localStorage has a different value than the cookie
   useEffect(() => {
-    setProgress(store.getProgress(toolPair))
+    const storedProgress = store.getProgress(toolPair)
+    if (storedProgress) {
+      setProgress(storedProgress)
+      // Sync cookie with localStorage value
+      updateProgressInCookieSync(
+        toolPair,
+        storedProgress.completedSteps,
+        storedProgress.currentStep,
+      )
+    }
     setIsLoading(false)
   }, [toolPair, store])
 
@@ -109,9 +151,14 @@ export function useStepProgress(toolPair: string, _totalSteps?: number): StepPro
  *
  * @param toolPair - The tool pairing slug
  * @param totalSteps - Total number of steps (required for percentage)
+ * @param options - Optional configuration including initialProgress from server
  */
-export function useStepProgressWithPercent(toolPair: string, totalSteps: number) {
-  const base = useStepProgress(toolPair, totalSteps)
+export function useStepProgressWithPercent(
+  toolPair: string,
+  totalSteps: number,
+  options?: UseStepProgressOptions,
+) {
+  const base = useStepProgress(toolPair, totalSteps, options)
   const percent = totalSteps > 0 ? (base.completedCount / totalSteps) * 100 : 0
 
   return {

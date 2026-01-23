@@ -27,6 +27,17 @@ export interface OverviewPageClientWrapperProps {
    * Estimated time per step (optional, for display).
    */
   readonly estimatedTimes?: ReadonlyMap<number, string>
+
+  /**
+   * Initial progress from server-side cookie reading.
+   * When provided, eliminates hydration flicker.
+   */
+  readonly initialProgress?:
+    | {
+        readonly completedSteps: readonly number[]
+        readonly currentStep: number
+      }
+    | undefined
 }
 
 /**
@@ -52,8 +63,11 @@ export function OverviewPageClientWrapper({
   totalSteps,
   steps,
   estimatedTimes,
+  initialProgress,
 }: OverviewPageClientWrapperProps) {
-  const { currentStep, isStepComplete, isLoading } = useStepProgress(toolPair, totalSteps)
+  const { currentStep, isStepComplete, isLoading } = useStepProgress(toolPair, totalSteps, {
+    initialProgress,
+  })
 
   // Create Set of completed steps for StepList
   const completedSteps = new Set<number>(

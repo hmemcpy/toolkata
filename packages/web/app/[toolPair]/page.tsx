@@ -5,6 +5,7 @@ import { Header } from "../../components/ui/Header"
 import { OverviewPageClientWrapper } from "../../components/ui/OverviewPageClientWrapper"
 import { ProgressCard } from "../../components/ui/ProgressCard"
 import { getPairing, isValidPairingSlug } from "../../content/pairings"
+import { getServerProgressForPairAsync } from "../../core/progress-server"
 import type { StepMeta } from "../../services/content"
 
 /**
@@ -76,6 +77,15 @@ export default async function ComparisonOverviewPage(props: {
     notFound()
   }
 
+  // Read progress from cookie for flicker-free SSR
+  const serverProgress = await getServerProgressForPairAsync(toolPair)
+  const initialProgress = serverProgress
+    ? {
+        completedSteps: serverProgress.completedSteps,
+        currentStep: serverProgress.currentStep,
+      }
+    : undefined
+
   // TODO: Load steps from ContentService when MDX content exists
   // For now, use static metadata based on the plan
   const steps: readonly StepMeta[] = [
@@ -135,7 +145,7 @@ export default async function ComparisonOverviewPage(props: {
             href="/"
             className="inline-flex items-center text-sm text-[#d1d5dc] hover:text-white focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
           >
-            ← All comparisons
+            ← Home
           </Link>
           <Link
             href={`/${toolPair}/cheatsheet`}
@@ -206,7 +216,11 @@ export default async function ComparisonOverviewPage(props: {
 
           {/* Right column: Progress card */}
           <aside className="lg:col-span-1">
-            <ProgressCard toolPair={toolPair} totalSteps={pairing.steps} />
+            <ProgressCard
+              toolPair={toolPair}
+              totalSteps={pairing.steps}
+              initialProgress={initialProgress}
+            />
           </aside>
 
           {/* Full width: Steps list */}
@@ -215,6 +229,7 @@ export default async function ComparisonOverviewPage(props: {
             totalSteps={pairing.steps}
             steps={steps}
             estimatedTimes={estimatedTimes}
+            initialProgress={initialProgress}
           />
         </div>
       </main>

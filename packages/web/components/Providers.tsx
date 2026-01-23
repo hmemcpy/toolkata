@@ -1,6 +1,5 @@
 "use client"
 
-import { DirectionProvider } from "../contexts/DirectionContext"
 import { TerminalProvider } from "../contexts/TerminalContext"
 import { MobileBottomSheet } from "./ui/MobileBottomSheet"
 import { TerminalSidebar } from "./ui/TerminalSidebar"
@@ -13,7 +12,7 @@ import type { ReactNode } from "react"
 export interface ProvidersProps {
   /**
    * The tool pairing slug (e.g., "jj-git").
-   * Passed to DirectionProvider for context initialization.
+   * Passed to TerminalProvider for context initialization.
    */
   readonly toolPair: string
 
@@ -31,7 +30,6 @@ export interface ProvidersProps {
  * to client components throughout the app.
  *
  * Currently provides:
- * - DirectionProvider: For bidirectional comparison direction state
  * - TerminalProvider: For terminal sidebar state and command execution
  *
  * Also renders:
@@ -66,13 +64,11 @@ export interface ProvidersProps {
  */
 export function Providers({ toolPair, children }: ProvidersProps): ReactNode {
   return (
-    <DirectionProvider toolPair={toolPair}>
-      <TerminalProvider toolPair={toolPair}>
-        {children}
-        <MobileBottomSheet toolPair={toolPair} />
-        <TerminalSidebar toolPair={toolPair} />
-        <TerminalToggle />
-      </TerminalProvider>
-    </DirectionProvider>
+    <TerminalProvider toolPair={toolPair}>
+      {children}
+      <MobileBottomSheet toolPair={toolPair} />
+      <TerminalSidebar toolPair={toolPair} />
+      <TerminalToggle />
+    </TerminalProvider>
   )
 }

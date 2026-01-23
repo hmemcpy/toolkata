@@ -26,7 +26,7 @@ export function Header() {
         >
           {/* Logo icon */}
           <Image
-            src="/logo-mark.svg"
+            src="/logo.svg"
             alt=""
             width={70}
             height={60}

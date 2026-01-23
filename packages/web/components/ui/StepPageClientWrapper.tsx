@@ -137,17 +137,6 @@ export function StepPageClientWrapper({
 
       {/* Keyboard Shortcuts Modal */}
       <KeyboardShortcutsModal isOpen={isOpen} onClose={onClose} />
-
-      {/* Keyboard hint in footer - visible only when help modal isn't open */}
-      <div className="mt-8 text-center">
-        <button
-          type="button"
-          onClick={showModal}
-          className="text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-        >
-          Press ? for keyboard shortcuts
-        </button>
-      </div>
     </>
   )
 }

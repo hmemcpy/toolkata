@@ -13,6 +13,7 @@
 
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { BackButton } from "../../../components/ui/BackButton"
 import { Footer } from "../../../components/ui/Footer"
 import { Header } from "../../../components/ui/Header"
 import { GlossaryClientWrapper } from "../../../components/ui/GlossaryClientWrapper"
@@ -87,12 +88,9 @@ export default async function CheatSheetPage({
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Back link */}
         <div className="mb-6">
-          <a
-            href={`/${toolPair}`}
-            className="inline-flex items-center text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
-          >
-            ← Overview
-          </a>
+          <BackButton className="inline-flex items-center text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]">
+            ← Back
+          </BackButton>
         </div>
 
         {/* Title */}

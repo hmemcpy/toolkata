@@ -16,6 +16,17 @@ export interface ProgressCardProps {
    * Total number of steps for this pairing.
    */
   readonly totalSteps: number
+
+  /**
+   * Initial progress from server-side cookie reading.
+   * When provided, eliminates hydration flicker.
+   */
+  readonly initialProgress?:
+    | {
+        readonly completedSteps: readonly number[]
+        readonly currentStep: number
+      }
+    | undefined
 }
 
 /**
@@ -32,10 +43,11 @@ export interface ProgressCardProps {
  * <ProgressCard toolPair="jj-git" totalSteps={12} />
  * ```
  */
-export function ProgressCard({ toolPair, totalSteps }: ProgressCardProps) {
+export function ProgressCard({ toolPair, totalSteps, initialProgress }: ProgressCardProps) {
   const { currentStep, completedCount, resetProgress, isLoading } = useStepProgress(
     toolPair,
     totalSteps,
+    { initialProgress },
   )
 
   // Calculate time remaining (average 3 min per step)

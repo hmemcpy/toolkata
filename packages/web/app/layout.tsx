@@ -10,6 +10,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env["NEXT_PUBLIC_SITE_URL"] ?? "https://toolkata.com"),
   title: {
     template: "%s | toolkata",
     default: "toolkata",
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
   openGraph: {
     images: [
       {
-        url: "/og-image.svg",
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: "toolkata - Master tools through practice",
@@ -31,7 +32,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    images: ["/og-image.svg"],
+    images: ["/og-image.png"],
   },
   other: {
     // Preconnect to sandbox API for faster WebSocket connection

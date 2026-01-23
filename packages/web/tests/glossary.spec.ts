@@ -1,33 +1,32 @@
 import { test, expect } from "@playwright/test"
 
 /**
- * Glossary page tests for searchable command reference (Phase 13.7.2).
+ * Glossary page tests for searchable command reference.
  *
  * Tests cover:
- * - Page loads at /jj-git/glossary (route exists)
+ * - Page loads at /jj-git/cheatsheet (route exists)
  * - All 42 entries render by default (category: All)
  * - Search filters results (query "commit" reduces count)
  * - Category filter works (click "COMMITS" shows only commit entries)
  * - Search + category combine correctly
  * - Empty state shows for no results (query "zzzzzzz")
- * - Copy button copies correct command based on direction
- * - Direction toggle in glossary header works
+ * - Copy button exists for each entry
  * - aria-live region announces result count changes
  */
 
-test.describe("Glossary Page (13.7.2)", () => {
+test.describe("Glossary Page", () => {
   test.beforeEach(async ({ page }) => {
     // Clear localStorage before each test
     await page.goto("/")
     await page.evaluate(() => localStorage.clear())
   })
 
-  test("page loads at /jj-git/glossary (route exists)", async ({ page }) => {
-    const response = await page.goto("/jj-git/glossary")
+  test("page loads at /jj-git/cheatsheet (route exists)", async ({ page }) => {
+    const response = await page.goto("/jj-git/cheatsheet")
     expect(response?.status()).toBe(200)
 
-    // Page should have "Command Glossary" heading
-    await expect(page.locator("h1").filter({ hasText: "Command Glossary" })).toBeVisible()
+    // Page should have "Cheat Sheet" heading
+    await expect(page.locator("h1").filter({ hasText: "Cheat Sheet" })).toBeVisible()
 
     // Search input should be visible
     await expect(page.locator("input#glossary-search")).toBeVisible()
@@ -37,7 +36,7 @@ test.describe("Glossary Page (13.7.2)", () => {
   })
 
   test("all 42 entries render by default (category: All)", async ({ page }) => {
-    await page.goto("/jj-git/glossary")
+    await page.goto("/jj-git/cheatsheet")
 
     // Wait for page to load and hydration to complete
     await page.waitForLoadState("domcontentloaded")
@@ -62,7 +61,7 @@ test.describe("Glossary Page (13.7.2)", () => {
   })
 
   test("search filters results (query 'commit' reduces count)", async ({ page }) => {
-    await page.goto("/jj-git/glossary")
+    await page.goto("/jj-git/cheatsheet")
 
     // Wait for page to load
     await page.waitForLoadState("domcontentloaded")
@@ -93,7 +92,7 @@ test.describe("Glossary Page (13.7.2)", () => {
   })
 
   test("category filter works (click 'COMMITS' shows only commit entries)", async ({ page }) => {
-    await page.goto("/jj-git/glossary")
+    await page.goto("/jj-git/cheatsheet")
     await page.waitForLoadState("domcontentloaded")
 
     // Get initial count (should be 42)
@@ -124,7 +123,7 @@ test.describe("Glossary Page (13.7.2)", () => {
   })
 
   test("search + category combine correctly", async ({ page }) => {
-    await page.goto("/jj-git/glossary")
+    await page.goto("/jj-git/cheatsheet")
     await page.waitForLoadState("domcontentloaded")
 
     // First filter by COMMITS category
@@ -151,7 +150,7 @@ test.describe("Glossary Page (13.7.2)", () => {
   })
 
   test("empty state shows for no results (query 'zzzzzzz')", async ({ page }) => {
-    await page.goto("/jj-git/glossary")
+    await page.goto("/jj-git/cheatsheet")
     await page.waitForLoadState("domcontentloaded")
 
     // Search for something that won't match
@@ -175,11 +174,8 @@ test.describe("Glossary Page (13.7.2)", () => {
     expect(countText).toMatch(/\b42\b/)
   })
 
-  test("copy button copies correct command based on direction", async ({ page }) => {
-    // Note: Testing actual clipboard write requires permissions and context
-    // This test verifies the button exists and has correct aria-label
-
-    await page.goto("/jj-git/glossary")
+  test("copy button exists for each entry", async ({ page }) => {
+    await page.goto("/jj-git/cheatsheet")
     await page.waitForLoadState("domcontentloaded")
 
     // Find copy buttons (should be one per entry)
@@ -189,53 +185,17 @@ test.describe("Glossary Page (13.7.2)", () => {
     const count = await copyButtons.count()
     expect(count).toBe(42)
 
-    // Check first copy button has correct aria-label (should copy jj command by default)
+    // Check first copy button has correct aria-label
     const firstCopyButton = copyButtons.first()
     const ariaLabel = await firstCopyButton.getAttribute("aria-label")
 
-    // In default direction (git→jj), copy button should copy jj command
     // The aria-label format is "Copy command: {command}"
     expect(ariaLabel).toMatch(/^Copy command: /)
-
-    // The command should be a jj command (contains "jj")
-    // This varies by entry, but we can verify it's not empty
     expect(ariaLabel?.length).toBeGreaterThan(14) // "Copy command: " + at least 1 char
   })
 
-  test("direction toggle in glossary works", async ({ page }) => {
-    await page.goto("/jj-git/glossary")
-    await page.waitForLoadState("domcontentloaded")
-
-    // Direction toggle should exist
-    const toggle = page.getByRole("switch", {
-      name: /switch comparison direction between git and jj/i,
-    })
-    await expect(toggle).toBeVisible()
-
-    // Initial state: not reversed (aria-checked="false")
-    await expect(toggle).toHaveAttribute("aria-checked", "false")
-
-    // Click to toggle
-    await toggle.click()
-
-    // Should now be reversed (aria-checked="true")
-    await expect(toggle).toHaveAttribute("aria-checked", "true")
-
-    // The column headers should visually swap
-    // Get the header text elements
-    const headerLeft = page.locator(".grid-cols-12").first().locator("div").nth(0)
-    const headerRight = page.locator(".grid-cols-12").first().locator("div").nth(2)
-
-    const leftText = await headerLeft.textContent()
-    const rightText = await headerRight.textContent()
-
-    // When reversed, left should be jj (green), right should be git (orange)
-    expect(leftText).toContain("jj")
-    expect(rightText).toContain("git")
-  })
-
   test("aria-live region announces result count changes", async ({ page }) => {
-    await page.goto("/jj-git/glossary")
+    await page.goto("/jj-git/cheatsheet")
     await page.waitForLoadState("domcontentloaded")
 
     // Get the aria-live element
@@ -259,32 +219,15 @@ test.describe("Glossary Page (13.7.2)", () => {
     expect(newText).toContain("Found")
   })
 
-  test("glossary page link from overview page works", async ({ page }) => {
+  test("cheatsheet page link from overview page works", async ({ page }) => {
     await page.goto("/jj-git")
 
-    // Click the glossary link
-    const glossaryLink = page.locator("a", { hasText: /glossary/i })
-    await glossaryLink.click()
-
-    // Should navigate to glossary page
-    await page.waitForURL("/jj-git/glossary")
-    await expect(page.locator("h1").filter({ hasText: "Command Glossary" })).toBeVisible()
-  })
-
-  test("glossary page has link to cheatsheet", async ({ page }) => {
-    await page.goto("/jj-git/glossary")
-    await page.waitForLoadState("domcontentloaded")
-
-    // Footer link to cheatsheet
-    const cheatsheetLink = page.locator("a", {
-      hasText: /\[View printable cheat sheet →\]/i,
-    })
-    await expect(cheatsheetLink).toBeVisible()
-
-    // Click the link
+    // Click the cheatsheet link
+    const cheatsheetLink = page.locator("a", { hasText: /cheat sheet/i })
     await cheatsheetLink.click()
 
-    // Should navigate to cheatsheet
+    // Should navigate to cheatsheet page
     await page.waitForURL("/jj-git/cheatsheet")
+    await expect(page.locator("h1").filter({ hasText: "Cheat Sheet" })).toBeVisible()
   })
 })
