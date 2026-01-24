@@ -129,7 +129,13 @@ const make = Effect.gen(function* () {
       // Use Bun's native PTY support with docker exec -it
       // The -t flag is needed for docker to allocate a TTY that bash can detect
       const bunProcess = Bun.spawn(
-        ["docker", "exec", "-it", "--user", "sandbox", containerId, "/bin/bash", "-il"],
+        [
+          "script",
+          "-q",
+          "-c",
+          `docker exec -it --user sandbox ${containerId} /bin/bash`,
+          "/dev/null",
+        ],
         {
           env: { ...process.env, TERM: "xterm-256color" },
           terminal: {

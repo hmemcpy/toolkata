@@ -580,6 +580,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
     )
 
     // Initialize xterm.js when terminal container is available
+    // biome-ignore lint/correctness/useExhaustiveDependencies: state is needed to re-run when terminal div becomes available after CONNECTED
     useEffect(() => {
       // Only initialize when terminal div is rendered and not already initialized
       if (!terminalRef.current || terminalInstanceRef.current) return
@@ -633,8 +634,30 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
         fitAddon.fit()
         terminal.focus() // Auto-focus the terminal when it opens
 
+        // Set refs BEFORE flushing buffer so onmessage can use them
         terminalInstanceRef.current = terminal
         fitAddonRef.current = fitAddon
+
+        // Flush any buffered messages that arrived before terminal was ready
+        if (messageBufferRef.current.length > 0) {
+          for (const msg of messageBufferRef.current) {
+            terminal.write(msg)
+          }
+          messageBufferRef.current = []
+          // Re-fit after flushing to ensure proper display
+          fitAddon.fit()
+        }
+
+        // Also flush after a short delay in case messages are still arriving
+        setTimeout(() => {
+          if (messageBufferRef.current.length > 0) {
+            for (const msg of messageBufferRef.current) {
+              terminal.write(msg)
+            }
+            messageBufferRef.current = []
+            fitAddon.fit()
+          }
+        }, 100)
 
         // Send initial terminal size to server
         const ws = wsRef.current
@@ -646,16 +669,6 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
               cols: terminal.cols,
             }),
           )
-        }
-
-        // Flush any buffered messages that arrived before terminal was ready
-        if (messageBufferRef.current.length > 0) {
-          for (const msg of messageBufferRef.current) {
-            terminal.write(msg)
-          }
-          messageBufferRef.current = []
-          // Re-fit after flushing to ensure proper display
-          fitAddon.fit()
         }
 
         // Handle user input
@@ -700,7 +713,17 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
           terminalInstanceRef.current = null
         }
       }
-    }, [cleanup])
+    }, [cleanup, state])
+
+    // Refit terminal when state changes (e.g., when footer appears)
+    useEffect(() => {
+      if (fitAddonRef.current && (state === "CONNECTED" || state === "TIMEOUT_WARNING")) {
+        // Small delay to let DOM update
+        setTimeout(() => {
+          fitAddonRef.current?.fit()
+        }, 50)
+      }
+    }, [state])
 
     // Session timer countdown
     useEffect(() => {
@@ -776,7 +799,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
         ) : state === "STATIC" ? (
           <StaticModeContent toolPair={toolPair} onTryInteractive={() => setState("IDLE")} />
         ) : (
-          <div className="flex-1 p-3">
+          <div className="min-h-0 flex-1 p-3">
             <div
               ref={terminalRef}
               tabIndex={0}

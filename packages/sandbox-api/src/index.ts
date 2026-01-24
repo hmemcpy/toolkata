@@ -12,6 +12,7 @@ import { createSessionRoutes } from "./routes/sessions.js"
 import { closeAllConnections, createWebSocketServer } from "./routes/websocket.js"
 import { AuditService, AuditServiceLive, type AuditServiceShape } from "./services/audit.js"
 import {
+  ContainerService,
   ContainerServiceLive,
   DockerClientLive,
   checkGvisorAvailable,
@@ -309,6 +310,13 @@ const mainProgram = Effect.gen(function* () {
 
   const http = yield* HttpServer
   const sessionService = yield* SessionService
+  const containerService = yield* ContainerService
+
+  // Clean up any orphaned containers from previous runs
+  const orphanedCount = yield* containerService.cleanupOrphaned
+  if (orphanedCount > 0) {
+    console.log(`[Startup] Cleaned up ${orphanedCount} orphaned container(s)`)
+  }
 
   // Start the session cleanup scheduler
   yield* sessionService.startCleanupScheduler

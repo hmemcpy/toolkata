@@ -22,6 +22,7 @@ export interface ContainerServiceShape {
   readonly create: (toolPair: string) => Effect.Effect<Container, ContainerError>
   readonly destroy: (containerId: string) => Effect.Effect<void, ContainerError>
   readonly get: (containerId: string) => Effect.Effect<Container, ContainerError>
+  readonly cleanupOrphaned: Effect.Effect<number, never>
 }
 
 // Service tag
@@ -303,7 +304,48 @@ const make = Effect.gen(function* () {
       },
     })
 
-  return { create, destroy, get }
+  // Clean up orphaned containers (stopped sandbox containers from previous runs)
+  const cleanupOrphaned = Effect.tryPromise({
+    try: async () => {
+      const docker = dockerClient.docker
+      const containers = await docker.listContainers({
+        all: true,
+        filters: {
+          name: ["sandbox-"],
+          status: ["exited", "dead"],
+        },
+      })
+
+      if (containers.length === 0) {
+        return 0
+      }
+
+      console.log(`[ContainerService] Cleaning up ${containers.length} orphaned container(s)`)
+
+      for (const containerInfo of containers) {
+        try {
+          const container = docker.getContainer(containerInfo.Id)
+          await container.remove({ force: true })
+          console.log(
+            `[ContainerService] Removed orphaned container: ${containerInfo.Names?.[0] ?? containerInfo.Id}`,
+          )
+        } catch (err) {
+          console.error(
+            `[ContainerService] Failed to remove orphaned container ${containerInfo.Id}:`,
+            err,
+          )
+        }
+      }
+
+      return containers.length
+    },
+    catch: (error) => {
+      console.error("[ContainerService] Failed to cleanup orphaned containers:", error)
+      return 0
+    },
+  })
+
+  return { create, destroy, get, cleanupOrphaned }
 })
 
 // Live layer

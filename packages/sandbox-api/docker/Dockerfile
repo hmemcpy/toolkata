@@ -27,6 +27,10 @@ RUN git --version && jj --version
 # Create non-root user for running commands (no sudo access)
 RUN useradd -m -s /bin/bash sandbox
 
+# Remove privilege escalation commands (su, sudo, newgrp, etc.)
+RUN rm -f /usr/bin/su /usr/bin/sudo /usr/bin/newgrp /usr/bin/chsh /usr/bin/chfn /usr/bin/gpasswd \
+    && rm -f /bin/su 2>/dev/null || true
+
 # Create workspace directory
 RUN mkdir -p /home/toolkata && \
     chown -R sandbox:sandbox /home/sandbox /home/toolkata

@@ -263,7 +263,7 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
           </div>
 
           {/* Body - Terminal */}
-          <div className="flex-1 overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-hidden">
             <InteractiveTerminal
               ref={terminalRef}
               toolPair={toolPair}
