@@ -42,7 +42,7 @@ export interface GlossaryEntry {
 /**
  * Complete glossary data for jj ← git comparison.
  *
- * 42 command mappings organized by functional category with notes
+ * 35 command mappings organized by functional category with notes
  * for important differences.
  */
 export const jjGitGlossary: readonly GlossaryEntry[] = [

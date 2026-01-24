@@ -149,21 +149,16 @@ const make = Effect.gen(function* () {
             "docker",
             "exec",
             "-it",
-            "-e",
-            "HOME=/home/toolkata",
-            "-w",
-            "/home/toolkata",
             "--user",
             "sandbox",
             containerId,
             "/bin/bash",
-            "--login",
           ]
         : [
             "script",
             "-q",
             "-c",
-            `docker exec -it -e HOME=/home/toolkata -w /home/toolkata --user sandbox ${containerId} /bin/bash --login`,
+            `docker exec -it --user sandbox ${containerId} /bin/bash`,
             "/dev/null",
           ]
 
@@ -177,14 +172,14 @@ const make = Effect.gen(function* () {
         terminal: {
           cols: initialCols,
           rows: initialRows,
-          data(_terminal: unknown, data: Uint8Array) {
+          data(_terminal, data) {
             if (socket.readyState === WebSocket.OPEN) {
               // Convert Uint8Array to string for WebSocket transmission
               const text = new TextDecoder().decode(data)
               socket.send(text)
             }
           },
-          exit(_terminal: unknown, exitCode: number) {
+          exit(_terminal, exitCode) {
             console.log(`[WebSocketService] PTY exited for ${sessionId} with code ${exitCode}`)
             if (socket.readyState === WebSocket.OPEN) {
               socket.close(1000, "Container process exited")
