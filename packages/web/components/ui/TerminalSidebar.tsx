@@ -166,15 +166,28 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
   // Resizing state
   const [isResizing, setIsResizing] = useState(false)
 
-  // Track if this is the initial mount (to skip focus on restore from localStorage)
-  const isInitialMountRef = useRef(true)
+  // Track previous isOpen value to detect user-initiated opens vs restores
+  const prevIsOpenRef = useRef(isOpen)
+  const isHydratedRef = useRef(false)
 
-  // Focus close button when sidebar opens (but not on initial restore)
+  // Mark as hydrated after initial mount + localStorage restore settles
   useEffect(() => {
-    if (isOpen && !isInitialMountRef.current) {
+    const timeout = setTimeout(() => {
+      isHydratedRef.current = true
+    }, 100) // Wait for localStorage restore to complete
+    return () => clearTimeout(timeout)
+  }, [])
+
+  // Focus close button only when user explicitly opens the sidebar
+  // (not on initial restore from localStorage)
+  useEffect(() => {
+    const wasOpen = prevIsOpenRef.current
+    prevIsOpenRef.current = isOpen
+
+    // Only focus if transitioning from closed to open AND hydration is complete
+    if (!wasOpen && isOpen && isHydratedRef.current) {
       closeButtonRef.current?.focus()
     }
-    isInitialMountRef.current = false
   }, [isOpen])
 
   // Register terminal ref with context when connected
