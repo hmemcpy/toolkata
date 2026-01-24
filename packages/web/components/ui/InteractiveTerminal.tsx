@@ -25,6 +25,7 @@
 
 import "@xterm/xterm/css/xterm.css"
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
+import { getSandboxHttpUrl, SANDBOX_API_KEY, SANDBOX_API_URL } from "../../lib/sandbox-url"
 
 /**
  * Terminal connection states.
@@ -445,10 +446,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
       hasErrorRef.current = false // Clear error flag for new connection attempt
 
       try {
-        const apiUrl = process.env["NEXT_PUBLIC_SANDBOX_API_URL"] ?? "ws://localhost:3001"
-        const apiKey = process.env["NEXT_PUBLIC_SANDBOX_API_KEY"] ?? ""
-        // Convert WebSocket URLs to HTTP, keeping the port
-        const httpUrl = apiUrl.replace(/^ws:\/\//, "http://").replace(/^wss:\/\//, "https://")
+        const httpUrl = getSandboxHttpUrl()
 
         // Check circuit breaker status before attempting connection
         try {
@@ -489,8 +487,8 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
         // Create new session if no valid stored session
         if (!sessionId) {
           const headers: Record<string, string> = { "Content-Type": "application/json" }
-          if (apiKey) {
-            headers["X-API-Key"] = apiKey
+          if (SANDBOX_API_KEY) {
+            headers["X-API-Key"] = SANDBOX_API_KEY
           }
           const response = await fetch(`${httpUrl}/api/v1/sessions`, {
             method: "POST",
@@ -518,9 +516,10 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
           )
         }
 
-        const wsBase = httpUrl.replace(/^https?:\/\//, "wss://")
-        const wsUrl = apiKey
-          ? `${wsBase}/api/v1/sessions/${sessionId}/ws?api_key=${encodeURIComponent(apiKey)}`
+        // Use the original WebSocket URL (ws:// or wss://) for the connection
+        const wsBase = SANDBOX_API_URL.replace(/^http:\/\//, "ws://").replace(/^https:\/\//, "wss://")
+        const wsUrl = SANDBOX_API_KEY
+          ? `${wsBase}/api/v1/sessions/${sessionId}/ws?api_key=${encodeURIComponent(SANDBOX_API_KEY)}`
           : `${wsBase}/api/v1/sessions/${sessionId}/ws`
 
         // Connect WebSocket

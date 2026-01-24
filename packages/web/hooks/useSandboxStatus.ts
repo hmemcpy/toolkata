@@ -8,6 +8,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { getSandboxHttpUrl } from "../lib/sandbox-url"
 
 export interface SandboxStatus {
   readonly isOpen: boolean // true = sandbox unavailable
@@ -37,10 +38,7 @@ export function useSandboxStatus(): UseSandboxStatusResult {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const apiUrl = process.env["NEXT_PUBLIC_SANDBOX_API_URL"] ?? "http://localhost:3001"
-    // Convert WebSocket URLs to HTTP, keeping the port
-    const httpUrl = apiUrl.replace(/^ws:\/\//, "http://").replace(/^wss:\/\//, "https://")
-    const statusUrl = `${httpUrl}/api/v1/status`
+    const statusUrl = `${getSandboxHttpUrl()}/api/v1/status`
 
     const fetchStatus = async () => {
       try {
