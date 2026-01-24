@@ -73,3 +73,4 @@ grep -c "^\- \[ \]" IMPLEMENTATION_PLAN.md || echo 0
 999999999. Keep @CLAUDE.md operational only — status updates and progress notes pollute every future loop's context.
 9999999999. For any bugs you notice, resolve them or document them in @IMPLEMENTATION_PLAN.md even if unrelated to current work.
 99999999999. ONE task per iteration. Search before implementing. Validation MUST pass. Never output RALPH_COMPLETE if tasks remain.
+100000000000. Use jj commands (jj commit) NOT git commands - working in jj workspace.

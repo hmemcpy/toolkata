@@ -49,6 +49,18 @@
   --color-accent-alt-glow: rgba(255, 176, 0, 0.15);
   --color-git: #ffb000;
 
+  /* ZIO (blue) */
+  --color-zio: #0066ff;
+  --color-zio-hover: #0052cc;
+  --color-zio-bg: rgba(0, 102, 255, 0.08);
+  --color-zio-glow: rgba(0, 102, 255, 0.15);
+
+  /* Cats Effect (purple) */
+  --color-ce: #8b5cf6;
+  --color-ce-hover: #7c3aed;
+  --color-ce-bg: rgba(139, 92, 246, 0.08);
+  --color-ce-glow: rgba(139, 92, 246, 0.15);
+
   --color-error: #ff4136;
   --color-warning: #ffdc00;
 
