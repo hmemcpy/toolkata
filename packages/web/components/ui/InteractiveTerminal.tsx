@@ -244,16 +244,8 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
       (command: string) => {
         // Send the command via WebSocket - the server will echo it back
         const ws = wsRef.current
-        console.log("[insertCommand]", command, {
-          hasWs: !!ws,
-          readyState: ws?.readyState,
-          isOpen: ws?.readyState === WebSocket.OPEN,
-        })
         if (ws && ws.readyState === WebSocket.OPEN) {
-          console.log("[insertCommand] Sending via WebSocket")
           ws.send(`${command}\n`)
-        } else {
-          console.log("[insertCommand] WebSocket not open, not sending")
         }
 
         // Notify parent callback
@@ -296,7 +288,6 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
 
     // Start the sandbox session
     const startSession = useCallback(async () => {
-      console.log("[startSession] Starting session")
       ptyReadyRef.current = false // Reset PTY ready flag for new session
       terminalReadyRef.current = false // Reset terminal ready flag
       ptyReadyCalledRef.current = false // Reset PTY ready called flag
@@ -443,33 +434,28 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
           // Mark PTY as ready when we receive the first message
           if (!ptyReadyRef.current) {
             ptyReadyRef.current = true
-            console.log("[ws.onmessage] PTY ready, terminal ready:", terminalReadyRef.current)
           }
 
           const terminal = terminalInstanceRef.current
           if (terminal) {
             // Flush any buffered messages first
             if (messageBufferRef.current.length > 0) {
-              console.log("[ws.onmessage] Flushing buffer:", messageBufferRef.current.length, "messages")
               for (const msg of messageBufferRef.current) {
                 terminal.write(msg)
               }
               messageBufferRef.current = []
             }
-            console.log("[ws.onmessage] Writing data:", JSON.stringify(data))
             terminal.write(data)
 
             // Check for shell prompt pattern to signal PTY is ready for commands
             // Look for $ character which is distinctive for shell prompts (may have ANSI codes)
             if (!ptyReadyCalledRef.current && terminalReadyRef.current) {
               if (data.includes("$")) {
-                console.log("[ws.onmessage] Found shell prompt, notifying parent to flush commands")
                 ptyReadyCalledRef.current = true
                 onPtyReady?.()
               }
             }
           } else {
-            console.log("[ws.onmessage] Buffering data (terminal not ready):", JSON.stringify(data))
             // Buffer message until terminal is ready
             messageBufferRef.current.push(data)
           }
@@ -614,13 +600,8 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
         fitAddonRef.current = fitAddon
         terminalReadyRef.current = true
 
-        console.log("[initTerminal] Terminal ready, PTY ready:", ptyReadyRef.current, "buffer length:", messageBufferRef.current.length)
-        // Don't flush commands here - wait for prompt to appear in onmessage
-        // This ensures we don't send commands before the shell is ready
-
         // Flush any buffered messages that arrived before terminal was ready
         if (messageBufferRef.current.length > 0) {
-          console.log("[initTerminal] Flushing buffer:", messageBufferRef.current.length, "messages")
           for (const msg of messageBufferRef.current) {
             terminal.write(msg)
           }

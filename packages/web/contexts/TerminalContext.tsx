@@ -356,24 +356,14 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
    */
   const registerTerminal = useCallback(
     (ref: TerminalRef | null) => {
-      console.log("[registerTerminal]", {
-        hasRef: !!ref,
-        state,
-        queueLength: commandQueueRef.current.length,
-        queue: commandQueueRef.current,
-      })
       terminalRef.current = ref
 
       // If terminal just became available and we have queued commands
       if (ref && commandQueueRef.current.length > 0) {
         if (state === "IDLE") {
-          console.log("[registerTerminal] Starting terminal (IDLE with queued commands)")
           // If idle, start the terminal (commands will be sent when connected)
           ref.start()
         }
-        // Note: We don't send commands here even if CONNECTED, because
-        // onStateChange will handle flushing the queue when the state changes.
-        // This prevents duplicate commands.
       }
     },
     [state],
@@ -389,12 +379,6 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
    */
   const executeCommand = useCallback(
     (command: string) => {
-      console.log("[executeCommand]", command, {
-        isOpen,
-        state,
-        hasRef: !!terminalRef.current,
-      })
-
       // Open sidebar if closed
       if (!isOpen) {
         setIsOpenState(true)
@@ -403,7 +387,6 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
 
       // If terminal is registered and connected, execute immediately
       if (terminalRef.current && (state === "CONNECTED" || state === "TIMEOUT_WARNING")) {
-        console.log("[executeCommand] Sending immediately (connected)")
         terminalRef.current.insertCommand(command)
         return
       }
@@ -412,22 +395,14 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       if (state === "IDLE" && terminalRef.current) {
         // Queue the command for when terminal connects
         commandQueueRef.current = [...commandQueueRef.current, command]
-        console.log("[executeCommand] Starting terminal (IDLE with ref)")
         terminalRef.current.start()
       } else if (state === "EXPIRED" && terminalRef.current) {
         // Clear old queue and only queue this command when expired
         commandQueueRef.current = [command]
-        console.log("[executeCommand] Resetting expired terminal with new command")
         terminalRef.current.reset()
-      } else if (state === "CONNECTING" || state === "ERROR") {
-        // Queue the command for when terminal connects
-        commandQueueRef.current = [...commandQueueRef.current, command]
-        console.log("[executeCommand] Queued command, queue:", commandQueueRef.current)
       } else {
         // Queue the command for when terminal connects
         commandQueueRef.current = [...commandQueueRef.current, command]
-        console.log("[executeCommand] Queued command, queue:", commandQueueRef.current)
-        console.log("[executeCommand] Not starting, state:", state, "hasRef:", !!terminalRef.current)
       }
     },
     [isOpen, state],
@@ -442,11 +417,6 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
    * @internal
    */
   const onTerminalStateChange = useCallback((newState: TerminalState) => {
-    console.log("[onTerminalStateChange]", newState, {
-      hasRef: !!terminalRef.current,
-      queueLength: commandQueueRef.current.length,
-      queue: commandQueueRef.current,
-    })
     setState(newState)
 
     // NOTE: We don't flush queued commands here anymore.
@@ -473,13 +443,7 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
    * @internal
    */
   const flushCommandQueue = useCallback(() => {
-    console.log("[flushCommandQueue]", {
-      hasRef: !!terminalRef.current,
-      queueLength: commandQueueRef.current.length,
-      queue: commandQueueRef.current,
-    })
     if (terminalRef.current && commandQueueRef.current.length > 0) {
-      console.log("[flushCommandQueue] Flushing queue:", commandQueueRef.current)
       for (const command of commandQueueRef.current) {
         terminalRef.current.insertCommand(command)
       }

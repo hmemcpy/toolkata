@@ -228,7 +228,6 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
 
   // Callback when PTY is ready to receive commands
   const handlePtyReady = useCallback(() => {
-    console.log("[TerminalSidebar] PTY ready, flushing command queue")
     flushCommandQueue()
   }, [flushCommandQueue])
 
