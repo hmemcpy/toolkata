@@ -136,7 +136,9 @@ const make = Effect.gen(function* () {
             rows: 24,
             data(_terminal, data) {
               if (socket.readyState === WebSocket.OPEN) {
-                socket.send(data)
+                // Convert Uint8Array to string for WebSocket transmission
+                const text = new TextDecoder().decode(data)
+                socket.send(text)
               }
             },
             exit(_terminal, exitCode) {
