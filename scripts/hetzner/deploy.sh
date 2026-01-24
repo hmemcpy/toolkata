@@ -188,17 +188,18 @@ scp "$PROJECT_ROOT/packages/sandbox-api/deploy/sandbox-api.service" \
     "$SSH_USER@$SERVER_IP:/etc/systemd/system/sandbox-api.service"
 
 # Create .env file with production settings
-ssh "$SSH_USER@$SERVER_IP" 'bash -s' << 'REMOTE'
-cat > /opt/sandbox-api/.env << 'EOF'
+ssh "$SSH_USER@$SERVER_IP" \
+  SANDBOX_API_KEY="$SANDBOX_API_KEY" \
+  SANDBOX_ALLOWED_ORIGINS="$SANDBOX_ALLOWED_ORIGINS" \
+  'bash -s' << 'REMOTE'
+cat > /opt/sandbox-api/.env << EOF
 NODE_ENV=production
 PORT=3001
 SANDBOX_USE_GVISOR=true
 SANDBOX_GVISOR_RUNTIME=runsc
+SANDBOX_API_KEY=$SANDBOX_API_KEY
+SANDBOX_ALLOWED_ORIGINS=$SANDBOX_ALLOWED_ORIGINS
 EOF
-
-# Append secrets separately to avoid shell escaping issues
-printf 'SANDBOX_API_KEY=%s\n' "$SANDBOX_API_KEY" >> /opt/sandbox-api/.env
-printf 'SANDBOX_ALLOWED_ORIGINS=%s\n' "$SANDBOX_ALLOWED_ORIGINS" >> /opt/sandbox-api/.env
 
 # Set correct ownership on .env
 chown sandboxapi:sandboxapi /opt/sandbox-api/.env
