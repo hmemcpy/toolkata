@@ -1,9 +1,9 @@
 # Implementation Plan: Gap Analysis & Prioritized Tasks
 
-> **Last Updated:** 2026-01-25
+> **Last Updated:** 2026-01-25 (P0.1 TryIt Enhancement Completed)
 > **Planning Mode:** Complete Gap Analysis (Verified & Confirmed)
 > **Scope:** 5 specifications analyzed against existing codebase
-> **Status:** Ready for implementation
+> **Status:** Implementation in progress (1 of ~15 tasks completed)
 >
 > **Analysis Method:** Parallel subagents analyzed specs, existing codebase, and specific component implementations to identify gaps.
 
@@ -20,7 +20,7 @@ After analyzing all 5 specification documents against the current implementation
 | Core interactive sandbox terminal | ✅ Complete | xterm.js + WebSocket with PTY detection |
 | MDX content loading with frontmatter validation | ✅ Complete | Zod schemas, 12 step files exist |
 | TerminalSidebar with collapsible UI | ✅ Complete | Desktop (400px) + MobileBottomSheet |
-| TryIt component for command execution | ✅ Partial | Command execution works, missing R3 enhancements |
+| **TryIt component** | ✅ Complete | Editable commands, expected output, Enter key support (enhanced 2026-01-25) |
 | TerminalContext for state management | ✅ Complete | State machine, command queue, session persistence |
 | Progress tracking with localStorage | ✅ Complete | ProgressStore with SSR-compatible cookie sync |
 | Glossary data module | ✅ Complete | 35 command mappings, 8 categories, search/filter |
@@ -37,7 +37,7 @@ After analyzing all 5 specification documents against the current implementation
 |--------------|--------|-------------------|
 | **bidirectional-comparison.md** | ❌ 0% Complete | DirectionToggle, PreferencesStore, useDirection, glossary route |
 | **terminal-sidebar.md** | ⚠️ 85% Complete | Swipe gesture, focus trap, `t` key shortcut |
-| **sandbox-integration.md** | ⚠️ 60% Complete | TryIt R3 (editable, expectedOutput), R4 (per-tool-pair images) |
+| **sandbox-integration.md** | ⚠️ 75% Complete | TryIt R3 ✅ COMPLETE, R4 (per-tool-pair images) |
 | **multi-environment-sandbox.md** | ❌ 0% Complete | Environment registry, config.yml, init protocol, multi-environment Dockerfiles |
 | **toolkata.md** | ✅ Complete | Base requirements already implemented |
 
@@ -105,25 +105,18 @@ After analyzing all 5 specification documents against the current implementation
 
 ### 3. sandbox-integration.md
 
-**Status:** ✅ **MOSTLY IMPLEMENTED** (60% complete)
+**Status:** ✅ **MOSTLY IMPLEMENTED** (75% complete - R3 COMPLETED 2026-01-25)
 
 **Verification:**
 - ✅ **R1:** Terminal state callbacks ARE invoked (InteractiveTerminal.tsx:227-235)
 - ✅ **R2:** Shrinking layout IS implemented (ShrinkingLayout.tsx:52-63)
+- ✅ **R3:** TryIt enhanced with editable commands and expected output (COMPLETED 2026-01-25)
 - ✅ **R5:** gVisor runtime IS configured (container.ts:176-178)
 - ✅ TerminalContext state machine exists with proper transitions
 - ✅ TerminalSidebar displays terminal with status indicator
 - ✅ TryIt component executes commands via TerminalContext
 
 **Missing Components:**
-- ❌ **R3:** TryIt lacks expected output and editable commands
-  - Current props: `command`, `description` only
-  - Missing `expectedOutput?: string` prop
-  - Missing `editable?: boolean` prop (should default to true)
-  - Command is rendered as static `<code>` tag, not editable `<input>`
-  - No expected output display area
-  - Location: `packages/web/components/ui/TryIt.tsx`
-
 - ❌ **R4:** Single Docker image instead of per-tool-pair images
   - Only `packages/sandbox-api/docker/Dockerfile` exists
   - No base image + tool-pair extension structure
@@ -135,9 +128,8 @@ After analyzing all 5 specification documents against the current implementation
 3. `scripts/docker-build-all.sh` - Build all images
 
 **Files to Modify:**
-1. `packages/web/components/ui/TryIt.tsx` - Add `expectedOutput` prop, `editable` prop, replace `<code>` with `<input>`
-2. `packages/sandbox-api/docker/Dockerfile` - Split into base + tool-pair structure
-3. `packages/sandbox-api/src/services/container.ts` - Update image name to use tool-pair suffix
+1. `packages/sandbox-api/docker/Dockerfile` - Split into base + tool-pair structure
+2. `packages/sandbox-api/src/services/container.ts` - Update image name to use tool-pair suffix
 
 ---
 
@@ -195,29 +187,31 @@ After analyzing all 5 specification documents against the current implementation
 
 ### P0 - Critical Foundation (Quick Wins)
 
-#### P0.1: Enhanced TryIt Component
+#### P0.1: Enhanced TryIt Component ✅ COMPLETED (2026-01-25)
+**Status:** ✅ **COMPLETE**
+
 **Why:** Editable commands + expected output are core UX improvements. TryIt is used throughout MDX content, so this enhances every lesson immediately.
 
 **Files:** `packages/web/components/ui/TryIt.tsx`
 
-**Changes:**
-- Add `expectedOutput?: string` prop
-- Add `editable?: boolean` prop (default true)
-- Replace static `<code>` display with editable `<input>`
-- Track edited command value in local state
-- Style expected output as muted terminal text
-- Update button to send input value instead of original command
+**Changes Made:**
+- ✅ Added `expectedOutput?: string` prop
+- ✅ Added `editable?: boolean` prop (default true)
+- ✅ Replaced static `<code>` display with editable `<input>`
+- ✅ Track edited command value in local state
+- ✅ Style expected output as muted terminal text
+- ✅ Update button to send input value instead of original command
+- ✅ Added `$` prompt prefix for terminal aesthetic
+- ✅ Added Enter key support to run command
 
 **Acceptance Criteria:**
-- Command appears in input field (not static code)
-- User can edit command before clicking "Run"
-- Expected output displays below command when provided
-- "Run" button sends current input value
-- Falls back to original command if not edited
+- ✅ Command appears in input field (not static code)
+- ✅ User can edit command before clicking "Run"
+- ✅ Expected output displays below command when provided
+- ✅ "Run" button sends current input value
+- ✅ Falls back to original command if not edited
 
-**Effort:** 2 hours
-
-**Dependencies:** None (standalone component)
+**Validation:** Type check, lint, and build all pass.
 
 ---
 

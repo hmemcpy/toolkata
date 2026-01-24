@@ -51,7 +51,7 @@ If stuck, use extended thinking to debug. Add extra logging if needed.
 ## Phase 3: Commit & Exit
 
 ```bash
-git add -A && git commit -m "feat(sandbox): [description]
+jj commit -m "feat(sandbox): [description]
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
