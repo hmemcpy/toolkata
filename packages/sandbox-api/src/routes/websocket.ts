@@ -7,6 +7,7 @@ import {
   validateOrigin,
   validateTerminalInput,
 } from "../config.js"
+import { getBanner } from "../config/banners.js"
 import type { AuditServiceShape } from "../services/audit.js"
 import type { SessionServiceShape } from "../services/session.js"
 import type { RateLimitServiceShape } from "../services/rate-limit.js"
@@ -358,6 +359,12 @@ export const createWebSocketServer = (
 
         // Send initial connection success message
         ws.send(JSON.stringify({ type: "connected", sessionId }))
+
+        // Send welcome banner if configured for this tool pair
+        const banner = getBanner(session.toolPair)
+        if (banner) {
+          ws.send(JSON.stringify({ type: "output", data: banner }))
+        }
       })
 
       // Run the connection handler

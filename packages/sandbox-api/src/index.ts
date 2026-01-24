@@ -21,6 +21,7 @@ import {
   RateLimitService,
   RateLimitServiceLive,
   type RateLimitServiceShape,
+  logRateLimitConfig,
 } from "./services/rate-limit.js"
 import { SessionService, SessionServiceLive, type SessionServiceShape } from "./services/session.js"
 import { WebSocketService, WebSocketServiceLive } from "./services/websocket.js"
@@ -224,12 +225,7 @@ const make = Effect.gen(function* () {
       console.log(`API v1: http://${config.host}:${config.port}/api/v1`)
       console.log(`WebSocket: ws://${config.host}:${config.port}/api/v1/sessions/:id/ws`)
       console.log(`CORS origin: ${config.frontendOrigin}`)
-      if (
-        process.env["NODE_ENV"] === "development" ||
-        process.env["DISABLE_RATE_LIMIT"] === "true"
-      ) {
-        console.log("Rate limiting: DISABLED (development mode)")
-      }
+      logRateLimitConfig()
     })
 
     httpServer.on("error", (error) => {

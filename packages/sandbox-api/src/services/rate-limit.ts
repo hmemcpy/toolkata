@@ -4,14 +4,55 @@ import { Context, Data, Effect, Layer, MutableHashMap, Option, Ref } from "effec
 const isDevMode =
   process.env["NODE_ENV"] === "development" || process.env["DISABLE_RATE_LIMIT"] === "true"
 
-// Rate limit configuration (from env or defaults from PLAN.md specs)
+// Defaults
+const DEFAULTS = {
+  sessionsPerHour: 50,
+  maxConcurrentSessions: 2,
+  commandsPerMinute: 60,
+  maxConcurrentWebSockets: 3,
+} as const
+
+// Rate limit configuration (from env or defaults)
 // In dev mode, use very high limits to effectively disable rate limiting
 const RATE_LIMITS = {
-  sessionsPerHour: isDevMode ? 999999 : Number(process.env["MAX_SESSIONS_PER_HOUR"]) || 10,
-  maxConcurrentSessions: isDevMode ? 999999 : Number(process.env["MAX_CONCURRENT_PER_IP"]) || 2,
-  commandsPerMinute: isDevMode ? 999999 : 60,
-  maxConcurrentWebSockets: isDevMode ? 999999 : Number(process.env["MAX_WEBSOCKETS_PER_IP"]) || 3,
+  sessionsPerHour: isDevMode
+    ? 999999
+    : Number(process.env["MAX_SESSIONS_PER_HOUR"]) || DEFAULTS.sessionsPerHour,
+  maxConcurrentSessions: isDevMode
+    ? 999999
+    : Number(process.env["MAX_CONCURRENT_PER_IP"]) || DEFAULTS.maxConcurrentSessions,
+  commandsPerMinute: isDevMode
+    ? 999999
+    : Number(process.env["COMMANDS_PER_MINUTE"]) || DEFAULTS.commandsPerMinute,
+  maxConcurrentWebSockets: isDevMode
+    ? 999999
+    : Number(process.env["MAX_WEBSOCKETS_PER_IP"]) || DEFAULTS.maxConcurrentWebSockets,
 } as const
+
+// Log rate limit configuration on startup
+export const logRateLimitConfig = () => {
+  if (isDevMode) {
+    console.log("Rate limiting: DISABLED (dev mode)")
+    return
+  }
+
+  const source = (envVar: string, actualVal: number) =>
+    process.env[envVar] ? `${actualVal} (from env)` : `${actualVal} (default)`
+
+  console.log("Rate limits:")
+  console.log(
+    `  Sessions/hour:       ${source("MAX_SESSIONS_PER_HOUR", RATE_LIMITS.sessionsPerHour)}`,
+  )
+  console.log(
+    `  Concurrent sessions: ${source("MAX_CONCURRENT_PER_IP", RATE_LIMITS.maxConcurrentSessions)}`,
+  )
+  console.log(
+    `  Commands/minute:     ${source("COMMANDS_PER_MINUTE", RATE_LIMITS.commandsPerMinute)}`,
+  )
+  console.log(
+    `  Concurrent WS:       ${source("MAX_WEBSOCKETS_PER_IP", RATE_LIMITS.maxConcurrentWebSockets)}`,
+  )
+}
 
 // Per-IP tracking data
 export interface IpTracking {
