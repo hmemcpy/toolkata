@@ -164,6 +164,8 @@ const make = Effect.gen(function* () {
         : [
             "script",
             "-q",
+            "--echo",
+            "never",
             "-c",
             `docker exec -it -e HOME=/home/toolkata -w /home/toolkata --user sandbox ${containerId} /bin/bash --init-file /home/toolkata/.bashrc -i`,
             "/dev/null",
