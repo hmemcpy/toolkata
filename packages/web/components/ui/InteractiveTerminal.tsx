@@ -447,7 +447,8 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
       try {
         const apiUrl = process.env["NEXT_PUBLIC_SANDBOX_API_URL"] ?? "ws://localhost:3001"
         const apiKey = process.env["NEXT_PUBLIC_SANDBOX_API_KEY"] ?? ""
-        const httpUrl = apiUrl.replace(/^wss?:\/\//, "https://").replace(/:\d+/, "")
+        // Convert WebSocket URLs to HTTP, keeping the port
+        const httpUrl = apiUrl.replace(/^ws:\/\//, "http://").replace(/^wss:\/\//, "https://")
 
         // Check circuit breaker status before attempting connection
         try {
