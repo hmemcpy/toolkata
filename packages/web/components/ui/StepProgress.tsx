@@ -1,5 +1,8 @@
+"use client"
+
 import Link from "next/link"
 import type { JSX } from "react"
+import { DirectionToggle } from "./DirectionToggle"
 
 export interface StepProgressProps {
   readonly currentStep: number
@@ -45,7 +48,7 @@ export function StepProgress({
         </div>
       </div>
 
-      {/* Secondary navigation bar with prev/next and cheat sheet */}
+      {/* Secondary navigation bar with prev/next, direction toggle, and cheat sheet */}
       <nav
         className="border-t border-[var(--color-border)] px-4 py-1.5 sm:px-6 lg:px-8"
         aria-label="Step navigation"
@@ -69,13 +72,16 @@ export function StepProgress({
             )}
           </div>
 
-          {/* Cheat sheet link */}
-          <Link
-            href={`/${toolPair}/cheatsheet`}
-            className="text-xs font-mono text-[var(--color-text-muted)] hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors"
-          >
-            [Cheat Sheet]
-          </Link>
+          {/* Direction toggle and cheat sheet links */}
+          <div className="flex items-center gap-2 sm:gap-4">
+            <DirectionToggle />
+            <Link
+              href={`/${toolPair}/cheatsheet`}
+              className="text-xs font-mono text-[var(--color-text-muted)] hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors"
+            >
+              [Cheat Sheet]
+            </Link>
+          </div>
 
           {/* Next link */}
           <div className="w-24 flex justify-end">

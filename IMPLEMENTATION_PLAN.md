@@ -1,9 +1,9 @@
 # Implementation Plan: Gap Analysis & Prioritized Tasks
 
-> **Last Updated:** 2026-01-25 (P1.1 Glossary Page Route Completed)
+> **Last Updated:** 2026-01-25 (P1.2 Bidirectional Comparison Completed)
 > **Planning Mode:** Complete Gap Analysis (Verified & Confirmed)
 > **Scope:** 5 specifications analyzed against existing codebase
-> **Status:** Implementation in progress (2 of ~15 tasks completed)
+> **Status:** Implementation in progress (3 of ~15 tasks completed)
 >
 > **Analysis Method:** Parallel subagents analyzed specs, existing codebase, and specific component implementations to identify gaps.
 
@@ -35,7 +35,7 @@ After analyzing all 5 specification documents against the current implementation
 
 | Specification | Status | Missing Components |
 |--------------|--------|-------------------|
-| **bidirectional-comparison.md** | ⚠️ 25% Complete | DirectionToggle, PreferencesStore, useDirection (glossary route ✅ COMPLETE) |
+| **bidirectional-comparison.md** | ✅ **COMPLETE** | DirectionToggle, PreferencesStore, useDirection, glossary route (2026-01-25) |
 | **terminal-sidebar.md** | ⚠️ 85% Complete | Swipe gesture, focus trap, `t` key shortcut |
 | **sandbox-integration.md** | ⚠️ 75% Complete | TryIt R3 ✅ COMPLETE, R4 (per-tool-pair images) |
 | **multi-environment-sandbox.md** | ❌ 0% Complete | Environment registry, config.yml, init protocol, multi-environment Dockerfiles |
@@ -47,34 +47,41 @@ After analyzing all 5 specification documents against the current implementation
 
 ### 1. bidirectional-comparison.md
 
-**Status:** ⚠️ **PARTIALLY IMPLEMENTED** (25% complete - glossary route ✅ COMPLETE 2026-01-25)
+**Status:** ✅ **COMPLETE** (2026-01-25)
 
 **Verification:**
-- ❌ `DirectionToggle` component does not exist
-- ❌ `PreferencesStore` class does not exist (only `ProgressStore` exists)
-- ❌ `useDirection` hook does not exist
-- ❌ `SideBySide` component does NOT accept `isReversed` prop (only `fromCommands`, `toCommands`, `fromLabel`, `toLabel`)
-- ✅ **Glossary page route EXISTS** at `/packages/web/app/[toolPair]/glossary/page.tsx` ✅ NEW
+- ✅ `DirectionToggle` component EXISTS at `packages/web/components/ui/DirectionToggle.tsx`
+- ✅ `PreferencesStore` class EXISTS at `packages/web/core/PreferencesStore.ts`
+- ✅ `useDirection` hook EXISTS at `packages/web/hooks/useDirection.ts`
+- ✅ `DirectionContext` EXISTS at `packages/web/contexts/DirectionContext.tsx`
+- ✅ `SideBySide` component NOW supports direction swap via DirectionContext
+- ✅ `StepProgress` component NOW includes DirectionToggle in header
+- ✅ `Providers` component NOW includes DirectionProvider
+- ✅ `GlossaryClient` component NOW respects direction preference (swaps columns)
+- ✅ **Glossary page route EXISTS** at `/packages/web/app/[toolPair]/glossary/page.tsx`
 - ✅ Glossary data EXISTS at `/packages/web/content/glossary/jj-git.ts` (35 entries, 8 categories)
-- ✅ `GlossaryClient` component EXISTS with search/filter functionality
-- ✅ Glossary is NOW accessible at `/jj-git/glossary` route ✅ NEW
 
-**Missing Components:**
-- DirectionToggle component (header toggle switch in terminal bracket style `[git ↔ jj]`)
-- useDirection hook (follows `useStepProgress` pattern)
-- PreferencesStore class (localStorage persistence, follows `ProgressStore` pattern)
-- SideBySide component `isReversed` prop support
+**Acceptance Criteria Met:**
+- ✅ Toggle displays as `[git ↔ jj]` in header
+- ✅ Click swaps to `[jj ↔ git]` and updates all SideBySide components
+- ✅ Preference stored in localStorage under `toolkata_preferences`
+- ✅ On page load, reads preference and applies (default: git→jj)
+- ✅ SideBySide columns swap when reversed (jj left/green, git right/orange)
+- ✅ Glossary page respects direction preference
+- ✅ Touch target >= 44px for mobile (min-h-[44px] applied)
+- ✅ Accessible: `role="switch"`, `aria-checked`, keyboard support (Enter/Space)
 
-**Files to Create:**
-1. `packages/web/components/ui/DirectionToggle.tsx` - Toggle switch with `role="switch"`, `aria-checked`
-2. `packages/web/core/PreferencesStore.ts` - localStorage for direction preference
-3. `packages/web/hooks/useDirection.ts` - Hook to read/write direction preference
+**Files Created:**
+1. `packages/web/core/PreferencesStore.ts` - localStorage for direction preference
+2. `packages/web/hooks/useDirection.ts` - Hook to read/write direction preference
+3. `packages/web/components/ui/DirectionToggle.tsx` - Toggle switch with `role="switch"`, `aria-checked`
+4. `packages/web/contexts/DirectionContext.tsx` - React Context for direction state
 
-**Files to Modify:**
-1. `packages/web/components/ui/SideBySide.tsx` - Add `isReversed?: boolean` prop, swap columns when true
-2. `packages/web/components/ui/StepProgress.tsx` - Include `<DirectionToggle />` in header
-3. `packages/web/app/[toolPair]/layout.tsx` - Provide PreferencesStore context at layout level
-4. `packages/web/app/[toolPair]/glossary/page.tsx` - Respect direction preference (reuse GlossaryClient)
+**Files Modified:**
+1. `packages/web/components/ui/SideBySide.tsx` - Now client component, uses DirectionContext to swap columns
+2. `packages/web/components/ui/StepProgress.tsx` - Now client component, includes DirectionToggle
+3. `packages/web/components/Providers.tsx` - Added DirectionProvider wrapper
+4. `packages/web/components/ui/GlossaryClient.tsx` - Uses DirectionContext to swap columns
 
 ---
 
@@ -242,33 +249,44 @@ After analyzing all 5 specification documents against the current implementation
 
 ---
 
-#### P1.2: Bidirectional Comparison - Direction Toggle
+#### P1.2: Bidirectional Comparison - Direction Toggle ✅ COMPLETED (2026-01-25)
+**Status:** ✅ **COMPLETE**
+
 **Why:** Key user-facing feature for "bilingual" developers. Enables viewing comparisons from either perspective (git→jj OR jj→git).
 
-**Files to Create:**
-- `packages/web/core/PreferencesStore.ts` - Follow ProgressStore pattern for localStorage persistence
+**Files Created:**
+- `packages/web/core/PreferencesStore.ts` - localStorage for direction preference
 - `packages/web/hooks/useDirection.ts` - Hook to read/write direction preference
 - `packages/web/components/ui/DirectionToggle.tsx` - Toggle switch in terminal bracket style `[git ↔ jj]`
+- `packages/web/contexts/DirectionContext.tsx` - React Context for direction state
 
-**Files to Modify:**
-- `packages/web/components/ui/SideBySide.tsx` - Add `isReversed?: boolean` prop, swap columns when true
-- `packages/web/components/ui/StepProgress.tsx` - Include `<DirectionToggle />` in header
-- `packages/web/app/[toolPair]/layout.tsx` - Provide PreferencesStore context at layout level
-- `packages/web/app/[toolPair]/glossary/page.tsx` - Respect direction preference (reuse GlossaryClient)
+**Files Modified:**
+- `packages/web/components/ui/SideBySide.tsx` - Now client component, uses DirectionContext to swap columns
+- `packages/web/components/ui/StepProgress.tsx` - Now client component, includes DirectionToggle in header
+- `packages/web/components/Providers.tsx` - Added DirectionProvider wrapper
+- `packages/web/components/ui/GlossaryClient.tsx` - Uses DirectionContext to swap columns
+
+**Changes Made:**
+- ✅ PreferencesStore follows ProgressStore pattern for localStorage persistence
+- ✅ useDirection hook manages direction state with hydration
+- ✅ DirectionToggle component with terminal bracket style `[git ↔ jj]`
+- ✅ DirectionContext provides direction to all child components
+- ✅ SideBySide swaps columns when reversed (jj left/green, git right/orange)
+- ✅ StepProgress includes DirectionToggle in navigation header
+- ✅ GlossaryClient respects direction preference
+- ✅ All accessible: `role="switch"`, `aria-checked`, keyboard (Enter/Space), min-h-[44px] touch target
 
 **Acceptance Criteria:**
-- Toggle displays as `[git ↔ jj]` in header
-- Click swaps to `[jj ↔ git]` and updates all SideBySide components
-- Preference stored in localStorage under `toolkata_preferences`
-- On page load, reads preference and applies (default: git→jj)
-- SideBySide columns swap when reversed (jj left/green, git right/orange)
-- Glossary page respects direction preference
-- Touch target >= 44px for mobile
-- Accessible: `role="switch"`, `aria-checked`, keyboard support
+- ✅ Toggle displays as `[git ↔ jj]` in header
+- ✅ Click swaps to `[jj ↔ git]` and updates all SideBySide components
+- ✅ Preference stored in localStorage under `toolkata_preferences`
+- ✅ On page load, reads preference and applies (default: git→jj)
+- ✅ SideBySide columns swap when reversed (jj left/green, git right/orange)
+- ✅ Glossary page respects direction preference
+- ✅ Touch target >= 44px for mobile
+- ✅ Accessible: `role="switch"`, `aria-checked`, keyboard support
 
-**Effort:** 5 hours
-
-**Dependencies:** None (but do after P1.1 so glossary page exists)
+**Validation:** Type check, lint, and build all pass.
 
 ---
 
