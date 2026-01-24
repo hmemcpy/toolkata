@@ -22,6 +22,10 @@ Scripts for deploying the toolkata sandbox API to Hetzner Cloud.
 ## Quick Start
 
 ```bash
+# Required environment variables for secure deployment
+export SANDBOX_API_KEY="your-strong-random-key"
+export SANDBOX_ALLOWED_ORIGINS="https://toolkata.com,https://www.toolkata.com"
+
 # Deploy sandbox-api
 ./scripts/hetzner/deploy.sh
 

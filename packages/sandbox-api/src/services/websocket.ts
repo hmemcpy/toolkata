@@ -127,24 +127,27 @@ const make = Effect.gen(function* () {
       yield* containerService.get(containerId)
 
       // Use Bun's native PTY support
-      const bunProcess = Bun.spawn(["docker", "exec", "-it", containerId, "/bin/bash"], {
-        env: { ...process.env, TERM: "xterm-256color" },
-        terminal: {
-          cols: 80,
-          rows: 24,
-          data(_terminal, data) {
-            if (socket.readyState === WebSocket.OPEN) {
-              socket.send(data)
-            }
-          },
-          exit(_terminal, exitCode) {
-            console.log(`[WebSocketService] PTY exited for ${sessionId} with code ${exitCode}`)
-            if (socket.readyState === WebSocket.OPEN) {
-              socket.close(1000, "Container process exited")
-            }
+      const bunProcess = Bun.spawn(
+        ["docker", "exec", "-it", "--user", "sandbox", containerId, "/bin/bash"],
+        {
+          env: { ...process.env, TERM: "xterm-256color" },
+          terminal: {
+            cols: 80,
+            rows: 24,
+            data(_terminal, data) {
+              if (socket.readyState === WebSocket.OPEN) {
+                socket.send(data)
+              }
+            },
+            exit(_terminal, exitCode) {
+              console.log(`[WebSocketService] PTY exited for ${sessionId} with code ${exitCode}`)
+              if (socket.readyState === WebSocket.OPEN) {
+                socket.close(1000, "Container process exited")
+              }
+            },
           },
         },
-      }) as unknown as BunTerminalProcess
+      ) as unknown as BunTerminalProcess
 
       console.log(`[WebSocketService] Spawned Bun PTY for ${sessionId}`)
 

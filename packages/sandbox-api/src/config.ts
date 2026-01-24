@@ -185,6 +185,44 @@ export const validateGvisorConfig = (): {
 }
 
 /**
+ * Validate security configuration at startup
+ *
+ * @returns Validation result with optional error message
+ *
+ * @remarks
+ * - In production mode, authentication must be enabled
+ * - In production mode, allowed origins must be explicitly configured
+ */
+export const validateSecurityConfig = (): {
+  readonly valid: boolean
+  readonly message?: string
+} => {
+  const production = isProduction()
+  if (!production) {
+    return { valid: true }
+  }
+
+  if (SandboxConfig.apiKey === "") {
+    return {
+      valid: false,
+      message:
+        "SANDBOX_API_KEY is required in production mode. Set a strong API key in the environment.",
+    }
+  }
+
+  const allowedOrigins = getAllowedOrigins()
+  if (allowedOrigins.length === 0) {
+    return {
+      valid: false,
+      message:
+        "SANDBOX_ALLOWED_ORIGINS is required in production mode. Set a comma-separated allowlist of frontend origins.",
+    }
+  }
+
+  return { valid: true }
+}
+
+/**
  * Authentication error type
  */
 export class AuthError extends Data.TaggedClass("AuthError")<{

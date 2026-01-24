@@ -28,6 +28,34 @@ interface ActiveConnection {
 
 const connections = new Map<string, ActiveConnection>()
 
+// Helper: Get client IP from request headers (trust proxy only when local)
+const getClientIp = (request: import("http").IncomingMessage): string => {
+  const remoteAddress = request.socket.remoteAddress ?? "unknown"
+  const normalizedRemote = remoteAddress.replace(/^::ffff:/, "")
+  const isLocalProxy =
+    normalizedRemote === "127.0.0.1" || normalizedRemote === "::1" || normalizedRemote === "unknown"
+
+  const forwardedFor = request.headers["x-forwarded-for"]
+  const realIp = request.headers["x-real-ip"]
+  const cfConnectingIp = request.headers["cf-connecting-ip"]
+
+  const parseForwarded = (value: string | string[] | undefined): string | null => {
+    if (!value) return null
+    const raw = Array.isArray(value) ? value.join(",") : value
+    const first = raw.split(",")[0]?.trim()
+    return first && first.length > 0 ? first : null
+  }
+
+  if (isLocalProxy) {
+    const forwarded = parseForwarded(forwardedFor)
+    if (forwarded) return forwarded
+    if (typeof realIp === "string" && realIp.length > 0) return realIp
+    if (typeof cfConnectingIp === "string" && cfConnectingIp.length > 0) return cfConnectingIp
+  }
+
+  return normalizedRemote
+}
+
 // Helper: Extract session ID from WebSocket path
 const getSessionId = (url: string): string | null => {
   // Path format: /api/v1/sessions/:sessionId/ws
@@ -62,7 +90,7 @@ export const createWebSocketServer = (
     }
 
     // Extract client IP early for logging
-    const clientIp = (request.socket.remoteAddress ?? "unknown").replace(/^::ffff:/, "")
+    const clientIp = getClientIp(request)
 
     // Validate Origin header to prevent CSRF attacks
     const originHeader = request.headers["origin"] as string | null

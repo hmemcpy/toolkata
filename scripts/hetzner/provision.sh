@@ -316,6 +316,17 @@ echo "=== ufw configured and enabled ==="
 echo "=== Active rules ==="
 ufw status verbose
 
+echo "=== Hardening SSH configuration ==="
+# Disable password authentication and interactive challenges
+sed -i 's/^#\\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
+sed -i 's/^#\\?KbdInteractiveAuthentication.*/KbdInteractiveAuthentication no/' /etc/ssh/sshd_config
+sed -i 's/^#\\?ChallengeResponseAuthentication.*/ChallengeResponseAuthentication no/' /etc/ssh/sshd_config
+# Allow root login only with keys (safer than passwords); adjust if you want to disable root entirely
+sed -i 's/^#\\?PermitRootLogin.*/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config
+
+# Reload SSH service to apply changes
+systemctl reload ssh
+
 echo "=== Configuring logrotate for sandbox-api ==="
 # Install logrotate if not present
 apt-get install -y logrotate

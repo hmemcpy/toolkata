@@ -31,6 +31,8 @@ warn() { echo -e "${YELLOW}⚠${NC}  $1"; }
 error() { echo -e "${RED}✗${NC}  $1"; exit 1; }
 
 DOMAIN="${SANDBOX_DOMAIN:-sandbox.toolkata.com}"
+SANDBOX_API_KEY="${SANDBOX_API_KEY:-}"
+SANDBOX_ALLOWED_ORIGINS="${SANDBOX_ALLOWED_ORIGINS:-}"
 
 echo ""
 echo "============================================================"
@@ -40,6 +42,17 @@ echo ""
 info "Server: $SERVER_IP"
 info "Domain: $DOMAIN"
 echo ""
+
+# ============================================================
+# 0. REQUIRED SECURITY CONFIG
+# ============================================================
+if [ -z "$SANDBOX_API_KEY" ]; then
+  error "SANDBOX_API_KEY is required. Set it in your environment before deploying."
+fi
+
+if [ -z "$SANDBOX_ALLOWED_ORIGINS" ]; then
+  error "SANDBOX_ALLOWED_ORIGINS is required. Example: https://toolkata.com,https://www.toolkata.com"
+fi
 
 # ============================================================
 # 1. SYNC CODE
@@ -60,7 +73,10 @@ success "Code synced"
 # ============================================================
 info "Installing dependencies and building Docker image..."
 
-ssh "$SSH_USER@$SERVER_IP" 'bash -s' << 'REMOTE'
+ssh "$SSH_USER@$SERVER_IP" \
+  SANDBOX_API_KEY="$SANDBOX_API_KEY" \
+  SANDBOX_ALLOWED_ORIGINS="$SANDBOX_ALLOWED_ORIGINS" \
+  'bash -s' << 'REMOTE'
 set -euo pipefail
 export PATH="/usr/local/bin:$PATH"
 
@@ -123,6 +139,10 @@ info "Configuring hardened Caddy reverse proxy..."
 ssh "$SSH_USER@$SERVER_IP" bash -c "cat > /etc/caddy/Caddyfile << CADDYEOF
 $DOMAIN {
     # Only allow specific API routes - block everything else
+    # Limit request body size to reduce DoS risk
+    request_body {
+        max_size 1MB
+    }
 
     # Health check endpoint
     handle /health {
@@ -175,6 +195,10 @@ PORT=3001
 SANDBOX_USE_GVISOR=true
 SANDBOX_GVISOR_RUNTIME=runsc
 EOF
+
+# Append secrets separately to avoid shell escaping issues
+printf 'SANDBOX_API_KEY=%s\n' "$SANDBOX_API_KEY" >> /opt/sandbox-api/.env
+printf 'SANDBOX_ALLOWED_ORIGINS=%s\n' "$SANDBOX_ALLOWED_ORIGINS" >> /opt/sandbox-api/.env
 
 # Set correct ownership on .env
 chown sandboxapi:sandboxapi /opt/sandbox-api/.env

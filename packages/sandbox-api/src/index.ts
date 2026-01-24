@@ -23,7 +23,12 @@ import {
 } from "./services/rate-limit.js"
 import { SessionService, SessionServiceLive, type SessionServiceShape } from "./services/session.js"
 import { WebSocketService, WebSocketServiceLive } from "./services/websocket.js"
-import { getAllowedOrigins, SandboxConfig, validateGvisorConfig } from "./config.js"
+import {
+  getAllowedOrigins,
+  SandboxConfig,
+  validateGvisorConfig,
+  validateSecurityConfig,
+} from "./config.js"
 
 // Module-level reference to SessionService for health checks
 // This is set when the server starts and allows the health endpoint to access session stats
@@ -288,6 +293,16 @@ const mainProgram = Effect.gen(function* () {
       new ConfigError({
         cause: "InvalidValue",
         message: gvisorValidation.message ?? "Invalid gVisor configuration",
+      }),
+    )
+  }
+
+  const securityValidation = validateSecurityConfig()
+  if (!securityValidation.valid) {
+    return yield* Effect.fail(
+      new ConfigError({
+        cause: "InvalidValue",
+        message: securityValidation.message ?? "Invalid security configuration",
       }),
     )
   }
