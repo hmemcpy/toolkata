@@ -166,11 +166,15 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
   // Resizing state
   const [isResizing, setIsResizing] = useState(false)
 
-  // Focus close button when sidebar opens
+  // Track if this is the initial mount (to skip focus on restore from localStorage)
+  const isInitialMountRef = useRef(true)
+
+  // Focus close button when sidebar opens (but not on initial restore)
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isInitialMountRef.current) {
       closeButtonRef.current?.focus()
     }
+    isInitialMountRef.current = false
   }, [isOpen])
 
   // Register terminal ref with context when connected
