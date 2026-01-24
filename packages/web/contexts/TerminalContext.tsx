@@ -46,6 +46,13 @@ export interface TerminalRef {
    * and starts a new session.
    */
   readonly reset: () => void
+
+  /**
+   * Start the terminal session.
+   *
+   * Initiates connection to the sandbox if in IDLE state.
+   */
+  readonly start: () => void
 }
 
 /**
@@ -180,46 +187,14 @@ export interface TerminalContextValue {
    */
   readonly onTerminalTimeChange: (remaining: number | null) => void
 
-  // Step initialization state
-
   /**
-   * The step that has been initialized for this session.
-   * Null if no step has been initialized yet.
-   */
-  readonly sessionInitializedStep: number | null
-
-  /**
-   * Whether an initialization sequence is currently running.
-   */
-  readonly isInitializing: boolean
-
-  /**
-   * The command currently being executed during initialization.
-   * Null if not initializing.
-   */
-  readonly currentInitCommand: string | null
-
-  /**
-   * Run a sequence of initialization commands.
+   * Flush any queued commands to the terminal.
    *
-   * Opens the sidebar, executes commands sequentially with delays,
-   * and updates the isInitializing state.
+   * Called when the PTY is ready to receive commands.
    *
-   * @param commands - Array of commands to execute in sequence
+   * @internal
    */
-  readonly runInitSequence: (commands: readonly string[]) => Promise<void>
-
-  /**
-   * Set the initialized step for the session.
-   *
-   * @param step - The step number that was initialized
-   */
-  readonly setSessionInitializedStep: (step: number) => void
-
-  /**
-   * Clear initialization state (used when session is reset).
-   */
-  readonly clearInitState: () => void
+  readonly flushCommandQueue: () => void
 }
 
 const TerminalContext = createContext<TerminalContextValue | null>(null)
@@ -269,7 +244,6 @@ export interface TerminalProviderProps {
  */
 const DEFAULT_SIDEBAR_WIDTH = 400
 const DEFAULT_INFO_PANEL_HEIGHT = 30 // percentage
-const INIT_STATE_KEY = "sandbox-init-state"
 const SIDEBAR_OPEN_KEY = "terminal-sidebar-open"
 
 export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProviderProps) {
@@ -346,27 +320,6 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
   // Queue for commands sent while terminal is CONNECTING
   const commandQueueRef = useRef<readonly string[]>([])
 
-  // Step initialization state
-  const [sessionInitializedStep, setSessionInitializedStepState] = useState<number | null>(null)
-  const [isInitializing, setIsInitializing] = useState(false)
-  const [currentInitCommand, setCurrentInitCommand] = useState<string | null>(null)
-
-  // Load init state from localStorage on mount
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    try {
-      const stored = localStorage.getItem(INIT_STATE_KEY)
-      if (stored) {
-        const step = Number.parseInt(stored, 10)
-        if (!Number.isNaN(step)) {
-          setSessionInitializedStepState(step)
-        }
-      }
-    } catch {
-      // Invalid data, ignore
-    }
-  }, [])
-
   /**
    * Open the sidebar.
    */
@@ -401,28 +354,47 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
    *
    * @internal
    */
-  const registerTerminal = useCallback((ref: TerminalRef | null) => {
-    terminalRef.current = ref
+  const registerTerminal = useCallback(
+    (ref: TerminalRef | null) => {
+      console.log("[registerTerminal]", {
+        hasRef: !!ref,
+        state,
+        queueLength: commandQueueRef.current.length,
+        queue: commandQueueRef.current,
+      })
+      terminalRef.current = ref
 
-    // If terminal just became available and we have queued commands,
-    // execute them now.
-    if (ref && commandQueueRef.current.length > 0) {
-      for (const command of commandQueueRef.current) {
-        ref.insertCommand(command)
+      // If terminal just became available and we have queued commands
+      if (ref && commandQueueRef.current.length > 0) {
+        if (state === "IDLE") {
+          console.log("[registerTerminal] Starting terminal (IDLE with queued commands)")
+          // If idle, start the terminal (commands will be sent when connected)
+          ref.start()
+        }
+        // Note: We don't send commands here even if CONNECTED, because
+        // onStateChange will handle flushing the queue when the state changes.
+        // This prevents duplicate commands.
       }
-      commandQueueRef.current = []
-    }
-  }, [])
+    },
+    [state],
+  )
 
   /**
    * Execute a command in the terminal.
    *
    * - Opens sidebar if closed
+   * - Starts terminal if IDLE
    * - Queues command if terminal is CONNECTING
    * - Executes immediately if CONNECTED
    */
   const executeCommand = useCallback(
     (command: string) => {
+      console.log("[executeCommand]", command, {
+        isOpen,
+        state,
+        hasRef: !!terminalRef.current,
+      })
+
       // Open sidebar if closed
       if (!isOpen) {
         setIsOpenState(true)
@@ -431,12 +403,22 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
 
       // If terminal is registered and connected, execute immediately
       if (terminalRef.current && (state === "CONNECTED" || state === "TIMEOUT_WARNING")) {
+        console.log("[executeCommand] Sending immediately (connected)")
         terminalRef.current.insertCommand(command)
         return
       }
 
-      // Otherwise, queue the command for when terminal connects
+      // Queue the command for when terminal connects
       commandQueueRef.current = [...commandQueueRef.current, command]
+      console.log("[executeCommand] Queued command, queue:", commandQueueRef.current)
+
+      // Start terminal if idle
+      if (state === "IDLE" && terminalRef.current) {
+        console.log("[executeCommand] Starting terminal (IDLE with ref)")
+        terminalRef.current.start()
+      } else {
+        console.log("[executeCommand] Not starting, state:", state, "hasRef:", !!terminalRef.current)
+      }
     },
     [isOpen, state],
   )
@@ -445,11 +427,21 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
    * Callback when terminal state changes.
    *
    * Called by InteractiveTerminal to notify the context of state changes.
+   * Also flushes any queued commands when terminal becomes connected.
    *
    * @internal
    */
   const onTerminalStateChange = useCallback((newState: TerminalState) => {
+    console.log("[onTerminalStateChange]", newState, {
+      hasRef: !!terminalRef.current,
+      queueLength: commandQueueRef.current.length,
+      queue: commandQueueRef.current,
+    })
     setState(newState)
+
+    // NOTE: We don't flush queued commands here anymore.
+    // Instead, commands are flushed when the PTY is ready (onPtyReady).
+    // This prevents sending commands before the PTY is initialized.
   }, [])
 
   /**
@@ -464,60 +456,26 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
   }, [])
 
   /**
-   * Set the initialized step for the session.
+   * Flush any queued commands to the terminal.
+   *
+   * Called when the PTY is ready to receive commands.
+   *
+   * @internal
    */
-  const setSessionInitializedStep = useCallback((step: number) => {
-    setSessionInitializedStepState(step)
-    if (typeof window !== "undefined") {
-      localStorage.setItem(INIT_STATE_KEY, String(step))
+  const flushCommandQueue = useCallback(() => {
+    console.log("[flushCommandQueue]", {
+      hasRef: !!terminalRef.current,
+      queueLength: commandQueueRef.current.length,
+      queue: commandQueueRef.current,
+    })
+    if (terminalRef.current && commandQueueRef.current.length > 0) {
+      console.log("[flushCommandQueue] Flushing queue:", commandQueueRef.current)
+      for (const command of commandQueueRef.current) {
+        terminalRef.current.insertCommand(command)
+      }
+      commandQueueRef.current = []
     }
   }, [])
-
-  /**
-   * Clear initialization state (used when session is reset).
-   */
-  const clearInitState = useCallback(() => {
-    setSessionInitializedStepState(null)
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(INIT_STATE_KEY)
-    }
-  }, [])
-
-  /**
-   * Run a sequence of initialization commands.
-   */
-  const runInitSequence = useCallback(
-    async (commands: readonly string[]) => {
-      if (commands.length === 0) return
-
-      // Open sidebar if closed
-      if (!isOpen) {
-        setIsOpenState(true)
-        localStorage.setItem(SIDEBAR_OPEN_KEY, "true")
-      }
-
-      setIsInitializing(true)
-
-      for (const cmd of commands) {
-        setCurrentInitCommand(cmd)
-
-        // If terminal is registered and connected, execute immediately
-        if (terminalRef.current && (state === "CONNECTED" || state === "TIMEOUT_WARNING")) {
-          terminalRef.current.insertCommand(cmd)
-        } else {
-          // Queue the command for when terminal connects
-          commandQueueRef.current = [...commandQueueRef.current, cmd]
-        }
-
-        // Wait for command to likely complete
-        await new Promise((r) => setTimeout(r, 500))
-      }
-
-      setCurrentInitCommand(null)
-      setIsInitializing(false)
-    },
-    [isOpen, state],
-  )
 
   // Memoize context value to prevent unnecessary re-renders
   const value = useMemo<TerminalContextValue>(
@@ -540,13 +498,7 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       registerTerminal,
       onTerminalStateChange,
       onTerminalTimeChange,
-      // Step initialization
-      sessionInitializedStep,
-      isInitializing,
-      currentInitCommand,
-      runInitSequence,
-      setSessionInitializedStep,
-      clearInitState,
+      flushCommandQueue,
     }),
     [
       state,
@@ -564,16 +516,10 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       closeSidebar,
       toggleSidebar,
       executeCommand,
+      flushCommandQueue,
       registerTerminal,
       onTerminalStateChange,
       onTerminalTimeChange,
-      // Step initialization
-      sessionInitializedStep,
-      isInitializing,
-      currentInitCommand,
-      runInitSequence,
-      setSessionInitializedStep,
-      clearInitState,
     ],
   )
 

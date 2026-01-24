@@ -4,10 +4,6 @@ step: 4
 description: "How jj handles branches differently from git"
 gitCommands: ["git branch", "git checkout", "git checkout -b"]
 jjCommands: ["jj branch", "jj checkout", "jj new"]
-initCommands:
-  - "jj describe -m 'Setup for step 4'"
-  - "jj new"
-  - "echo 'feature code' > feature.js"
 ---
 
 # Branching and Checkout
@@ -212,26 +208,15 @@ jj status
 
 ## Try It Yourself
 
-```bash
-# Create a branch
-jj branch create test-branch
+<TryIt command="jj branch create test-branch" description="Create a branch" />
 
-# Make changes
-echo "test" > test.txt
-jj describe -m "Test commit"
+<TryIt command="echo 'test' > test.txt" description="Make changes" />
 
-# Update branch to point here
-jj branch set test-branch
+<TryIt command="jj describe -m 'Test commit'" description="Name the commit" />
 
-# Verify
-jj branch list
+<TryIt command="jj branch set test-branch" description="Update branch to point here" />
 
-# Go back to main
-jj checkout main
-
-# List branches again
-jj branch list
-```
+<TryIt command="jj branch list" description="Verify branches" />
 
 ## Key Takeaways
 

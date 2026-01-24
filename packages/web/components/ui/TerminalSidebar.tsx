@@ -158,10 +158,11 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
     registerTerminal,
     onTerminalStateChange,
     onTerminalTimeChange,
+    flushCommandQueue,
   } = useTerminalContext()
   const closeButtonRef = useRef<HTMLButtonElement>(null)
-  const terminalRef = useRef<InteractiveTerminalRef>(null)
   const sidebarRef = useRef<HTMLDivElement>(null)
+  const terminalRef = useRef<InteractiveTerminalRef | null>(null)
 
   // Resizing state
   const [isResizing, setIsResizing] = useState(false)
@@ -169,6 +170,27 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
   // Track previous isOpen value to detect user-initiated opens vs restores
   const prevIsOpenRef = useRef(isOpen)
   const isHydratedRef = useRef(false)
+
+  // Track latest registerTerminal function to avoid stale closures
+  const registerTerminalRef = useRef(registerTerminal)
+  registerTerminalRef.current = registerTerminal
+
+  // Track the last registered ref to avoid duplicate registrations
+  const lastRegisteredRef = useRef<InteractiveTerminalRef | null>(null)
+
+  // Use callback ref to register terminal when it mounts/unmounts
+  // The terminal is registered whenever it's mounted, regardless of sidebar state
+  const terminalRefCallback = useCallback(
+    (ref: InteractiveTerminalRef | null) => {
+      // Only register if the ref actually changed
+      if (ref !== lastRegisteredRef.current) {
+        lastRegisteredRef.current = ref
+        terminalRef.current = ref
+        registerTerminalRef.current(ref)
+      }
+    },
+    [], // Empty deps - this ref callback should be stable
+  )
 
   // Mark as hydrated after initial mount + localStorage restore settles
   useEffect(() => {
@@ -190,19 +212,6 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
     }
   }, [isOpen])
 
-  // Register terminal ref with context when connected
-  // This enables executeCommand from context to send commands to the terminal
-  useEffect(() => {
-    if (state === "CONNECTED" || state === "TIMEOUT_WARNING") {
-      registerTerminal(terminalRef.current)
-    }
-
-    // Unregister on unmount or when disconnected
-    return () => {
-      registerTerminal(null)
-    }
-  }, [state, registerTerminal])
-
   // Handle Escape key to close sidebar
   useEffect(() => {
     if (!isOpen) return
@@ -216,6 +225,12 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
     document.addEventListener("keydown", handleEscape)
     return () => document.removeEventListener("keydown", handleEscape)
   }, [isOpen, closeSidebar])
+
+  // Callback when PTY is ready to receive commands
+  const handlePtyReady = useCallback(() => {
+    console.log("[TerminalSidebar] PTY ready, flushing command queue")
+    flushCommandQueue()
+  }, [flushCommandQueue])
 
   // Handle resize drag
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -304,11 +319,12 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
             <SplitPane
               topContent={
                 <InteractiveTerminal
-                  ref={terminalRef}
+                  ref={terminalRefCallback}
                   toolPair={toolPair}
                   stepId="sidebar"
                   onStateChange={onTerminalStateChange}
                   onSessionTimeChange={onTerminalTimeChange}
+                  onPtyReady={handlePtyReady}
                 />
               }
               bottomContent={<InfoPanel />}

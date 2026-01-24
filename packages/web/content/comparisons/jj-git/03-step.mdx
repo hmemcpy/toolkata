@@ -4,10 +4,6 @@ step: 3
 description: "Creating commits in jj without a staging area"
 gitCommands: ["git add", "git commit", "git commit --amend"]
 jjCommands: ["jj describe", "jj new", "jj status"]
-initCommands:
-  - "jj describe -m 'Setup for step 3'"
-  - "jj new"
-  - "echo 'console.log(\"hello\")' > app.js"
 ---
 
 # Your First Commits
@@ -198,25 +194,17 @@ jj new
 
 ## Try It Yourself
 
-```bash
-# Create a new working copy
-jj new
+<TryIt command="jj new" description="Create a new working copy commit" />
 
-# Make some changes
-echo "test" > demo.txt
+<TryIt command="echo 'test' > demo.txt" description="Create a demo file" />
 
-# Name your commit
-jj describe -m "Add demo file"
+<TryIt command="jj describe -m 'Add demo file'" description="Name your commit" />
 
-# Check it
-jj show @
+<TryIt command="jj show @" description="Check the current commit" />
 
-# Finalize it
-jj new
+<TryIt command="jj new" description="Finalize and create new commit" />
 
-# Verify in history
-jj log
-```
+<TryIt command="jj log" description="Verify in history" />
 
 ## Key Takeaways
 

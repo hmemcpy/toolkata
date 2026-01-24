@@ -102,7 +102,6 @@ export default async function StepPage(props: {
             previousHref={stepNum > 1 ? `/${toolPair}/${stepNum - 1}` : `/${toolPair}`}
             nextHref={stepNum < pairing.steps ? `/${toolPair}/${stepNum + 1}` : null}
             stepCommands={frontmatter.jjCommands ?? []}
-            initCommands={frontmatter.initCommands ?? []}
           >
             {/* MDX Content */}
             <article className="prose prose-invert max-w-none">

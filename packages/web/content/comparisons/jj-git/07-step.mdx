@@ -4,9 +4,6 @@ step: 7
 description: "Querying commits with revset syntax (more powerful than git rev-parse)"
 gitCommands: ["git log --grep", "git log --author", "git log --since", "git rev-list"]
 jjCommands: ["jj log -r", "revset queries"]
-initCommands:
-  - "jj describe -m 'Setup for step 7'"
-  - "jj new"
 ---
 
 # Revsets: Powerful Commit Queries
@@ -197,22 +194,11 @@ jj log -r 'visible_heads()'
 
 ## Try It Yourself
 
-```bash
-# Make some commits
-jj describe -m "Feature A"
-jj new
-jj describe -m "Feature B"
-jj new
+<TryIt command="jj log -r @" description="Show the current working copy" />
 
-# Query them
-jj log -r 'description("Feature")'
+<TryIt command="jj log -r '::@'" description="Show ancestry of current commit" />
 
-# Show ancestry
-jj log -r '::@'
-
-# Show just the last two
-jj log -r '@- | @'
-```
+<TryIt command="jj log -r 'heads()'" description="Show all branch heads" />
 
 ## Key Takeaways
 

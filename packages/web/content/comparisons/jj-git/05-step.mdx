@@ -4,9 +4,6 @@ step: 5
 description: "Exploring commit history and comparing changes"
 gitCommands: ["git log", "git diff", "git show"]
 jjCommands: ["jj log", "jj diff", "jj show"]
-initCommands:
-  - "jj describe -m 'Setup for step 5'"
-  - "jj new"
 ---
 
 # Viewing History and Diffs
@@ -178,27 +175,17 @@ jj op log
 
 ## Try It Yourself
 
-```bash
-# Make some changes
-echo "test" > test.txt
-echo "demo" > demo.txt
+<TryIt command="echo 'test' > test.txt && echo 'demo' > demo.txt" description="Make some changes" />
 
-# See what changed
-jj diff
+<TryIt command="jj diff" description="See what changed" />
 
-# Commit them
-jj describe -m "Add files"
-jj new
+<TryIt command="jj describe -m 'Add files'" description="Name the commit" />
 
-# View the commit
-jj show @-
+<TryIt command="jj new" description="Finalize the commit" />
 
-# See history
-jj log
+<TryIt command="jj show @-" description="View the previous commit" />
 
-# Compare with parent
-jj diff --from @- --to @
-```
+<TryIt command="jj log" description="See history" />
 
 ## Key Takeaways
 

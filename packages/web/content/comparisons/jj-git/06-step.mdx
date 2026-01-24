@@ -4,9 +4,6 @@ step: 6
 description: "Working with remotes and pushing/pulling changes"
 gitCommands: ["git fetch", "git pull", "git push", "git clone"]
 jjCommands: ["jj git fetch", "jj git push", "jj git clone", "jj git remote"]
-initCommands:
-  - "jj describe -m 'Setup for step 6'"
-  - "jj new"
 ---
 
 # Remote Operations
@@ -169,28 +166,11 @@ You get jj's UX with git's compatibility.
 
 ## Try It Yourself
 
-If you have a GitHub repository:
+In the sandbox, you can explore the basic commands (remote operations require a connected repository):
 
-```bash
-# Clone with jj
-jj git clone git@github.com:user/repo.git
-cd repo
+<TryIt command="jj git remote list" description="List configured remotes" />
 
-# Initialize jj
-jj git init --colocate
-
-# Make a change
-echo "test" > test.txt
-jj describe -m "Add test"
-jj new
-
-# Push
-jj git push
-
-# Pull from another machine
-jj git fetch
-jj rebase -d main@origin
-```
+<TryIt command="jj log" description="View current history" />
 
 ## Key Takeaways
 

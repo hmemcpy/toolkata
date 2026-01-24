@@ -5,7 +5,6 @@
  * - Keyboard navigation (←/→ for prev/next step, ? for help, Esc to close)
  * - Keyboard shortcuts modal
  * - Integration with progress tracking and navigation components
- * - Step initialization (runs init commands when entering a step)
  *
  * @example
  * ```tsx
@@ -24,13 +23,12 @@
 
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useKeyboardNavigation, useKeyboardShortcutsModal } from "../../hooks/useKeyboardNavigation"
 import { KeyboardShortcutsModal } from "./KeyboardShortcutsModal"
 import { NavigationWrapper } from "./NavigationWrapper"
 import { StepProgressWrapper } from "./StepProgressWrapper"
-import { InitOverlay } from "./InitOverlay"
 import { useTerminalContext } from "../../contexts/TerminalContext"
 
 export interface StepPageClientWrapperProps {
@@ -73,11 +71,6 @@ export interface StepPageClientWrapperProps {
    * Commands from the step's MDX frontmatter to show in the info panel.
    */
   readonly stepCommands: readonly string[]
-
-  /**
-   * Commands to run when entering this step to set up prerequisites.
-   */
-  readonly initCommands: readonly string[]
 }
 
 /**
@@ -88,7 +81,6 @@ export interface StepPageClientWrapperProps {
  * - Keyboard shortcuts modal
  * - Progress tracking
  * - Navigation (prev/next buttons)
- * - Step initialization
  *
  * Note: The terminal has been moved to a collapsible sidebar (TerminalProvider),
  * accessible via the FAB toggle button or TryIt components in MDX content.
@@ -102,23 +94,10 @@ export function StepPageClientWrapper({
   nextHref,
   children,
   stepCommands,
-  initCommands,
 }: StepPageClientWrapperProps) {
   const router = useRouter()
   const { isOpen, onClose, showModal } = useKeyboardShortcutsModal()
-  const {
-    toggleSidebar,
-    setContextCommands,
-    state,
-    runInitSequence,
-    setSessionInitializedStep,
-    sessionInitializedStep,
-    isInitializing,
-    currentInitCommand,
-  } = useTerminalContext()
-
-  // Track whether initialization has been triggered for this step
-  const initTriggeredRef = useRef(false)
+  const { toggleSidebar, setContextCommands } = useTerminalContext()
 
   // Register step commands in context on mount and when step changes
   useEffect(() => {
@@ -129,49 +108,6 @@ export function StepPageClientWrapper({
       setContextCommands([])
     }
   }, [stepCommands, setContextCommands])
-
-  // Reset init trigger when step changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: currentStep is the trigger for resetting the ref
-  useEffect(() => {
-    initTriggeredRef.current = false
-  }, [currentStep])
-
-  // Run initialization when terminal connects and step needs setup
-  useEffect(() => {
-    // Only run when terminal is connected
-    if (state !== "CONNECTED" && state !== "TIMEOUT_WARNING") {
-      return
-    }
-
-    // Don't run if already triggered for this step
-    if (initTriggeredRef.current) {
-      return
-    }
-
-    // Don't run if this step is already initialized
-    if (sessionInitializedStep === currentStep) {
-      return
-    }
-
-    // Mark as triggered
-    initTriggeredRef.current = true
-
-    // Run init commands if there are any
-    if (initCommands.length > 0) {
-      runInitSequence(initCommands).then(() => {
-        setSessionInitializedStep(currentStep)
-      })
-    } else {
-      setSessionInitializedStep(currentStep)
-    }
-  }, [
-    state,
-    currentStep,
-    sessionInitializedStep,
-    initCommands,
-    runInitSequence,
-    setSessionInitializedStep,
-  ])
 
   const handleNextStep = () => {
     if (nextHref) {
@@ -198,13 +134,6 @@ export function StepPageClientWrapper({
 
   return (
     <>
-      {/* Initialization Overlay */}
-      <InitOverlay
-        isVisible={isInitializing}
-        currentStep={currentStep}
-        currentCommand={currentInitCommand}
-      />
-
       {/* Step Progress Header with keyboard hints */}
       <StepProgressWrapper
         toolPair={toolPair}

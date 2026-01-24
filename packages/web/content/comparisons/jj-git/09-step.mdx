@@ -4,9 +4,6 @@ step: 9
 description: "How jj stores conflicts in commits rather than blocking work"
 gitCommands: ["git merge", "git status", "git checkout --ours/--theirs"]
 jjCommands: ["jj merge", "jj status", "jj resolve"]
-initCommands:
-  - "jj describe -m 'Setup for step 9'"
-  - "jj new"
 ---
 
 # First-Class Conflict Handling
@@ -210,40 +207,9 @@ jj diff --conflict
 
 ## Try It Yourself
 
-```bash
-# Create a conflict scenario
-# Terminal 1
-jj init repo1
-cd repo1
-echo "original" > file.txt
-jj describe -m "Initial"
-jj new
+<TryIt command="jj status" description="Check for any conflicts" />
 
-# Terminal 2
-jj init repo2
-cd repo2
-echo "original" > file.txt
-jj describe -m "Initial"
-jj new
-
-# Make diverging changes
-# Terminal 1
-echo "change1" > file.txt
-jj describe -m "Change 1"
-jj new
-
-# Terminal 2
-echo "change2" > file.txt
-jj describe -m "Change 2"
-jj new
-
-# Now try to merge in Terminal 1
-# (after somehow importing Terminal 2's changes)
-# You'll get a conflict
-
-jj resolve --edit file.txt
-# Choose "change1" or "change2" or both
-```
+<TryIt command="jj log" description="View commit history" />
 
 ## Key Takeaways
 

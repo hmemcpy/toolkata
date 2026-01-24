@@ -39,7 +39,6 @@ export type TerminalState =
   | "TIMEOUT_WARNING"
   | "EXPIRED"
   | "ERROR"
-  | "STATIC"
 
 /**
  * WebSocket message types sent by the sandbox API.
@@ -117,6 +116,13 @@ export interface InteractiveTerminalRef {
    * and starts a new session.
    */
   readonly reset: () => void
+
+  /**
+   * Start the terminal session.
+   *
+   * Initiates connection to the sandbox if in IDLE state.
+   */
+  readonly start: () => void
 }
 
 /**
@@ -142,7 +148,7 @@ export interface InteractiveTerminalProps {
    * Optional callback when terminal state changes.
    *
    * Called when the terminal transitions between states:
-   * IDLE, CONNECTING, CONNECTED, TIMEOUT_WARNING, EXPIRED, ERROR, STATIC
+   * IDLE, CONNECTING, CONNECTED, TIMEOUT_WARNING, EXPIRED, ERROR
    *
    * Used by TerminalProvider to track terminal state for the sidebar.
    */
@@ -157,6 +163,14 @@ export interface InteractiveTerminalProps {
    * Used by TerminalProvider to display the session timer in the sidebar footer.
    */
   readonly onSessionTimeChange?: (remaining: number | null) => void
+
+  /**
+   * Optional callback when PTY is ready to receive commands.
+   *
+   * Called when the first message is received from the server,
+   * indicating the PTY is initialized and ready to process commands.
+   */
+  readonly onPtyReady?: () => void
 }
 
 /**
@@ -179,169 +193,6 @@ interface IFitAddon {
 }
 
 /**
- * Props for StaticModeContent component.
- */
-interface StaticModeContentProps {
-  /**
-   * The tool pairing slug (e.g., "jj-git").
-   */
-  readonly toolPair: string
-
-  /**
-   * Callback when user wants to try the interactive terminal again.
-   */
-  readonly onTryInteractive: () => void
-}
-
-/**
- * Copy button state for user feedback.
- */
-type CopyState = "idle" | "copied" | "error"
-
-/**
- * StaticModeContent - Fallback static command blocks when sandbox unavailable.
- *
- * Shows copyable code blocks with commands for users to run locally.
- * Includes a link to the cheat sheet for reference.
- */
-function StaticModeContent({ toolPair, onTryInteractive }: StaticModeContentProps) {
-  const [copyState, setCopyState] = useState<CopyState>("idle")
-
-  // Define commands to show in static mode based on the tool pair
-  // For jj-git, show essential commands for getting started
-  const staticCommands =
-    toolPair === "jj-git"
-      ? ["jj status", "jj log", "jj describe -m 'Your commit message'", "jj new", "jj diff"]
-      : []
-
-  const handleCopyAll = async () => {
-    const allCommands = staticCommands.join("\n")
-    try {
-      await navigator.clipboard.writeText(allCommands)
-      setCopyState("copied")
-      setTimeout(() => setCopyState("idle"), 2000)
-    } catch {
-      setCopyState("error")
-      setTimeout(() => setCopyState("idle"), 2000)
-    }
-  }
-
-  const handleCopySingle = async (command: string) => {
-    try {
-      await navigator.clipboard.writeText(command)
-      setCopyState("copied")
-      setTimeout(() => setCopyState("idle"), 2000)
-    } catch {
-      setCopyState("error")
-      setTimeout(() => setCopyState("idle"), 2000)
-    }
-  }
-
-  return (
-    <div className="flex min-h-[200px] flex-col p-6">
-      {/* Message */}
-      <div className="mb-4">
-        <p className="mb-2 text-sm text-[var(--color-text-muted)]">
-          Interactive sandbox unavailable. Copy commands to try locally.
-        </p>
-        <a
-          href={`/${toolPair}/cheatsheet`}
-          className="text-sm text-[var(--color-accent)] transition-colors hover:text-[var(--color-accent-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-        >
-          Cheat Sheet →
-        </a>
-      </div>
-
-      {/* Command blocks */}
-      <div className="mb-4 flex flex-col gap-2">
-        {staticCommands.map((command, index) => (
-          <div
-            // biome-ignore lint/suspicious/noArrayIndexKey: Commands are static and order matters
-            key={index}
-            className="group flex items-center justify-between rounded border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 transition-colors hover:border-[var(--color-border-focus)]"
-          >
-            <code className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-sm text-[var(--color-text)]">
-              {command}
-            </code>
-            <button
-              type="button"
-              onClick={() => handleCopySingle(command)}
-              className="ml-3 flex-shrink-0 text-[var(--color-text-dim)] transition-colors hover:text-[var(--color-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-              aria-label={`Copy command: ${command}`}
-            >
-              {copyState === "copied" ? (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4 text-[var(--color-accent)]"
-                >
-                  <title>Copied</title>
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              ) : copyState === "error" ? (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4 text-[var(--color-error)]"
-                >
-                  <title>Error</title>
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="15" y1="9" x2="9" y2="15" />
-                  <line x1="9" y1="9" x2="15" y2="15" />
-                </svg>
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4"
-                >
-                  <title>Copy</title>
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                </svg>
-              )}
-            </button>
-          </div>
-        ))}
-      </div>
-
-      {/* Footer actions */}
-      <div className="mt-auto flex items-center justify-between border-t border-[var(--color-border)] pt-4">
-        <button
-          type="button"
-          onClick={onTryInteractive}
-          className="rounded bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-bg)] transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-        >
-          Try Interactive Terminal
-        </button>
-        <button
-          type="button"
-          onClick={handleCopyAll}
-          className="text-sm text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-        >
-          Copy All Commands
-        </button>
-      </div>
-    </div>
-  )
-}
-
-/**
  * InteractiveTerminal component with xterm.js and WebSocket.
  */
 export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, InteractiveTerminalProps>(
@@ -352,6 +203,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
       onCommandInsert,
       onStateChange,
       onSessionTimeChange,
+      onPtyReady,
     }: InteractiveTerminalProps,
     ref,
   ) {
@@ -364,6 +216,9 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
     const isResettingRef = useRef(false) // Flag to prevent EXPIRED state during reset
     const retryCountRef = useRef(0) // Counter to prevent infinite retry loops
     const hasErrorRef = useRef(false) // Flag to prevent EXPIRED after ERROR
+    const ptyReadyRef = useRef(false) // Flag to track when PTY is ready to receive commands
+    const terminalReadyRef = useRef(false) // Flag to track when xterm.js is ready
+    const ptyReadyCalledRef = useRef(false) // Flag to track if we've called onPtyReady
 
     const [state, setState] = useState<TerminalState>("IDLE")
     const [error, setError] = useState<string | null>(null)
@@ -389,8 +244,16 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
       (command: string) => {
         // Send the command via WebSocket - the server will echo it back
         const ws = wsRef.current
+        console.log("[insertCommand]", command, {
+          hasWs: !!ws,
+          readyState: ws?.readyState,
+          isOpen: ws?.readyState === WebSocket.OPEN,
+        })
         if (ws && ws.readyState === WebSocket.OPEN) {
+          console.log("[insertCommand] Sending via WebSocket")
           ws.send(`${command}\n`)
+        } else {
+          console.log("[insertCommand] WebSocket not open, not sending")
         }
 
         // Notify parent callback
@@ -433,6 +296,10 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
 
     // Start the sandbox session
     const startSession = useCallback(async () => {
+      console.log("[startSession] Starting session")
+      ptyReadyRef.current = false // Reset PTY ready flag for new session
+      terminalReadyRef.current = false // Reset terminal ready flag
+      ptyReadyCalledRef.current = false // Reset PTY ready called flag
       setState("CONNECTING")
       setError(null)
       hasErrorRef.current = false // Clear error flag for new connection attempt
@@ -573,17 +440,36 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
             }
           }
 
+          // Mark PTY as ready when we receive the first message
+          if (!ptyReadyRef.current) {
+            ptyReadyRef.current = true
+            console.log("[ws.onmessage] PTY ready, terminal ready:", terminalReadyRef.current)
+          }
+
           const terminal = terminalInstanceRef.current
           if (terminal) {
             // Flush any buffered messages first
             if (messageBufferRef.current.length > 0) {
+              console.log("[ws.onmessage] Flushing buffer:", messageBufferRef.current.length, "messages")
               for (const msg of messageBufferRef.current) {
                 terminal.write(msg)
               }
               messageBufferRef.current = []
             }
+            console.log("[ws.onmessage] Writing data:", JSON.stringify(data))
             terminal.write(data)
+
+            // Check for shell prompt pattern to signal PTY is ready for commands
+            // Look for $ character which is distinctive for shell prompts (may have ANSI codes)
+            if (!ptyReadyCalledRef.current && terminalReadyRef.current) {
+              if (data.includes("$")) {
+                console.log("[ws.onmessage] Found shell prompt, notifying parent to flush commands")
+                ptyReadyCalledRef.current = true
+                onPtyReady?.()
+              }
+            }
           } else {
+            console.log("[ws.onmessage] Buffering data (terminal not ready):", JSON.stringify(data))
             // Buffer message until terminal is ready
             messageBufferRef.current.push(data)
           }
@@ -606,7 +492,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
           isResettingRef.current = false // Clear reset flag when giving up
           hasErrorRef.current = true // Prevent onclose from showing EXPIRED
           setState("ERROR")
-          setError("Connection error. Try again or use static mode.")
+          setError("Connection error. Please try again.")
         }
 
         ws.onclose = () => {
@@ -643,8 +529,13 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
       // Clear localStorage to force a fresh session (expired session won't exist on server)
       localStorage.removeItem(sessionStorageKey)
 
-      // Start fresh session
-      startSession()
+      // Set state to IDLE first to trigger init state reset
+      setState("IDLE")
+
+      // Start fresh session after a brief delay to allow state update to propagate
+      setTimeout(() => {
+        startSession()
+      }, 0)
     }, [cleanup, startSession, sessionStorageKey])
 
     /**
@@ -658,8 +549,9 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
         insertCommand,
         focus,
         reset,
+        start: startSession,
       }),
-      [insertCommand, focus, reset],
+      [insertCommand, focus, reset, startSession],
     )
 
     // Initialize xterm.js when terminal container is available
@@ -720,9 +612,15 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
         // Set refs BEFORE flushing buffer so onmessage can use them
         terminalInstanceRef.current = terminal
         fitAddonRef.current = fitAddon
+        terminalReadyRef.current = true
+
+        console.log("[initTerminal] Terminal ready, PTY ready:", ptyReadyRef.current, "buffer length:", messageBufferRef.current.length)
+        // Don't flush commands here - wait for prompt to appear in onmessage
+        // This ensures we don't send commands before the shell is ready
 
         // Flush any buffered messages that arrived before terminal was ready
         if (messageBufferRef.current.length > 0) {
+          console.log("[initTerminal] Flushing buffer:", messageBufferRef.current.length, "messages")
           for (const msg of messageBufferRef.current) {
             terminal.write(msg)
           }
@@ -869,29 +767,15 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
           </div>
         ) : state === "ERROR" || state === "EXPIRED" ? (
           <div className="flex flex-1 flex-col items-center justify-center p-8">
-            <p className="mb-2 text-sm text-[var(--color-error)]">{error ?? "An error occurred"}</p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={reset}
-                className="rounded bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-bg)] transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-              >
-                Retry
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setState("STATIC")
-                  setError(null)
-                }}
-                className="rounded border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-              >
-                Use Static Mode
-              </button>
-            </div>
+            <p className="mb-4 text-sm text-[var(--color-error)]">{error ?? "An error occurred"}</p>
+            <button
+              type="button"
+              onClick={reset}
+              className="rounded bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-bg)] transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+            >
+              Retry
+            </button>
           </div>
-        ) : state === "STATIC" ? (
-          <StaticModeContent toolPair={toolPair} onTryInteractive={() => setState("IDLE")} />
         ) : (
           <div className="min-h-0 flex-1 p-3">
             <div

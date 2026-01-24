@@ -4,9 +4,6 @@ step: 11
 description: "Patterns and workflows for power users"
 gitCommands: ["git worktree", "git stash", "git subtree"]
 jjCommands: ["jj new", "jj squash", "jj abandon"]
-initCommands:
-  - "jj describe -m 'Setup for step 11'"
-  - "jj new"
 ---
 
 # Advanced Workflows
@@ -283,25 +280,11 @@ jj --parallel 4 operation
 
 ## Try It Yourself
 
-```bash
-# Practice parallel work
-jj describe -m "Task A"
-jj new
-# Note change ID
+<TryIt command="jj log" description="View commit history and change IDs" />
 
-jj describe -m "Task B"
-jj new
-# Note change ID
+<TryIt command="jj describe -m 'Task A'" description="Create a task commit" />
 
-# Switch between them
-jj checkout <task-a-id>
-jj describe -m "Continue A"
-jj new
-
-jj checkout <task-b-id>
-jj describe -m "Continue B"
-jj new
-```
+<TryIt command="jj new" description="Start a new working copy" />
 
 ## Key Takeaways
 

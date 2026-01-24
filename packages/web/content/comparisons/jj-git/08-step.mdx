@@ -4,15 +4,6 @@ step: 8
 description: "Automatic descendant rebasing and editing old commits"
 gitCommands: ["git rebase", "git rebase -i", "git commit --amend"]
 jjCommands: ["jj rebase", "jj edit", "jj squash", "jj new"]
-initCommands:
-  - "jj describe -m 'Setup for step 8'"
-  - "jj new"
-  - "echo 'base' > rebase-demo.txt"
-  - "jj describe -m 'Base commit'"
-  - "jj new"
-  - "echo 'feature' >> rebase-demo.txt"
-  - "jj describe -m 'Feature commit'"
-  - "jj new"
 ---
 
 # Rebasing and Editing History
@@ -184,33 +175,11 @@ jj never loses data:
 
 ## Try It Yourself
 
-```bash
-# Create 3 commits
-echo "a" > a.txt
-jj describe -m "Add A"
-jj new
+<TryIt command="jj log" description="View current history" />
 
-echo "b" > b.txt
-jj describe -m "Add B"
-jj new
+<TryIt command="jj op log" description="View operation log (for undo)" />
 
-echo "c" > c.txt
-jj describe -m "Add C"
-jj new
-
-# Edit the middle commit
-jj edit @-
-
-# Change B
-echo "b2" > b.txt
-
-# Finalize
-jj describe -m "Add B (updated)"
-jj new
-
-# Commit C auto-rebased!
-jj log
-```
+<TryIt command="jj op undo" description="Undo the last operation" />
 
 ## Key Takeaways
 
