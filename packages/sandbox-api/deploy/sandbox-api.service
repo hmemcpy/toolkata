@@ -57,8 +57,12 @@ TasksMax=128
 # Security hardening
 # No new privileges
 NoNewPrivileges=true
-# Private /tmp, /dev, /etc
+# Private /tmp (but NOT private devices - need PTY access for terminal)
 PrivateTmp=true
+PrivateDevices=false
+# Allow PTY devices for terminal emulation
+DeviceAllow=/dev/ptmx rw
+DeviceAllow=/dev/pts/* rw
 # Read-only root filesystem (exceptions below)
 ReadOnlyPaths=/
 # Read-write paths

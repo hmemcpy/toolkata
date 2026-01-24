@@ -149,16 +149,23 @@ const make = Effect.gen(function* () {
             "docker",
             "exec",
             "-it",
+            "-e",
+            "HOME=/home/toolkata",
+            "-w",
+            "/home/toolkata",
             "--user",
             "sandbox",
             containerId,
             "/bin/bash",
+            "--rcfile",
+            "/home/toolkata/.bashrc",
+            "-i",
           ]
         : [
             "script",
             "-q",
             "-c",
-            `docker exec -it --user sandbox ${containerId} /bin/bash`,
+            `docker exec -it -e HOME=/home/toolkata -w /home/toolkata --user sandbox ${containerId} /bin/bash --init-file /home/toolkata/.bashrc -i`,
             "/dev/null",
           ]
 
@@ -174,7 +181,6 @@ const make = Effect.gen(function* () {
           rows: initialRows,
           data(_terminal, data) {
             if (socket.readyState === WebSocket.OPEN) {
-              // Convert Uint8Array to string for WebSocket transmission
               const text = new TextDecoder().decode(data)
               socket.send(text)
             }
