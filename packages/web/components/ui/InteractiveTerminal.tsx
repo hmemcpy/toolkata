@@ -633,6 +633,27 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
           )
         }
 
+        // Allow browser shortcuts to pass through (F12 for dev tools, etc.)
+        terminal.attachCustomKeyEventHandler((event: KeyboardEvent) => {
+          // Let F12 pass through to browser
+          if (event.key === "F12") {
+            return false
+          }
+          // Let Ctrl+Shift+I (dev tools) pass through
+          if (event.ctrlKey && event.shiftKey && event.key === "I") {
+            return false
+          }
+          // Let Ctrl+Shift+J (console) pass through
+          if (event.ctrlKey && event.shiftKey && event.key === "J") {
+            return false
+          }
+          // Let Cmd+Option+I (macOS dev tools) pass through
+          if (event.metaKey && event.altKey && event.key === "i") {
+            return false
+          }
+          return true
+        })
+
         // Handle user input
         terminal.onData((data: string) => {
           const ws = wsRef.current
