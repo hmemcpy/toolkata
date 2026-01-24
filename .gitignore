@@ -48,3 +48,4 @@ coverage/
 .vercel
 playwright-report/
 test-results/
+scripts/hetzner/sandbox.env
