@@ -27,7 +27,7 @@ export default async function HomePage() {
         <section className="mb-10 relative">
           {/* Simple bold title */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold font-mono mb-4">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold font-mono mb-3">
               <span className="text-[var(--color-text)]">tool</span>
               <span className="text-[var(--color-accent)]">kata</span>
               <span
@@ -37,6 +37,11 @@ export default async function HomePage() {
                 _
               </span>
             </h1>
+            <p className="text-[var(--color-text-muted)] text-sm sm:text-base">
+              <span className="text-[var(--color-text-dim)]">kata</span>
+              <span className="mx-2 text-[var(--color-text-dim)]">(型)</span>
+              <span className="italic">the art of learning through deliberate practice</span>
+            </p>
           </div>
 
           {/* Tagline as terminal output */}
