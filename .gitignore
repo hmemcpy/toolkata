@@ -50,3 +50,4 @@ playwright-report/
 test-results/
 scripts/hetzner/sandbox.env
 scripts/hetzner/sandbox.env
+packages/web/.vercel
