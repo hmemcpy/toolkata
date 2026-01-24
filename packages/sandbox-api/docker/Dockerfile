@@ -82,9 +82,9 @@ RUN cat <<'BASHRC' > /home/sandbox/.bashrc
 export TERM=xterm-256color
 export HOME=/home/toolkata
 
-# Parse git branch for prompt
+# Parse git branch for prompt (works even before first commit)
 parse_git_branch() {
-  git branch 2>/dev/null | sed -n 's/^\* \(.*\)/ (\1)/p'
+  git symbolic-ref --short HEAD 2>/dev/null | sed 's/.*/ (&)/'
 }
 
 # Prompt: path (blue) + git branch (yellow) + $ (green)
