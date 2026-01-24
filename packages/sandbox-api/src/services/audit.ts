@@ -39,6 +39,9 @@ export const AuditEventType = {
   // Error events
   ERROR_CONTAINER: "error.container",
   ERROR_INTERNAL: "error.internal",
+
+  // Circuit breaker events
+  CIRCUIT_BREAKER_OPEN: "circuit_breaker.open",
 } as const
 
 export type AuditEventType = (typeof AuditEventType)[keyof typeof AuditEventType]
@@ -107,20 +110,7 @@ export interface AuditServiceShape {
 // Service tag
 export class AuditService extends Context.Tag("AuditService")<AuditService, AuditServiceShape>() {}
 
-// Helper: Format metadata as JSON string for console output
-const _formatMetadata = (metadata: AuditMetadata): string => {
-  // Sanitize metadata for logging - remove any sensitive data
-  const sanitized = { ...metadata }
 
-  // Redact any fields that might contain sensitive data
-  if (sanitized.input !== undefined) {
-    // Truncate input to 100 chars
-    sanitized.input =
-      String(sanitized.input).slice(0, 100) + (String(sanitized.input).length > 100 ? "..." : "")
-  }
-
-  return JSON.stringify(sanitized)
-}
 
 // Helper: Write audit log to console (structured JSON format)
 const writeLog = (entry: AuditLogEntry): void => {
@@ -191,7 +181,7 @@ const make = Effect.gen(function* () {
 
   const logAuthFailure = (reason: string, clientIp: string, sessionId?: string) =>
     log("warn", AuditEventType.AUTH_FAILURE, `Authentication failed: ${reason}`, {
-      sessionId,
+      ...(sessionId !== undefined ? { sessionId } : {}),
       clientIp,
       reason,
     })

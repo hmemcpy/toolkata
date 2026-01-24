@@ -305,45 +305,44 @@ const make = Effect.gen(function* () {
     })
 
   // Clean up orphaned containers (stopped sandbox containers from previous runs)
-  const cleanupOrphaned = Effect.tryPromise({
-    try: async () => {
-      const docker = dockerClient.docker
-      const containers = await docker.listContainers({
-        all: true,
-        filters: {
-          name: ["sandbox-"],
-          status: ["exited", "dead"],
-        },
-      })
+  const cleanupOrphaned = Effect.tryPromise(async () => {
+    const docker = dockerClient.docker
+    const containers = await docker.listContainers({
+      all: true,
+      filters: {
+        name: ["sandbox-"],
+        status: ["exited", "dead"],
+      },
+    })
 
-      if (containers.length === 0) {
-        return 0
-      }
-
-      console.log(`[ContainerService] Cleaning up ${containers.length} orphaned container(s)`)
-
-      for (const containerInfo of containers) {
-        try {
-          const container = docker.getContainer(containerInfo.Id)
-          await container.remove({ force: true })
-          console.log(
-            `[ContainerService] Removed orphaned container: ${containerInfo.Names?.[0] ?? containerInfo.Id}`,
-          )
-        } catch (err) {
-          console.error(
-            `[ContainerService] Failed to remove orphaned container ${containerInfo.Id}:`,
-            err,
-          )
-        }
-      }
-
-      return containers.length
-    },
-    catch: (error) => {
-      console.error("[ContainerService] Failed to cleanup orphaned containers:", error)
+    if (containers.length === 0) {
       return 0
-    },
-  })
+    }
+
+    console.log(`[ContainerService] Cleaning up ${containers.length} orphaned container(s)`)
+
+    for (const containerInfo of containers) {
+      try {
+        const container = docker.getContainer(containerInfo.Id)
+        await container.remove({ force: true })
+        console.log(
+          `[ContainerService] Removed orphaned container: ${containerInfo.Names?.[0] ?? containerInfo.Id}`,
+        )
+      } catch (err) {
+        console.error(
+          `[ContainerService] Failed to remove orphaned container ${containerInfo.Id}:`,
+          err,
+        )
+      }
+    }
+
+    return containers.length
+  }).pipe(
+    Effect.catchAll((error) => {
+      console.error("[ContainerService] Failed to cleanup orphaned containers:", error)
+      return Effect.succeed(0)
+    }),
+  )
 
   return { create, destroy, get, cleanupOrphaned }
 })

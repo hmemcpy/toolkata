@@ -153,12 +153,13 @@ const make = Effect.gen(function* () {
             "sandbox",
             containerId,
             "/bin/bash",
+            "-l",
           ]
         : [
             "script",
             "-q",
             "-c",
-            `docker exec -it --user sandbox ${containerId} /bin/bash`,
+            `docker exec -it --user sandbox ${containerId} /bin/bash -l`,
             "/dev/null",
           ]
 
@@ -172,14 +173,14 @@ const make = Effect.gen(function* () {
         terminal: {
           cols: initialCols,
           rows: initialRows,
-          data(_terminal, data) {
+          data(_terminal: unknown, data: Uint8Array) {
             if (socket.readyState === WebSocket.OPEN) {
               // Convert Uint8Array to string for WebSocket transmission
               const text = new TextDecoder().decode(data)
               socket.send(text)
             }
           },
-          exit(_terminal, exitCode) {
+          exit(_terminal: unknown, exitCode: number) {
             console.log(`[WebSocketService] PTY exited for ${sessionId} with code ${exitCode}`)
             if (socket.readyState === WebSocket.OPEN) {
               socket.close(1000, "Container process exited")

@@ -221,6 +221,7 @@ const make = Effect.gen(function* () {
         activeSessions: [...tracking.activeSessions, sessionId],
         commandCount: tracking.commandCount,
         minuteWindowStart: tracking.minuteWindowStart,
+        activeWebSocketIds: tracking.activeWebSocketIds,
       }
 
       // MutableHashMap.set is synchronous and mutates in place

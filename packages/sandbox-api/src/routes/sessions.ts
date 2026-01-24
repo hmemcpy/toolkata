@@ -2,7 +2,7 @@ import { Data, Effect } from "effect"
 import { Hono } from "hono"
 import type { Env } from "hono"
 import { AuthError, validateApiKey } from "../config.js"
-import type { AuditServiceShape } from "../services/audit.js"
+import { AuditEventType, type AuditServiceShape } from "../services/audit.js"
 import type { CircuitBreakerServiceShape, CircuitStatus } from "../services/circuit-breaker.js"
 import type { RateLimitServiceShape } from "../services/rate-limit.js"
 import { RateLimitError } from "../services/rate-limit.js"
@@ -218,7 +218,7 @@ const createSessionRoutes = (
       if (circuitStatus.isOpen) {
         // Log circuit breaker trigger
         await Effect.runPromise(
-          auditService.log("warn", "circuit_breaker.open", circuitStatus.reason ?? "Circuit open", {
+          auditService.log("warn", AuditEventType.CIRCUIT_BREAKER_OPEN, circuitStatus.reason ?? "Circuit open", {
             clientIp,
             ...circuitStatus.metrics,
           }),

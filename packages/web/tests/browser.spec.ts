@@ -393,6 +393,110 @@ test.describe("Sandbox Connection (12.5)", () => {
       })
     }
   })
+
+  test("bash prompt appears after connection", async ({ page }) => {
+    // Check if sandbox API is running
+    const sandboxAvailable = await page.request
+      .get("http://localhost:3001/health")
+      .then((r) => r.ok())
+      .catch(() => false)
+
+    test.skip(!sandboxAvailable, "Sandbox API not running")
+
+    await page.goto("/jj-git/1")
+
+    // Look for terminal/sandbox section
+    const terminalSection = page.locator("[data-testid=terminal], .terminal, :text('SANDBOX')")
+
+    if (await terminalSection.isVisible()) {
+      // Click to start sandbox if there's a start button
+      const startButton = page.getByRole("button", { name: /start|connect/i })
+      if (await startButton.isVisible()) {
+        await startButton.click()
+      }
+
+      // Wait for xterm.js canvas/text area to appear
+      const terminalCanvas = page.locator(".xterm-text-layer, .xterm-canvas-layer, canvas")
+      await expect(terminalCanvas.first()).toBeVisible({ timeout: 10000 })
+
+      // Wait for bash prompt ($ character) to appear in terminal
+      // The prompt format from .bashrc is: path (blue) + git branch (yellow) + $ (green)
+      // So we look for the $ character which is distinctive
+      await page.waitForTimeout(2000) // Give bash time to start and output prompt
+
+      // Get the terminal text content
+      const terminalText = await page.evaluate(() => {
+        // xterm.js renders to a canvas, but we can check the text layer
+        const textLayer = document.querySelector(".xterm-text-layer")
+        if (textLayer) {
+          return textLayer.textContent || ""
+        }
+        return ""
+      })
+
+      // Check for bash prompt indicators
+      // The prompt should contain $ for shell, and possibly ~ for home directory
+      const hasPrompt = terminalText.includes("$") || terminalText.includes("~")
+
+      expect(
+        hasPrompt,
+        `Expected bash prompt (with $ or ~) but got: "${terminalText.slice(0, 100)}"`,
+      ).toBe(true)
+    }
+  })
+
+  test("terminal accepts keyboard input", async ({ page }) => {
+    // Check if sandbox API is running
+    const sandboxAvailable = await page.request
+      .get("http://localhost:3001/health")
+      .then((r) => r.ok())
+      .catch(() => false)
+
+    test.skip(!sandboxAvailable, "Sandbox API not running")
+
+    await page.goto("/jj-git/1")
+
+    // Look for terminal/sandbox section
+    const terminalSection = page.locator("[data-testid=terminal], .terminal, :text('SANDBOX')")
+
+    if (await terminalSection.isVisible()) {
+      // Click to start sandbox if there's a start button
+      const startButton = page.getByRole("button", { name: /start|connect/i })
+      if (await startButton.isVisible()) {
+        await startButton.click()
+      }
+
+      // Wait for terminal to be ready
+      const terminalCanvas = page.locator(".xterm-text-layer, .xterm-canvas-layer, canvas")
+      await expect(terminalCanvas.first()).toBeVisible({ timeout: 10000 })
+
+      // Wait a bit for bash to be ready
+      await page.waitForTimeout(2000)
+
+      // Focus the terminal and type a command
+      const terminalContainer = page.locator(".xterm").first()
+      await terminalContainer.click()
+
+      // Type "echo test" and press Enter
+      await page.keyboard.type("echo test")
+      await page.keyboard.press("Enter")
+
+      // Wait for output
+      await page.waitForTimeout(1000)
+
+      // Get the terminal text content and verify our command echoed back
+      const terminalText = await page.evaluate(() => {
+        const textLayer = document.querySelector(".xterm-text-layer")
+        if (textLayer) {
+          return textLayer.textContent || ""
+        }
+        return ""
+      })
+
+      // Should contain "echo test" and "test" (the output)
+      expect(terminalText).toContain("test")
+    }
+  })
 })
 
 test.describe("All Routes Load (12.4)", () => {

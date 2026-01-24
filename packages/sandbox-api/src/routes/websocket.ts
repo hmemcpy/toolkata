@@ -171,8 +171,8 @@ export const createWebSocketServer = (
       )
 
       // Store connection ID on the WebSocket for cleanup
-      ;(ws as unknown as Record<string, unknown>).__connectionId = connectionId
-      ;(ws as unknown as Record<string, unknown>).__clientIp = clientIp
+      ;(ws as unknown as Record<string, unknown>)["__connectionId"] = connectionId
+      ;(ws as unknown as Record<string, unknown>)["__clientIp"] = clientIp
 
       wss.emit(
         "connection",

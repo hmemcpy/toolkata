@@ -111,8 +111,8 @@ const createApp = (
         }
 
         // Check if origin is in the whitelist
-        // Return the origin if allowed, false otherwise
-        return allowedOrigins.includes(origin) ? origin : false
+        // Return the origin if allowed, null otherwise (CORS spec)
+        return allowedOrigins.includes(origin) ? origin : null
       },
       credentials: true,
       allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
