@@ -26,6 +26,7 @@
 
 import type { ReactNode } from "react"
 import { useTerminalContext } from "../../contexts/TerminalContext"
+import { useSandboxStatus } from "../../hooks/useSandboxStatus"
 
 /**
  * Props for TerminalToggle component.
@@ -45,6 +46,7 @@ export interface TerminalToggleProps {
  */
 export function TerminalToggle({ className = "" }: TerminalToggleProps): ReactNode {
   const { state, isOpen, toggleSidebar } = useTerminalContext()
+  const { isUnavailable, reason } = useSandboxStatus()
 
   // Hide on desktop when sidebar is open
   if (isOpen) {
@@ -53,6 +55,9 @@ export function TerminalToggle({ className = "" }: TerminalToggleProps): ReactNo
 
   // Connection indicator color
   const getIndicatorColor = () => {
+    if (isUnavailable) {
+      return "bg-[var(--color-text-dim)]"
+    }
     switch (state) {
       case "CONNECTED":
         return "bg-[var(--color-accent)]"
@@ -69,6 +74,10 @@ export function TerminalToggle({ className = "" }: TerminalToggleProps): ReactNo
 
   // Button label with connection status
   const getButtonLabel = (): string => {
+    if (isUnavailable) {
+      return `Sandbox unavailable: ${reason ?? "High load"}`
+    }
+
     let statusText: string
     switch (state) {
       case "IDLE":
@@ -98,10 +107,19 @@ export function TerminalToggle({ className = "" }: TerminalToggleProps): ReactNo
     return `${statusText} (Press T to toggle)`
   }
 
+  // Handle click - don't toggle if unavailable
+  const handleClick = () => {
+    if (!isUnavailable) {
+      toggleSidebar()
+    }
+  }
+
   return (
     <button
       type="button"
-      onClick={toggleSidebar}
+      onClick={handleClick}
+      disabled={isUnavailable}
+      title={isUnavailable ? `Sandbox unavailable: ${reason ?? "High load"}` : undefined}
       className={`
         fixed bottom-6 right-6 z-[var(--toggle-z-index)]
         flex h-14 w-14 items-center justify-center
@@ -115,6 +133,7 @@ export function TerminalToggle({ className = "" }: TerminalToggleProps): ReactNo
         focus:outline-none
         focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]
         active:scale-95
+        disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
         ${className}
       `}
       aria-label={getButtonLabel()}

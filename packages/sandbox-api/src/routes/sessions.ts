@@ -3,15 +3,16 @@ import { Hono } from "hono"
 import type { Env } from "hono"
 import { AuthError, validateApiKey } from "../config.js"
 import type { AuditServiceShape } from "../services/audit.js"
+import type { CircuitBreakerServiceShape, CircuitStatus } from "../services/circuit-breaker.js"
 import type { RateLimitServiceShape } from "../services/rate-limit.js"
 import { RateLimitError } from "../services/rate-limit.js"
 import type { SessionServiceShape } from "../services/session.js"
 import { SessionError } from "../services/session.js"
 
 // Helper: Cast statusCode to the literal type Hono expects
-const toStatusCode = (code: number): 200 | 201 | 400 | 401 | 403 | 404 | 409 | 429 | 500 => {
-  if ([200, 201, 400, 401, 403, 404, 409, 429, 500].includes(code)) {
-    return code as 200 | 201 | 400 | 401 | 403 | 404 | 409 | 429 | 500
+const toStatusCode = (code: number): 200 | 201 | 400 | 401 | 403 | 404 | 409 | 429 | 500 | 503 => {
+  if ([200, 201, 400, 401, 403, 404, 409, 429, 500, 503].includes(code)) {
+    return code as 200 | 201 | 400 | 401 | 403 | 404 | 409 | 429 | 500 | 503
   }
   return 500
 }
@@ -171,8 +172,15 @@ const createSessionRoutes = (
   sessionService: SessionServiceShape,
   rateLimitService: RateLimitServiceShape,
   auditService: AuditServiceShape,
+  circuitBreakerService: CircuitBreakerServiceShape,
 ) => {
   const app = new Hono<{ Bindings: Env }>()
+
+  // GET /status - Get sandbox availability status (no auth required)
+  app.get("/status", async (c) => {
+    const status = await Effect.runPromise(circuitBreakerService.getStatus)
+    return c.json<CircuitStatus>(status, 200)
+  })
 
   // POST /sessions - Create a new session
   app.post("/sessions", async (c) => {
@@ -204,6 +212,25 @@ const createSessionRoutes = (
 
       // Get client IP for rate limiting
       const clientIp = getClientIp(c.req.raw)
+
+      // Check circuit breaker first
+      const circuitStatus = await Effect.runPromise(circuitBreakerService.getStatus)
+      if (circuitStatus.isOpen) {
+        // Log circuit breaker trigger
+        await Effect.runPromise(
+          auditService.log("warn", "circuit_breaker.open", circuitStatus.reason ?? "Circuit open", {
+            clientIp,
+            ...circuitStatus.metrics,
+          }),
+        )
+        return c.json<ErrorResponse>(
+          {
+            error: "ServiceUnavailable",
+            message: "Sandbox temporarily unavailable due to high load. Please try again later.",
+          },
+          503,
+        )
+      }
 
       // Check rate limits
       const limitResult = await Effect.runPromise(rateLimitService.checkSessionLimit(clientIp))

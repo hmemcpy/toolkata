@@ -404,6 +404,22 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
         const apiKey = process.env["NEXT_PUBLIC_SANDBOX_API_KEY"] ?? ""
         const httpUrl = apiUrl.replace(/^wss?:\/\//, "https://").replace(/:\d+/, "")
 
+        // Check circuit breaker status before attempting connection
+        try {
+          const statusResponse = await fetch(`${httpUrl}/api/v1/status`)
+          if (statusResponse.ok) {
+            const status = await statusResponse.json()
+            if (status.isOpen) {
+              setState("ERROR")
+              setError(status.reason ?? "Sandbox temporarily unavailable due to high load")
+              hasErrorRef.current = true
+              return
+            }
+          }
+        } catch {
+          // Status check failed - continue anyway, session creation will fail if unavailable
+        }
+
         // Check for existing session in localStorage
         let sessionId: string | null = null
         const stored = localStorage.getItem(sessionStorageKey)

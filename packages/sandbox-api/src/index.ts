@@ -23,6 +23,11 @@ import {
   type RateLimitServiceShape,
   logRateLimitConfig,
 } from "./services/rate-limit.js"
+import {
+  type CircuitBreakerServiceShape,
+  makeCircuitBreakerService,
+  logCircuitBreakerConfig,
+} from "./services/circuit-breaker.js"
 import { SessionService, SessionServiceLive, type SessionServiceShape } from "./services/session.js"
 import { WebSocketService, WebSocketServiceLive } from "./services/websocket.js"
 import {
@@ -86,6 +91,7 @@ const createApp = (
   sessionService: SessionServiceShape,
   rateLimitService: RateLimitServiceShape,
   auditService: AuditServiceShape,
+  circuitBreakerService: CircuitBreakerServiceShape,
 ) => {
   const app = new Hono<{ Bindings: Env }>()
 
@@ -147,7 +153,10 @@ const createApp = (
   })
 
   // Mount session routes under /api/v1
-  app.route("/api/v1", createSessionRoutes(sessionService, rateLimitService, auditService))
+  app.route(
+    "/api/v1",
+    createSessionRoutes(sessionService, rateLimitService, auditService, circuitBreakerService),
+  )
 
   return app
 }
@@ -160,8 +169,17 @@ const make = Effect.gen(function* () {
   const webSocketService = yield* WebSocketService
   const auditService = yield* AuditService
 
+  // Create circuit breaker (depends on session service for container count)
+  const circuitBreakerService = makeCircuitBreakerService(sessionService)
+
   let httpServer: NodeHttpServer | null = null
-  const app = createApp(config, sessionService, rateLimitService, auditService)
+  const app = createApp(
+    config,
+    sessionService,
+    rateLimitService,
+    auditService,
+    circuitBreakerService,
+  )
 
   const start = Effect.sync(() => {
     // Store session service reference for health checks
@@ -226,6 +244,7 @@ const make = Effect.gen(function* () {
       console.log(`WebSocket: ws://${config.host}:${config.port}/api/v1/sessions/:id/ws`)
       console.log(`CORS origin: ${config.frontendOrigin}`)
       logRateLimitConfig()
+      logCircuitBreakerConfig()
     })
 
     httpServer.on("error", (error) => {
