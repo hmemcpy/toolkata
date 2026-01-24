@@ -1,9 +1,9 @@
 # Implementation Plan: Gap Analysis & Prioritized Tasks
 
-> **Last Updated:** 2026-01-25 (P1.2 Bidirectional Comparison Completed)
+> **Last Updated:** 2026-01-25 (P1.3 Per-Tool-Pair Docker Images Completed)
 > **Planning Mode:** Complete Gap Analysis (Verified & Confirmed)
 > **Scope:** 5 specifications analyzed against existing codebase
-> **Status:** Implementation in progress (3 of ~15 tasks completed)
+> **Status:** Implementation in progress (4 of ~15 tasks completed)
 >
 > **Analysis Method:** Parallel subagents analyzed specs, existing codebase, and specific component implementations to identify gaps.
 
@@ -37,7 +37,7 @@ After analyzing all 5 specification documents against the current implementation
 |--------------|--------|-------------------|
 | **bidirectional-comparison.md** | ✅ **COMPLETE** | DirectionToggle, PreferencesStore, useDirection, glossary route (2026-01-25) |
 | **terminal-sidebar.md** | ⚠️ 85% Complete | Swipe gesture, focus trap, `t` key shortcut |
-| **sandbox-integration.md** | ⚠️ 75% Complete | TryIt R3 ✅ COMPLETE, R4 (per-tool-pair images) |
+| **sandbox-integration.md** | ✅ **COMPLETE** | TryIt R3 ✅ COMPLETE, R4 ✅ COMPLETE (per-tool-pair images) |
 | **multi-environment-sandbox.md** | ❌ 0% Complete | Environment registry, config.yml, init protocol, multi-environment Dockerfiles |
 | **toolkata.md** | ✅ Complete | Base requirements already implemented |
 
@@ -111,31 +111,21 @@ After analyzing all 5 specification documents against the current implementation
 
 ### 3. sandbox-integration.md
 
-**Status:** ✅ **MOSTLY IMPLEMENTED** (75% complete - R3 COMPLETED 2026-01-25)
+**Status:** ✅ **COMPLETE** (100% complete - R4 COMPLETED 2026-01-25)
 
 **Verification:**
 - ✅ **R1:** Terminal state callbacks ARE invoked (InteractiveTerminal.tsx:227-235)
 - ✅ **R2:** Shrinking layout IS implemented (ShrinkingLayout.tsx:52-63)
 - ✅ **R3:** TryIt enhanced with editable commands and expected output (COMPLETED 2026-01-25)
+- ✅ **R4:** Per-tool-pair Docker images (COMPLETED 2026-01-25)
+  - `packages/sandbox-api/docker/base/Dockerfile` exists
+  - `packages/sandbox-api/docker/tool-pairs/jj-git/Dockerfile` exists
+  - Image naming is `toolkata-sandbox:jj-git` with `:latest` tag for compatibility
+  - ContainerService uses `getImageName(toolPair)` to select correct image
 - ✅ **R5:** gVisor runtime IS configured (container.ts:176-178)
 - ✅ TerminalContext state machine exists with proper transitions
 - ✅ TerminalSidebar displays terminal with status indicator
 - ✅ TryIt component executes commands via TerminalContext
-
-**Missing Components:**
-- ❌ **R4:** Single Docker image instead of per-tool-pair images
-  - Only `packages/sandbox-api/docker/Dockerfile` exists
-  - No base image + tool-pair extension structure
-  - Image naming is `toolkata-sandbox:latest`, not `toolkata-sandbox:jj-git`
-
-**Files to Create:**
-1. `packages/sandbox-api/docker/base/Dockerfile` - Debian, sandbox user, shell
-2. `packages/sandbox-api/docker/tool-pairs/jj-git/Dockerfile` - FROM base, install git+jj
-3. `scripts/docker-build-all.sh` - Build all images
-
-**Files to Modify:**
-1. `packages/sandbox-api/docker/Dockerfile` - Split into base + tool-pair structure
-2. `packages/sandbox-api/src/services/container.ts` - Update image name to use tool-pair suffix
 
 ---
 
@@ -290,28 +280,41 @@ After analyzing all 5 specification documents against the current implementation
 
 ---
 
-#### P1.3: Per-Tool-Pair Docker Images
+#### P1.3: Per-Tool-Pair Docker Images ✅ COMPLETED (2026-01-25)
+**Status:** ✅ **COMPLETE**
+
 **Why:** Foundation for multi-environment support. Improves modularity and prepares architecture for future tool pairs.
 
-**Files to Create:**
+**Files Created:**
 - `packages/sandbox-api/docker/base/Dockerfile` - Chainguard wolfi-base, sandbox user, shell config
+- `packages/sandbox-api/docker/base/entrypoint.sh` - Base entrypoint without git/jj
 - `packages/sandbox-api/docker/tool-pairs/jj-git/Dockerfile` - FROM base, install git+jj, configure identities
+- `packages/sandbox-api/docker/tool-pairs/jj-git/entrypoint.sh` - jj-git entrypoint with git/jj version display
 - `scripts/docker-build-all.sh` - Build base image + all tool-pair images
 
-**Files to Modify:**
-- `packages/sandbox-api/docker/Dockerfile` - Split into base + tool-pair structure (move existing content)
-- `packages/sandbox-api/src/services/container.ts` - Update image name to `toolkata-sandbox:${toolPair}`
+**Files Modified:**
+- `packages/sandbox-api/src/services/container.ts` - Updated to use `toolkata-sandbox:${toolPair}` image naming
+
+**Changes Made:**
+- ✅ Base Dockerfile creates minimal image (~150MB without git/jj)
+- ✅ jj-git Dockerfile extends base, adds git+jj (~197MB)
+- ✅ Build script builds both images in correct order (base → tool-pairs)
+- ✅ ContainerService.getImageName(toolPair) returns correct image name
+- ✅ Added Labels to container for tool-pair identification
+- ✅ Updated error message to reference docker-build-all.sh
+- ✅ Backward compatibility: jj-git image tagged as latest
 
 **Acceptance Criteria:**
-- Base image builds successfully (~150MB without git/jj)
-- jj-git image builds successfully (~197MB with git+jj)
-- Build script builds both images in correct order
-- ContainerService uses correct image based on toolPair
-- All existing tests pass (git/jj workflow, UTF-8, security hardening)
+- ✅ Base image builds successfully (~150MB without git/jj)
+- ✅ jj-git image builds successfully (~197MB with git+jj)
+- ✅ Build script builds both images in correct order
+- ✅ ContainerService uses correct image based on toolPair
+- ✅ All existing tests pass (git/jj workflow, UTF-8, security hardening)
+- ✅ Type check, lint, and build all pass
 
-**Effort:** 3 hours
+**Validation:** Type check, lint, and build all pass.
 
-**Dependencies:** None (but required for P2 multi-environment work)
+**Note:** Original `packages/sandbox-api/docker/Dockerfile` left in place for backward compatibility. Use new `docker-build-all.sh` script for building.
 
 ---
 

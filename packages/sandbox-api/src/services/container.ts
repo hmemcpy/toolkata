@@ -67,8 +67,11 @@ const CONTAINER_SECURITY = {
   autoRemove: false, // We'll handle cleanup explicitly
 } as const
 
-// Image name (built from packages/sandbox-api/docker/Dockerfile)
-const SANDBOX_IMAGE = "toolkata-sandbox:latest"
+// Image name pattern: toolkata-sandbox:{toolPair}
+// Built from packages/sandbox-api/docker/tool-pairs/{toolPair}/Dockerfile
+const getImageName = (toolPair: string): string => {
+  return `toolkata-sandbox:${toolPair}`
+}
 
 // Helper: Generate unique container name
 const generateContainerName = (toolPair: string): string => {
@@ -137,15 +140,16 @@ const make = Effect.gen(function* () {
         }
 
         const docker = dockerClient.docker
+        const imageName = getImageName(toolPair)
 
         // Check if image exists, pull if needed
         try {
-          await docker.getImage(SANDBOX_IMAGE).inspect()
+          await docker.getImage(imageName).inspect()
         } catch {
           // Image doesn't exist, need to pull it
           throw new ContainerError({
             cause: "CreateFailed",
-            message: `Sandbox image ${SANDBOX_IMAGE} not found. Please build the image first.`,
+            message: `Sandbox image ${imageName} not found. Please build the image first using: ./scripts/docker-build-all.sh`,
           })
         }
 
@@ -178,9 +182,12 @@ const make = Effect.gen(function* () {
         }
 
         const container = await docker.createContainer({
-          Image: SANDBOX_IMAGE,
+          Image: imageName,
           name: containerName,
           HostConfig: hostConfig,
+          Labels: {
+            "toolkata.tool-pair": toolPair,
+          },
           Env: [`TOOL_PAIR=${toolPair}`],
           // Attach stdin/stdout/stderr for terminal interaction
           OpenStdin: true,
