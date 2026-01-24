@@ -9,8 +9,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
-    wget \
     ca-certificates \
+    nano \
+    vim-tiny \
     && rm -rf /var/lib/apt/lists/*
 
 # Install jj (Jujutsu VCS) from pre-built GitHub release
@@ -27,9 +28,35 @@ RUN git --version && jj --version
 # Create non-root user for running commands (no sudo access)
 RUN useradd -m -s /bin/bash sandbox
 
-# Remove privilege escalation commands (su, sudo, newgrp, etc.)
-RUN rm -f /usr/bin/su /usr/bin/sudo /usr/bin/newgrp /usr/bin/chsh /usr/bin/chfn /usr/bin/gpasswd \
-    && rm -f /bin/su 2>/dev/null || true
+# Remove dangerous utilities for security hardening
+RUN rm -f \
+    # Privilege escalation
+    /usr/bin/su /bin/su /usr/bin/sudo /usr/bin/newgrp \
+    /usr/bin/chsh /usr/bin/chfn /usr/bin/gpasswd \
+    /usr/bin/runuser /usr/sbin/runuser \
+    /usr/bin/setpriv /usr/bin/sg \
+    # Container escape vectors
+    /usr/bin/chroot /usr/sbin/chroot \
+    /usr/bin/nsenter /usr/bin/unshare \
+    /usr/sbin/pivot_root \
+    # Filesystem mounting
+    /usr/bin/mount /bin/mount /usr/bin/umount /bin/umount \
+    /usr/sbin/losetup /sbin/losetup \
+    /usr/bin/mknod /bin/mknod \
+    # User/group management (not needed in sandbox)
+    /usr/sbin/useradd /usr/sbin/userdel /usr/sbin/usermod \
+    /usr/sbin/adduser /usr/sbin/deluser \
+    /usr/sbin/groupadd /usr/sbin/groupdel /usr/sbin/groupmod \
+    /usr/sbin/addgroup /usr/sbin/delgroup \
+    /usr/bin/passwd /usr/sbin/chpasswd /usr/sbin/newusers \
+    # Package management (prevent installing software)
+    /usr/bin/apt /usr/bin/apt-get /usr/bin/apt-cache \
+    /usr/bin/apt-cdrom /usr/bin/apt-config /usr/bin/apt-key /usr/bin/apt-mark \
+    /usr/bin/dpkg /usr/bin/dpkg-deb /usr/bin/dpkg-divert \
+    /usr/bin/dpkg-query /usr/bin/dpkg-split /usr/bin/dpkg-trigger \
+    # Network download (curl kept for potential tutorial use)
+    /usr/bin/wget \
+    2>/dev/null || true
 
 # Create workspace directory
 RUN mkdir -p /home/toolkata && \
@@ -42,26 +69,41 @@ USER sandbox
 RUN git config --global user.name "Sandbox User" && \
     git config --global user.email "sandbox@toolkata.com" && \
     git config --global init.defaultBranch main && \
-    git config --global core.editor "vim"
+    git config --global core.editor "vi"
 
 # Configure jj for sandbox user
 RUN mkdir -p /home/sandbox/.config/jj && \
     printf '[user]\nname = "Sandbox User"\nemail = "sandbox@toolkata.com"\n' > /home/sandbox/.config/jj/config.toml
 
-# Create .bashrc with colored prompt and aliases
+# Create .bashrc with colored prompt (including git branch), and aliases
 # Set HOME to /home/toolkata so ~ shows correctly in prompt
-# PS1 shows relative path (blue) followed by $ (green)
-RUN printf 'export TERM=xterm-256color\n' > /home/sandbox/.bashrc && \
-    printf 'export HOME=/home/toolkata\n' >> /home/sandbox/.bashrc && \
-    printf 'export PS1="\\[\\033[34m\\]\\w\\[\\033[0m\\] \\[\\033[32m\\]$\\[\\033[0m\\] "\n' >> /home/sandbox/.bashrc && \
-    printf 'alias ls="ls --color=auto"\n' >> /home/sandbox/.bashrc && \
-    printf 'alias grep="grep --color=auto"\n' >> /home/sandbox/.bashrc
+# PS1 shows: path (blue) + git branch (yellow) + $ (green)
+RUN cat <<'BASHRC' > /home/sandbox/.bashrc
+export TERM=xterm-256color
+export HOME=/home/toolkata
+
+# Parse git branch for prompt
+parse_git_branch() {
+  git branch 2>/dev/null | sed -n 's/^\* \(.*\)/ (\1)/p'
+}
+
+# Prompt: path (blue) + git branch (yellow) + $ (green)
+export PS1='\[\033[34m\]\w\[\033[0m\]\[\033[33m\]$(parse_git_branch)\[\033[0m\] \[\033[32m\]$\[\033[0m\] '
+
+alias ls="ls --color=auto"
+alias grep="grep --color=auto"
+BASHRC
 
 # Enable git colors
 RUN git config --global color.ui auto
 
 # Enable jj colors (auto-enabled when TERM is set, but be explicit)
 RUN printf '[ui]\ncolor = "auto"\n' >> /home/sandbox/.config/jj/config.toml
+
+# Copy git and jj configs to /home/toolkata (since .bashrc sets HOME=/home/toolkata)
+RUN cp /home/sandbox/.gitconfig /home/toolkata/.gitconfig && \
+    mkdir -p /home/toolkata/.config && \
+    cp -r /home/sandbox/.config/jj /home/toolkata/.config/
 
 # Set working directory
 WORKDIR /home/toolkata
