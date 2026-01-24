@@ -518,9 +518,28 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
 
         // Use the original WebSocket URL (ws:// or wss://) for the connection
         const wsBase = SANDBOX_API_URL.replace(/^http:\/\//, "ws://").replace(/^https:\/\//, "wss://")
-        const wsUrl = SANDBOX_API_KEY
-          ? `${wsBase}/api/v1/sessions/${sessionId}/ws?api_key=${encodeURIComponent(SANDBOX_API_KEY)}`
-          : `${wsBase}/api/v1/sessions/${sessionId}/ws`
+
+        // Estimate terminal size from container for initial PTY sizing
+        // Use typical monospace character dimensions (9px wide, 17px tall)
+        let cols = 80
+        let rows = 24
+        if (terminalRef.current) {
+          const rect = terminalRef.current.getBoundingClientRect()
+          // Account for padding (12px on each side from p-3)
+          const availableWidth = rect.width - 24
+          const availableHeight = rect.height - 24
+          cols = Math.max(40, Math.floor(availableWidth / 9))
+          rows = Math.max(10, Math.floor(availableHeight / 17))
+        }
+
+        // Build WebSocket URL with size parameters
+        const params = new URLSearchParams()
+        if (SANDBOX_API_KEY) {
+          params.set("api_key", SANDBOX_API_KEY)
+        }
+        params.set("cols", String(cols))
+        params.set("rows", String(rows))
+        const wsUrl = `${wsBase}/api/v1/sessions/${sessionId}/ws?${params.toString()}`
 
         // Connect WebSocket
         const ws = new WebSocket(wsUrl)
@@ -595,7 +614,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
           setError("Connection error. Try again or use static mode.")
         }
 
-        ws.onclose = (_event: CloseEvent) => {
+        ws.onclose = () => {
           // Clear stored session - server session is gone either way
           localStorage.removeItem(sessionStorageKey)
 
@@ -774,9 +793,20 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
 
       window.addEventListener("resize", handleResize)
 
+      // Watch for container size changes (e.g., panel resize)
+      const resizeObserver = new ResizeObserver(() => {
+        if (fitAddonRef.current) {
+          fitAddonRef.current.fit()
+        }
+      })
+      if (terminalRef.current) {
+        resizeObserver.observe(terminalRef.current)
+      }
+
       return () => {
         cleanup()
         window.removeEventListener("resize", handleResize)
+        resizeObserver.disconnect()
         if (terminalInstanceRef.current) {
           terminalInstanceRef.current.dispose()
           terminalInstanceRef.current = null

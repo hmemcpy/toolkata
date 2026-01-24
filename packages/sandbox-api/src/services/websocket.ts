@@ -1,6 +1,10 @@
+import { platform } from "node:os"
 import { Context, Data, Effect, Layer } from "effect"
 import { WebSocket } from "ws"
 import { ContainerError, ContainerService } from "./container.js"
+
+// Detect platform for script command syntax
+const isMacOS = platform() === "darwin"
 
 // Bun subprocess with terminal
 interface BunTerminalProcess {
@@ -59,6 +63,8 @@ export interface WebSocketServiceShape {
     sessionId: string,
     containerId: string,
     socket: WebSocket,
+    initialCols?: number,
+    initialRows?: number,
   ) => Effect.Effect<ConnectionState, WebSocketError>
   readonly sendMessage: (
     connection: ConnectionState,
@@ -121,26 +127,31 @@ const make = Effect.gen(function* () {
   // Note: dockerClient not needed with CLI approach
 
   // Handle a new WebSocket connection using docker exec CLI
-  const handleConnection = (sessionId: string, containerId: string, socket: WebSocket) =>
+  const handleConnection = (
+    sessionId: string,
+    containerId: string,
+    socket: WebSocket,
+    initialCols = 80,
+    initialRows = 24,
+  ) =>
     Effect.gen(function* () {
       // Verify container exists before connecting
       yield* containerService.get(containerId)
 
       // Use Bun's native PTY support with docker exec -it
       // The -t flag is needed for docker to allocate a TTY that bash can detect
+      // Note: macOS and Linux have different `script` command syntax
+      const scriptArgs = isMacOS
+        ? ["script", "-q", "/dev/null", "docker", "exec", "-it", "--user", "sandbox", containerId, "/bin/bash"]
+        : ["script", "-q", "-c", `docker exec -it --user sandbox ${containerId} /bin/bash`, "/dev/null"]
+
       const bunProcess = Bun.spawn(
-        [
-          "script",
-          "-q",
-          "-c",
-          `docker exec -it --user sandbox ${containerId} /bin/bash`,
-          "/dev/null",
-        ],
+        scriptArgs,
         {
           env: { ...process.env, TERM: "xterm-256color" },
           terminal: {
-            cols: 80,
-            rows: 24,
+            cols: initialCols,
+            rows: initialRows,
             data(_terminal, data) {
               if (socket.readyState === WebSocket.OPEN) {
                 // Convert Uint8Array to string for WebSocket transmission

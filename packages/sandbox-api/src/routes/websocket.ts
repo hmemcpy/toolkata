@@ -145,6 +145,16 @@ export const createWebSocketServer = (
       return
     }
 
+    // Extract initial terminal size from query parameters with limits to prevent abuse
+    const MIN_COLS = 20
+    const MAX_COLS = 500
+    const MIN_ROWS = 5
+    const MAX_ROWS = 200
+    const rawCols = Number.parseInt(searchParams.get("cols") ?? "80", 10) || 80
+    const rawRows = Number.parseInt(searchParams.get("rows") ?? "24", 10) || 24
+    const initialCols = Math.max(MIN_COLS, Math.min(MAX_COLS, rawCols))
+    const initialRows = Math.max(MIN_ROWS, Math.min(MAX_ROWS, rawRows))
+
     // Upgrade the connection to WebSocket
     wss.handleUpgrade(request, socket, head, (ws) => {
       // V-007: Generate unique connection ID for tracking
@@ -171,6 +181,8 @@ export const createWebSocketServer = (
         sessionId,
         connectionId,
         clientIp,
+        initialCols,
+        initialRows,
         rateLimitService,
         auditService,
       )
@@ -186,10 +198,12 @@ export const createWebSocketServer = (
       sessionId: string,
       connectionId: string, // V-007: Connection ID for rate limit tracking
       clientIp: string, // V-007: Client IP for rate limit tracking
+      initialCols: number, // Initial terminal columns from client
+      initialRows: number, // Initial terminal rows from client
       rateLimitService: RateLimitServiceShape, // V-007: Rate limit service for cleanup
       auditService: AuditServiceShape, // V-019: Audit service for logging
     ) => {
-      console.log(`[WebSocket] Connection attempt for session: ${sessionId}`)
+      console.log(`[WebSocket] Connection attempt for session: ${sessionId} (${initialCols}x${initialRows})`)
 
       // Run the connection handler using passed-in services
       const program = Effect.gen(function* () {
@@ -205,11 +219,13 @@ export const createWebSocketServer = (
           )
         }
 
-        // Handle the WebSocket connection
+        // Handle the WebSocket connection with initial terminal size
         const connection = yield* webSocketService.handleConnection(
           sessionId,
           session.containerId,
           ws,
+          initialCols,
+          initialRows,
         )
 
         // Store connection for cleanup - use captured service values
