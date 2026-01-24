@@ -186,7 +186,7 @@ const make = Effect.succeed<SandboxClientShape>({
   createSession: (options: CreateSessionOptions) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = SANDBOX_API_URL.replace(/^wss?:\/\//, "http://").replace(/:\d+/, ":3001")
+        const apiUrl = SANDBOX_API_URL.replace(/^ws:\/\//, "http://").replace(/^wss:\/\//, "https://")
 
         // Build headers, including API key if configured
         const headers: Record<string, string> = {
@@ -230,7 +230,7 @@ const make = Effect.succeed<SandboxClientShape>({
   destroySession: (sessionId: string) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = SANDBOX_API_URL.replace(/^wss?:\/\//, "http://").replace(/:\d+/, ":3001")
+        const apiUrl = SANDBOX_API_URL.replace(/^ws:\/\//, "http://").replace(/^wss:\/\//, "https://")
 
         // Build headers, including API key if configured
         const headers: Record<string, string> = {}
@@ -258,7 +258,7 @@ const make = Effect.succeed<SandboxClientShape>({
   getSessionStatus: (sessionId: string) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = SANDBOX_API_URL.replace(/^wss?:\/\//, "http://").replace(/:\d+/, ":3001")
+        const apiUrl = SANDBOX_API_URL.replace(/^ws:\/\//, "http://").replace(/^wss:\/\//, "https://")
 
         // Build headers, including API key if configured
         const headers: Record<string, string> = {}

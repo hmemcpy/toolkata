@@ -38,7 +38,8 @@ export function useSandboxStatus(): UseSandboxStatusResult {
 
   useEffect(() => {
     const apiUrl = process.env["NEXT_PUBLIC_SANDBOX_API_URL"] ?? "http://localhost:3001"
-    const httpUrl = apiUrl.replace(/^wss?:\/\//, "https://").replace(/:\d+/, "")
+    // Convert WebSocket URLs to HTTP, keeping the port
+    const httpUrl = apiUrl.replace(/^ws:\/\//, "http://").replace(/^wss:\/\//, "https://")
     const statusUrl = `${httpUrl}/api/v1/status`
 
     const fetchStatus = async () => {
