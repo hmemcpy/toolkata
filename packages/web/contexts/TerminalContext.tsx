@@ -408,15 +408,25 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
         return
       }
 
-      // Queue the command for when terminal connects
-      commandQueueRef.current = [...commandQueueRef.current, command]
-      console.log("[executeCommand] Queued command, queue:", commandQueueRef.current)
-
-      // Start terminal if idle
+      // Start terminal if idle or expired (expired needs a fresh session)
       if (state === "IDLE" && terminalRef.current) {
+        // Queue the command for when terminal connects
+        commandQueueRef.current = [...commandQueueRef.current, command]
         console.log("[executeCommand] Starting terminal (IDLE with ref)")
         terminalRef.current.start()
+      } else if (state === "EXPIRED" && terminalRef.current) {
+        // Clear old queue and only queue this command when expired
+        commandQueueRef.current = [command]
+        console.log("[executeCommand] Resetting expired terminal with new command")
+        terminalRef.current.reset()
+      } else if (state === "CONNECTING" || state === "ERROR") {
+        // Queue the command for when terminal connects
+        commandQueueRef.current = [...commandQueueRef.current, command]
+        console.log("[executeCommand] Queued command, queue:", commandQueueRef.current)
       } else {
+        // Queue the command for when terminal connects
+        commandQueueRef.current = [...commandQueueRef.current, command]
+        console.log("[executeCommand] Queued command, queue:", commandQueueRef.current)
         console.log("[executeCommand] Not starting, state:", state, "hasRef:", !!terminalRef.current)
       }
     },
