@@ -126,10 +126,10 @@ const make = Effect.gen(function* () {
       // Verify container exists before connecting
       yield* containerService.get(containerId)
 
-      // Use Bun's native PTY support
-      // Note: Use -i (interactive) only, not -t (tty) since Bun's terminal provides the PTY
+      // Use Bun's native PTY support with docker exec -it
+      // The -t flag is needed for docker to allocate a TTY that bash can detect
       const bunProcess = Bun.spawn(
-        ["docker", "exec", "-i", "--user", "sandbox", containerId, "/bin/bash", "-l"],
+        ["docker", "exec", "-it", "--user", "sandbox", containerId, "/bin/bash", "-il"],
         {
           env: { ...process.env, TERM: "xterm-256color" },
           terminal: {
