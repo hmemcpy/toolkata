@@ -4,6 +4,10 @@ step: 4
 description: "How jj handles branches differently from git"
 gitCommands: ["git branch", "git checkout", "git checkout -b"]
 jjCommands: ["jj branch", "jj checkout", "jj new"]
+initCommands:
+  - "jj describe -m 'Setup for step 4'"
+  - "jj new"
+  - "echo 'feature code' > feature.js"
 ---
 
 # Branching and Checkout

@@ -506,3 +506,76 @@ Use browser DevTools or `/agent-browser` to verify:
 - Touch targets >= 44px
 - Terminal states (connecting, connected, error, timeout)
 - Sandbox API integration (requires running sandbox-api)
+
+---
+
+## Sandbox Docker Image
+
+The sandbox API runs user commands in isolated Docker containers. The image is built from `packages/sandbox-api/docker/`.
+
+### Building the Image
+
+```bash
+cd packages/sandbox-api
+
+# Build and run all tests (recommended)
+bun run docker:build
+
+# Build without tests (faster, for development)
+bun run docker:build:no-test
+
+# Custom image tag
+IMAGE_TAG=v1.0.0 bun run docker:build
+```
+
+### Automated Tests
+
+The build script (`scripts/docker-build.sh`) runs 5 tests on every build:
+
+| Test | Description |
+|------|-------------|
+| Test 1 | Verify git and jj are installed and working |
+| Test 2 | Test jj git workflow (init, commit, log) |
+| Test 3 | UTF-8 support (Russian, Hebrew, Chinese characters) |
+| Test 4 | Security hardening (no curl, wget, sudo, su, apt, dpkg) |
+| Test 5 | Running as non-root user (sandbox) |
+
+### Image Characteristics
+
+- **Base**: Chainguard wolfi-base (minimal, security-focused)
+- **Size**: ~197MB (70% smaller than Debian-based alternative)
+- **Tools installed**: bash, git, jj (Jujutsu VCS)
+- **Tools removed**: curl, wget, sudo, su, apt, dpkg, text editors
+- **User**: Non-root `sandbox` user
+- **Locale**: UTF-8 (en_US.UTF-8)
+- **No text editors**: Users must use `-m` flag for commit messages
+
+### Security Hardening
+
+The image is hardened for sandboxed execution:
+- No package managers (apt, dpkg removed)
+- No network tools (curl, wget removed)
+- No privilege escalation (sudo, su removed)
+- Non-root user by default
+- Minimal attack surface (Chainguard base)
+
+### Key Files
+
+```
+packages/sandbox-api/
+├── docker/
+│   ├── Dockerfile        # Multi-stage build definition
+│   └── entrypoint.sh     # Container startup script
+├── scripts/
+│   └── docker-build.sh   # Build script with automated tests
+└── src/services/
+    └── websocket.ts      # PTY terminal proxy (spawns docker exec)
+```
+
+### Modifying the Image
+
+When changing the Dockerfile:
+1. Always run `bun run docker:build` to verify tests pass
+2. If adding tools, update Test 4 in `docker-build.sh` if needed
+3. Ensure UTF-8 locale is preserved (Test 3)
+4. Keep the non-root user requirement (Test 5)

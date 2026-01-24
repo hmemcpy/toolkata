@@ -4,6 +4,8 @@ step: 1
 description: "Installing jj and setting up a colocated repository"
 gitCommands: ["git init", "git clone"]
 jjCommands: ["jj git init", "jj git clone"]
+initCommands:
+  - "jj git init --colocate"
 ---
 
 # Installation & Setup

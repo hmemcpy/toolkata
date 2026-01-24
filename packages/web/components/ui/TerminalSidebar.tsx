@@ -30,6 +30,8 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import dynamic from "next/dynamic"
 import { useTerminalContext } from "../../contexts/TerminalContext"
 import type { InteractiveTerminalRef } from "./InteractiveTerminal"
+import { SplitPane } from "./SplitPane"
+import { InfoPanel } from "./InfoPanel"
 
 const MIN_SIDEBAR_WIDTH = 300
 const MAX_SIDEBAR_WIDTH = 800
@@ -149,6 +151,11 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
     sessionTimeRemaining,
     sidebarWidth,
     setSidebarWidth,
+    infoPanelCollapsed,
+    setInfoPanelCollapsed,
+    infoPanelHeight,
+    setInfoPanelHeight,
+    registerTerminal,
     onTerminalStateChange,
     onTerminalTimeChange,
   } = useTerminalContext()
@@ -165,6 +172,19 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
       closeButtonRef.current?.focus()
     }
   }, [isOpen])
+
+  // Register terminal ref with context when connected
+  // This enables executeCommand from context to send commands to the terminal
+  useEffect(() => {
+    if (state === "CONNECTED" || state === "TIMEOUT_WARNING") {
+      registerTerminal(terminalRef.current)
+    }
+
+    // Unregister on unmount or when disconnected
+    return () => {
+      registerTerminal(null)
+    }
+  }, [state, registerTerminal])
 
   // Handle Escape key to close sidebar
   useEffect(() => {
@@ -262,14 +282,23 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
             </button>
           </div>
 
-          {/* Body - Terminal */}
+          {/* Body - Terminal and Info Panel with SplitPane */}
           <div className="min-h-0 flex-1 overflow-hidden">
-            <InteractiveTerminal
-              ref={terminalRef}
-              toolPair={toolPair}
-              stepId="sidebar"
-              onStateChange={onTerminalStateChange}
-              onSessionTimeChange={onTerminalTimeChange}
+            <SplitPane
+              topContent={
+                <InteractiveTerminal
+                  ref={terminalRef}
+                  toolPair={toolPair}
+                  stepId="sidebar"
+                  onStateChange={onTerminalStateChange}
+                  onSessionTimeChange={onTerminalTimeChange}
+                />
+              }
+              bottomContent={<InfoPanel />}
+              bottomHeightPercent={infoPanelHeight}
+              onBottomHeightChange={setInfoPanelHeight}
+              isBottomCollapsed={infoPanelCollapsed}
+              onBottomCollapsedChange={setInfoPanelCollapsed}
             />
           </div>
 

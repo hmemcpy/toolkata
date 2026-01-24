@@ -4,6 +4,9 @@ step: 9
 description: "How jj stores conflicts in commits rather than blocking work"
 gitCommands: ["git merge", "git status", "git checkout --ours/--theirs"]
 jjCommands: ["jj merge", "jj status", "jj resolve"]
+initCommands:
+  - "jj describe -m 'Setup for step 9'"
+  - "jj new"
 ---
 
 # First-Class Conflict Handling

@@ -4,6 +4,9 @@ step: 2
 description: "Understanding jj's core concept - your working copy IS a commit"
 gitCommands: ["git status", "git add", "git commit"]
 jjCommands: ["jj status", "jj describe", "jj new"]
+initCommands:
+  - "jj new"
+  - "echo 'hello world' > example.txt"
 ---
 
 # Mental Model: Working Copy as a Commit

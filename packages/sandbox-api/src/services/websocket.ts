@@ -142,32 +142,51 @@ const make = Effect.gen(function* () {
       // The -t flag is needed for docker to allocate a TTY that bash can detect
       // Note: macOS and Linux have different `script` command syntax
       const scriptArgs = isMacOS
-        ? ["script", "-q", "/dev/null", "docker", "exec", "-it", "--user", "sandbox", containerId, "/bin/bash"]
-        : ["script", "-q", "-c", `docker exec -it --user sandbox ${containerId} /bin/bash`, "/dev/null"]
+        ? [
+            "script",
+            "-q",
+            "/dev/null",
+            "docker",
+            "exec",
+            "-it",
+            "--user",
+            "sandbox",
+            containerId,
+            "/bin/bash",
+          ]
+        : [
+            "script",
+            "-q",
+            "-c",
+            `docker exec -it --user sandbox ${containerId} /bin/bash`,
+            "/dev/null",
+          ]
 
-      const bunProcess = Bun.spawn(
-        scriptArgs,
-        {
-          env: { ...process.env, TERM: "xterm-256color" },
-          terminal: {
-            cols: initialCols,
-            rows: initialRows,
-            data(_terminal, data) {
-              if (socket.readyState === WebSocket.OPEN) {
-                // Convert Uint8Array to string for WebSocket transmission
-                const text = new TextDecoder().decode(data)
-                socket.send(text)
-              }
-            },
-            exit(_terminal, exitCode) {
-              console.log(`[WebSocketService] PTY exited for ${sessionId} with code ${exitCode}`)
-              if (socket.readyState === WebSocket.OPEN) {
-                socket.close(1000, "Container process exited")
-              }
-            },
+      const bunProcess = Bun.spawn(scriptArgs, {
+        env: {
+          ...process.env,
+          TERM: "xterm-256color",
+          LANG: "en_US.UTF-8",
+          LC_ALL: "en_US.UTF-8",
+        },
+        terminal: {
+          cols: initialCols,
+          rows: initialRows,
+          data(_terminal, data) {
+            if (socket.readyState === WebSocket.OPEN) {
+              // Convert Uint8Array to string for WebSocket transmission
+              const text = new TextDecoder().decode(data)
+              socket.send(text)
+            }
+          },
+          exit(_terminal, exitCode) {
+            console.log(`[WebSocketService] PTY exited for ${sessionId} with code ${exitCode}`)
+            if (socket.readyState === WebSocket.OPEN) {
+              socket.close(1000, "Container process exited")
+            }
           },
         },
-      ) as unknown as BunTerminalProcess
+      }) as unknown as BunTerminalProcess
 
       console.log(`[WebSocketService] Spawned Bun PTY for ${sessionId}`)
 

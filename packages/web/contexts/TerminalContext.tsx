@@ -96,6 +96,38 @@ export interface TerminalContextValue {
   readonly sessionTimeRemaining: number | null
 
   /**
+   * Commands from the current step's MDX frontmatter.
+   * Used by InfoPanel to show "Try it" commands.
+   */
+  readonly contextCommands: readonly string[]
+
+  /**
+   * Set the context commands from MDX frontmatter.
+   */
+  readonly setContextCommands: (commands: readonly string[]) => void
+
+
+  /**
+   * Whether the info panel is collapsed.
+   */
+  readonly infoPanelCollapsed: boolean
+
+  /**
+   * Set the info panel collapsed state.
+   */
+  readonly setInfoPanelCollapsed: (collapsed: boolean) => void
+
+  /**
+   * Height of the info panel as a percentage (0-100).
+   */
+  readonly infoPanelHeight: number
+
+  /**
+   * Set the info panel height percentage.
+   */
+  readonly setInfoPanelHeight: (height: number) => void
+
+  /**
    * Open the terminal sidebar (or bottom sheet on mobile).
    */
   readonly openSidebar: () => void
@@ -147,6 +179,47 @@ export interface TerminalContextValue {
    * @internal
    */
   readonly onTerminalTimeChange: (remaining: number | null) => void
+
+  // Step initialization state
+
+  /**
+   * The step that has been initialized for this session.
+   * Null if no step has been initialized yet.
+   */
+  readonly sessionInitializedStep: number | null
+
+  /**
+   * Whether an initialization sequence is currently running.
+   */
+  readonly isInitializing: boolean
+
+  /**
+   * The command currently being executed during initialization.
+   * Null if not initializing.
+   */
+  readonly currentInitCommand: string | null
+
+  /**
+   * Run a sequence of initialization commands.
+   *
+   * Opens the sidebar, executes commands sequentially with delays,
+   * and updates the isInitializing state.
+   *
+   * @param commands - Array of commands to execute in sequence
+   */
+  readonly runInitSequence: (commands: readonly string[]) => Promise<void>
+
+  /**
+   * Set the initialized step for the session.
+   *
+   * @param step - The step number that was initialized
+   */
+  readonly setSessionInitializedStep: (step: number) => void
+
+  /**
+   * Clear initialization state (used when session is reset).
+   */
+  readonly clearInitState: () => void
 }
 
 const TerminalContext = createContext<TerminalContextValue | null>(null)
@@ -195,6 +268,8 @@ export interface TerminalProviderProps {
  * ```
  */
 const DEFAULT_SIDEBAR_WIDTH = 400
+const DEFAULT_INFO_PANEL_HEIGHT = 30 // percentage
+const INIT_STATE_KEY = "sandbox-init-state"
 
 export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProviderProps) {
   // Sidebar open/closed state
@@ -203,18 +278,54 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
   // Sidebar width state with localStorage persistence
   const [sidebarWidth, setSidebarWidthState] = useState(DEFAULT_SIDEBAR_WIDTH)
 
-  // Load width from localStorage on mount
+  // Context commands from MDX frontmatter
+  const [contextCommands, setContextCommandsState] = useState<readonly string[]>([])
+
+  // Info panel collapsed state with localStorage persistence
+  const [infoPanelCollapsed, setInfoPanelCollapsedState] = useState(false)
+
+  // Info panel height percentage with localStorage persistence
+  const [infoPanelHeight, setInfoPanelHeightState] = useState(DEFAULT_INFO_PANEL_HEIGHT)
+
+  // Load width and info panel state from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem("terminal-sidebar-width")
-    if (stored) {
-      setSidebarWidthState(Number(stored))
+    const storedWidth = localStorage.getItem("terminal-sidebar-width")
+    if (storedWidth) {
+      setSidebarWidthState(Number(storedWidth))
+    }
+
+    const storedCollapsed = localStorage.getItem("terminal-info-panel-collapsed")
+    if (storedCollapsed) {
+      setInfoPanelCollapsedState(storedCollapsed === "true")
+    }
+
+    const storedHeight = localStorage.getItem("terminal-info-panel-height")
+    if (storedHeight) {
+      setInfoPanelHeightState(Number(storedHeight))
     }
   }, [])
 
-  // Wrapper to save to localStorage
+  // Wrapper to save sidebar width to localStorage
   const setSidebarWidth = useCallback((width: number) => {
     setSidebarWidthState(width)
     localStorage.setItem("terminal-sidebar-width", String(width))
+  }, [])
+
+  // Wrapper to set context commands
+  const setContextCommands = useCallback((commands: readonly string[]) => {
+    setContextCommandsState(commands)
+  }, [])
+
+  // Wrapper to save info panel collapsed state to localStorage
+  const setInfoPanelCollapsed = useCallback((collapsed: boolean) => {
+    setInfoPanelCollapsedState(collapsed)
+    localStorage.setItem("terminal-info-panel-collapsed", String(collapsed))
+  }, [])
+
+  // Wrapper to save info panel height to localStorage
+  const setInfoPanelHeight = useCallback((height: number) => {
+    setInfoPanelHeightState(height)
+    localStorage.setItem("terminal-info-panel-height", String(height))
   }, [])
 
   // Terminal connection state (managed by InteractiveTerminal via callbacks)
@@ -228,6 +339,27 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
 
   // Queue for commands sent while terminal is CONNECTING
   const commandQueueRef = useRef<readonly string[]>([])
+
+  // Step initialization state
+  const [sessionInitializedStep, setSessionInitializedStepState] = useState<number | null>(null)
+  const [isInitializing, setIsInitializing] = useState(false)
+  const [currentInitCommand, setCurrentInitCommand] = useState<string | null>(null)
+
+  // Load init state from localStorage on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    try {
+      const stored = localStorage.getItem(INIT_STATE_KEY)
+      if (stored) {
+        const step = Number.parseInt(stored, 10)
+        if (!Number.isNaN(step)) {
+          setSessionInitializedStepState(step)
+        }
+      }
+    } catch {
+      // Invalid data, ignore
+    }
+  }, [])
 
   /**
    * Open the sidebar.
@@ -318,6 +450,61 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
     setSessionTimeRemaining(remaining)
   }, [])
 
+  /**
+   * Set the initialized step for the session.
+   */
+  const setSessionInitializedStep = useCallback((step: number) => {
+    setSessionInitializedStepState(step)
+    if (typeof window !== "undefined") {
+      localStorage.setItem(INIT_STATE_KEY, String(step))
+    }
+  }, [])
+
+  /**
+   * Clear initialization state (used when session is reset).
+   */
+  const clearInitState = useCallback(() => {
+    setSessionInitializedStepState(null)
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(INIT_STATE_KEY)
+    }
+  }, [])
+
+  /**
+   * Run a sequence of initialization commands.
+   */
+  const runInitSequence = useCallback(
+    async (commands: readonly string[]) => {
+      if (commands.length === 0) return
+
+      // Open sidebar if closed
+      if (!isOpen) {
+        setIsOpen(true)
+      }
+
+      setIsInitializing(true)
+
+      for (const cmd of commands) {
+        setCurrentInitCommand(cmd)
+
+        // If terminal is registered and connected, execute immediately
+        if (terminalRef.current && (state === "CONNECTED" || state === "TIMEOUT_WARNING")) {
+          terminalRef.current.insertCommand(cmd)
+        } else {
+          // Queue the command for when terminal connects
+          commandQueueRef.current = [...commandQueueRef.current, cmd]
+        }
+
+        // Wait for command to likely complete
+        await new Promise((r) => setTimeout(r, 500))
+      }
+
+      setCurrentInitCommand(null)
+      setIsInitializing(false)
+    },
+    [isOpen, state],
+  )
+
   // Memoize context value to prevent unnecessary re-renders
   const value = useMemo<TerminalContextValue>(
     () => ({
@@ -326,6 +513,12 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       sidebarWidth,
       setSidebarWidth,
       sessionTimeRemaining,
+      contextCommands,
+      setContextCommands,
+      infoPanelCollapsed,
+      setInfoPanelCollapsed,
+      infoPanelHeight,
+      setInfoPanelHeight,
       openSidebar,
       closeSidebar,
       toggleSidebar,
@@ -333,6 +526,13 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       registerTerminal,
       onTerminalStateChange,
       onTerminalTimeChange,
+      // Step initialization
+      sessionInitializedStep,
+      isInitializing,
+      currentInitCommand,
+      runInitSequence,
+      setSessionInitializedStep,
+      clearInitState,
     }),
     [
       state,
@@ -340,6 +540,12 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       sidebarWidth,
       setSidebarWidth,
       sessionTimeRemaining,
+      contextCommands,
+      setContextCommands,
+      infoPanelCollapsed,
+      setInfoPanelCollapsed,
+      infoPanelHeight,
+      setInfoPanelHeight,
       openSidebar,
       closeSidebar,
       toggleSidebar,
@@ -347,6 +553,13 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       registerTerminal,
       onTerminalStateChange,
       onTerminalTimeChange,
+      // Step initialization
+      sessionInitializedStep,
+      isInitializing,
+      currentInitCommand,
+      runInitSequence,
+      setSessionInitializedStep,
+      clearInitState,
     ],
   )
 

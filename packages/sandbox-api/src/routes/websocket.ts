@@ -203,7 +203,9 @@ export const createWebSocketServer = (
       rateLimitService: RateLimitServiceShape, // V-007: Rate limit service for cleanup
       auditService: AuditServiceShape, // V-019: Audit service for logging
     ) => {
-      console.log(`[WebSocket] Connection attempt for session: ${sessionId} (${initialCols}x${initialRows})`)
+      console.log(
+        `[WebSocket] Connection attempt for session: ${sessionId} (${initialCols}x${initialRows})`,
+      )
 
       // Run the connection handler using passed-in services
       const program = Effect.gen(function* () {

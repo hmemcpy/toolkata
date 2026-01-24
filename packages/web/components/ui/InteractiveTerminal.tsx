@@ -387,18 +387,10 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
      */
     const insertCommand = useCallback(
       (command: string) => {
-        const terminal = terminalInstanceRef.current
-        if (!terminal) {
-          return
-        }
-
-        // Write the command to the terminal display
-        terminal.write(`\r${command}`)
-
-        // Send the command via WebSocket
+        // Send the command via WebSocket - the server will echo it back
         const ws = wsRef.current
         if (ws && ws.readyState === WebSocket.OPEN) {
-          ws.send(`${command}\r`)
+          ws.send(`${command}\n`)
         }
 
         // Notify parent callback
@@ -517,7 +509,10 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
         }
 
         // Use the original WebSocket URL (ws:// or wss://) for the connection
-        const wsBase = SANDBOX_API_URL.replace(/^http:\/\//, "ws://").replace(/^https:\/\//, "wss://")
+        const wsBase = SANDBOX_API_URL.replace(/^http:\/\//, "ws://").replace(
+          /^https:\/\//,
+          "wss://",
+        )
 
         // Estimate terminal size from container for initial PTY sizing
         // Use typical monospace character dimensions (9px wide, 17px tall)

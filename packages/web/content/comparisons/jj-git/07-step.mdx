@@ -4,6 +4,9 @@ step: 7
 description: "Querying commits with revset syntax (more powerful than git rev-parse)"
 gitCommands: ["git log --grep", "git log --author", "git log --since", "git rev-list"]
 jjCommands: ["jj log -r", "revset queries"]
+initCommands:
+  - "jj describe -m 'Setup for step 7'"
+  - "jj new"
 ---
 
 # Revsets: Powerful Commit Queries

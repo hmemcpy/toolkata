@@ -4,6 +4,9 @@ step: 5
 description: "Exploring commit history and comparing changes"
 gitCommands: ["git log", "git diff", "git show"]
 jjCommands: ["jj log", "jj diff", "jj show"]
+initCommands:
+  - "jj describe -m 'Setup for step 5'"
+  - "jj new"
 ---
 
 # Viewing History and Diffs

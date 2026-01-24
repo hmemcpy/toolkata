@@ -4,6 +4,15 @@ step: 8
 description: "Automatic descendant rebasing and editing old commits"
 gitCommands: ["git rebase", "git rebase -i", "git commit --amend"]
 jjCommands: ["jj rebase", "jj edit", "jj squash", "jj new"]
+initCommands:
+  - "jj describe -m 'Setup for step 8'"
+  - "jj new"
+  - "echo 'base' > rebase-demo.txt"
+  - "jj describe -m 'Base commit'"
+  - "jj new"
+  - "echo 'feature' >> rebase-demo.txt"
+  - "jj describe -m 'Feature commit'"
+  - "jj new"
 ---
 
 # Rebasing and Editing History

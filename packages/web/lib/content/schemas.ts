@@ -23,6 +23,11 @@ export const stepFrontmatterSchema = z.object({
   description: z.string().min(1, "Description is required").optional(),
   gitCommands: z.array(z.string()).optional(),
   jjCommands: z.array(z.string()).optional(),
+  /**
+   * Commands to run when entering this step to set up prerequisites.
+   * Run automatically after terminal connects, before user interaction.
+   */
+  initCommands: z.array(z.string()).optional(),
 })
 
 /**

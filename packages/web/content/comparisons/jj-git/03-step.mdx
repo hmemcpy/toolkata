@@ -4,6 +4,10 @@ step: 3
 description: "Creating commits in jj without a staging area"
 gitCommands: ["git add", "git commit", "git commit --amend"]
 jjCommands: ["jj describe", "jj new", "jj status"]
+initCommands:
+  - "jj describe -m 'Setup for step 3'"
+  - "jj new"
+  - "echo 'console.log(\"hello\")' > app.js"
 ---
 
 # Your First Commits

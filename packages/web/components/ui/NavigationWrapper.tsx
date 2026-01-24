@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { useStepProgress } from "../../hooks/useStepProgress"
 import { Navigation } from "./Navigation"
 
@@ -29,13 +30,9 @@ export function NavigationWrapper({
 
   // Update current step when component mounts
   // This tracks which step the user is currently viewing
-  if (currentStep !== undefined) {
-    // Use useEffect to avoid setState during render
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    React.useEffect(() => {
-      setCurrentStep(currentStep)
-    }, [currentStep, setCurrentStep])
-  }
+  React.useEffect(() => {
+    setCurrentStep(currentStep)
+  }, [currentStep, setCurrentStep])
 
   const isCompleted = isStepComplete(currentStep)
 
@@ -55,6 +52,3 @@ export function NavigationWrapper({
     />
   )
 }
-
-// Import React for useEffect
-import React from "react"

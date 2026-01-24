@@ -4,6 +4,9 @@ step: 10
 description: "Using jj's operation log to undo and restore any state"
 gitCommands: ["git reflog", "git reset", "git revert"]
 jjCommands: ["jj op log", "jj op undo", "jj op restore"]
+initCommands:
+  - "jj describe -m 'Setup for step 10'"
+  - "jj new"
 ---
 
 # Undo and Time Travel

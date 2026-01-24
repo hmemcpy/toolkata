@@ -5,7 +5,9 @@
   "private": true,
   "scripts": {
     "dev": "NODE_ENV=development bun run src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "docker:build": "./scripts/docker-build.sh",
+    "docker:build:no-test": "./scripts/docker-build.sh --no-test"
   },
   "devDependencies": {
     "@types/bun": "latest",
