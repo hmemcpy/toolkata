@@ -270,10 +270,11 @@ export interface TerminalProviderProps {
 const DEFAULT_SIDEBAR_WIDTH = 400
 const DEFAULT_INFO_PANEL_HEIGHT = 30 // percentage
 const INIT_STATE_KEY = "sandbox-init-state"
+const SIDEBAR_OPEN_KEY = "terminal-sidebar-open"
 
 export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProviderProps) {
-  // Sidebar open/closed state
-  const [isOpen, setIsOpen] = useState(false)
+  // Sidebar open/closed state with localStorage persistence
+  const [isOpen, setIsOpenState] = useState(false)
 
   // Sidebar width state with localStorage persistence
   const [sidebarWidth, setSidebarWidthState] = useState(DEFAULT_SIDEBAR_WIDTH)
@@ -287,8 +288,13 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
   // Info panel height percentage with localStorage persistence
   const [infoPanelHeight, setInfoPanelHeightState] = useState(DEFAULT_INFO_PANEL_HEIGHT)
 
-  // Load width and info panel state from localStorage on mount
+  // Load sidebar state from localStorage on mount
   useEffect(() => {
+    const storedOpen = localStorage.getItem(SIDEBAR_OPEN_KEY)
+    if (storedOpen) {
+      setIsOpenState(storedOpen === "true")
+    }
+
     const storedWidth = localStorage.getItem("terminal-sidebar-width")
     if (storedWidth) {
       setSidebarWidthState(Number(storedWidth))
@@ -365,21 +371,27 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
    * Open the sidebar.
    */
   const openSidebar = useCallback(() => {
-    setIsOpen(true)
+    setIsOpenState(true)
+    localStorage.setItem(SIDEBAR_OPEN_KEY, "true")
   }, [])
 
   /**
    * Close the sidebar.
    */
   const closeSidebar = useCallback(() => {
-    setIsOpen(false)
+    setIsOpenState(false)
+    localStorage.setItem(SIDEBAR_OPEN_KEY, "false")
   }, [])
 
   /**
    * Toggle the sidebar open/closed state.
    */
   const toggleSidebar = useCallback(() => {
-    setIsOpen((prev) => !prev)
+    setIsOpenState((prev) => {
+      const next = !prev
+      localStorage.setItem(SIDEBAR_OPEN_KEY, String(next))
+      return next
+    })
   }, [])
 
   /**
@@ -413,7 +425,8 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
     (command: string) => {
       // Open sidebar if closed
       if (!isOpen) {
-        setIsOpen(true)
+        setIsOpenState(true)
+        localStorage.setItem(SIDEBAR_OPEN_KEY, "true")
       }
 
       // If terminal is registered and connected, execute immediately
@@ -479,7 +492,8 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
 
       // Open sidebar if closed
       if (!isOpen) {
-        setIsOpen(true)
+        setIsOpenState(true)
+        localStorage.setItem(SIDEBAR_OPEN_KEY, "true")
       }
 
       setIsInitializing(true)
