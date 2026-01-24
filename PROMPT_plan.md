@@ -9,11 +9,12 @@ Read all files in `specs/` directory using parallel subagents.
 
 ### 0b. Study existing implementation
 Use parallel subagents to analyze relevant source directories:
-- `packages/web/contexts/` - TerminalContext
-- `packages/web/components/ui/` - TerminalSidebar, TryIt, InteractiveTerminal, MobileBottomSheet
-- `packages/web/app/[toolPair]/` - Layout and step pages
-- `packages/sandbox-api/src/services/` - ContainerService, SessionService
-- `packages/sandbox-api/docker/` - Dockerfile structure
+- `packages/web/lib/content/` - Content loading and schemas
+- `packages/web/services/` - Frontend services
+- `packages/web/components/ui/InteractiveTerminal.tsx` - Terminal component
+- `packages/sandbox-api/src/services/` - Backend services (container, session, websocket)
+- `packages/sandbox-api/src/routes/` - API routes
+- `packages/sandbox-api/docker/` - Docker infrastructure
 
 ### 0c. Study the current plan
 Read `IMPLEMENTATION_PLAN.md` if it exists.
@@ -26,13 +27,6 @@ Compare specs against implementation:
 - What's partially done?
 
 **CRITICAL**: Don't assume something isn't implemented. Search the codebase first.
-
-Key areas to verify:
-1. TerminalContext.tsx - Are `_setState` and `_setSessionTimeRemaining` still unused? (lines 166, 170)
-2. InteractiveTerminal.tsx - Is there a useEffect calling `onStateChange`?
-3. TerminalSidebar.tsx - Does it still have backdrop and inert?
-4. TryIt.tsx - Does it have `expectedOutput` and `editable` props?
-5. container.ts - Is there a `Runtime` field in HostConfig?
 
 ## Phase 2: Generate Plan
 
