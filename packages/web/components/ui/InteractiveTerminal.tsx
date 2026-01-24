@@ -547,7 +547,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
       }
     }, [toolPair, sessionStorageKey])
 
-    // Reset the terminal (reconnects to existing session, doesn't create new one)
+    // Reset the terminal (creates fresh session if expired/error, otherwise reconnects)
     const reset = useCallback(() => {
       // Set flag to prevent EXPIRED state during reset (cleared in ws.onopen)
       isResettingRef.current = true
@@ -560,9 +560,12 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
         terminal.clear()
       }
 
-      // Reconnect to existing session (don't clear localStorage)
+      // Clear localStorage to force a fresh session (expired session won't exist on server)
+      localStorage.removeItem(sessionStorageKey)
+
+      // Start fresh session
       startSession()
-    }, [cleanup, startSession])
+    }, [cleanup, startSession, sessionStorageKey])
 
     /**
      * Expose imperative handle for external command insertion.
