@@ -149,17 +149,21 @@ const make = Effect.gen(function* () {
             "docker",
             "exec",
             "-it",
+            "-e",
+            "HOME=/home/toolkata",
+            "-w",
+            "/home/toolkata",
             "--user",
             "sandbox",
             containerId,
             "/bin/bash",
-            "-l",
+            "--login",
           ]
         : [
             "script",
             "-q",
             "-c",
-            `docker exec -it --user sandbox ${containerId} /bin/bash -l`,
+            `docker exec -it -e HOME=/home/toolkata -w /home/toolkata --user sandbox ${containerId} /bin/bash --login`,
             "/dev/null",
           ]
 
