@@ -41,6 +41,51 @@ export type TerminalState =
   | "STATIC"
 
 /**
+ * WebSocket message types sent by the sandbox API.
+ */
+interface WsConnectedMessage {
+  readonly type: "connected"
+  readonly sessionId: string
+}
+
+interface WsOutputMessage {
+  readonly type: "output"
+  readonly data: string
+}
+
+interface WsErrorMessage {
+  readonly type: "error"
+  readonly message: string
+}
+
+type WsMessage = WsConnectedMessage | WsOutputMessage | WsErrorMessage
+
+/**
+ * Type guard to check if a value is a valid WebSocket message.
+ */
+const isWsMessage = (value: unknown): value is WsMessage => {
+  if (typeof value !== "object" || value === null) return false
+  const obj = value as Record<string, unknown>
+  const type = obj["type"]
+  if (type === "connected") return typeof obj["sessionId"] === "string"
+  if (type === "output") return typeof obj["data"] === "string"
+  if (type === "error") return typeof obj["message"] === "string"
+  return false
+}
+
+/**
+ * Parse a JSON string into a WebSocket message, or return null if invalid.
+ */
+const parseWsMessage = (data: string): WsMessage | null => {
+  try {
+    const parsed: unknown = JSON.parse(data)
+    return isWsMessage(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+/**
  * Imperative handle for InteractiveTerminal.
  *
  * Exposed via ref to allow external command insertion.
@@ -499,16 +544,18 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
             return // Unknown data type
           }
 
-          // Filter out JSON control messages (they start with { and are valid JSON)
+          // Parse WebSocket control messages (JSON starting with {)
           if (data.startsWith("{")) {
-            try {
-              const msg = JSON.parse(data) as Record<string, unknown>
-              // Skip control messages like {"type":"connected",...}
-              if (msg["type"] === "connected" || msg["type"] === "error") {
+            const msg = parseWsMessage(data)
+            if (msg) {
+              // Skip control messages (connected, error)
+              if (msg.type === "connected" || msg.type === "error") {
                 return
               }
-            } catch {
-              // Not valid JSON, treat as terminal output
+              // Extract terminal output from output messages (e.g., welcome banner)
+              if (msg.type === "output") {
+                data = msg.data
+              }
             }
           }
 
