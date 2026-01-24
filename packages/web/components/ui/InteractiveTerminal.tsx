@@ -401,7 +401,8 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
 
       try {
         const apiUrl = process.env["NEXT_PUBLIC_SANDBOX_API_URL"] ?? "ws://localhost:3001"
-        const httpUrl = apiUrl.replace(/^wss?:\/\//, "http://").replace(/:\d+/, ":3001")
+        const apiKey = process.env["NEXT_PUBLIC_SANDBOX_API_KEY"] ?? ""
+        const httpUrl = apiUrl.replace(/^wss?:\/\//, "https://").replace(/:\d+/, "")
 
         // Check for existing session in localStorage
         let sessionId: string | null = null
@@ -425,9 +426,13 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
 
         // Create new session if no valid stored session
         if (!sessionId) {
+          const headers: Record<string, string> = { "Content-Type": "application/json" }
+          if (apiKey) {
+            headers["X-API-Key"] = apiKey
+          }
           const response = await fetch(`${httpUrl}/api/v1/sessions`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers,
             body: JSON.stringify({ toolPair }),
           })
 
@@ -451,7 +456,10 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
           )
         }
 
-        const wsUrl = `${apiUrl}/api/v1/sessions/${sessionId}/ws`
+        const wsBase = httpUrl.replace(/^https?:\/\//, "wss://")
+        const wsUrl = apiKey
+          ? `${wsBase}/api/v1/sessions/${sessionId}/ws?api_key=${encodeURIComponent(apiKey)}`
+          : `${wsBase}/api/v1/sessions/${sessionId}/ws`
 
         // Connect WebSocket
         const ws = new WebSocket(wsUrl)

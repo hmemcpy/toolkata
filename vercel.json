@@ -4,8 +4,5 @@
   "buildCommand": "cd packages/web && bun run build",
   "installCommand": "bun install",
   "outputDirectory": "packages/web/.next",
-  "devCommand": "cd packages/web && bun run dev",
-  "env": {
-    "NEXT_PUBLIC_SANDBOX_API_URL": "https://sandbox.toolkata.com"
-  }
+  "devCommand": "cd packages/web && bun run dev"
 }
