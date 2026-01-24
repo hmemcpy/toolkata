@@ -86,6 +86,8 @@ const getOrCreateTracking = (store: RateLimitStore, ipAddress: string, now: numb
   }
 
   const tracking = existingOption.value
+  // Ensure activeWebSocketIds exists (for backwards compatibility with old tracking data)
+  const activeWebSocketIds = tracking.activeWebSocketIds ?? []
   const hourElapsed = now - tracking.hourWindowStart >= 60 * 60 * 1000
   const minuteElapsed = now - tracking.minuteWindowStart >= 60 * 1000
 
@@ -97,7 +99,7 @@ const getOrCreateTracking = (store: RateLimitStore, ipAddress: string, now: numb
       activeSessions: tracking.activeSessions,
       commandCount: 0,
       minuteWindowStart: now,
-      activeWebSocketIds: tracking.activeWebSocketIds,
+      activeWebSocketIds,
     }
   }
 
@@ -106,6 +108,7 @@ const getOrCreateTracking = (store: RateLimitStore, ipAddress: string, now: numb
       ...tracking,
       sessionCount: 0,
       hourWindowStart: now,
+      activeWebSocketIds,
     }
   }
 
@@ -114,10 +117,11 @@ const getOrCreateTracking = (store: RateLimitStore, ipAddress: string, now: numb
       ...tracking,
       commandCount: 0,
       minuteWindowStart: now,
+      activeWebSocketIds,
     }
   }
 
-  return tracking
+  return { ...tracking, activeWebSocketIds }
 }
 
 // Helper: Calculate retry-after seconds
