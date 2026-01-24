@@ -41,7 +41,7 @@ COPY --from=builder /tmp/jj /usr/bin/jj
 # Verify installations
 RUN git --version && jj --version
 
-# Set UTF-8 locale environment variables
+# Set UTF-8 locale environment variables (but not HOME yet - will set after user config)
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 ENV LANGUAGE=en_US:en
@@ -57,7 +57,7 @@ RUN mkdir -p /home/toolkata && \
 # Switch to sandbox user BEFORE configuring git (so configs go to correct user)
 USER sandbox
 
-# Configure git for sandbox user
+# Configure git for sandbox user (writes to /home/sandbox/.gitconfig since HOME not overridden yet)
 # Using "true" as editor (no-op) since no text editors are installed
 # Users should use -m flag for commit messages: git commit -m "message"
 RUN git config --global user.name "Sandbox User" && \
@@ -72,12 +72,13 @@ RUN git config --global user.name "Sandbox User" && \
 RUN mkdir -p /home/sandbox/.config/jj && \
     printf '[user]\nname = "Sandbox User"\nemail = "sandbox@toolkata.com"\n\n[ui]\ncolor = "auto"\neditor = "true"\n' > /home/sandbox/.config/jj/config.toml
 
+# Create .bash_profile to source .bashrc for login shells
+RUN printf 'if [ -f ~/.bashrc ]; then . ~/.bashrc; fi\n' > /home/sandbox/.bash_profile
+
 # Create .bashrc with colored prompt (including git branch), locale, and aliases
-# Set HOME to /home/toolkata so ~ shows correctly in prompt
 # PS1 shows: path (blue) + git branch (yellow) + $ (green)
 RUN cat <<'BASHRC' > /home/sandbox/.bashrc
 export TERM=xterm-256color
-export HOME=/home/toolkata
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
@@ -93,10 +94,15 @@ alias ls="ls --color=auto"
 alias grep="grep --color=auto"
 BASHRC
 
-# Copy git and jj configs to /home/toolkata (since .bashrc sets HOME=/home/toolkata)
+# Copy git, jj configs, and bash files to /home/toolkata (will be HOME during runtime)
 RUN cp /home/sandbox/.gitconfig /home/toolkata/.gitconfig && \
+    cp /home/sandbox/.bashrc /home/toolkata/.bashrc && \
+    cp /home/sandbox/.bash_profile /home/toolkata/.bash_profile && \
     mkdir -p /home/toolkata/.config && \
     cp -r /home/sandbox/.config/jj /home/toolkata/.config/
+
+# Now set HOME to /home/toolkata for runtime (after all config files are in place)
+ENV HOME=/home/toolkata
 
 # Set working directory
 WORKDIR /home/toolkata

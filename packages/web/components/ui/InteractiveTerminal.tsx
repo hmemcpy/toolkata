@@ -497,7 +497,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
         setState("ERROR")
         setError(err instanceof Error ? err.message : "Failed to connect to sandbox")
       }
-    }, [toolPair, sessionStorageKey])
+    }, [onPtyReady, toolPair, sessionStorageKey])
 
     // Reset the terminal (creates fresh session if expired/error, otherwise reconnects)
     const reset = useCallback(() => {

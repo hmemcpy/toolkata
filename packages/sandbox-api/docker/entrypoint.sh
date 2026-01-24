@@ -14,8 +14,10 @@ echo "jj version: $(jj --version)"
 echo "=========================="
 echo ""
 
-# Copy git and jj configs to /home/toolkata (tmpfs mount wipes files from image)
+# Copy git, jj configs, and bash files to /home/toolkata (tmpfs mount wipes files from image)
 cp /home/sandbox/.gitconfig /home/toolkata/.gitconfig 2>/dev/null || true
+cp /home/sandbox/.bashrc /home/toolkata/.bashrc 2>/dev/null || true
+cp /home/sandbox/.bash_profile /home/toolkata/.bash_profile 2>/dev/null || true
 mkdir -p /home/toolkata/.config
 cp -r /home/sandbox/.config/jj /home/toolkata/.config/ 2>/dev/null || true
 
