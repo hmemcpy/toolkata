@@ -14,8 +14,10 @@ echo "jj version: $(jj --version)"
 echo "=========================="
 echo ""
 
-# Git and jj configs are pre-configured in the Docker image
-# No runtime initialization needed (filesystem is read-only)
+# Copy git and jj configs to /home/toolkata (tmpfs mount wipes files from image)
+cp /home/sandbox/.gitconfig /home/toolkata/.gitconfig 2>/dev/null || true
+mkdir -p /home/toolkata/.config
+cp -r /home/sandbox/.config/jj /home/toolkata/.config/ 2>/dev/null || true
 
 # If command provided, execute it; otherwise keep alive
 if [ $# -gt 0 ]; then
