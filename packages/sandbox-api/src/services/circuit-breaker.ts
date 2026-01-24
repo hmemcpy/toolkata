@@ -1,9 +1,11 @@
-import { freemem, totalmem } from "node:os"
+import { readFileSync } from "node:fs"
+import { freemem, platform, totalmem } from "node:os"
 import { Context, Effect } from "effect"
 import type { SessionServiceShape } from "./session.js"
 
 // Check if in development mode (skip memory check on macOS which reports low free memory)
 const isDevMode = process.env["NODE_ENV"] === "development"
+const isLinux = platform() === "linux"
 
 // Circuit breaker thresholds
 const THRESHOLDS = {
@@ -37,8 +39,28 @@ export class CircuitBreakerService extends Context.Tag("CircuitBreakerService")<
 >() {}
 
 // Get system memory usage percentage
+// On Linux, use MemAvailable from /proc/meminfo for more accurate "usable" memory
+// On other systems, fall back to os.freemem()
 const getMemoryUsage = (): number => {
   const total = totalmem()
+
+  if (isLinux) {
+    try {
+      const meminfo = readFileSync("/proc/meminfo", "utf8")
+      const match = meminfo.match(/MemAvailable:\s+(\d+)\s+kB/)
+      if (match?.[1]) {
+        const availableKb = Number.parseInt(match[1], 10)
+        const available = availableKb * 1024
+        const used = total - available
+        const percent = (used / total) * 100
+        return Math.round(percent)
+      }
+    } catch {
+      // Fall through to freemem()
+    }
+  }
+
+  // Fallback for non-Linux or if /proc/meminfo fails
   const free = freemem()
   const used = total - free
   const percent = (used / total) * 100
