@@ -596,6 +596,9 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
         }
 
         ws.onclose = (_event: CloseEvent) => {
+          // Clear stored session - server session is gone either way
+          localStorage.removeItem(sessionStorageKey)
+
           // Don't show EXPIRED if we're intentionally resetting or already in error state
           if (!isResettingRef.current && !hasErrorRef.current) {
             setState("EXPIRED")
