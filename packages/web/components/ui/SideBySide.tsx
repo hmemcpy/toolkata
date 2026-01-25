@@ -2,15 +2,14 @@
  * SideBySide - Two-column command comparison component.
  *
  * Displays commands side-by-side with subtle color-coded backgrounds
- * for visual distinction. Left column shows "from" tool (git),
- * right column shows "to" tool (jj).
+ * for visual distinction. Left column shows "from" tool (e.g., git),
+ * right column shows "to" tool (e.g., jj).
  *
  * Features:
- * - Two-column layout (git on left, jj on right)
+ * - Two-column layout (from tool on left, to tool on right)
  * - Subtle background tint for each column
  * - Mobile: stacks vertically with arrow indicator
  * - Semantic table for accessibility
- * - Supports direction toggle via DirectionContext
  *
  * @example
  * ```tsx
@@ -23,9 +22,6 @@
  * ```
  */
 
-"use client"
-
-import { useDirectionContext } from "../../contexts/DirectionContext"
 import type { JSX } from "react"
 
 interface SideBySideProps {
@@ -60,22 +56,9 @@ interface SideBySideProps {
 }
 
 /**
- * Column data for rendering
- */
-interface ColumnData {
-  readonly label: string
-  readonly commands: readonly string[]
-  readonly comments: readonly string[]
-  readonly bgClass: string
-  readonly textColorClass: string
-}
-
-/**
  * SideBySide component for comparing commands side-by-side.
  *
- * When direction is reversed (via DirectionContext), the columns swap:
- * - Normal (git→jj): git left (orange), jj right (green)
- * - Reversed (jj→git): jj left (green), git right (orange)
+ * Shows "from" tool on the left (orange) and "to" tool on the right (green).
  */
 export function SideBySide({
   fromCommands,
@@ -85,70 +68,27 @@ export function SideBySide({
   fromComments = [],
   toComments = [],
 }: SideBySideProps): JSX.Element {
-  const { isReversed } = useDirectionContext()
-
-  // When reversed, swap the columns
-  // fromCommands (git) moves to right (orange), toCommands (jj) moves to left (green)
-  const leftColumn: ColumnData = isReversed
-    ? {
-        label: toLabel,
-        commands: toCommands,
-        comments: toComments,
-        bgClass: "bg-[rgba(57,217,108,0.08)]", // green for jj
-        textColorClass: "text-[var(--color-accent)]",
-      }
-    : {
-        label: fromLabel,
-        commands: fromCommands,
-        comments: fromComments,
-        bgClass: "bg-[rgba(255,176,0,0.08)]", // orange for git
-        textColorClass: "text-[var(--color-accent-alt)]",
-      }
-
-  const rightColumn: ColumnData = isReversed
-    ? {
-        label: fromLabel,
-        commands: fromCommands,
-        comments: fromComments,
-        bgClass: "bg-[rgba(255,176,0,0.08)]", // orange for git
-        textColorClass: "text-[var(--color-accent-alt)]",
-      }
-    : {
-        label: toLabel,
-        commands: toCommands,
-        comments: toComments,
-        bgClass: "bg-[rgba(57,217,108,0.08)]", // green for jj
-        textColorClass: "text-[var(--color-accent)]",
-      }
-
-  // For accessibility table, preserve semantic order (from, to)
-  // Visual order changes but semantic order stays the same
-  const tableLeftLabel = fromLabel
-  const tableRightLabel = toLabel
-
   return (
     <div className="my-6 overflow-x-auto">
       {/* Desktop: side-by-side, Mobile: stacked */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {/* Left column */}
-        <div
-          className={`overflow-hidden rounded border border-[var(--color-border)] ${leftColumn.bgClass}`}
-        >
+        {/* Left column (from tool - orange) */}
+        <div className="overflow-hidden rounded border border-[var(--color-border)] bg-[rgba(255,176,0,0.08)]">
           <div className="border-b border-[var(--color-border)] px-4 py-2">
             <span className="text-xs font-semibold text-[var(--color-text-muted)]">
-              {leftColumn.label}
+              {fromLabel}
             </span>
           </div>
           <div className="p-4">
-            {leftColumn.commands.map((cmd, i) => (
+            {fromCommands.map((cmd, i) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: Commands are static and order won't change
               <div key={i} className="mb-3 last:mb-0">
                 <code className="block text-sm text-[var(--color-text)] !bg-transparent !p-0">
                   {cmd}
                 </code>
-                {leftColumn.comments[i] && (
+                {fromComments[i] && (
                   <span className="mt-1 block text-xs text-[var(--color-text-muted)]">
-                    {leftColumn.comments[i]}
+                    {fromComments[i]}
                   </span>
                 )}
               </div>
@@ -174,25 +114,23 @@ export function SideBySide({
           </svg>
         </div>
 
-        {/* Right column */}
-        <div
-          className={`overflow-hidden rounded border border-[var(--color-border)] ${rightColumn.bgClass}`}
-        >
+        {/* Right column (to tool - green) */}
+        <div className="overflow-hidden rounded border border-[var(--color-border)] bg-[rgba(57,217,108,0.08)]">
           <div className="border-b border-[var(--color-border)] px-4 py-2">
             <span className="text-xs font-semibold text-[var(--color-text-muted)]">
-              {rightColumn.label}
+              {toLabel}
             </span>
           </div>
           <div className="p-4">
-            {rightColumn.commands.map((cmd, i) => (
+            {toCommands.map((cmd, i) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: Commands are static and order won't change
               <div key={i} className="mb-3 last:mb-0">
                 <code className="block text-sm text-[var(--color-text)] !bg-transparent !p-0">
                   {cmd}
                 </code>
-                {rightColumn.comments[i] && (
+                {toComments[i] && (
                   <span className="mt-1 block text-xs text-[var(--color-text-muted)]">
-                    {rightColumn.comments[i]}
+                    {toComments[i]}
                   </span>
                 )}
               </div>
@@ -204,17 +142,17 @@ export function SideBySide({
       {/* Accessible table for screen readers (visually hidden) */}
       <div className="sr-only">
         <table
-          aria-label={`Command comparison: ${tableLeftLabel} vs ${tableRightLabel}`}
-          summary={`Side-by-side comparison of ${tableLeftLabel} and ${tableRightLabel} commands`}
+          aria-label={`Command comparison: ${fromLabel} vs ${toLabel}`}
+          summary={`Side-by-side comparison of ${fromLabel} and ${toLabel} commands`}
         >
           <caption>
-            Command comparison: {tableLeftLabel} commands on the left, {tableRightLabel} commands on
+            Command comparison: {fromLabel} commands on the left, {toLabel} commands on
             the right
           </caption>
           <thead>
             <tr>
-              <th scope="col">{tableLeftLabel}</th>
-              <th scope="col">{tableRightLabel}</th>
+              <th scope="col">{fromLabel}</th>
+              <th scope="col">{toLabel}</th>
             </tr>
           </thead>
           <tbody>

@@ -2,7 +2,6 @@
  * Playwright Browser Tests for toolkata
  *
  * Tests cover:
- * - Bidirectional comparison (toggle click, persistence)
  * - Glossary page (search, filter, copy)
  * - Swipe gesture (mobile bottom sheet)
  * - 't' key toggle
@@ -33,15 +32,6 @@ async function getLocalStorageItem(page: Page, key: string): Promise<string | nu
 }
 
 /**
- * Helper: Set localStorage item
- */
-async function setLocalStorageItem(page: Page, key: string, value: string): Promise<void> {
-  await page.evaluate(({ k, v }) => {
-    localStorage.setItem(k, v)
-  }, { k: key, v: value })
-}
-
-/**
  * Helper: Clear localStorage
  */
 async function clearLocalStorage(page: Page): Promise<void> {
@@ -49,112 +39,6 @@ async function clearLocalStorage(page: Page): Promise<void> {
     localStorage.clear()
   })
 }
-
-test.describe("Bidirectional Comparison", () => {
-  test.beforeEach(async ({ page }) => {
-    await clearLocalStorage(page)
-  })
-
-  test("direction toggle exists on step pages", async ({ page }) => {
-    await page.goto(`${baseUrl}/${toolPair}/1`)
-    const toggle = page.getByRole("switch", { name: /Toggle direction/ })
-    await expect(toggle).toBeVisible()
-    await expect(toggle).toHaveText("[git ↔ jj]")
-    await expect(toggle).toHaveAttribute("aria-checked", "false")
-  })
-
-  test("direction toggle switches to reversed state", async ({ page }) => {
-    await page.goto(`${baseUrl}/${toolPair}/1`)
-    const toggle = page.getByRole("switch", { name: /Toggle direction/ })
-
-    // Click to toggle
-    await toggle.click()
-    await expect(toggle).toHaveText("[jj ↔ git]")
-    await expect(toggle).toHaveAttribute("aria-checked", "true")
-  })
-
-  test("direction preference persists in localStorage", async ({ page }) => {
-    await page.goto(`${baseUrl}/${toolPair}/1`)
-    const toggle = page.getByRole("switch", { name: /Toggle direction/ })
-
-    // Toggle to reversed
-    await toggle.click()
-    await expect(toggle).toHaveText("[jj ↔ git]")
-
-    // Check localStorage
-    const prefs = await getLocalStorageItem(page, "toolkata_preferences")
-    expect(prefs).not.toBeNull()
-    const parsed = JSON.parse(prefs ?? "{}")
-    expect(parsed.direction).toBe("jj-git")
-  })
-
-  test("direction preference persists across page navigation", async ({ page }) => {
-    await page.goto(`${baseUrl}/${toolPair}/1`)
-    const toggle = page.getByRole("switch", { name: /Toggle direction/ })
-
-    // Toggle to reversed on step 1
-    await toggle.click()
-    await expect(toggle).toHaveText("[jj ↔ git]")
-
-    // Navigate to step 2
-    await page.goto(`${baseUrl}/${toolPair}/2`)
-    const toggle2 = page.getByRole("switch", { name: /Toggle direction/ })
-    await expect(toggle2).toHaveText("[jj ↔ git]")
-    await expect(toggle2).toHaveAttribute("aria-checked", "true")
-  })
-
-  test("direction preference persists after page reload", async ({ page }) => {
-    await page.goto(`${baseUrl}/${toolPair}/1`)
-    const toggle = page.getByRole("switch", { name: /Toggle direction/ })
-
-    // Toggle to reversed
-    await toggle.click()
-    await expect(toggle).toHaveText("[jj ↔ git]")
-
-    // Reload page
-    await page.reload()
-    const toggleAfter = page.getByRole("switch", { name: /Toggle direction/ })
-    await expect(toggleAfter).toHaveText("[jj ↔ git]")
-    await expect(toggleAfter).toHaveAttribute("aria-checked", "true")
-  })
-
-  test("direction toggle supports keyboard (Enter key)", async ({ page }) => {
-    await page.goto(`${baseUrl}/${toolPair}/1`)
-    const toggle = page.getByRole("switch", { name: /Toggle direction/ })
-
-    await toggle.focus()
-    await page.keyboard.press("Enter")
-    await expect(toggle).toHaveText("[jj ↔ git]")
-    await expect(toggle).toHaveAttribute("aria-checked", "true")
-  })
-
-  test("direction toggle supports keyboard (Space key)", async ({ page }) => {
-    await page.goto(`${baseUrl}/${toolPair}/1`)
-    const toggle = page.getByRole("switch", { name: /Toggle direction/ })
-
-    await toggle.focus()
-    await page.keyboard.press(" ")
-    await expect(toggle).toHaveText("[jj ↔ git]")
-    await expect(toggle).toHaveAttribute("aria-checked", "true")
-  })
-
-  test("SideBySide components swap columns when direction is reversed", async ({ page }) => {
-    await page.goto(`${baseUrl}/${toolPair}/1`)
-    const toggle = page.getByRole("switch", { name: /Toggle direction/ })
-
-    // Get initial column order (git left, jj right)
-    page.getByText(/git/).first()
-    page.getByText(/jj/).nth(1)
-
-    // Toggle direction
-    await toggle.click()
-
-    // After toggle: jj left (green), git right (orange)
-    // We can verify this by checking the order or color classes
-    // For now, verify the toggle text changed
-    await expect(toggle).toHaveText("[jj ↔ git]")
-  })
-})
 
 test.describe("Glossary Page", () => {
   test.beforeEach(async ({ page }) => {
@@ -228,16 +112,6 @@ test.describe("Glossary Page", () => {
     // Find copy buttons
     const copyButtons = page.getByRole("button", { name: /Copy command:/ })
     await expect(copyButtons.first()).toBeVisible()
-  })
-
-  test("glossary respects direction preference", async ({ page }) => {
-    // Set direction preference to reversed
-    await setLocalStorageItem(page, "toolkata_preferences", JSON.stringify({ direction: "jj-git" }))
-    await page.goto(`${baseUrl}/${toolPair}/glossary`)
-
-    // Table headers should be swapped (jj left, git right)
-    const tableHeaders = page.getByRole("row").filter({ hasText: /(jj|git)/ }).first()
-    await expect(tableHeaders).toBeVisible()
   })
 })
 
@@ -725,66 +599,5 @@ test.describe("Shrinking Layout", () => {
 
     // On mobile, main content should not have significant margin-right
     expect(Number.parseInt(mainMarginRight || "0", 10)).toBe(0)
-  })
-})
-
-test.describe("Scala Effects Demo Page", () => {
-  test.beforeEach(async ({ page }) => {
-    await clearLocalStorage(page)
-  })
-
-  test("scala-effects-demo page loads successfully", async ({ page }) => {
-    await page.goto(`${baseUrl}/scala-effects-demo`)
-    await expect(page.getByRole("heading", { name: /Prototype/i })).toBeVisible()
-  })
-
-  test("all 4 UX options render correctly", async ({ page }) => {
-    await page.goto(`${baseUrl}/scala-effects-demo`)
-
-    // Option 1: Column Swap Toggle
-    await expect(page.getByText(/Option 1: Column Swap Toggle/i)).toBeVisible()
-
-    // Option 2: Separate Routes
-    await expect(page.getByText(/Option 2: Separate Routes/i)).toBeVisible()
-
-    // Option 3: Landing Chooser
-    await expect(page.getByText(/Option 3: Landing Chooser/i)).toBeVisible()
-
-    // Option 4: Smart Cards
-    await expect(page.getByText(/Option 4: Smart Cards/i)).toBeVisible()
-  })
-
-  test("direction toggle works and persists", async ({ page }) => {
-    await page.goto(`${baseUrl}/scala-effects-demo`)
-
-    // Find a direction toggle on the demo page
-    const toggle = page.getByRole("switch", { name: /Toggle direction/i }).first()
-    if (await toggle.isVisible()) {
-      await toggle.click()
-      await expect(toggle).toHaveAttribute("aria-checked", "true")
-
-      // Check localStorage
-      const prefs = await getLocalStorageItem(page, "toolkata_preferences")
-      expect(prefs).not.toBeNull()
-      const parsed = JSON.parse(prefs ?? "{}")
-      expect(parsed.direction).toBeTruthy()
-    }
-  })
-
-  test("user can interact with each demo section", async ({ page }) => {
-    await page.goto(`${baseUrl}/scala-effects-demo`)
-
-    // Try clicking on interactive elements in each section
-    const buttons = page.getByRole("button")
-    const count = await buttons.count()
-
-    // There should be multiple interactive buttons
-    expect(count).toBeGreaterThan(0)
-
-    // First button should be clickable
-    if (count > 0) {
-      await buttons.first().click()
-      // No error should be thrown
-    }
   })
 })

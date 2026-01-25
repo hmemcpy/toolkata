@@ -1,7 +1,6 @@
 "use client"
 
 import { TerminalProvider } from "../contexts/TerminalContext"
-import { DirectionProvider } from "../contexts/DirectionContext"
 import { MobileBottomSheet } from "./ui/MobileBottomSheet"
 import { TerminalSidebar } from "./ui/TerminalSidebar"
 import { TerminalToggle } from "./ui/TerminalToggle"
@@ -32,7 +31,6 @@ export interface ProvidersProps {
  *
  * Currently provides:
  * - TerminalProvider: For terminal sidebar state and command execution
- * - DirectionProvider: For bidirectional comparison direction preference
  *
  * Also renders:
  * - TerminalSidebar: Desktop sidebar component (fixed overlay, lg+)
@@ -66,13 +64,11 @@ export interface ProvidersProps {
  */
 export function Providers({ toolPair, children }: ProvidersProps): ReactNode {
   return (
-    <DirectionProvider>
-      <TerminalProvider toolPair={toolPair}>
-        {children}
-        <MobileBottomSheet toolPair={toolPair} />
-        <TerminalSidebar toolPair={toolPair} />
-        <TerminalToggle />
-      </TerminalProvider>
-    </DirectionProvider>
+    <TerminalProvider toolPair={toolPair}>
+      {children}
+      <MobileBottomSheet toolPair={toolPair} />
+      <TerminalSidebar toolPair={toolPair} />
+      <TerminalToggle />
+    </TerminalProvider>
   )
 }
