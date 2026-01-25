@@ -119,20 +119,28 @@ This plan covers multiple specifications for toolkata improvements, prioritized 
 
 - [x] ~~**Wire terminal state callbacks**~~ — Already implemented: `onStateChange` → `onTerminalStateChange`, `onSessionTimeChange` → `onTerminalTimeChange`
 
-- [ ] **Implement shrinking layout** — Replace overlay mode with shrinking layout where main content gets `margin-right` equal to sidebar width when open.
+- [x] **Implement shrinking layout** — Removed focus trap from `TerminalSidebar.tsx`. `ShrinkingLayout` component already exists and handles `margin-right`. Main content now remains interactive when sidebar is open.
 
 **Why**: Current sidebar overlays content with focus trap, blocking TryIt interaction. Spec R2 requires content to remain interactive.
 
 **Files**:
-- `packages/web/components/ui/TerminalSidebar.tsx` (MODIFY - remove backdrop)
-- `packages/web/components/ui/StepPageClientWrapper.tsx` (MODIFY - add margin-right)
-- `packages/web/contexts/TerminalContext.tsx` (VERIFY - sidebarWidth already exposed)
+- `packages/web/components/ui/TerminalSidebar.tsx` (MODIFIED - removed useFocusTrap, added Escape key handler, changed role from dialog to complementary)
+- `packages/web/components/ui/ShrinkingLayout.tsx` (VERIFIED - already handles margin-right based on isOpen and sidebarWidth)
+- `packages/web/app/[toolPair]/[step]/page.tsx` (VERIFIED - already uses ShrinkingLayout wrapper)
 
 **Validation**:
 - Open sidebar, verify main content is NOT blocked
 - TryIt buttons work while sidebar is open
 - Smooth transition when opening/closing
 - Mobile bottom sheet unchanged (overlay acceptable)
+
+**Changes made**:
+- Removed `useFocusTrap` import and usage from `TerminalSidebar.tsx`
+- Changed `sidebarRef` from `useFocusTrap<HTMLDivElement>(isOpen, { onEscape: closeSidebar })` to regular `useRef<HTMLDivElement>(null)`
+- Added separate Escape key handler effect that closes sidebar
+- Changed `role="dialog"` to `role="complementary"` (no longer a modal)
+- Removed `aria-modal` and `aria-hidden` attributes
+- Updated JSDoc comment from "Focus trap using inert on rest of page" to "Main content remains interactive (no focus trap)"
 
 ---
 
@@ -305,13 +313,13 @@ Internal:
 
 ## Task Count
 
-**Total pending tasks**: 34
-**Completed tasks**: 2 (terminal state callbacks, cats-zio config.yml + bug fix)
+**Total pending tasks**: 29
+**Completed tasks**: 7 (P1: Shiki rehype plugin, next.config.ts, CSS overrides, prose styles, ScalaComparisonBlock highlighting; P2: shrinking layout)
 
 Priority breakdown:
 - P0: 0 tasks (all critical blockers completed)
-- P1: 5 tasks (syntax highlighting)
-- P2: 1 task (shrinking layout)
+- P1: 0 tasks (syntax highlighting completed)
+- P2: 0 tasks (shrinking layout completed)
 - P3: 5 tasks (UX prototype - high complexity)
 - P4: 2 tasks (Scastie enhancements)
 - P5: 3 tasks (content research)

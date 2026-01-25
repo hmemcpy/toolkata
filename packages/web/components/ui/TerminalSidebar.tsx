@@ -9,8 +9,8 @@
  * - Lazy-loaded InteractiveTerminal component
  * - Footer with reset button and session timer
  * - Slide-in animation from right
- * - Focus trap using inert on rest of page
  * - Escape key closes sidebar
+ * - Main content remains interactive (no focus trap)
  *
  * @example
  * ```tsx
@@ -32,7 +32,6 @@ import { useTerminalContext } from "../../contexts/TerminalContext"
 import type { InteractiveTerminalRef } from "./InteractiveTerminal"
 import { SplitPane } from "./SplitPane"
 import { InfoPanel } from "./InfoPanel"
-import { useFocusTrap } from "../../hooks/useFocusTrap"
 
 const MIN_SIDEBAR_WIDTH = 300
 const MAX_SIDEBAR_WIDTH = 800
@@ -163,7 +162,7 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
     flushCommandQueue,
   } = useTerminalContext()
   const closeButtonRef = useRef<HTMLButtonElement>(null)
-  const sidebarRef = useFocusTrap<HTMLDivElement>(isOpen, { onEscape: closeSidebar })
+  const sidebarRef = useRef<HTMLDivElement>(null)
   const terminalRef = useRef<InteractiveTerminalRef | null>(null)
 
   // Resizing state
@@ -246,6 +245,20 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
     }
   }, [isResizing, setSidebarWidth])
 
+  // Handle Escape key to close sidebar
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isOpen) {
+        closeSidebar()
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown)
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [isOpen, closeSidebar])
+
   // If sandbox is disabled, don't render the sidebar at all
   if (sandboxConfig?.enabled === false) {
     return null
@@ -261,9 +274,7 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
         } ${isResizing ? "select-none" : ""}`}
         style={{ width: `${sidebarWidth}px` }}
         id="terminal-sidebar"
-        role="dialog"
-        aria-modal={isOpen ? true : undefined}
-        aria-hidden={!isOpen}
+        role="complementary"
         aria-label="Terminal sidebar"
       >
         {/* Resize handle */}
