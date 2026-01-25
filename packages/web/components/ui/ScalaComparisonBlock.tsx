@@ -25,7 +25,6 @@ import {
   type BundledLanguage,
   type BundledTheme,
 } from "shiki"
-import { useDirectionContext } from "../../contexts/DirectionContext"
 
 interface ScalaComparisonBlockProps {
   /**
@@ -55,22 +54,9 @@ interface ScalaComparisonBlockProps {
 }
 
 /**
- * Code column data for rendering.
- */
-interface CodeColumn {
-  readonly label: string
-  readonly code: string
-  readonly html: string
-  readonly comment: string | undefined
-  readonly bgClass: string
-  readonly labelClass: string
-}
-
-/**
  * Side-by-side comparison block for Scala code.
  *
- * Shows ZIO code (blue) and Cats Effect code (purple) side by side.
- * When direction is reversed (via DirectionContext), the columns swap.
+ * Shows ZIO code (blue) on the left and Cats Effect code (purple) on the right.
  * Uses Shiki for client-side syntax highlighting.
  */
 export function ScalaComparisonBlock({
@@ -80,7 +66,6 @@ export function ScalaComparisonBlock({
   catsEffectComment,
   language = "scala",
 }: ScalaComparisonBlockProps) {
-  const { isReversed } = useDirectionContext()
   const [zioHtml, setZioHtml] = useState<string>("")
   const [ceHtml, setCeHtml] = useState<string>("")
   const [isLoading, setIsLoading] = useState(true)
@@ -125,64 +110,61 @@ export function ScalaComparisonBlock({
     }
   }, [zioCode, catsEffectCode, language])
 
-  // ZIO column data
-  const zioColumn: CodeColumn = {
-    label: "ZIO",
-    code: zioCode,
-    html: zioHtml,
-    comment: zioComment,
-    bgClass: "bg-[var(--color-zio-bg)]",
-    labelClass: "text-[var(--color-zio)]",
-  }
-
-  // Cats Effect column data
-  const ceColumn: CodeColumn = {
-    label: "Cats Effect",
-    code: catsEffectCode,
-    html: ceHtml,
-    comment: catsEffectComment,
-    bgClass: "bg-[var(--color-ce-bg)]",
-    labelClass: "text-[var(--color-ce)]",
-  }
-
-  // Swap columns based on direction
-  // Normal (ZIO→CE): ZIO left, CE right
-  // Reversed (CE→ZIO): CE left, ZIO right
-  const leftColumn = isReversed ? ceColumn : zioColumn
-  const rightColumn = isReversed ? zioColumn : ceColumn
-
-  const renderColumn = (column: CodeColumn) => (
-    <div className={`overflow-hidden rounded border border-[var(--color-border)] ${column.bgClass}`}>
-      <div className="border-b border-[var(--color-border)] px-4 py-2">
-        <span className={`text-xs font-semibold uppercase tracking-wide ${column.labelClass}`}>
-          {column.label}
-        </span>
-      </div>
-      <div className="p-4">
-        {isLoading ? (
-          <pre className="overflow-x-auto text-sm text-[var(--color-text)]">
-            <code>{column.code}</code>
-          </pre>
-        ) : (
-          <div
-            className="shiki-container text-sm"
-            dangerouslySetInnerHTML={{ __html: column.html }}
-            style={{ background: "transparent" }}
-          />
-        )}
-        {column.comment && (
-          <p className="mt-2 text-xs text-[var(--color-text-muted)]">
-            {column.comment}
-          </p>
-        )}
-      </div>
-    </div>
-  )
-
   return (
     <div className="my-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-      {renderColumn(leftColumn)}
-      {renderColumn(rightColumn)}
+      {/* ZIO column (blue) */}
+      <div className="overflow-hidden rounded border border-[var(--color-border)] bg-[var(--color-zio-bg)]">
+        <div className="border-b border-[var(--color-border)] px-4 py-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-zio)]">
+            ZIO
+          </span>
+        </div>
+        <div className="p-4">
+          {isLoading ? (
+            <pre className="overflow-x-auto text-sm text-[var(--color-text)]">
+              <code>{zioCode}</code>
+            </pre>
+          ) : (
+            <div
+              className="shiki-container text-sm"
+              dangerouslySetInnerHTML={{ __html: zioHtml }}
+              style={{ background: "transparent" }}
+            />
+          )}
+          {zioComment && (
+            <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+              {zioComment}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Cats Effect column (purple) */}
+      <div className="overflow-hidden rounded border border-[var(--color-border)] bg-[var(--color-ce-bg)]">
+        <div className="border-b border-[var(--color-border)] px-4 py-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-ce)]">
+            Cats Effect
+          </span>
+        </div>
+        <div className="p-4">
+          {isLoading ? (
+            <pre className="overflow-x-auto text-sm text-[var(--color-text)]">
+              <code>{catsEffectCode}</code>
+            </pre>
+          ) : (
+            <div
+              className="shiki-container text-sm"
+              dangerouslySetInnerHTML={{ __html: ceHtml }}
+              style={{ background: "transparent" }}
+            />
+          )}
+          {catsEffectComment && (
+            <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+              {catsEffectComment}
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

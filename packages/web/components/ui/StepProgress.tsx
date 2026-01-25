@@ -72,9 +72,9 @@ export function StepProgress({
             )}
           </div>
 
-          {/* Direction toggle and cheat sheet links */}
+          {/* Direction toggle (jj-git only) and cheat sheet links */}
           <div className="flex items-center gap-2 sm:gap-4">
-            <DirectionToggle toolPair={toolPair} />
+            {toolPair === "jj-git" && <DirectionToggle toolPair={toolPair} />}
             <Link
               href={`/${toolPair}/cheatsheet`}
               className="text-xs font-mono text-[var(--color-text-muted)] hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors"

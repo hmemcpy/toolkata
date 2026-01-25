@@ -21,7 +21,7 @@
 "use client"
 
 import type React from "react"
-import { useDirection } from "../../hooks/useDirection"
+import { useDirectionContext } from "../../contexts/DirectionContext"
 import { getPairing } from "../../content/pairings"
 
 /**
@@ -42,7 +42,7 @@ export interface DirectionToggleProps {
  * switching between from→to and to→from comparison direction.
  */
 export function DirectionToggle({ toolPair }: DirectionToggleProps): React.JSX.Element {
-  const { isReversed, toggleDirection } = useDirection()
+  const { isReversed, toggleDirection } = useDirectionContext()
   const pairing = getPairing(toolPair)
 
   // Get tool names from pairing, fallback to generic names

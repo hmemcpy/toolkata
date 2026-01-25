@@ -4,27 +4,25 @@
  * Features:
  * - Context for accessing direction without prop drilling
  * - Follows same pattern as TerminalContext
- * - Used by SideBySide and GlossaryClient components
+ * - Used by SideBySide, ScalaComparisonBlock, and GlossaryClient components
+ * - Syncs with localStorage and re-renders when direction changes
  */
 
 "use client"
 
-import React from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 import type { DirectionPreference } from "../core/PreferencesStore"
 import { getPreferencesStore } from "../core/PreferencesStore"
 
 /**
- * Direction context state
+ * Direction context value with state and actions
  */
-export interface DirectionContextState {
+export interface DirectionContextValue {
   readonly direction: DirectionPreference
   readonly isReversed: boolean
+  readonly toggleDirection: () => void
+  readonly setDirection: (direction: DirectionPreference) => void
 }
-
-/**
- * Direction context value (read-only)
- */
-export type DirectionContextValue = DirectionContextState
 
 /**
  * Create the context with a default value
@@ -41,8 +39,8 @@ export interface DirectionProviderProps {
 /**
  * DirectionProvider - Provides direction preference to child components.
  *
- * This provider reads from localStorage and provides the direction state
- * to all child components via context.
+ * This provider manages direction state with localStorage persistence
+ * and provides the direction state + actions to all child components.
  *
  * @example
  * ```tsx
@@ -52,15 +50,42 @@ export interface DirectionProviderProps {
  * ```
  */
 export function DirectionProvider({ children }: DirectionProviderProps) {
-  // Read direction from localStorage
+  const [direction, setDirectionState] = useState<DirectionPreference>("git-to-jj")
+  const [isHydrated, setIsHydrated] = useState(false)
+
   const store = getPreferencesStore()
-  const direction = store.getDirection()
+
+  // Sync from localStorage on mount (client-side only)
+  useEffect(() => {
+    const storedDirection = store.getDirection()
+    setDirectionState(storedDirection)
+    setIsHydrated(true)
+  }, [store])
+
+  const setDirection = useCallback(
+    (newDirection: DirectionPreference) => {
+      store.setDirection(newDirection)
+      setDirectionState(newDirection)
+    },
+    [store],
+  )
+
+  const toggleDirection = useCallback(() => {
+    const newDirection = store.toggleDirection()
+    setDirectionState(newDirection)
+  }, [store])
+
   const isReversed = direction === "jj-to-git"
 
-  const value: DirectionContextValue = {
-    direction,
-    isReversed,
-  }
+  const value = useMemo<DirectionContextValue>(
+    () => ({
+      direction: isHydrated ? direction : "git-to-jj",
+      isReversed: isHydrated ? isReversed : false,
+      toggleDirection,
+      setDirection,
+    }),
+    [direction, isHydrated, isReversed, toggleDirection, setDirection],
+  )
 
   return <DirectionContext.Provider value={value}>{children}</DirectionContext.Provider>
 }
