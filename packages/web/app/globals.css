@@ -259,15 +259,12 @@ select:focus {
   font-size: 0.875em;
 }
 
-/* Dark theme Shiki overrides - match github-dark to terminal aesthetic */
-.shiki,
-.shiki span {
-  color: var(--color-text) !important;
+/* Dark theme Shiki overrides - preserve inline styles, only set background */
+.shiki {
   background: var(--color-surface) !important;
 }
 
 /* Light theme Shiki overrides */
-html.light .shiki,
-html.light .shiki span {
+html.light .shiki {
   background: #ffffff !important;
 }

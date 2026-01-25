@@ -308,11 +308,13 @@ packages/web/content/comparisons/
 - [x] No ERR_CONNECTION_REFUSED errors caused by sandbox polling on cats-zio pages (useSandboxStatus now respects enabled flag)
 
 ### After P1:
-- [ ] Scala code blocks have syntax highlighting (keywords, strings, comments colored) (requires browser verification)
-- [ ] Dark theme consistent with terminal aesthetic (#0a0a0a background) (requires browser verification)
-- [ ] Inline code (`backticks`) still uses green accent (requires browser verification)
+- [x] Scala code blocks have syntax highlighting (keywords, strings, comments colored) (verified via Playwright - pink for keywords, purple for types, gray for punctuation)
+- [x] Dark theme consistent with terminal aesthetic (#0a0a0a background) (verified via Playwright)
+- [x] Inline code (`backticks`) still uses green accent (verified via Playwright - rgb(57, 217, 108))
 - [x] `bun run typecheck` passes
-- [ ] ScalaComparisonBlock shows highlighted code (requires browser verification)
+- [x] ScalaComparisonBlock shows highlighted code (verified via Playwright)
+
+**Bug fixed**: `globals.css` was overriding Shiki inline styles with `.shiki, .shiki span { color: var(--color-text) !important; }`. Changed to only override background, preserve inline color styles.
 
 ### After P2:
 - [ ] Main content shrinks when sidebar opens (not blocked by overlay) (requires browser verification)
@@ -365,23 +367,27 @@ Internal:
 
 ## Task Count
 
-**Total pending tasks**: 13 (3 content research + 10 browser verification items)
-**Completed implementation tasks**: 17 (P0: cats-zio config.yml; P1: Shiki rehype plugin, next.config.ts, CSS overrides, prose styles, ScalaComparisonBlock highlighting; P2: shrinking layout; P3: UX prototype with 4 options; P4: Scastie UUID snippet support, dark theme verification; **P0 BUG FIX**: TerminalToggle/MobileBottomSheet sandboxConfig check, useSandboxStatus enabled param, tool-config.ts defaults section parsing, step page contentRoot path)
+**Total pending tasks**: 9 (3 content research + 6 browser verification items)
+**Completed implementation tasks**: 18 (P0: cats-zio config.yml; P1: Shiki rehype plugin, next.config.ts, CSS overrides, prose styles, ScalaComparisonBlock highlighting, **CSS bug fix for Shiki colors**; P2: shrinking layout; P3: UX prototype with 4 options; P4: Scastie UUID snippet support, dark theme verification; **P0 BUG FIX**: TerminalToggle/MobileBottomSheet sandboxConfig check, useSandboxStatus enabled param, tool-config.ts defaults section parsing, step page contentRoot path; **P1 BUG FIX**: globals.css was overriding Shiki inline styles)
 
-**Bug discovered and fixed**: The cats-zio config.yml with `sandbox.enabled: false` was not being properly loaded due to:
-1. Incorrect `contentRoot` path passed to `loadToolConfig` (was `process.cwd()` instead of `"content/comparisons"`)
-2. Regex parser in `extractYamlValues` was matching values in comments instead of only in the `defaults:` section
-3. `TerminalToggle`, `MobileBottomSheet`, and `TerminalSidebar` didn't check `sandboxConfig.enabled` before rendering
-4. `useSandboxStatus` didn't accept an `enabled` parameter to skip polling when sandbox is disabled
+**Bugs discovered and fixed**:
+
+1. **Sandbox config loading bug**: The cats-zio config.yml with `sandbox.enabled: false` was not being properly loaded due to:
+   - Incorrect `contentRoot` path passed to `loadToolConfig` (was `process.cwd()` instead of `"content/comparisons"`)
+   - Regex parser in `extractYamlValues` was matching values in comments instead of only in the `defaults:` section
+   - `TerminalToggle`, `MobileBottomSheet`, and `TerminalSidebar` didn't check `sandboxConfig.enabled` before rendering
+   - `useSandboxStatus` didn't accept an `enabled` parameter to skip polling when sandbox is disabled
+
+2. **Shiki color override bug**: `globals.css` lines 263-267 had `.shiki, .shiki span { color: var(--color-text) !important; }` which overrode all Shiki inline color styles. Fixed by removing the span selector and only setting background color, allowing inline styles to take effect.
 
 Priority breakdown:
-- P0: 0 tasks (all critical blockers completed, including bug fix for sandbox config loading)
-- P1: 0 tasks (syntax highlighting completed)
+- P0: 0 tasks (all critical blockers completed)
+- P1: 0 tasks (syntax highlighting completed and verified)
 - P2: 0 tasks (shrinking layout completed)
 - P3: 0 tasks (UX prototype completed)
 - P4: 0 tasks (Scastie improvements completed)
 - P5: 3 tasks (content research - requires external documentation: Zionomicon ePub, ZIO 2.x docs)
-- Browser verification: 10 tasks (requires manual testing with /agent-browser or browser DevTools)
+- Browser verification: 6 tasks (P2: 4 tasks for shrinking layout, P3: 3 tasks for UX demo)
 
 ---
 

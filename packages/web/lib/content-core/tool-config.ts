@@ -92,7 +92,7 @@ function extractYamlValues(yaml: string): RawToolConfig {
     return {}
   }
 
-  const defaultsSection = defaultsMatch[1]!
+  const defaultsSection = defaultsMatch[1] ?? ""
 
   const enabledMatch = defaultsSection.match(/enabled:\s*(true|false)/)
   const envMatch = defaultsSection.match(/environment:\s*(bash|node|python)/)
