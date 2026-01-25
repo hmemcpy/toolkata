@@ -1,0 +1,68 @@
+---
+title: "R/E/A Signature"
+step: 1
+description: "Understanding the effect type signatures"
+zioCommands: []
+ceCommands: []
+---
+
+# R/E/A Signature
+
+The fundamental difference between ZIO and Cats Effect starts with the type signature.
+
+## The Type Signatures
+
+<ScalaComparisonBlock
+  zioCode={`import zio.*
+
+// ZIO has THREE type parameters
+val zioEffect: ZIO[String, Throwable, Int] =
+  ZIO.succeed(42)`}
+  catsEffectCode={`import cats.effect.*
+
+// Cats Effect 3: IO has TWO type parameters
+val ceEffect: IO[Throwable, Int] =
+  IO.pure(42)`}
+  zioComment="ZIO[R, E, A] - Environment, Error, Success"
+  catsEffectComment="IO[E, A] - Error, Success (no environment)"
+/>
+
+## The Parameters
+
+| Parameter | ZIO | Cats Effect | Purpose |
+|-----------|-----|-------------|---------|
+| **R** | `ZIO[R, E, A]` | None | Environment/Dependencies |
+| **E** | `ZIO[R, E, A]` | `IO[E, A]` | Error type |
+| **A** | `ZIO[R, E, A]` | `IO[E, A]` | Success type |
+
+## Key Insight
+
+**ZIO** has an explicit environment parameter `R` for dependency injection.
+
+**Cats Effect** doesn't - you use `Kleisli` or `Resource` for dependencies.
+
+<Callout variant="tip">
+In practice, CE3's `IO[E, A]` is equivalent to ZIO's `ZIO[Any, E, A]`.
+</Callout>
+
+## UIO vs IO
+
+In ZIO, you often use `UIO[A]` for effects that can't fail:
+
+```scala
+// ZIO - no error type
+val zioNoError: UIO[Int] = ZIO.succeed(42)
+```
+
+In Cats Effect, just use `IO[A]` with `Nothing` error type:
+
+```scala
+// CE3 - Nothing means never fails
+val ceNoError: IO[Int] = IO.pure(42)
+```
+
+## Next Steps
+
+Now that you understand the signature difference, let's look at creating effects in both libraries.
+
+[Next →](/cats-effect-zio/2)

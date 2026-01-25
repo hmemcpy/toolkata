@@ -1,0 +1,185 @@
+---
+title: "Resource Management"
+step: 6
+description: "Resource safety and lifecycle management"
+zioCommands: []
+ceCommands: []
+---
+
+# Resource Management
+
+Both libraries provide robust resource management with guaranteed cleanup.
+
+## ZManaged vs Resource
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - ZManaged for resource safety
+import zio.*
+
+def openFile(path: String): ZIO[Any, IOException, File] =
+  ZIO.effect(new java.io.File(path))
+
+def closeFile(file: File): ZIO[Any, IOException, Unit] =
+  ZIO.effect(file.close())
+
+// ZManaged - acquire and release
+val managedFile: ZManaged[Any, IOException, File] =
+  ZManaged.acquireRelease(openFile("data.txt"))(file =>
+    closeFile(file).orDie
+  )
+
+// Use managed resource
+val zioRead: ZIO[Any, IOException, String] =
+  managedFile.use { file =>
+    ZIO.effect(scala.io.Source.fromFile(file).mkString)
+  }`}
+  catsEffectCode={`// Cats Effect - Resource for resource safety
+import cats.effect.*
+
+def openFile(path: String): IO[IOException, File] =
+  IO.delay(new java.io.File(path))
+
+def closeFile(file: File): IO[IOException, Unit] =
+  IO.delay(file.close())
+
+// Resource - acquire and release
+val fileResource: Resource[IO, File] =
+  Resource.make(openFile("data.txt"))(file =>
+    closeFile(file).handleErrorWith(_ => IO.unit)
+  )
+
+// Use resource
+val ceRead: IO[IOException, String] =
+  fileResource.use { file =>
+    IO.delay(scala.io.Source.fromFile(file).mkString)
+  }`}
+  zioComment="ZManaged - resource with acquire/release"
+  catsEffectComment="Resource - resource with acquire/release"
+/>
+
+## acquireRelease Shortcut
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - acquireRelease without ZManaged
+val zioScoped: ZIO[Any, IOException, String] =
+  ZIO.acquireRelease(openFile("data.txt"))(file =>
+    closeFile(file).orDie
+  ).use { file =>
+    ZIO.effect(scala.io.Source.fromFile(file).mkString)
+  }`}
+  catsEffectCode={`// Cats Effect - Resource.make
+val ceScoped: IO[IOException, String] =
+  Resource.make(openFile("data.txt"))(file =>
+    closeFile(file).handleErrorWith(_ => IO.unit)
+  ).use { file =>
+    IO.delay(scala.io.Source.fromFile(file).mkString)
+  }`}
+  zioComment="acquireRelease - scoped resource use"
+  catsEffectComment="Resource.make - scoped resource use"
+/>
+
+<Callout variant="tip">
+Both libraries guarantee resource cleanup even if the effect fails or is
+interrupted. Cleanup runs in the opposite order of acquisition.
+</Callout>
+
+## Multiple Resources
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - compose managed resources
+val zioBoth: ZManaged[Any, IOException, (File, Socket)] =
+  managedFile.zip(managedSocket)
+
+// Use both
+val zioUseBoth: ZIO[Any, IOException, String] =
+  zioBoth.use { case (file, socket) =>
+    ZIO.succeed("Both resources available")
+  }`}
+  catsEffectCode={`// Cats Effect - compose resources
+val ceBoth: Resource[IO, (File, Socket)] =
+  for {
+    file <- fileResource
+    socket <- socketResource
+  } yield (file, socket)
+
+// Use both
+val ceUseBoth: IO[IOException, String] =
+  ceBoth.use { case (file, socket) =>
+    IO.pure("Both resources available")
+  }`}
+  zioComment="zip - compose managed resources"
+  catsEffectComment="for-comprehension - compose resources"
+/>
+
+## Scoped Effects
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - scoped for temporary resources
+val zioScoped: ZIO[Any, IOException, Unit] =
+  ZIO.scoped {
+    for {
+      file <- ZIO.acquireRelease(openFile("data.txt"))(closeFile)
+      _ <- ZIO.succeed(println("Using file"))
+    } yield ()
+  }`}
+  catsEffectCode={`// Cats Effect - Resource.use is already scoped
+val ceScoped: IO[IOException, Unit] =
+  fileResource.use { file =>
+    IO.delay(println("Using file"))
+  }`}
+  zioComment="scoped - automatic resource scope"
+  catsEffectComment="Resource.use - automatic resource scope"
+/>
+
+## MonadCancel
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - ZManaged uses MonadCancel internally
+// You rarely use MonadCancel directly
+
+val zioCancelable: ZIO[Any, Nothing, Unit] =
+  ZIO.acquireRelease(ZIO.unit)(_ => ZIO.unit).use {
+    _ => ZIO.never
+  }`}
+  catsEffectCode={`// Cats Effect - MonadCancel for cancellation
+import cats.effect.kernel.MonadCancel
+
+val ceCancelable: IO[Nothing, Unit] =
+  MonadCancel[IO].guaranteeCase(IO.unit) {
+    case Outcome.Canceled() => IO.unit
+    case _ => IO.unit
+  }`}
+  zioComment="ZManaged abstracts MonadCancel"
+  catsEffectComment="MonadCancel - low-level cancellation"
+/>
+
+## Finalizers
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - ensuring (always runs)
+val zioEnsuring: ZIO[Any, Nothing, Int] =
+  ZIO.succeed(42)
+    .ensuring(ZIO.succeed(println("Cleanup")))
+
+// ZIO - on error
+val zioOnError: ZIO[Any, String, Int] =
+  ZIO.fail("error")
+    .onError(_ => ZIO.succeed(println("Logged error")))`}
+  catsEffectCode={`// Cats Effect - guarantee (always runs)
+val ceGuarantee: IO[Nothing, Int] =
+  IO.pure(42)
+    .guarantee(IO.delay(println("Cleanup")))
+
+// Cats Effect - onError
+val ceOnError: IO[String, Int] =
+  IO.raiseError("error")
+    .onError(_ => IO.delay(println("Logged error")))`}
+  zioComment="ensuring / onError - add finalizers"
+  catsEffectComment="guarantee / onError - add finalizers"
+/>
+
+## Next Steps
+
+Resource management patterns are similar. Now let's explore concurrency and fibers.
+
+[Next →](/cats-effect-zio/7)

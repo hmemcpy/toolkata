@@ -1,0 +1,207 @@
+---
+title: "Interop"
+step: 10
+description: "Converting between ZIO and Cats Effect"
+zioCommands: []
+ceCommands: []
+---
+
+# Interop
+
+ZIO and Cats Effect can interoperate using the `zio-interop-cats` library.
+
+## Adding the Dependency
+
+```scala
+// build.sbt
+libraryDependencies += "dev.zio" %% "zio-interop-cats" % "23.1.0.0"
+```
+
+## ZIO to Cats Effect Conversion
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - convert to Cats Effect
+import zio.interop.catz.*
+
+// ZIO to IO
+val zioToIO: IO[Throwable, Int] =
+  ZIO.succeed(42).toIO
+
+// ZIO with error to IO
+val zioErrorToIO: IO[Exception, Int] =
+  ZIO.succeed(42).toIO
+
+// ZIO to Resource
+val zioToResource: Resource[IO, Database] =
+  ZManaged.acquireRelease(
+    ZIO.succeed(openDb())
+  )(db => ZIO.succeed(db.close())).toResource`}
+  catsEffectCode={`// Cats Effect - receive ZIO effects
+import zio.interop.catz.*
+
+// No direct conversion from CE to ZIO needed
+// Use zio-interop-cats to run ZIO in CE context
+
+// ZIO effects can be used in Cats Effect code
+val ceWithZio: IO[Throwable, Unit] =
+  for {
+    _ <- IO.println("CE start")
+    _ <- ZIO.succeed(42).toIO
+    _ <- IO.println("CE end")
+  } yield ()`}
+  zioComment="toIO / toResource - convert ZIO to CE"
+  catsEffectComment="Use ZIO effects in CE via interop"
+/>
+
+## Using Cats Type Classes
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - use Cats type classes
+import cats._
+import cats.implicits._
+import zio.interop.catz.implicits._
+
+// ZIO has Functor, Monad, etc.
+val zioFunctor: ZIO[Any, Nothing, Int] =
+  ZIO.succeed(21).map(_ * 2)
+
+// Use Cats syntax
+val zioWithCats: ZIO[Any, Nothing, Int] =
+  ZIO.succeed(21).map(_ * 2)
+
+// Traverse with Cats
+val zioTraverse: ZIO[Any, Nothing, List[Int]] =
+  List(1, 2, 3).traverse(ZIO.succeed)`}
+  catsEffectCode={`// Cats Effect - native Cats type classes
+import cats._
+import cats.implicits._
+
+// IO is a full Cats effect type
+val ceFunctor: IO[Nothing, Int] =
+  IO.pure(21).map(_ * 2)
+
+// Use Cats syntax (native)
+val ceWithCats: IO[Nothing, Int] =
+  IO.pure(21).map(_ * 2)
+
+// Traverse (native)
+val ceTraverse: IO[Nothing, List[Int]] =
+  List(1, 2, 3).traverse(IO.pure)`}
+  zioComment="zio-interop-catz enables Cats type classes"
+  catsEffectComment="Native Cats type class support"
+/>
+
+## Parallel Execution
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - use Cats Parallel
+import cats.Parallel
+import zio.interop.catz._
+
+val zioPar: ZIO[Any, Nothing, (Int, String)] =
+  (ZIO.succeed(42), ZIO.succeed("hello")).parTupled
+
+// Parallel for-comprehension
+val zioParMap: ZIO[Any, Nothing, Int] =
+  (ZIO.succeed(42), ZIO.succeed(10)).parMapN(_ + _)`}
+  catsEffectCode={`// Cats Effect - native Parallel
+import cats.Parallel
+import cats.effect.syntax.all._
+
+val cePar: IO[Nothing, (Int, String)] =
+  (IO.pure(42), IO.pure("hello")).parTupled
+
+// Parallel for-comprehension (native)
+val ceParMap: IO[Nothing, Int] =
+  (IO.pure(42), IO.pure(10)).parMapN(_ + _)`}
+  zioComment="ParTupled / parMapN via Cats"
+  catsEffectComment="Native parTupled / parMapN"
+/>
+
+## Using fs2 with ZIO
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - use fs2 streams
+import fs2._
+import zio.interop.catz._
+
+val zioFs2: Stream[Task, Int] =
+  Stream(1, 2, 3).covary[Task]
+
+// Run fs2 stream with ZIO runtime
+val zioRunFs2: Task[List[Int]] =
+  zioFs2.compile.toList`}
+  catsEffectCode={`// Cats Effect - native fs2
+import fs2._
+
+val ceFs2: Stream[IO, Int] =
+  Stream(1, 2, 3)
+
+// Run fs2 stream (native)
+val ceRunFs2: IO[Nothing, List[Int]] =
+  ceFs2.compile.toList`}
+  zioComment="fs2 works with ZIO via interop"
+  catsEffectComment="Native fs2 support"
+/>
+
+## Using Cats Effect Libraries
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - use Cats ecosystem libraries
+import cats.data._
+import zio.interop.catz._
+
+// Use Kleisli with ZIO
+type ZIOKleisli[A, B] = Kleisli[Task, A, B]
+
+val zioKleisli: ZIOKleisli[String, Int] =
+  Kleisli(s => ZIO.succeed(s.length))
+
+// Use EitherT with ZIO
+val zioEitherT: EitherT[Task, String, Int] =
+  EitherT(ZIO.succeed(Right(42)))`}
+  catsEffectCode={`// Cats Effect - native Cats data types
+import cats.data._
+
+// Use Kleisli (native)
+type IOKleisli[A, B] = Kleisli[IO, A, B]
+
+val ceKleisli: IOKleisli[String, Int] =
+  Kleisli(s => IO.pure(s.length))
+
+// Use EitherT (native)
+val ceEitherT: EitherT[IO, String, Int] =
+  EitherT(IO.pure(Right(42)))`}
+  zioComment="Cats data types via interop"
+  catsEffectComment="Native Cats data types"
+/>
+
+<Callout variant="tip">
+Use `zio-interop-cats` when you need to integrate ZIO with Cats ecosystem
+libraries like fs2, http4s, or Doobie.
+</Callout>
+
+## When to Use Interop
+
+**Use Interop When:**
+- You're migrating from ZIO to Cats Effect (or vice versa)
+- You need to use a Cats-only library with ZIO
+- You're working in a mixed codebase
+
+**Avoid Interop When:**
+- You can use a ZIO-native alternative
+- Performance is critical (interop has overhead)
+- You want to keep dependencies minimal
+
+## Next Steps
+
+You've completed the Cats Effect ← ZIO tutorial! Check the [cheat sheet](/cats-effect-zio/cheatsheet) for quick reference.
+
+## Further Learning
+
+- [Cats Effect Documentation](https://typelevel.org/cats-effect/)
+- [ZIO Documentation](https://zio.dev)
+- [fs2 Documentation](https://fs2.io/)
+- [Typelevel Scala](https://typelevel.org/)
+
+[Cheat Sheet →](/cats-effect-zio/cheatsheet)

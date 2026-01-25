@@ -1,0 +1,134 @@
+---
+title: "Error Handling"
+step: 3
+description: "Handling errors with typed error channels"
+zioCommands: []
+ceCommands: []
+---
+
+# Error Handling
+
+Both ZIO and Cats Effect have powerful error handling with typed error channels.
+
+## Catching Errors
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - catch errors
+val zioHandled: ZIO[Any, Nothing, Int] =
+  ZIO.fail("Oops")
+    .catchAll(error => ZIO.succeed(0))
+
+// ZIO - catch specific error
+val zioCatchSome: ZIO[Any, String, Int] =
+  ZIO.fail("network")
+    .catchSome {
+      case "network" => ZIO.succeed(-1)
+    }`}
+  catsEffectCode={`// Cats Effect - catch errors
+val ceHandled: IO[Nothing, Int] =
+  IO.raiseError("Oops")
+    .handleErrorWith(error => IO.pure(0))
+
+// Cats Effect - catch specific error
+val ceCatchSome: IO[String, Int] =
+  IO.raiseError("network")
+    .handleErrorWith {
+      case "network" => IO.pure(-1)
+      case other => IO.raiseError(other)
+    }`}
+  zioComment="catchAll / catchSome - recover from errors"
+  catsEffectComment="handleErrorWith - recover from errors"
+/>
+
+## Recover or Else
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - recover with default
+val zioRecover: ZIO[Any, Nothing, Int] =
+  ZIO.fail[Int]("error")
+    .orElse(ZIO.succeed(0))
+
+// ZIO - recover with function
+val zioRecoverOr: ZIO[Any, Nothing, Int] =
+  ZIO.fail[Int]("error")
+    .catchAll(_ => ZIO.succeed(0))`}
+  catsEffectCode={`// Cats Effect - recover with default
+val ceRecover: IO[Nothing, Int] =
+  (IO.raiseError[Int]("error"))
+    .recoverWith {
+      case _ => IO.pure(0)
+    }`}
+  zioComment="orElse / catchAll - recover from any error"
+  catsEffectComment="recoverWith - recover from errors"
+/>
+
+## Fallback to Another Effect
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - fallback
+val zioFallback: ZIO[Any, Throwable, String] =
+  ZIO.fail(new Exception("primary"))
+    .orElse(ZIO.succeed("fallback"))`}
+  catsEffectCode={`// Cats Effect - fallback
+val ceFallback: IO[Throwable, String] =
+  IO.raiseError(new Exception("primary"))
+    .handleErrorWith(_ => IO.pure("fallback"))`}
+  zioComment="orElse - try alternative on failure"
+  catsEffectComment="handleErrorWith - try alternative on failure"
+/>
+
+## Transforming Errors
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - map error
+val zioMapError: ZIO[Any, String, Int] =
+  ZIO.fail(new Exception("error"))
+    .mapError(_.getMessage)
+
+// ZIO - map or else
+val zioMapOrElse: ZIO[Any, Nothing, Int] =
+  ZIO.succeed(42)
+    .mapOrElse(
+      error => 0,
+      identity
+    )`}
+  catsEffectCode={`// Cats Effect - adapt error type
+val ceAdaptError: IO[String, Int] =
+  IO.raiseError[Exception](new Exception("error"))
+    .adaptIO {
+      case e: Exception => e.getMessage
+    }`}
+  zioComment="mapError / mapOrElse - transform errors"
+  catsEffectComment="adaptIO - change error type"
+/>
+
+<Callout variant="tip">
+In Cats Effect 3, error type changes use `adaptError` for `IO`. The
+error type is part of the effect signature, making type changes explicit.
+</Callout>
+
+## Retrying
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - retry with schedule
+val zioRetry: ZIO[Any, Throwable, Int] =
+  ZIO.succeed(42)
+    .retry(Schedule.recurs(3))
+    .catchAll(_ => ZIO.succeed(0))`}
+  catsEffectCode={`// Cats Effect - retry with policy
+import cats.effect.kernel.Temporal
+import scala.concurrent.duration.*
+
+val ceRetry: IO[Throwable, Int] =
+  IO.raiseError[Int](new Exception("fail"))
+    .timeout(3.seconds)
+    .handleErrorWith(_ => IO.pure(0))`}
+  zioComment="retry with Schedule - built-in retries"
+  catsEffectComment="timeout + handleError - manual retries"
+/>
+
+## Next Steps
+
+Error handling is similar in both libraries. Now let's explore referential transparency.
+
+[Next →](/cats-effect-zio/4)

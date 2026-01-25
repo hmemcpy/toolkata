@@ -1,0 +1,251 @@
+---
+title: "Application Structure"
+step: 9
+description: "ZIOApp vs IOApp for main entry points"
+zioCommands: []
+ceCommands: []
+---
+
+# Application Structure
+
+Both libraries provide application templates for running complete programs.
+
+## Main Entry Point
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - ZIOAppDefault
+import zio.*
+
+object Main extends ZIOAppDefault {
+  override val run: ZIO[ZIOAppArgs, Any, Any] =
+    for {
+      args <- ZIOAppArgs.getArgs
+      _ <- Console.printLine("Hello, " + args.headOption.getOrElse("World") + "!")
+      _ <- Console.printLine("Application complete")
+    } yield ()
+}
+
+// Or extend ZIOApp with custom environment
+object MainCustom extends ZIOApp {
+  override val bootstrap: ZLayer[ZIOAppArgs, Any, Any] =
+    Runtime.removeDefaultLoggers ++ Runtime.addLogger(ConsoleLogger.default)
+
+  override val run: ZIO[ZIOAppArgs, Any, Any] =
+    Console.printLine("Custom runtime!")
+}`}
+  catsEffectCode={`// Cats Effect - IOApp
+import cats.effect.*
+
+object Main extends IOApp.Simple {
+  val run: IO[Throwable, Unit] =
+    for {
+      _ <- IO.print("Hello, World!")
+      _ <- IO.println("Application complete")
+    } yield ()
+}
+
+// Or IOApp with command-line args
+object MainArgs extends IOApp {
+  def run(args: List[String]): IO[ExitCode, Unit] =
+    for {
+      name <- IO.pure(args.headOption.getOrElse("World"))
+      _ <- IO.println("Hello, " + name + "!")
+    } yield ()
+}`}
+  zioComment="ZIOAppDefault / ZIOApp - main entry point"
+  catsEffectComment="IOApp.Simple / IOApp - main entry point"
+/>
+
+## Exit Codes
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - exit codes via exit status
+import zio.*
+
+object MainExit extends ZIOAppDefault {
+  override val run: ZIO[Any, Nothing, Int] =
+    ZIO.succeed(0)  // 0 = success, non-zero = error
+
+  // Or use Exit
+  override val run2: ZIO[Any, Nothing, Exit[Nothing, Int]] =
+    ZIO.succeed(Exit.success(0))
+}`}
+  catsEffectCode={`// Cats Effect - ExitCode from IOApp
+import cats.effect.*
+import cats.effect.ExitCode
+
+object MainExit extends IOApp {
+  def run(args: List[String]): IO[ExitCode, Unit] =
+    IO.pure(())  // Returns ExitCode.Success
+
+  // Or explicit exit code
+  def run2(args: List[String]): IO[Nothing, ExitCode] =
+    IO.pure(ExitCode.Success)  // or ExitCode.Error(code)
+}`}
+  zioComment="Return Int or Exit from run"
+  catsEffectComment="Return ExitCode from run"
+/>
+
+## Runtime Configuration
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - runtime configuration via ZIOApp
+object MainConfig extends ZIOAppDefault {
+  override val bootstrap: ZLayer[ZIOAppArgs, Any, Any] =
+    Runtime.setExecutor(Executor.bounded(10))
+
+  override val run: ZIO[Any, Nothing, Int] =
+    ZIO.succeed(0)
+}
+
+// ZIO - custom runtime layer
+val customRuntime: ZLayer[Any, Any, Any] =
+  Runtime.removeDefaultLoggers ++
+    Runtime.addLogger(ConsoleLogger.default) ++
+    Runtime.setExecutor(Executor.io)`}
+  catsEffectCode={`// Cats Effect - runtime via IORuntime
+import cats.effect.unsafe.*
+
+object MainConfig extends IOApp.Simple {
+  // IORuntime is implicitly available
+  val run: IO[Throwable, Unit] =
+    for {
+      runtime <- IO(IORuntime.global)
+      _ <- IO.println("Runtime: " + runtime)
+    } yield ()
+}
+
+// Custom IORuntime (advanced)
+val customRuntime: IORuntime = IORuntime(
+  compute = IORuntime.defaultComputeExecutor,
+  blocking = IORuntime.defaultBlockingExecutor,
+  scheduler = IORuntime.defaultScheduler,
+  shutdown = IORuntime.defaultShutdownHook,
+  config = IORuntimeConfig()
+)`}
+  zioComment="bootstrap / Runtime.* - configure runtime"
+  catsEffectComment="IORuntime - configure runtime (advanced)"
+/>
+
+## Graceful Shutdown
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - interrupt signal handling
+import zio.*
+
+object MainShutdown extends ZIOAppDefault {
+  override val run: ZIO[Any, IOException, Unit] =
+    (for {
+      _ <- Console.printLine("Starting...")
+      _ <- ZIO.sleep(10.seconds)
+      _ <- Console.printLine("Complete")
+    } yield ()).onInterrupt(
+      Console.printLine("Shutting down gracefully")
+    )`}
+  catsEffectCode={`// Cats Effect - shutdown hooks via IOApp
+import cats.effect.*
+
+object MainShutdown extends IOApp.Simple {
+  val run: IO[Throwable, Unit] =
+    for {
+      _ <- IO.println("Starting...")
+      _ <- IO.sleep(10.seconds)
+      _ <- IO.println("Complete")
+    } yield ()
+    .onCancel(IO.println("Shutting down gracefully"))
+}`}
+  zioComment="onInterrupt - handle shutdown signals"
+  catsEffectComment="onCancel - handle cancellation"
+/>
+
+## Logging
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - built-in logging
+import zio.*
+
+object MainLog extends ZIOAppDefault {
+  override val run: ZIO[Any, Nothing, Unit] =
+    for {
+      _ <- ZIO.logInfo("Application started")
+      _ <- ZIO.logDebug("Debug message")
+      _ <- ZIO.logWarning("Warning message")
+      _ <- ZIO.logError("Error message")
+    } yield ()
+}
+
+// Or use Console
+val consoleLog: ZIO[Any, IOException, Unit] =
+  for {
+    _ <- Console.printLine("Starting...")
+    _ <- Console.printLine("Complete")
+  } yield ()`}
+  catsEffectCode={`// Cats Effect - use logging library (log4cats)
+import cats.effect._
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
+
+object MainLog extends IOApp.Simple {
+  def run: IO[Throwable, Unit] =
+    for {
+      logger <- Slf4jLogger.create[IO]
+      _ <- logger.info("Application started")
+      _ <- logger.debug("Debug message")
+      _ <- logger.warn("Warning message")
+      _ <- logger.error("Error message")
+    } yield ()
+}
+
+// Or use console
+val consoleLog: IO[Throwable, Unit] =
+  for {
+    _ <- IO.println("Starting...")
+    _ <- IO.println("Complete")
+  } yield ()`}
+  zioComment="ZIO.log* - built-in logging"
+  catsEffectComment="log4cats - external logging library"
+/>
+
+<Callout variant="tip">
+ZIO includes logging in the core library. Cats Effect delegates to
+ecosystem libraries like log4cats for logging.
+</Callout>
+
+## Resource Lifecycle
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - scoped resources in ZIOApp
+import zio.*
+
+object MainScoped extends ZIOAppDefault {
+  override val run: ZIO[Any, IOException, Unit] =
+    ZIO.scoped {
+      for {
+        conn <- ZIO.acquireRelease(
+          ZIO.succeed(openConnection())
+        )(conn => ZIO.succeed(conn.close()))
+        _ <- useConnection(conn)
+      } yield ()
+    }`}
+  catsEffectCode={`// Cats Effect - resources in IOApp
+import cats.effect._
+
+object MainScoped extends IOApp.Simple {
+  def run: IO[Throwable, Unit] =
+    Resource
+      .make(IO.delay(openConnection()))(conn =>
+        IO.delay(conn.close())
+      )
+      .use { conn =>
+        useConnection(conn)
+      }
+}`}
+  zioComment="ZIO.scoped - automatic resource cleanup"
+  catsEffectComment="Resource.use - automatic resource cleanup"
+/>
+
+## Next Steps
+
+Application structure differs but both provide robust runtimes. Let's explore interop.
+
+[Next →](/cats-effect-zio/10)

@@ -1,0 +1,212 @@
+---
+title: "Streaming"
+step: 8
+description: "ZStream vs fs2 for streaming data"
+zioCommands: []
+ceCommands: []
+---
+
+# Streaming
+
+ZIO provides ZStream built-in. Cats Effect uses fs2 as the streaming library.
+
+## Creating Streams
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - create stream from values
+val zioStream: ZStream[Any, Nothing, Int] =
+  ZStream(1, 2, 3, 4, 5)
+
+// ZIO - stream from range
+val zioRange: ZStream[Any, Nothing, Int] =
+  ZStream.range(1, 10)
+
+// ZIO - stream from effect
+val zioEffectStream: ZStream[Any, Nothing, Int] =
+  ZStream.fromZIO(ZIO.succeed(42))`}
+  catsEffectCode={`// Cats Effect - fs2 stream from values
+import fs2.*
+
+val ceStream: Stream[IO, Int] =
+  Stream(1, 2, 3, 4, 5)
+
+// fs2 - stream from range
+val ceRange: Stream[IO, Int] =
+  Stream.range(1, 10)
+
+// fs2 - stream from effect
+val ceEffectStream: Stream[IO, Int] =
+  Stream.eval(IO.pure(42))`}
+  zioComment="ZStream - built-in streaming"
+  catsEffectComment="fs2.Stream - separate library"
+/>
+
+## Transforming Streams
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - map stream elements
+val zioMap: ZStream[Any, Nothing, Int] =
+  ZStream(1, 2, 3).map(_ * 2)
+
+// ZIO - filter
+val zioFilter: ZStream[Any, Nothing, Int] =
+  ZStream(1, 2, 3, 4, 5).filter(_ % 2 == 0)
+
+// ZIO - take/drop
+val zioTake: ZStream[Any, Nothing, Int] =
+  ZStream.fromIterable(1 to 100).take(5)`}
+  catsEffectCode={`// Cats Effect - map stream elements
+val ceMap: Stream[IO, Int] =
+  Stream(1, 2, 3).map(_ * 2)
+
+// fs2 - filter
+val ceFilter: Stream[IO, Int] =
+  Stream(1, 2, 3, 4, 5).filter(_ % 2 == 0)
+
+// fs2 - take/drop
+val ceTake: Stream[IO, Int] =
+  Stream.range(1, 100).take(5)`}
+  zioComment="map / filter / take - transform streams"
+  catsEffectComment="map / filter / take - transform streams"
+/>
+
+## Chunks and Batching
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - chunked processing
+val zioChunks: ZStream[Any, Nothing, Int] =
+  ZStream.fromChunk(Chunk(1, 2, 3, 4, 5))
+
+// ZIO - group by size
+val zioGrouped: ZStream[Any, Nothing, Chunk[Int]] =
+  ZStream.fromIterable(1 to 100).grouped(10)`}
+  catsEffectCode={`// Cats Effect - chunked processing
+import fs2.Chunk
+
+val ceChunks: Stream[IO, Int] =
+  Stream.chunk(Chunk(1, 2, 3, 4, 5))
+
+// fs2 - group by size
+val ceGrouped: Stream[IO, Chunk[Int]] =
+  Stream.range(1, 100).chunkN(10)`}
+  zioComment="Chunk - batch processing"
+  catsEffectComment="Chunk - batch processing"
+/>
+
+## Running Streams
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - run to sink
+val zioRun: ZIO[Any, Nothing, Unit] =
+  ZStream(1, 2, 3).run(ZSink.foreach(println))
+
+// ZIO - collect to list
+val zioCollect: ZIO[Any, Nothing, List[Int]] =
+  ZStream(1, 2, 3).runCollect.map(_.toList)
+
+// ZIO - fold
+val zioFold: ZIO[Any, Nothing, Int] =
+  ZStream(1, 2, 3, 4, 5).runFold(0)(_ + _)`}
+  catsEffectCode={`// Cats Effect - run to sink
+val ceRun: IO[Nothing, Unit] =
+  Stream(1, 2, 3).evalMap(i =>
+    IO.delay(println(i))
+  ).compile.drain
+
+// fs2 - collect to list
+val ceCollect: IO[Nothing, List[Int]] =
+  Stream(1, 2, 3).compile.toList
+
+// fs2 - fold
+val ceFold: IO[Nothing, Int] =
+  Stream(1, 2, 3, 4, 5).compile.fold(0)(_ + _)`}
+  zioComment="run* methods - execute stream"
+  catsEffectComment="compile.* methods - execute stream"
+/>
+
+## Stream Effects
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - mapM (effectful map)
+val zioMapM: ZStream[Any, Throwable, Int] =
+  ZStream(1, 2, 3).mapZIO(i =>
+    ZIO.effect(println(s"Processing: $i")).as(i)
+  )
+
+// ZIO - filterM (effectful filter)
+val zioFilterM: ZStream[Any, Throwable, Int] =
+  ZStream(1, 2, 3, 4, 5).filterZIO(i =>
+    ZIO.succeed(i % 2 == 0)
+  )`}
+  catsEffectCode={`// Cats Effect - evalMap (effectful map)
+val ceEvalMap: Stream[IO, Int] =
+  Stream(1, 2, 3).evalMap(i =>
+    IO.delay(println(s"Processing: $i")).as(i)
+  )
+
+// fs2 - evalFilter (effectful filter)
+val ceEvalFilter: Stream[IO, Int] =
+  Stream(1, 2, 3, 4, 5).evalFilter(i =>
+    IO.pure(i % 2 == 0)
+  )`}
+  zioComment="mapZIO / filterZIO - effectful operations"
+  catsEffectComment="evalMap / evalFilter - effectful operations"
+/>
+
+## Concurrent Streams
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - merge concurrent streams
+val zioMerge: ZStream[Any, Nothing, Int] =
+  ZStream(1, 2, 3).merge(ZStream(4, 5, 6))
+
+// ZIO - parallel zip
+val zioZip: ZStream[Any, Nothing, (Int, String)] =
+  ZStream(1, 2, 3).zip(ZStream("a", "b", "c"))`}
+  catsEffectCode={`// Cats Effect - merge concurrent streams
+val ceMerge: Stream[IO, Int] =
+  Stream(1, 2, 3).merge(Stream(4, 5, 6))
+
+// fs2 - parallel zip
+val ceZip: Stream[IO, (Int, String)] =
+  Stream(1, 2, 3).zip(Stream("a", "b", "c"))`}
+  zioComment="merge / zip - combine streams"
+  catsEffectComment="merge / zip - combine streams"
+/>
+
+## File Streaming
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - stream from file
+val zioFile: ZStream[Any, IOException, Byte] =
+  ZStream.fromPath(java.nio.file.Paths.get("data.txt"))
+
+// ZIO - stream to file
+val zioWrite: ZIO[Any, IOException, Unit] =
+  ZStream.fromIterable("Hello".getBytes)
+    .run(ZSink.fromPath(java.nio.file.Paths.get("out.txt")))`}
+  catsEffectCode={`// Cats Effect - fs2 IO stream from file
+import fs2.io.file.*
+
+val ceFile: Stream[IO, Byte] =
+  Files[IO].readAll(java.nio.file.Paths.get("data.txt"))
+
+// fs2 - stream to file
+val ceWrite: IO[IOException, Unit] =
+  Stream.emits("Hello".getBytes)
+    .through(Files[IO].writeAll(java.nio.file.Paths.get("out.txt")))
+    .compile.drain`}
+  zioComment="ZStream.fromPath - file streaming"
+  catsEffectComment="Files[IO] - fs2 file streaming"
+/>
+
+<Callout variant="tip">
+ZStream is built into ZIO. fs2 is a separate library but integrates
+seamlessly with Cats Effect through the `cats-effect` kernel.
+</Callout>
+
+## Next Steps
+
+Streaming is powerful but requires different approaches. Let's look at application structure.
+
+[Next →](/cats-effect-zio/9)

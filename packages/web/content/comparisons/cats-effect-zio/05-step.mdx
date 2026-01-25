@@ -1,0 +1,183 @@
+---
+title: "Dependency Injection"
+step: 5
+description: "ZLayers vs Tagless Final patterns"
+zioCommands: []
+ceCommands: []
+---
+
+# Dependency Injection
+
+ZIO and Cats Effect take different approaches to dependency injection. ZIO uses `ZLayer` with the environment parameter `R`. Cats Effect uses `Resource` and tagless final patterns.
+
+## ZIO Environment Pattern
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - define service interface
+trait Logger {
+  def log(msg: String): ZIO[Any, Nothing, Unit]
+}
+
+object Logger {
+  def log(msg: String): ZIO[Logger, Nothing, Unit] =
+    ZIO.serviceWithLog(_.log(msg))
+}
+
+// ZIO - implementation
+case class ConsoleLogger() extends Logger {
+  def log(msg: String): ZIO[Any, Nothing, Unit] =
+    ZIO.succeed(println(msg))
+}
+
+// ZIO - layer
+val loggerLayer: ULayer[Logger] =
+  ZLayer.succeed(ConsoleLogger())`}
+  catsEffectCode={`// Cats Effect - define service interface
+trait Logger {
+  def log(msg: String): IO[Nothing, Unit]
+}
+
+object Logger {
+  def log(msg: String): IO[Logger, Unit] =
+    IO.askWith(logger => logger.log(msg))
+}
+
+// Cats Effect - implementation
+case class ConsoleLogger() extends Logger {
+  def log(msg: String): IO[Nothing, Unit] =
+    IO.delay(println(msg))
+}
+
+// Cats Effect - resource (not layer)
+val loggerResource: Resource[IO, Logger] =
+  Resource.pure(ConsoleLogger())`}
+  zioComment="ZLayer - dependency injection through R parameter"
+  catsEffectComment="Resource - dependency management, not injection"
+/>
+
+## Using Dependencies
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - program with dependencies
+val zioProgram: ZIO[Logger, Nothing, Unit] =
+  for {
+    _ <- Logger.log("Starting")
+    _ <- Logger.log("Complete")
+  } yield ()
+
+// ZIO - provide layer
+val zioRun: ZIO[Any, Nothing, Unit] =
+  zioProgram.provideLayer(loggerLayer)
+
+// Or provide from some layer
+val zioRun2: ZIO[Any, Nothing, Unit] =
+  zioProgram.provideSomeLayer[Logger](loggerLayer)`}
+  catsEffectCode={`// Cats Effect - Kleisli for dependencies
+import cats.data.Kleisli
+
+type LoggerIO[A] = Kleisli[IO, Logger, A]
+
+val ceProgram: LoggerIO[Unit] =
+  for {
+    logger <- Kleisli.ask[IO, Logger]
+    _ <- Kleisli.liftF(logger.log("Starting"))
+    _ <- Kleisli.liftF(logger.log("Complete"))
+  } yield ()
+
+// Cats Effect - run with dependency
+val ceRun: IO[Throwable, Unit] =
+  ceProgram.run(ConsoleLogger())`}
+  zioComment="provideLayer - inject dependencies into R"
+  catsEffectComment="Kleisli.run - pass dependencies through functions"
+/>
+
+## Tagless Final Pattern
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - tagless final (less common)
+trait Logging[F[_]] {
+  def log(msg: String): F[Unit]
+}
+
+object Logging {
+  def apply[F[_]](implicit L: Logging[F]): Logging[F] = L
+
+  def log[F[_]](msg: String)(implicit L: Logging[F]): F[Unit] =
+    L.log(msg)
+}
+
+// ZIO - instance for ZIO
+implicit val loggingZIO: Logging[UIO] =
+  new Logging[UIO] {
+    def log(msg: String): UIO[Unit] =
+      ZIO.succeed(println(msg))
+  }`}
+  catsEffectCode={`// Cats Effect - tagless final (common pattern)
+trait Logging[F[_]] {
+  def log(msg: String): F[Unit]
+}
+
+object Logging {
+  def apply[F[_]](implicit L: Logging[F]): Logging[F] = L
+
+  def log[F[_]](msg: String)(implicit L: Logging[F]): F[Unit] =
+    L.log(msg)
+}
+
+// Cats Effect - instance for IO
+implicit val loggingIO: Logging[IO] =
+  new Logging[IO] {
+    def log(msg: String): IO[Unit] =
+      IO.delay(println(msg))
+  }`}
+  zioComment="Tagless final works but ZLayer is preferred"
+  catsEffectComment="Tagless final is the standard pattern"
+/>
+
+## Multiple Dependencies
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - compose layers
+trait Database { def query: ZIO[Any, Nothing, Int] }
+trait Cache { def get: ZIO[Any, Nothing, Option[Int]] }
+
+val appLayer: ULayer[Database & Cache] =
+  ZLayer.succeed(Database()) ++ ZLayer.succeed(Cache())
+
+val zioApp: ZIO[Database & Cache, Nothing, Unit] =
+  for {
+    db <- ZIO.service[Database]
+    cache <- ZIO.service[Cache]
+    _ <- db.query
+  } yield ()`}
+  catsEffectCode={`// Cats Effect - Resource composition
+trait Database { def query: IO[Nothing, Int] }
+trait Cache { def get: IO[Nothing, Option[Int]] }
+
+val appResource: Resource[IO, (Database, Cache)] =
+  for {
+    db <- Resource.pure(Database())
+    cache <- Resource.pure(Cache())
+  } yield (db, cache)
+
+val ceApp: Resource[IO, Unit] =
+  appResource.use { case (db, cache) =>
+    for {
+      _ <- db.query
+      _ <- cache.get
+    } yield ()
+  }`}
+  zioComment="++ operator composes ZLayers"
+  catsEffectComment="Resource.forProductN composes dependencies"
+/>
+
+<Callout variant="tip">
+ZIO's ZLayer provides compile-time dependency injection through the type system.
+Cats Effect prefers tagless final or manual Resource composition.
+</Callout>
+
+## Next Steps
+
+Now let's look at resource management and lifecycle handling.
+
+[Next →](/cats-effect-zio/6)

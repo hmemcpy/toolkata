@@ -3,12 +3,11 @@
  *
  * Features:
  * - Client-side component for interactive search and filtering
- * - Category filter tabs (All + 8 categories)
+ * - Category filter tabs (All + dynamic categories)
  * - Debounced search input with aria-live result announcements
  * - Two-column table with copy buttons
  * - Responsive: horizontal scroll on mobile
  * - Empty state for no results
- * - Respects direction preference (swaps columns when reversed)
  *
  * @example
  * ```tsx
@@ -21,10 +20,8 @@
 "use client"
 
 import React from "react"
-import type { GlossaryEntry, GlossaryCategory } from "../../content/glossary/jj-git"
-import { getCategories } from "../../content/glossary/jj-git"
+import type { GlossaryEntry } from "../../content/glossary/types"
 import { useGlossarySearch } from "../../hooks/useGlossarySearch"
-import { useDirectionContext } from "../../contexts/DirectionContext"
 
 /**
  * Copy button component for individual commands.
@@ -59,7 +56,7 @@ function CategoryTab({
   isActive,
   onClick,
 }: {
-  readonly category: GlossaryCategory | "All"
+  readonly category: string | "All"
   readonly isActive: boolean
   readonly onClick: () => void
 }): React.JSX.Element {
@@ -90,65 +87,16 @@ export interface GlossaryClientProps {
   readonly entries: readonly GlossaryEntry[]
   /** The tool pairing slug */
   readonly toolPair: string
-  /** Label for the "from" tool (left column in normal mode) */
+  /** Label for the "from" tool (left column) */
   readonly fromLabel?: string
-  /** Label for the "to" tool (right column in normal mode) */
+  /** Label for the "to" tool (right column) */
   readonly toLabel?: string
-}
-
-/**
- * Column data for rendering
- */
-interface ColumnData {
-  readonly label: string
-  readonly command: string
-  readonly colorClass: string
-}
-
-/**
- * Extract column data from an entry based on direction
- */
-function getEntryColumns(
-  entry: GlossaryEntry,
-  isReversed: boolean,
-  fromLabel: string,
-  toLabel: string,
-): [ColumnData, ColumnData] {
-  if (isReversed) {
-    // Reversed (jj→git): jj left (green), git right (orange)
-    return [
-      {
-        label: toLabel,
-        command: entry.toCommand,
-        colorClass: "text-[var(--color-accent)]",
-      },
-      {
-        label: fromLabel,
-        command: entry.fromCommand,
-        colorClass: "text-[var(--color-accent-alt)]",
-      },
-    ]
-  }
-  // Normal (git→jj): git left (orange), jj right (green)
-  return [
-    {
-      label: fromLabel,
-      command: entry.fromCommand,
-      colorClass: "text-[var(--color-accent-alt)]",
-    },
-    {
-      label: toLabel,
-      command: entry.toCommand,
-      colorClass: "text-[var(--color-accent)]",
-    },
-  ]
 }
 
 /**
  * GlossaryClient component.
  *
  * Renders an interactive glossary with search and category filtering.
- * Swaps column order when direction preference is reversed.
  */
 export function GlossaryClient({
   entries,
@@ -159,19 +107,14 @@ export function GlossaryClient({
   const { query, setQuery, category, setCategory, filteredEntries, resultCount } =
     useGlossarySearch(entries)
 
-  const { isReversed } = useDirectionContext()
-
-  const categories = getCategories()
-
-  // Table header labels (swap when reversed)
-  const tableLeftLabel = isReversed ? toLabel : fromLabel
-  const tableRightLabel = isReversed ? fromLabel : toLabel
-  const tableLeftColor = isReversed
-    ? "text-[var(--color-accent)]"
-    : "text-[var(--color-accent-alt)]"
-  const tableRightColor = isReversed
-    ? "text-[var(--color-accent-alt)]"
-    : "text-[var(--color-accent)]"
+  // Extract unique categories from entries
+  const categories = React.useMemo(() => {
+    const uniqueCategories = new Set<string>()
+    for (const entry of entries) {
+      uniqueCategories.add(entry.category)
+    }
+    return Array.from(uniqueCategories).sort()
+  }, [entries])
 
   return (
     <div>
@@ -254,50 +197,40 @@ export function GlossaryClient({
           <div className="overflow-x-auto">
             {/* Table header */}
             <div className="grid grid-cols-2 gap-4 border-b border-[var(--color-border)] bg-[var(--color-bg)] px-6 py-3">
-              <div
-                className={`text-xs font-mono font-medium uppercase tracking-wide ${tableLeftColor}`}
-              >
-                {tableLeftLabel}
+              <div className="text-xs font-mono font-medium uppercase tracking-wide text-[var(--color-accent-alt)]">
+                {fromLabel}
               </div>
-              <div
-                className={`text-xs font-mono font-medium uppercase tracking-wide ${tableRightColor}`}
-              >
-                {tableRightLabel}
+              <div className="text-xs font-mono font-medium uppercase tracking-wide text-[var(--color-accent)]">
+                {toLabel}
               </div>
             </div>
 
             {/* Command rows */}
-            {filteredEntries.map((entry) => {
-              const [leftCol, rightCol] = getEntryColumns(entry, isReversed, fromLabel, toLabel)
-              // Copy button copies the "to" command based on direction (git→jj copies jj, jj→git copies git)
-              const copyCommand = isReversed ? entry.fromCommand : entry.toCommand
-
-              return (
-                <div
-                  key={entry.id}
-                  className="grid grid-cols-2 gap-4 border-b border-[var(--color-border)] px-6 py-3 last:border-b-0 hover:bg-[var(--color-surface-hover)] transition-colors duration-[var(--transition-fast)]"
-                >
-                  <div className="flex items-center">
-                    <code className={`text-sm font-mono ${leftCol.colorClass}`}>
-                      {leftCol.command}
-                    </code>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <code className={`text-sm font-mono ${rightCol.colorClass}`}>
-                        {rightCol.command}
-                      </code>
-                      {entry.note && (
-                        <span className="text-xs text-[var(--color-text-muted)] italic hidden sm:inline">
-                          ({entry.note})
-                        </span>
-                      )}
-                    </div>
-                    <CopyButton text={copyCommand} />
-                  </div>
+            {filteredEntries.map((entry) => (
+              <div
+                key={entry.id}
+                className="grid grid-cols-2 gap-4 border-b border-[var(--color-border)] px-6 py-3 last:border-b-0 hover:bg-[var(--color-surface-hover)] transition-colors duration-[var(--transition-fast)]"
+              >
+                <div className="flex items-center">
+                  <code className="text-sm font-mono text-[var(--color-accent-alt)]">
+                    {entry.fromCommand}
+                  </code>
                 </div>
-              )
-            })}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <code className="text-sm font-mono text-[var(--color-accent)]">
+                      {entry.toCommand}
+                    </code>
+                    {entry.note && (
+                      <span className="text-xs text-[var(--color-text-muted)] italic hidden sm:inline">
+                        ({entry.note})
+                      </span>
+                    )}
+                  </div>
+                  <CopyButton text={entry.toCommand} />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

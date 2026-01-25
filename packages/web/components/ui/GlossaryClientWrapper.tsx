@@ -6,7 +6,7 @@
 
 "use client"
 
-import type { GlossaryEntry } from "../../content/glossary/jj-git"
+import type { GlossaryEntry } from "../../content/glossary/types"
 import { GlossaryClient } from "./GlossaryClient"
 
 export interface GlossaryClientWrapperProps {

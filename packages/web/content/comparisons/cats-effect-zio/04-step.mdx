@@ -1,0 +1,148 @@
+---
+title: "Map/FlatMap Purity"
+step: 4
+description: "Referential transparency and functional composition"
+zioCommands: []
+ceCommands: []
+---
+
+# Map/FlatMap Purity
+
+Both ZIO and Cats Effect guarantee referential transparency through their effect types.
+
+## Map (Transform Success)
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - map success value
+val zioMap: ZIO[Any, Nothing, Int] =
+  ZIO.succeed(21)
+    .map(_ * 2)
+    .map(_ + 10)
+
+// Result: UIO[Int] = 52`}
+  catsEffectCode={`// Cats Effect - map success value
+val ceMap: IO[Nothing, Int] =
+  IO.pure(21)
+    .map(_ * 2)
+    .map(_ + 10)
+
+// Result: IO[Int] = 52`}
+  zioComment="map - transform success value"
+  catsEffectComment="map - transform success value"
+/>
+
+## FlatMap (Chain Effects)
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - flatMap (for-comprehension)
+val zioFlatMap: ZIO[Any, Nothing, Int] =
+  for {
+    x <- ZIO.succeed(10)
+    y <- ZIO.succeed(20)
+    z <- ZIO.succeed(x + y)
+  } yield z * 2
+
+// Equivalent to:
+val zioFlatMap2 = ZIO.succeed(10)
+  .flatMap(x => ZIO.succeed(20)
+  .flatMap(y => ZIO.succeed(x + y)
+  .map(z => z * 2)))`}
+  catsEffectCode={`// Cats Effect - flatMap (for-comprehension)
+val ceFlatMap: IO[Nothing, Int] =
+  for {
+    x <- IO.pure(10)
+    y <- IO.pure(20)
+    z <- IO.pure(x + y)
+  } yield z * 2
+
+// Equivalent to:
+val ceFlatMap2 = IO.pure(10)
+  .flatMap(x => IO.pure(20)
+  .flatMap(y => IO.pure(x + y)
+  .map(z => z * 2)))`}
+  zioComment="flatMap / for-comprehension - chain effects"
+  catsEffectComment="flatMap / for-comprehension - chain effects"
+/>
+
+## Error Propagation in FlatMap
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - errors short-circuit
+val zioErrorChain: ZIO[Any, String, Int] =
+  ZIO.fail("error")
+    .flatMap(_ => ZIO.succeed(42))
+    .flatMap(_ => ZIO.succeed(100))
+// Result: ZIO.fail("error")`}
+  catsEffectCode={`// Cats Effect - errors short-circuit
+val ceErrorChain: IO[String, Int] =
+  IO.raiseError("error")
+    .flatMap(_ => IO.pure(42))
+    .flatMap(_ => IO.pure(100))
+// Result: IO.raiseError("error")`}
+  zioComment="Errors in flatMap short-circuit"
+  catsEffectComment="Errors in flatMap short-circuit"
+/>
+
+<Callout variant="tip">
+Both libraries short-circuit on errors in flatMap chains. This is called
+"error propagation" and is fundamental to typed error handling.
+</Callout>
+
+## Zip (Parallel Execution)
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - zip (parallel by default)
+val zioZip: ZIO[Any, Nothing, (Int, String)] =
+  ZIO.succeed(42).zip(ZIO.succeed("hello"))
+
+// ZIO - zipWith (combine results)
+val zioZipWith: ZIO[Any, Nothing, String] =
+  ZIO.succeed(42).zipWith(ZIO.succeed(10))(_ + _)`}
+  catsEffectCode={`// Cats Effect - parZip2 (parallel)
+import cats.effect.syntax.all.*
+import cats.Parallel
+
+val ceZip: IO[Nothing, (Int, String)] =
+  (IO.pure(42), IO.pure("hello")).parTupled
+
+// Cats Effect - map2 (combine parallel)
+val ceMap2: IO[Nothing, Int] =
+  (IO.pure(42), IO.pure(10)).parMapN(_ + _)`}
+  zioComment="zip / zipWith - combine parallel effects"
+  catsEffectComment="parTupled / parMapN - combine parallel effects"
+/>
+
+## Sequencing Collections
+
+<ScalaComparisonBlock
+  zioCode={`// ZIO - collectAll (sequential)
+val zioSeq: ZIO[Any, Nothing, List[Int]] =
+  ZIO.collectAll(
+    List(ZIO.succeed(1), ZIO.succeed(2), ZIO.succeed(3))
+  )
+
+// ZIO - collectAllPar (parallel)
+val zioPar: ZIO[Any, Nothing, List[Int]] =
+  ZIO.collectAllPar(
+    List(ZIO.succeed(1), ZIO.succeed(2), ZIO.succeed(3))
+  )`}
+  catsEffectCode={`// Cats Effect - sequence (sequential)
+import cats.syntax.all.*
+
+val ceSeq: IO[Nothing, List[Int]] =
+  List(IO.pure(1), IO.pure(2), IO.pure(3))
+    .sequence
+
+// Cats Effect - parSequence (parallel)
+val cePar: IO[Nothing, List[Int]] =
+  List(IO.pure(1), IO.pure(2), IO.pure(3))
+    .parSequence`}
+  zioComment="collectAll / collectAllPar - sequence effects"
+  catsEffectComment="sequence / parSequence - sequence effects"
+/>
+
+## Next Steps
+
+With functional composition covered, let's explore dependency injection patterns.
+
+[Next →](/cats-effect-zio/5)

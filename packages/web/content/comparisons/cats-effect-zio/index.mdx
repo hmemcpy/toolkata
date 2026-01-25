@@ -1,0 +1,61 @@
+---
+title: "Cats Effect for ZIO Developers"
+description: "Learn Cats Effect 3 if you already know ZIO 2"
+estimatedTime: "~45 min"
+---
+
+# Cats Effect ← ZIO
+
+**Cats Effect 3** for developers who know **ZIO 2**.
+
+## Why Learn Cats Effect?
+
+Cats Effect is the standard effect system for Scala's Typelevel ecosystem. While ZIO and Cats Effect share the same core principles, they differ in implementation details and API design.
+
+### Key Differences
+
+- **Error Channel:** CE3 has `IO[E, A]` with typed errors (no environment parameter)
+- **Dependency Injection:** Uses `Resource` and `Kleisli` instead of `ZLayer`
+- **Interop:** Better integration with Cats ecosystem libraries
+- **Type Classes:** Embraces Cats type classes (Functor, Monad, etc.)
+
+## What You'll Learn
+
+┌─ Fundamentals ──────────────────────────────────────┐
+│                                                      │
+│  →  1. R/E/A Signature                     ~4 min   │
+│  ○  2. Creating Effects                     ~5 min   │
+│  ○  3. Error Handling                       ~5 min   │
+│  ○  4. Map/FlatMap Purity                   ~3 min   │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+
+┌─ Application Architecture ───────────────────────────┐
+│                                                      │
+│  ○  5. ZLayers vs Tagless Final            ~6 min   │
+│  ○  6. Resource Management                 ~5 min   │
+│  ○  7. Fiber Supervision                   ~5 min   │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+
+┌─ Advanced Topics ─────────────────────────────────────┐
+│                                                      │
+│  ○  8. Streaming (ZStream vs fs2)           ~6 min   │
+│  ○  9. Application Structure               ~4 min   │
+│  ○  10. Interop                            ~4 min   │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+
+<Callout variant="tip">
+Both ZIO and Cats Effect are purely functional effect systems with
+identical core concepts. The main differences are API design and
+ecosystem integration.
+</Callout>
+
+## Prerequisites
+
+- Scala 3 or Scala 2.13
+- Basic familiarity with functional programming concepts
+- Experience with ZIO 2.x
+
+[Start Learning →](/cats-effect-zio/1)

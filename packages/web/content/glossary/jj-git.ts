@@ -7,6 +7,8 @@
  * @module
  */
 
+import type { GlossaryEntry as SharedGlossaryEntry } from "./types"
+
 /**
  * Glossary category types for command groupings.
  */
@@ -26,17 +28,9 @@ export type GlossaryCategory =
  * Contains the source command, target command, optional note,
  * and category for grouping.
  */
-export interface GlossaryEntry {
-  /** Unique identifier for React keys */
-  readonly id: string
+export interface GlossaryEntry extends SharedGlossaryEntry {
   /** Category grouping for this entry */
   readonly category: GlossaryCategory
-  /** Source command (e.g., git command) */
-  readonly fromCommand: string
-  /** Target command (e.g., jj command) */
-  readonly toCommand: string
-  /** Optional note about differences or usage */
-  readonly note: string
 }
 
 /**

@@ -18,13 +18,14 @@ import { Footer } from "../../../components/ui/Footer"
 import { Header } from "../../../components/ui/Header"
 import { GlossaryClientWrapper } from "../../../components/ui/GlossaryClientWrapper"
 import { getPairing, isValidPairingSlug } from "../../../content/pairings"
+import { catsEffectZioGlossary } from "../../../content/glossary/cats-effect-zio"
 import { jjGitGlossary } from "../../../content/glossary/jj-git"
 
 /**
  * Generate static params for all known tool pairings.
  */
 export function generateStaticParams(): Array<{ readonly toolPair: string }> {
-  return [{ toolPair: "jj-git" }]
+  return [{ toolPair: "jj-git" }, { toolPair: "cats-effect-zio" }]
 }
 
 /**
@@ -81,6 +82,12 @@ export default async function CheatSheetPage({
     notFound()
   }
 
+  // Select glossary based on tool pair
+  const entries =
+    toolPair === "cats-effect-zio"
+      ? catsEffectZioGlossary
+      : jjGitGlossary
+
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
       <Header />
@@ -98,7 +105,7 @@ export default async function CheatSheetPage({
 
         {/* Client wrapper for interactive cheat sheet */}
         <GlossaryClientWrapper
-          entries={jjGitGlossary}
+          entries={entries}
           toolPair={toolPair}
           pairingFrom={pairing.from.name}
           pairingTo={pairing.to.name}

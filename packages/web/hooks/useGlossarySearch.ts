@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import type { GlossaryCategory, GlossaryEntry } from "../content/glossary/jj-git"
-import { searchEntries, filterByCategory } from "../content/glossary/jj-git"
+import type { GlossaryEntry } from "../content/glossary/types"
 
 /**
  * Return type for useGlossarySearch hook.
@@ -8,10 +7,41 @@ import { searchEntries, filterByCategory } from "../content/glossary/jj-git"
 export interface GlossarySearchState {
   readonly query: string
   readonly setQuery: (query: string) => void
-  readonly category: GlossaryCategory | "All"
-  readonly setCategory: (category: GlossaryCategory | "All") => void
+  readonly category: string | "All"
+  readonly setCategory: (category: string | "All") => void
   readonly filteredEntries: readonly GlossaryEntry[]
   readonly resultCount: number
+}
+
+/**
+ * Simple search function for glossary entries.
+ */
+function searchEntries(
+  entries: readonly GlossaryEntry[],
+  query: string,
+): readonly GlossaryEntry[] {
+  if (!query) {
+    return entries
+  }
+
+  const lowerQuery = query.toLowerCase()
+
+  return entries.filter(
+    (entry) =>
+      entry.fromCommand.toLowerCase().includes(lowerQuery) ||
+      entry.toCommand.toLowerCase().includes(lowerQuery) ||
+      entry.note.toLowerCase().includes(lowerQuery),
+  )
+}
+
+/**
+ * Simple filter by category function.
+ */
+function filterByCategory(
+  entries: readonly GlossaryEntry[],
+  category: string,
+): readonly GlossaryEntry[] {
+  return entries.filter((entry) => entry.category === category)
 }
 
 /**
@@ -41,7 +71,7 @@ export interface GlossarySearchState {
 export function useGlossarySearch(entries: readonly GlossaryEntry[]): GlossarySearchState {
   const [query, setQuery] = useState("")
   const [debouncedQuery, setDebouncedQuery] = useState("")
-  const [category, setCategory] = useState<GlossaryCategory | "All">("All")
+  const [category, setCategory] = useState<string | "All">("All")
 
   // Debounce search query (300ms)
   useEffect(() => {
