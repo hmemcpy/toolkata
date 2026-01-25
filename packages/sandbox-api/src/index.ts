@@ -30,6 +30,7 @@ import {
 } from "./services/circuit-breaker.js"
 import { SessionService, SessionServiceLive, type SessionServiceShape } from "./services/session.js"
 import { WebSocketService, WebSocketServiceLive } from "./services/websocket.js"
+import { EnvironmentServiceLive } from "./environments/index.js"
 import {
   getAllowedOrigins,
   SandboxConfig,
@@ -279,6 +280,7 @@ export const ServerLayer = Layer.mergeAll(
   DockerClientLive,
   RateLimitServiceLive,
   AuditServiceLive,
+  EnvironmentServiceLive,
   ContainerServiceLive,
   SessionServiceLive,
   WebSocketServiceLive,
@@ -349,10 +351,13 @@ if (import.meta.main) {
     DockerClientLive,
     RateLimitServiceLive,
     AuditServiceLive,
+    EnvironmentServiceLive,
   )
 
-  // Container service depends on DockerClient
-  const containerLayer = ContainerServiceLive.pipe(Layer.provide(DockerClientLive))
+  // Container service depends on DockerClient and EnvironmentService
+  const containerLayer = ContainerServiceLive.pipe(
+    Layer.provide(Layer.merge(DockerClientLive, EnvironmentServiceLive)),
+  )
 
   // Session service depends on ContainerService
   const sessionLayer = SessionServiceLive.pipe(Layer.provide(containerLayer))
@@ -376,7 +381,14 @@ if (import.meta.main) {
   )
 
   // Merge all layers for the final app
-  const appLayer = Layer.mergeAll(baseLayer, containerLayer, sessionLayer, wsLayer, httpLayer)
+  const appLayer = Layer.mergeAll(
+    baseLayer,
+    EnvironmentServiceLive,
+    containerLayer,
+    sessionLayer,
+    wsLayer,
+    httpLayer,
+  )
 
   const program = mainProgram.pipe(
     Effect.provide(appLayer),

@@ -1,6 +1,7 @@
 import Docker from "dockerode"
 import { Context, Data, Effect, Layer, Console } from "effect"
 import { SandboxConfig } from "../config.js"
+import { EnvironmentService } from "../environments/index.js"
 
 // Error types with Data.TaggedClass
 export class ContainerError extends Data.TaggedClass("ContainerError")<{
@@ -19,7 +20,7 @@ export interface Container {
 
 // Service interface
 export interface ContainerServiceShape {
-  readonly create: (toolPair: string) => Effect.Effect<Container, ContainerError>
+  readonly create: (toolPair: string, environment?: string) => Effect.Effect<Container, ContainerError>
   readonly destroy: (containerId: string) => Effect.Effect<void, ContainerError>
   readonly get: (containerId: string) => Effect.Effect<Container, ContainerError>
   readonly cleanupOrphaned: Effect.Effect<number, never>
@@ -67,23 +68,11 @@ const CONTAINER_SECURITY = {
   autoRemove: false, // We'll handle cleanup explicitly
 } as const
 
-// Image name pattern: toolkata-sandbox:{toolPair}
-// Built from packages/sandbox-api/docker/tool-pairs/{toolPair}/Dockerfile
-const getImageName = (toolPair: string): string => {
-  return `toolkata-sandbox:${toolPair}`
-}
-
 // Helper: Generate unique container name
 const generateContainerName = (toolPair: string): string => {
   const timestamp = Date.now().toString(36)
   const random = Math.random().toString(36).substring(2, 8)
   return `sandbox-${toolPair}-${timestamp}-${random}`
-}
-
-// Helper: Validate tool pair
-const isValidToolPair = (toolPair: string): boolean => {
-  // Only jj-git is supported for MVP
-  return toolPair === "jj-git"
 }
 
 /**
@@ -127,96 +116,123 @@ export const checkGvisorAvailable = Effect.tryPromise({
 // Service implementation
 const make = Effect.gen(function* () {
   const dockerClient = yield* DockerClient
+  const environmentService = yield* EnvironmentService
 
-  const create = (toolPair: string) =>
-    Effect.tryPromise({
-      try: async () => {
-        // Validate tool pair
-        if (!isValidToolPair(toolPair)) {
-          throw new ContainerError({
-            cause: "CreateFailed",
-            message: `Unsupported tool pair: ${toolPair}. Only jj-git is supported.`,
-          })
-        }
+  const create = (toolPair: string, environmentParam?: string) =>
+    Effect.gen(function* () {
+      // Get environment configuration (defaults to "bash")
+      const environment = environmentParam ?? "bash"
+      const envConfig = yield* environmentService.get(environment)
 
-        const docker = dockerClient.docker
-        const imageName = getImageName(toolPair)
+      const docker = dockerClient.docker
+      const imageName = envConfig.dockerImage
 
-        // Check if image exists, pull if needed
-        try {
-          await docker.getImage(imageName).inspect()
-        } catch {
-          // Image doesn't exist, need to pull it
-          throw new ContainerError({
+      // Check if image exists
+      const imageExists = yield* Effect.tryPromise({
+        try: async () => {
+          try {
+            await docker.getImage(imageName).inspect()
+            return true
+          } catch {
+            return false
+          }
+        },
+        catch: () => false,
+      })
+
+      if (!imageExists) {
+        return yield* Effect.fail(
+          new ContainerError({
             cause: "CreateFailed",
             message: `Sandbox image ${imageName} not found. Please build the image first using: ./scripts/docker-build-all.sh`,
-          })
-        }
+          }),
+        )
+      }
 
-        // Create container with security settings
-        const containerName = generateContainerName(toolPair)
+      // Create container with security settings
+      const containerName = generateContainerName(toolPair)
 
-        // Build HostConfig with optional gVisor runtime
-        const hostConfig: Docker.HostConfig = {
-          NetworkMode: CONTAINER_SECURITY.network,
-          ReadonlyRootfs: CONTAINER_SECURITY.readonly,
-          Tmpfs: CONTAINER_SECURITY.tmpfs,
-          Memory: CONTAINER_SECURITY.memory,
-          CpuQuota: CONTAINER_SECURITY.cpus * 100000, // Convert to CPU quota (100000 = 1 CPU)
-          PidsLimit: CONTAINER_SECURITY.pidsLimit,
-          CapDrop: CONTAINER_SECURITY.capDrop,
-          SecurityOpt: CONTAINER_SECURITY.securityOpt,
-          Ulimits: [
-            {
-              Name: "nofile",
-              Soft: CONTAINER_SECURITY.ulimit.nofile.soft,
-              Hard: CONTAINER_SECURITY.ulimit.nofile.hard,
-            },
-          ],
-          AutoRemove: false, // We'll manage cleanup explicitly
-        }
-
-        // Add gVisor runtime if enabled
-        if (SandboxConfig.useGvisor) {
-          hostConfig.Runtime = SandboxConfig.gvisorRuntime
-        }
-
-        const container = await docker.createContainer({
-          Image: imageName,
-          name: containerName,
-          HostConfig: hostConfig,
-          Labels: {
-            "toolkata.tool-pair": toolPair,
+      // Build HostConfig with optional gVisor runtime
+      const hostConfig: Docker.HostConfig = {
+        NetworkMode: CONTAINER_SECURITY.network,
+        ReadonlyRootfs: CONTAINER_SECURITY.readonly,
+        Tmpfs: CONTAINER_SECURITY.tmpfs,
+        Memory: CONTAINER_SECURITY.memory,
+        CpuQuota: CONTAINER_SECURITY.cpus * 100000, // Convert to CPU quota (100000 = 1 CPU)
+        PidsLimit: CONTAINER_SECURITY.pidsLimit,
+        CapDrop: CONTAINER_SECURITY.capDrop,
+        SecurityOpt: CONTAINER_SECURITY.securityOpt,
+        Ulimits: [
+          {
+            Name: "nofile",
+            Soft: CONTAINER_SECURITY.ulimit.nofile.soft,
+            Hard: CONTAINER_SECURITY.ulimit.nofile.hard,
           },
-          Env: [`TOOL_PAIR=${toolPair}`],
-          // Attach stdin/stdout/stderr for terminal interaction
-          OpenStdin: true,
-          Tty: true,
-          // Keep container running
-          Cmd: ["/bin/bash"], // Will use entrypoint.sh in production
-        })
+        ],
+        AutoRemove: false, // We'll manage cleanup explicitly
+      }
 
-        // Start the container
-        await container.start()
+      // Add gVisor runtime if enabled
+      if (SandboxConfig.useGvisor) {
+        hostConfig.Runtime = SandboxConfig.gvisorRuntime
+      }
 
-        return {
-          id: container.id,
-          name: containerName,
-          toolPair,
-          createdAt: new Date(),
-        }
-      },
-      catch: (error) => {
-        if (error instanceof ContainerError) {
-          return error
-        }
-        return new ContainerError({
-          cause: "CreateFailed",
-          message: error instanceof Error ? error.message : "Unknown error creating container",
-          originalError: error,
-        })
-      },
-    })
+      const container = yield* Effect.tryPromise({
+        try: async () => {
+          return await docker.createContainer({
+            Image: imageName,
+            name: containerName,
+            HostConfig: hostConfig,
+            Labels: {
+              "toolkata.tool-pair": toolPair,
+              "toolkata.environment": environment,
+            },
+            Env: [`TOOL_PAIR=${toolPair}`, `ENVIRONMENT=${environment}`],
+            // Attach stdin/stdout/stderr for terminal interaction
+            OpenStdin: true,
+            Tty: true,
+            // Keep container running
+            Cmd: ["/bin/bash"], // Will use entrypoint.sh in production
+          })
+        },
+        catch: (error) => {
+          return new ContainerError({
+            cause: "CreateFailed",
+            message: error instanceof Error ? error.message : "Unknown error creating container",
+            originalError: error,
+          })
+        },
+      })
+
+      // Start the container
+      yield* Effect.tryPromise({
+        try: async () => await container.start(),
+        catch: (error) => {
+          return new ContainerError({
+            cause: "CreateFailed",
+            message: error instanceof Error ? error.message : "Failed to start container",
+            originalError: error,
+          })
+        },
+      })
+
+      return {
+        id: container.id,
+        name: containerName,
+        toolPair,
+        createdAt: new Date(),
+      }
+    }).pipe(
+      Effect.catchTag("EnvironmentError", (error) =>
+        Effect.fail(
+          new ContainerError({
+            cause: "CreateFailed",
+            message: `Invalid environment: ${error.message}`,
+            originalError: error,
+          }),
+        ),
+      ),
+    )
 
   const destroy = (containerId: string) =>
     Effect.gen(function* () {

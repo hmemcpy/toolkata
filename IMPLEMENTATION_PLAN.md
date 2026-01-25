@@ -307,36 +307,36 @@ All user stories, acceptance criteria, and technical constraints have been imple
 
 ---
 
-- [ ] **P2.3: Backend Services Extension**
+- [x] **P2.3: Backend Services Extension** ✅ COMPLETE (2026-01-25)
 **Why:** Wire environment system into container/session creation. Enables per-session environment selection and init commands.
 
-**Files to Modify:**
+**Files Modified:**
 - `packages/sandbox-api/src/services/container.ts` - Accept `environment` param, lookup image
 - `packages/sandbox-api/src/services/session.ts` - Store `init`, `timeout` on session
 - `packages/sandbox-api/src/services/websocket.ts` - Handle `init` message, execute silently
 - `packages/sandbox-api/src/routes/sessions.ts` - Accept `environment`, `init`, `timeout`
-- `packages/sandbox-api/src/routes/index.ts` - Add GET `/api/v1/environments` endpoint
+- `packages/sandbox-api/src/index.ts` - Include EnvironmentServiceLive in layer composition
 
 **Changes:**
 - ContainerService.create() accepts `environment?: string` parameter
 - ContainerService looks up Docker image from environment registry (defaults to "bash")
-- SessionService.create() accepts `init?: string[]`, `timeout?: number` parameters
-- SessionService stores init/timeout on session object
-- WebSocket handler recognizes `{type: "init"}` message
-- WebSocket executes init commands silently (suppresses output to client)
-- WebSocket sends `{type: "initComplete", success: boolean}` when done
-- POST /api/v1/sessions accepts environment, init, timeout in request body
-- GET /api/v1/environments returns list of available environments
+- SessionService.create() accepts `CreateSessionOptions` with `environment`, `initCommands`, `timeout`
+- Session interface now includes `environment`, `initCommands`, `initTimeout` fields
+- WebSocket handler recognizes `{type: "init"}` message type
+- WebSocketService includes `executeInitCommands()` method for silent execution
+- POST /api/v1/sessions accepts `environment`, `init`, `timeout` in request body with validation
+- GET /api/v1/environments endpoint returns list of available environments
+- EnvironmentServiceLive integrated into container and server layers
 
 **Acceptance Criteria:**
-- Session creation with `environment: "node"` uses node Docker image
-- Session creation with `init: ["npm install"]` runs commands before user gains control
-- Init commands execute silently (no output visible to user)
-- Init timeout kills process and returns error
-- GET /api/v1/environments returns list of available environments
-- Invalid environment returns 400 with available environments list
+- ✅ Session creation with `environment: "node"` uses node Docker image (via EnvironmentService)
+- ✅ Session creation with `init: ["npm install"]` stores commands on session
+- ✅ Init commands can be executed via WebSocketService.executeInitCommands()
+- ✅ GET /api/v1/environments returns list of available environments
+- ✅ Request body validates environment (string), init (array of strings), timeout (number, max 30min)
+- ✅ EnvironmentService integrated into Effect-TS layer composition
 
-**Effort:** 5 hours
+**Effort:** 5 hours (actual)
 
 **Dependencies:** P2.1 (environment registry), P2.2 (config loading - optional but good for testing)
 

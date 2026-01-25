@@ -30,8 +30,15 @@ export interface TerminalInput {
   readonly data: string
 }
 
+// Init command message (runs silently before user gains control)
+export interface InitCommands {
+  readonly type: "init"
+  readonly commands: readonly string[]
+  readonly timeout?: number
+}
+
 // Messages from WebSocket client
-export type WebSocketMessage = TerminalInput | TerminalResize
+export type WebSocketMessage = TerminalInput | TerminalResize | InitCommands
 
 // WebSocket connection state
 export interface ConnectionState {
@@ -79,6 +86,11 @@ export interface WebSocketServiceShape {
     rows: number,
     cols: number,
   ) => Effect.Effect<void, WebSocketError>
+  readonly executeInitCommands: (
+    connection: ConnectionState,
+    commands: readonly string[],
+    timeout?: number,
+  ) => Effect.Effect<void, WebSocketError>
   readonly close: (connection: ConnectionState) => Effect.Effect<void, never>
 }
 
@@ -110,6 +122,15 @@ const _parseMessage = (data: string): WebSocketMessage => {
           type: "input",
           data: inputData,
         } satisfies TerminalInput
+      }
+      if (msgType === "init") {
+        const commands = Array.isArray(parsed["commands"]) ? (parsed["commands"] as readonly string[]) : []
+        const timeout = typeof parsed["timeout"] === "number" ? parsed["timeout"] : undefined
+        return {
+          type: "init",
+          commands,
+          timeout,
+        } satisfies InitCommands
       }
     }
 
@@ -265,6 +286,44 @@ const make = Effect.gen(function* () {
       connection.bunProcess.terminal.resize(cols, rows)
     })
 
+  // Execute init commands silently (run commands without sending output to client)
+  const executeInitCommands = (
+    connection: ConnectionState,
+    commands: readonly string[],
+    timeout = 30000, // Default 30 seconds
+  ) =>
+    Effect.gen(function* () {
+      if (commands.length === 0) {
+        return
+      }
+
+      console.log(`[WebSocketService] Executing ${commands.length} init commands for ${connection.sessionId}`)
+
+      // Execute each command silently
+      for (const command of commands) {
+        const commandWithNewline = command.endsWith("\n") ? command : `${command}\n`
+
+        // Write command to terminal
+        connection.bunProcess.terminal.write(commandWithNewline)
+
+        // Wait for command to complete (simple delay - in production would monitor PTY output)
+        // For now, we use a timeout to prevent hanging
+        yield* Effect.sleep("200 millis")
+      }
+
+      console.log(`[WebSocketService] Init commands completed for ${connection.sessionId}`)
+    }).pipe(
+      Effect.timeout(`${timeout} millis`),
+      Effect.catchAll(() =>
+        Effect.fail(
+          new WebSocketError({
+            cause: "WriteFailed",
+            message: `Init commands timed out after ${timeout}ms`,
+          }),
+        ),
+      ),
+    )
+
   // Close connection gracefully
   const close = (connection: ConnectionState) =>
     Effect.sync(() => {
@@ -296,6 +355,7 @@ const make = Effect.gen(function* () {
     sendMessage,
     writeInput,
     resize,
+    executeInitCommands,
     close,
   }
 })

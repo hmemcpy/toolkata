@@ -10,10 +10,13 @@ export interface Session {
   readonly id: string
   readonly containerId: string
   readonly toolPair: string
+  readonly environment: string
   readonly state: SessionState
   readonly createdAt: Date
   readonly expiresAt: Date
   readonly lastActivityAt: Date
+  readonly initCommands: readonly string[]
+  readonly initTimeout: number
 }
 
 // Timeout configuration (from PLAN.md)
@@ -35,9 +38,17 @@ export class SessionError extends Data.TaggedClass("SessionError")<{
   readonly originalError?: unknown
 }> {}
 
+// Options for creating a session
+export interface CreateSessionOptions {
+  readonly toolPair: string
+  readonly environment?: string
+  readonly initCommands?: readonly string[]
+  readonly timeout?: number
+}
+
 // Service interface
 export interface SessionServiceShape {
-  readonly create: (toolPair: string) => Effect.Effect<Session, SessionError>
+  readonly create: (options: CreateSessionOptions) => Effect.Effect<Session, SessionError>
   readonly get: (sessionId: string) => Effect.Effect<Session, SessionError>
   readonly destroy: (sessionId: string) => Effect.Effect<void, SessionError>
   readonly updateActivity: (sessionId: string) => Effect.Effect<void, SessionError>
@@ -95,9 +106,13 @@ const make = Effect.gen(function* () {
   const schedulerRef = yield* Ref.make<ReturnType<typeof setInterval> | null>(null)
 
   // Create a new session
-  const create = (toolPair: string) =>
+  const create = (options: CreateSessionOptions) =>
     Effect.gen(function* () {
-      return yield* Effect.all([containerService.create(toolPair), Ref.get(storeRef)]).pipe(
+      const environment = options.environment ?? "bash"
+      const initCommands = options.initCommands ?? []
+      const timeout = options.timeout ?? TIMEOUTS.maxLifetime
+
+      return yield* Effect.all([containerService.create(options.toolPair, environment), Ref.get(storeRef)]).pipe(
         Effect.flatMap(([container, store]) =>
           Effect.gen(function* () {
             const sessionId = generateSessionId()
@@ -107,10 +122,13 @@ const make = Effect.gen(function* () {
               id: sessionId,
               containerId: container.id,
               toolPair: container.toolPair,
+              environment,
               state: "RUNNING",
               createdAt: now,
-              expiresAt: new Date(now.getTime() + TIMEOUTS.maxLifetime),
+              expiresAt: new Date(now.getTime() + timeout),
               lastActivityAt: now,
+              initCommands,
+              initTimeout: timeout,
             }
 
             // Check for ID collisions (extremely unlikely)
@@ -319,7 +337,7 @@ const make = Effect.gen(function* () {
   )
 
   return {
-    create: (toolPair: string) => create(toolPair),
+    create: (options: CreateSessionOptions) => create(options),
     get: (sessionId: string) => get(sessionId),
     destroy: (sessionId: string) => destroy(sessionId),
     updateActivity: (sessionId: string) => updateActivity(sessionId),
