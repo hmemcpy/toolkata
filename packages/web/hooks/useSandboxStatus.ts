@@ -32,12 +32,19 @@ interface UseSandboxStatusResult {
 // Default poll interval (30 seconds)
 const POLL_INTERVAL = 30000
 
-export function useSandboxStatus(): UseSandboxStatusResult {
+export function useSandboxStatus(opts: { readonly enabled?: boolean } = {}): UseSandboxStatusResult {
+  const { enabled = true } = opts
   const [status, setStatus] = useState<SandboxStatus | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // Don't poll if sandbox is disabled
+    if (!enabled) {
+      setIsLoading(false)
+      return
+    }
+
     const statusUrl = `${getSandboxHttpUrl()}/api/v1/status`
 
     const fetchStatus = async () => {
@@ -71,7 +78,7 @@ export function useSandboxStatus(): UseSandboxStatusResult {
     const interval = setInterval(fetchStatus, POLL_INTERVAL)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [enabled])
 
   return {
     status,

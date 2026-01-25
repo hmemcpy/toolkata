@@ -144,6 +144,7 @@ export function MobileBottomSheet({ toolPair }: MobileBottomSheetProps): ReactNo
     sessionTimeRemaining,
     onTerminalStateChange,
     onTerminalTimeChange,
+    sandboxConfig,
   } = useTerminalContext()
   const sheetRef = useRef<HTMLDivElement>(null)
   const handleRef = useRef<HTMLDivElement>(null)
@@ -151,6 +152,16 @@ export function MobileBottomSheet({ toolPair }: MobileBottomSheetProps): ReactNo
   const [isDragging, setIsDragging] = useState(false)
   const [startY, setStartY] = useState(0)
   const [currentY, setCurrentY] = useState(0)
+
+  // If sandbox is disabled, don't render the sheet at all
+  if (sandboxConfig?.enabled === false) {
+    return null
+  }
+
+  // Don't render if closed (mobile only - handled by CSS media query)
+  if (!isOpen) {
+    return null
+  }
 
   // Handle Escape key to close sheet
   useEffect(() => {
@@ -204,11 +215,6 @@ export function MobileBottomSheet({ toolPair }: MobileBottomSheetProps): ReactNo
     setIsDragging(false)
     setCurrentY(0)
   }, [isDragging, currentY, closeSidebar])
-
-  // Don't render if closed (mobile only - handled by CSS media query)
-  if (!isOpen) {
-    return null
-  }
 
   // Calculate transform based on drag
   const transform = currentY > 0 ? `translateY(${currentY}px)` : "translateY(0)"

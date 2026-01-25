@@ -37,6 +37,16 @@ export interface ToolConfig {
 }
 
 /**
+ * Helper type for sandbox config parsing.
+ */
+type SandboxConfig = {
+  readonly enabled: boolean
+  readonly environment: "bash" | "node" | "python"
+  readonly timeout: number
+  readonly init: readonly string[]
+}
+
+/**
  * Global defaults when no config.yml exists.
  */
 export const DEFAULT_TOOL_CONFIG: ToolConfig = {
@@ -75,12 +85,20 @@ function parseToolConfig(yaml: string, _filePath: string): Effect.Effect<ToolCon
  * This is a lightweight alternative to a full YAML parser.
  */
 function extractYamlValues(yaml: string): RawToolConfig {
-  const enabledMatch = yaml.match(/enabled:\s*(true|false)/)
-  const envMatch = yaml.match(/environment:\s*(bash|node|python)/)
-  const timeoutMatch = yaml.match(/timeout:\s*(\d+)/)
-  const initMatches = yaml.match(/init:\s*\n((?:\s*-\s*[^\n]+\n?)+)/)
+  // Extract the defaults section to avoid matching values in comments
+  const defaultsMatch = yaml.match(/defaults:\s*\n((?:[ \t]+[^\n]+\n?)+)/)
 
-  type SandboxConfig = Required<NonNullable<RawToolConfig["defaults"]>["sandbox"]>
+  if (!defaultsMatch) {
+    return {}
+  }
+
+  const defaultsSection = defaultsMatch[1]!
+
+  const enabledMatch = defaultsSection.match(/enabled:\s*(true|false)/)
+  const envMatch = defaultsSection.match(/environment:\s*(bash|node|python)/)
+  const timeoutMatch = defaultsSection.match(/timeout:\s*(\d+)/)
+  const initMatches = defaultsSection.match(/init:\s*\n((?:\s*-\s*[^\n]+\n?)+)/)
+
   const sandboxConfig: Partial<SandboxConfig> = {}
 
   if (enabledMatch) {

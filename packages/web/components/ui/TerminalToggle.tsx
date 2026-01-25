@@ -45,8 +45,14 @@ export interface TerminalToggleProps {
  * Toggles the terminal sidebar/bottom sheet when clicked.
  */
 export function TerminalToggle({ className = "" }: TerminalToggleProps): ReactNode {
-  const { state, isOpen, toggleSidebar } = useTerminalContext()
-  const { isUnavailable, reason } = useSandboxStatus()
+  const { state, isOpen, toggleSidebar, sandboxConfig } = useTerminalContext()
+  const sandboxEnabled = sandboxConfig?.enabled ?? true
+  const { isUnavailable, reason } = useSandboxStatus({ enabled: sandboxEnabled })
+
+  // Hide when sandbox is disabled for the current page
+  if (sandboxConfig?.enabled === false) {
+    return null
+  }
 
   // Hide on desktop when sidebar is open
   if (isOpen) {

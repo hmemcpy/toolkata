@@ -95,7 +95,7 @@ export default async function StepPage(props: {
 
   // Load tool-pair config and resolve sandbox configuration
   // Sandbox config is resolved from: step frontmatter → tool-pair config.yml → global defaults
-  const toolConfigResult = await loadToolConfig(toolPair, process.cwd()).pipe(
+  const toolConfigResult = await loadToolConfig(toolPair, "content/comparisons").pipe(
     (await import("effect")).Effect.either,
     (await import("effect")).Effect.runPromise,
   )
