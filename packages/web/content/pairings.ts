@@ -115,7 +115,7 @@ export const toolPairings = [
     },
     to: {
       name: "ZIO",
-      description: "ZIO 2.0 for Cats Effect experts",
+      description: "ZIO 2.0 for Cats Effect users",
       color: "#0066ff",
       icon: "scala",
     },
