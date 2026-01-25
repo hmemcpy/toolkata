@@ -17,12 +17,9 @@ import { BackButton } from "../../../components/ui/BackButton"
 import { Footer } from "../../../components/ui/Footer"
 import { Header } from "../../../components/ui/Header"
 import { GlossaryClientWrapper } from "../../../components/ui/GlossaryClientWrapper"
-import { catsZioGlossary, getCategories as getCatsZioCategories } from "../../../content/glossary/cats-zio"
+import { catsZioGlossary } from "../../../content/glossary/cats-zio"
 import { getPairing, isValidPairingSlug } from "../../../content/pairings"
-import {
-  getCategories as getJJCategories,
-  jjGitGlossary,
-} from "../../../content/glossary/jj-git"
+import { jjGitGlossary } from "../../../content/glossary/jj-git"
 
 /**
  * Generate static params for all known tool pairings.
@@ -85,9 +82,8 @@ export default async function CheatSheetPage({
     notFound()
   }
 
-  // Select glossary and categories based on tool pair
+  // Select glossary based on tool pair
   const entries = toolPair === "cats-zio" ? catsZioGlossary : jjGitGlossary
-  const categories = toolPair === "cats-zio" ? getCatsZioCategories() : getJJCategories()
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
@@ -107,7 +103,6 @@ export default async function CheatSheetPage({
         {/* Client wrapper for interactive cheat sheet */}
         <GlossaryClientWrapper
           entries={entries}
-          categories={categories}
           toolPair={toolPair}
           pairingFrom={pairing.from.name}
           pairingTo={pairing.to.name}

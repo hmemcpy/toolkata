@@ -41,7 +41,7 @@ This plan covers multiple specifications for toolkata improvements, prioritized 
 
 | Feature | Spec | Impact | Complexity |
 |---------|------|--------|------------|
-| **cats-zio config.yml** | cats-zio-improvements.md R1 | Blocks cats-zio usage | Low |
+| ~~**cats-zio config.yml**~~ | cats-zio-improvements.md R1 | ~~Blocks cats-zio usage~~ | ~~Low~~ |
 | **Shiki rehype plugin** | cats-zio-improvements.md R2 | No syntax highlighting | Medium |
 | **ScalaComparisonBlock highlighting** | cats-zio-improvements.md R2 | No Scala highlighting | Medium |
 | **Shrinking layout** | sandbox-integration.md R2 | Overlay blocks content | Medium |
@@ -54,14 +54,18 @@ This plan covers multiple specifications for toolkata improvements, prioritized 
 
 ### P0: Critical Fixes (Blocking)
 
-- [ ] **Create cats-zio config.yml** — Add `packages/web/content/comparisons/cats-zio/config.yml` with `sandbox: enabled: false` to prevent ERR_CONNECTION_REFUSED errors. Copy structure from jj-git/config.yml.
+- [x] **Create cats-zio config.yml** — Created `packages/web/content/comparisons/cats-zio/config.yml` with `sandbox: enabled: false` to prevent ERR_CONNECTION_REFUSED errors. Also fixed type error in glossary/cheatsheet pages (removed unused `categories` prop passed to `GlossaryClientWrapper`).
 
 **Why**: The terminal sidebar currently tries to connect for cats-zio pages, causing console errors and broken UX. Config.yml with `enabled: false` will prevent the sidebar from rendering.
 
 **Files**:
-- `packages/web/content/comparisons/cats-zio/config.yml` (CREATE)
+- `packages/web/content/comparisons/cats-zio/config.yml` (CREATED)
+- `packages/web/app/[toolPair]/cheatsheet/page.tsx` (FIXED - removed unused categories import/prop)
+- `packages/web/app/[toolPair]/glossary/page.tsx` (FIXED - removed unused categories import/prop)
 
 **Validation**: Navigate to `/cats-zio/1`, verify no terminal errors in console, no sidebar FAB visible.
+
+**Bug discovered**: `GlossaryClientWrapper` doesn't accept a `categories` prop (it extracts categories internally from entries), but both `cheatsheet/page.tsx` and `glossary/page.tsx` were passing it, causing TypeScript errors.
 
 ---
 
@@ -298,11 +302,11 @@ Internal:
 
 ## Task Count
 
-**Total pending tasks**: 17
-**Completed tasks**: 1 (terminal state callbacks)
+**Total pending tasks**: 34
+**Completed tasks**: 2 (terminal state callbacks, cats-zio config.yml + bug fix)
 
 Priority breakdown:
-- P0: 1 task (critical blocker)
+- P0: 0 tasks (all critical blockers completed)
 - P1: 5 tasks (syntax highlighting)
 - P2: 1 task (shrinking layout)
 - P3: 5 tasks (UX prototype - high complexity)
