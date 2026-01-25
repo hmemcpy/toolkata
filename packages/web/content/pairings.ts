@@ -54,7 +54,7 @@ export interface ToolPairing {
     | "Version Control"
     | "Package Management"
     | "Build Tools"
-    | "Programming Languages"
+    | "Libraries & Frameworks"
     | "Other"
 
   /**
@@ -81,7 +81,7 @@ export interface ToolPairing {
 /**
  * Registry of all tool pairings.
  *
- * Published: jj-git (Version Control), cats-effect-zio (Programming Languages).
+ * Published: jj-git (Version Control), cats-effect-zio (Libraries & Frameworks).
  * Others are placeholders for future expansion.
  */
 export const toolPairings = [
@@ -119,7 +119,7 @@ export const toolPairings = [
       color: "#8b5cf6",
       icon: "code",
     },
-    category: "Programming Languages" as const,
+    category: "Libraries & Frameworks" as const,
     steps: 10,
     estimatedTime: "~45 min",
     status: "published" as const,
