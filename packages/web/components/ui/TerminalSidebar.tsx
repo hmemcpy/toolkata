@@ -149,6 +149,7 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
     closeSidebar,
     state,
     sessionTimeRemaining,
+    sandboxConfig,
     sidebarWidth,
     setSidebarWidth,
     infoPanelCollapsed,
@@ -258,6 +259,11 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
     }
   }, [isResizing, setSidebarWidth])
 
+  // If sandbox is disabled, don't render the sidebar at all
+  if (sandboxConfig?.enabled === false) {
+    return null
+  }
+
   return (
     <>
       {/* Sidebar - always mounted, hidden via transform when closed */}
@@ -321,6 +327,7 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
                   ref={terminalRefCallback}
                   toolPair={toolPair}
                   stepId="sidebar"
+                  {...(sandboxConfig !== undefined ? { sandboxConfig } : {})}
                   onStateChange={onTerminalStateChange}
                   onSessionTimeChange={onTerminalTimeChange}
                   onPtyReady={handlePtyReady}

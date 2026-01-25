@@ -7,6 +7,9 @@ import { StepPageClientWrapper } from "../../../components/ui/StepPageClientWrap
 import { getPairing, isValidPairingSlug } from "../../../content/pairings"
 import { mdxComponents } from "../../../components/mdx/MDXComponents"
 import { loadStep } from "../../../services/content"
+import { loadToolConfig } from "../../../lib/content-core"
+import { resolveSandboxConfig, type RawSandboxConfig } from "../../../lib/content/types"
+import type { SandboxConfig } from "../../../components/ui/InteractiveTerminal"
 
 /**
  * Generate static params for all steps of all published tool pairings.
@@ -88,6 +91,23 @@ export default async function StepPage(props: {
 
   const { frontmatter, content } = stepContent
 
+  // Load tool-pair config and resolve sandbox configuration
+  // Sandbox config is resolved from: step frontmatter → tool-pair config.yml → global defaults
+  const toolConfigResult = await loadToolConfig(toolPair, process.cwd()).pipe(
+    (await import("effect")).Effect.either,
+    (await import("effect")).Effect.runPromise,
+  )
+
+  const toolConfig =
+    toolConfigResult._tag === "Right"
+      ? toolConfigResult.right
+      : ({ sandbox: { enabled: true, environment: "bash" as const, timeout: 60, init: [] as const } } as const)
+
+  const sandboxConfig: SandboxConfig = resolveSandboxConfig(
+    frontmatter.sandbox as RawSandboxConfig | undefined,
+    toolConfig,
+  )
+
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
       <Header />
@@ -102,6 +122,7 @@ export default async function StepPage(props: {
             previousHref={stepNum > 1 ? `/${toolPair}/${stepNum - 1}` : `/${toolPair}`}
             nextHref={stepNum < pairing.steps ? `/${toolPair}/${stepNum + 1}` : null}
             stepCommands={frontmatter.jjCommands ?? []}
+            sandboxConfig={sandboxConfig}
           >
             {/* MDX Content */}
             <article className="prose prose-invert max-w-none">

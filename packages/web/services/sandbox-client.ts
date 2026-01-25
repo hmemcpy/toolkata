@@ -44,6 +44,9 @@ export interface Session {
  */
 interface CreateSessionRequest {
   readonly toolPair: string
+  readonly environment?: string
+  readonly init?: readonly string[]
+  readonly timeout?: number
 }
 
 /**
@@ -67,6 +70,21 @@ export interface CreateSessionOptions {
    * The tool pairing slug (e.g., "jj-git").
    */
   readonly toolPair: string
+
+  /**
+   * Runtime environment (e.g., "bash", "node", "python").
+   */
+  readonly environment?: string
+
+  /**
+   * Initialization commands to run on session start.
+   */
+  readonly init?: readonly string[]
+
+  /**
+   * Session timeout in seconds.
+   */
+  readonly timeout?: number
 
   /**
    * Optional callback for WebSocket messages.
@@ -186,12 +204,20 @@ const make = Effect.succeed<SandboxClientShape>({
           headers["X-API-Key"] = SANDBOX_API_KEY
         }
 
+        // Build request body with optional sandbox config
+        const requestBody: CreateSessionRequest = {
+          toolPair: options.toolPair,
+          ...((options.environment || options.init || options.timeout) ? {
+            ...(options.environment ? { environment: options.environment } : {}),
+            ...(options.init ? { init: options.init } : {}),
+            ...(options.timeout ? { timeout: options.timeout } : {}),
+          } : {}),
+        }
+
         const response = await fetch(`${apiUrl}/api/v1/sessions`, {
           method: "POST",
           headers,
-          body: JSON.stringify({
-            toolPair: options.toolPair,
-          } satisfies CreateSessionRequest),
+          body: JSON.stringify(requestBody),
         })
 
         if (!response.ok) {

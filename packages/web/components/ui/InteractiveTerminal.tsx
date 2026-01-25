@@ -58,7 +58,11 @@ interface WsErrorMessage {
   readonly message: string
 }
 
-type WsMessage = WsConnectedMessage | WsOutputMessage | WsErrorMessage
+interface WsInitCompleteMessage {
+  readonly type: "initComplete"
+}
+
+type WsMessage = WsConnectedMessage | WsOutputMessage | WsErrorMessage | WsInitCompleteMessage
 
 /**
  * Type guard to check if a value is a valid WebSocket message.
@@ -70,6 +74,7 @@ const isWsMessage = (value: unknown): value is WsMessage => {
   if (type === "connected") return typeof obj["sessionId"] === "string"
   if (type === "output") return typeof obj["data"] === "string"
   if (type === "error") return typeof obj["message"] === "string"
+  if (type === "initComplete") return true
   return false
 }
 
@@ -126,6 +131,16 @@ export interface InteractiveTerminalRef {
 }
 
 /**
+ * Sandbox configuration for terminal behavior.
+ */
+export interface SandboxConfig {
+  readonly enabled: boolean
+  readonly environment: "bash" | "node" | "python"
+  readonly timeout: number
+  readonly init: readonly string[]
+}
+
+/**
  * Props for InteractiveTerminal component.
  */
 export interface InteractiveTerminalProps {
@@ -138,6 +153,12 @@ export interface InteractiveTerminalProps {
    * The step ID for this terminal instance.
    */
   readonly stepId: string
+
+  /**
+   * Sandbox configuration for this step.
+   * If enabled is false, terminal will not render.
+   */
+  readonly sandboxConfig?: SandboxConfig
 
   /**
    * Optional callback when user clicks a suggested command.
@@ -171,6 +192,14 @@ export interface InteractiveTerminalProps {
    * indicating the PTY is initialized and ready to process commands.
    */
   readonly onPtyReady?: () => void
+
+  /**
+   * Optional callback when init commands complete.
+   *
+   * Called when the server sends an initComplete message,
+   * indicating initialization commands have finished running.
+   */
+  readonly onInitComplete?: () => void
 }
 
 /**
@@ -200,10 +229,12 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
     {
       toolPair,
       stepId: _stepId,
+      sandboxConfig,
       onCommandInsert,
       onStateChange,
       onSessionTimeChange,
       onPtyReady,
+      onInitComplete,
     }: InteractiveTerminalProps,
     ref,
   ) {
@@ -283,8 +314,9 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
       }
     }, [])
 
-    // Storage key for persisting session
-    const sessionStorageKey = `sandbox-session-${toolPair}`
+    // Storage key for persisting session (includes environment for isolation)
+    const environment = sandboxConfig?.environment ?? "bash"
+    const sessionStorageKey = `sandbox-session-${toolPair}-${environment}`
 
     // Start the sandbox session
     const startSession = useCallback(async () => {
@@ -340,10 +372,23 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
           if (SANDBOX_API_KEY) {
             headers["X-API-Key"] = SANDBOX_API_KEY
           }
+
+          // Build request body with sandbox config
+          const requestBody: Record<string, unknown> = { toolPair }
+          if (sandboxConfig?.environment) {
+            requestBody["environment"] = sandboxConfig.environment
+          }
+          if (sandboxConfig?.init) {
+            requestBody["init"] = sandboxConfig.init
+          }
+          if (sandboxConfig?.timeout) {
+            requestBody["timeout"] = sandboxConfig.timeout
+          }
+
           const response = await fetch(`${httpUrl}/api/v1/sessions`, {
             method: "POST",
             headers,
-            body: JSON.stringify({ toolPair }),
+            body: JSON.stringify(requestBody),
           })
 
           if (!response.ok) {
@@ -424,6 +469,11 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
               if (msg.type === "connected" || msg.type === "error") {
                 return
               }
+              // Handle initComplete message
+              if (msg.type === "initComplete") {
+                onInitComplete?.()
+                return
+              }
               // Extract terminal output from output messages (e.g., welcome banner)
               if (msg.type === "output") {
                 data = msg.data
@@ -497,7 +547,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
         setState("ERROR")
         setError(err instanceof Error ? err.message : "Failed to connect to sandbox")
       }
-    }, [onPtyReady, toolPair, sessionStorageKey])
+    }, [onPtyReady, onInitComplete, toolPair, sandboxConfig, sessionStorageKey])
 
     // Reset the terminal (creates fresh session if expired/error, otherwise reconnects)
     const reset = useCallback(() => {

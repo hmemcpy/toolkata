@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import type { TerminalState } from "../components/ui/InteractiveTerminal"
+import type { SandboxConfig, TerminalState } from "../components/ui/InteractiveTerminal"
 
 // Re-export TerminalState from InteractiveTerminal for convenience
 export type { TerminalState }
@@ -101,6 +101,16 @@ export interface TerminalContextValue {
    * Session time remaining in seconds, or null if no active session.
    */
   readonly sessionTimeRemaining: number | null
+
+  /**
+   * Current sandbox configuration for the active step.
+   */
+  readonly sandboxConfig: SandboxConfig | undefined
+
+  /**
+   * Set the sandbox configuration (triggers re-init if changed).
+   */
+  readonly setSandboxConfig: (config: SandboxConfig | undefined) => void
 
   /**
    * Commands from the current step's MDX frontmatter.
@@ -256,11 +266,27 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
   // Context commands from MDX frontmatter
   const [contextCommands, setContextCommandsState] = useState<readonly string[]>([])
 
+  // Sandbox config for current step
+  const [sandboxConfig, setSandboxConfigState] = useState<SandboxConfig | undefined>(undefined)
+  const previousSandboxConfigRef = useRef<SandboxConfig | undefined>(undefined)
+
   // Info panel collapsed state with localStorage persistence
   const [infoPanelCollapsed, setInfoPanelCollapsedState] = useState(false)
 
   // Info panel height percentage with localStorage persistence
   const [infoPanelHeight, setInfoPanelHeightState] = useState(DEFAULT_INFO_PANEL_HEIGHT)
+
+  // Terminal connection state (managed by InteractiveTerminal via callbacks)
+  const [state, setState] = useState<TerminalState>("IDLE")
+
+  // Session time remaining (managed by InteractiveTerminal via callbacks)
+  const [sessionTimeRemaining, setSessionTimeRemaining] = useState<number | null>(null)
+
+  // Ref to terminal for imperative operations
+  const terminalRef = useRef<TerminalRef | null>(null)
+
+  // Queue for commands sent while terminal is CONNECTING
+  const commandQueueRef = useRef<readonly string[]>([])
 
   // Load sidebar state from localStorage on mount
   useEffect(() => {
@@ -296,6 +322,45 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
     setContextCommandsState(commands)
   }, [])
 
+  /**
+   * Set sandbox config and trigger re-initialization if changed.
+   *
+   * Compares the new config with the previous one to detect changes in:
+   * - enabled status
+   * - environment
+   * - init commands
+   * - timeout
+   *
+   * If any of these change, the terminal session is reset to apply the new config.
+   */
+  const setSandboxConfig = useCallback(
+    (newConfig: SandboxConfig | undefined) => {
+      const previous = previousSandboxConfigRef.current
+
+      // Check if config changed in meaningful ways
+      const configChanged =
+        !previous !== !newConfig ||
+        (previous && newConfig &&
+          (previous.enabled !== newConfig.enabled ||
+           previous.environment !== newConfig.environment ||
+           previous.timeout !== newConfig.timeout ||
+           JSON.stringify(previous.init) !== JSON.stringify(newConfig.init)))
+
+      setSandboxConfigState(newConfig)
+      previousSandboxConfigRef.current = newConfig
+
+      // If config changed and terminal is active, reset to apply new config
+      if (configChanged && terminalRef.current) {
+        const currentState = state
+        if (currentState === "CONNECTED" || currentState === "TIMEOUT_WARNING") {
+          // Reset terminal to start fresh session with new config
+          terminalRef.current.reset()
+        }
+      }
+    },
+    [state],
+  )
+
   // Wrapper to save info panel collapsed state to localStorage
   const setInfoPanelCollapsed = useCallback((collapsed: boolean) => {
     setInfoPanelCollapsedState(collapsed)
@@ -307,18 +372,6 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
     setInfoPanelHeightState(height)
     localStorage.setItem("terminal-info-panel-height", String(height))
   }, [])
-
-  // Terminal connection state (managed by InteractiveTerminal via callbacks)
-  const [state, setState] = useState<TerminalState>("IDLE")
-
-  // Session time remaining (managed by InteractiveTerminal via callbacks)
-  const [sessionTimeRemaining, setSessionTimeRemaining] = useState<number | null>(null)
-
-  // Ref to terminal for imperative operations
-  const terminalRef = useRef<TerminalRef | null>(null)
-
-  // Queue for commands sent while terminal is CONNECTING
-  const commandQueueRef = useRef<readonly string[]>([])
 
   /**
    * Open the sidebar.
@@ -459,6 +512,8 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       sidebarWidth,
       setSidebarWidth,
       sessionTimeRemaining,
+      sandboxConfig,
+      setSandboxConfig,
       contextCommands,
       setContextCommands,
       infoPanelCollapsed,
@@ -480,6 +535,8 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       sidebarWidth,
       setSidebarWidth,
       sessionTimeRemaining,
+      sandboxConfig,
+      setSandboxConfig,
       contextCommands,
       setContextCommands,
       infoPanelCollapsed,

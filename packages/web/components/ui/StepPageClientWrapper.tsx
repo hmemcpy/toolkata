@@ -30,6 +30,7 @@ import { KeyboardShortcutsModal } from "./KeyboardShortcutsModal"
 import { NavigationWrapper } from "./NavigationWrapper"
 import { StepProgressWrapper } from "./StepProgressWrapper"
 import { useTerminalContext } from "../../contexts/TerminalContext"
+import type { SandboxConfig } from "./InteractiveTerminal"
 
 export interface StepPageClientWrapperProps {
   /**
@@ -71,6 +72,11 @@ export interface StepPageClientWrapperProps {
    * Commands from the step's MDX frontmatter to show in the info panel.
    */
   readonly stepCommands: readonly string[]
+
+  /**
+   * Sandbox configuration for this step.
+   */
+  readonly sandboxConfig?: SandboxConfig
 }
 
 /**
@@ -94,10 +100,11 @@ export function StepPageClientWrapper({
   nextHref,
   children,
   stepCommands,
+  sandboxConfig,
 }: StepPageClientWrapperProps) {
   const router = useRouter()
   const { isOpen, onClose, showModal } = useKeyboardShortcutsModal()
-  const { toggleSidebar, setContextCommands } = useTerminalContext()
+  const { toggleSidebar, setContextCommands, setSandboxConfig } = useTerminalContext()
 
   // Register step commands in context on mount and when step changes
   useEffect(() => {
@@ -108,6 +115,13 @@ export function StepPageClientWrapper({
       setContextCommands([])
     }
   }, [stepCommands, setContextCommands])
+
+  // Register sandbox config in context on mount and when step changes
+  useEffect(() => {
+    setSandboxConfig(sandboxConfig)
+
+    // No need to clear on unmount - next step will set its own config
+  }, [sandboxConfig, setSandboxConfig])
 
   const handleNextStep = () => {
     if (nextHref) {

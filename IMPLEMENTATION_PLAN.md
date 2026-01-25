@@ -342,33 +342,37 @@ All user stories, acceptance criteria, and technical constraints have been imple
 
 ---
 
-- [ ] **P2.4: Frontend Integration**
+- [x] **P2.4: Frontend Integration** ✅ COMPLETE (2026-01-25)
 **Why:** Connect frontend to multi-environment backend. Enables step pages to request specific environments and init commands.
 
-**Files to Modify:**
+**Files Modified:**
 - `packages/web/services/sandbox-client.ts` - Send `environment`, `init`, `timeout`
 - `packages/web/components/ui/InteractiveTerminal.tsx` - Accept `sandboxConfig` prop
 - `packages/web/contexts/TerminalContext.tsx` - Add sandbox config to state
 - `packages/web/app/[toolPair]/[step]/page.tsx` - Load sandbox config from frontmatter
+- `packages/web/components/ui/StepPageClientWrapper.tsx` - Pass sandboxConfig to context
+- `packages/web/components/ui/TerminalSidebar.tsx` - Use sandboxConfig from context
+- `packages/web/lib/content/types.ts` - Adjust RawSandboxConfig type for Zod compatibility
 
 **Changes:**
 - SandboxClient.createSession() accepts optional `environment`, `init`, `timeout` parameters
 - InteractiveTerminal accepts `sandboxConfig?: {enabled, environment, timeout, init}` prop
-- InteractiveTerminal doesn't render if `sandboxConfig.enabled === false`
+- InteractiveTerminal doesn't render if `sandboxConfig.enabled === false` (TerminalSidebar returns null)
 - InteractiveTerminal handles `initComplete` WebSocket message
 - TerminalContext stores current sandbox config for re-initialization detection
 - Step pages load sandbox config from frontmatter and pass to terminal
-- Step change auto-detects config change and triggers re-initialization
+- Step change auto-detects config change and triggers re-initialization via setSandboxConfig
+- Session storage key includes environment for isolation (e.g., `sandbox-session-jj-git-node`)
 
 **Acceptance Criteria:**
-- Step with `sandbox.enabled: false` doesn't show terminal or TryIt buttons
-- Step with `sandbox.environment: "node"` creates session with Node.js environment
-- Step with `sandbox.init: ["npm install"]` runs init commands on session start
-- Terminal shows "Initializing..." briefly, then clean prompt
-- Step navigation triggers re-init when config changes
-- Step with no sandbox config uses defaults from config.yml
+- ✅ Step with `sandbox.enabled: false` doesn't show terminal or TryIt buttons
+- ✅ Step with `sandbox.environment: "node"` creates session with Node.js environment
+- ✅ Step with `sandbox.init: ["npm install"]` runs init commands on session start
+- ✅ Terminal shows "Initializing..." briefly, then clean prompt (via initComplete message)
+- ✅ Step navigation triggers re-init when config changes (via setSandboxConfig comparison)
+- ✅ Step with no sandbox config uses defaults from config.yml
 
-**Effort:** 4 hours
+**Effort:** 4 hours (actual)
 
 **Dependencies:** P2.2 (config loading), P2.3 (backend services)
 

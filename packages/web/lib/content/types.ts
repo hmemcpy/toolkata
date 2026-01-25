@@ -36,12 +36,14 @@ export const DEFAULT_SANDBOX_CONFIG: SandboxConfig = {
 
 /**
  * Raw sandbox config from frontmatter (all fields optional).
+ *
+ * Matches the Zod-inferred type from sandboxConfigSchema.
  */
 export type RawSandboxConfig = {
   readonly enabled?: boolean
   readonly environment?: "bash" | "node" | "python"
   readonly timeout?: number
-  readonly init?: readonly string[]
+  readonly init?: string[]
 }
 
 /**
