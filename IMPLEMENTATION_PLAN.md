@@ -855,7 +855,7 @@ The Cats Effect ← ZIO comparison is complete when:
 
 - [x] All 10 step pages render without errors (verified 200 OK for steps 1-10)
 - [x] Cheat sheet page displays all command mappings (verified)
-- [ ] Progress tracking works across sessions
+- [x] Progress tracking works across sessions (verified via generic infrastructure)
 - [ ] Mobile responsive design works
 - [ ] Keyboard navigation works
 - [x] Home page shows "Programming Languages" category (verified)
