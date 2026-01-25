@@ -8,7 +8,7 @@
     "lint": "biome lint .",
     "format": "biome format --write .",
     "typecheck": "tsc --build",
-    "test": "bun test"
+    "test": "bun run --cwd packages/web test"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
