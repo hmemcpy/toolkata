@@ -1,0 +1,21 @@
+# This directory is reserved for custom environment plugins.
+#
+# To add a new environment:
+# 1. Create a new file in this directory (e.g., `my-custom-env.ts`)
+# 2. Export an EnvironmentConfig object
+# 3. Import and register it in `environments/registry.ts`
+#
+# Example plugin:
+#
+# ```typescript
+# import type { EnvironmentConfig } from "../types.js"
+#
+# export const myCustomEnvironment: EnvironmentConfig = {
+#   name: "ruby",
+#   dockerImage: "toolkata-env:ruby",
+#   defaultTimeout: 120000,
+#   defaultInitCommands: [],
+#   description: "Ruby runtime with bundler",
+#   category: "runtime",
+# }
+# ```

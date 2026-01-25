@@ -1,17 +1,15 @@
 # Implementation Plan: Gap Analysis & Prioritized Tasks
 
-> **Last Updated:** 2026-01-25 (P1.3 Per-Tool-Pair Docker Images Completed)
-> **Planning Mode:** Complete Gap Analysis (Verified & Confirmed)
+> **Last Updated:** 2026-01-25
+> **Planning Status:** Gap Analysis Complete - Ready for Implementation
 > **Scope:** 5 specifications analyzed against existing codebase
-> **Status:** Implementation in progress (4 of ~15 tasks completed)
+> **Status:** P0-P1 COMPLETE, P2 Multi-environment remaining (6 tasks), P3 Polish partial (2 of 4 tasks)
 >
 > **Analysis Method:** Parallel subagents analyzed specs, existing codebase, and specific component implementations to identify gaps.
 
----
-
 ## Executive Summary
 
-After analyzing all 5 specification documents against the current implementation through parallel codebase exploration, here's what's **already implemented** vs. what's **missing**:
+After analyzing all 5 specification documents against the current implementation through parallel codebase exploration, here's the **final implementation status**:
 
 ### Already Implemented (Baseline)
 
@@ -20,7 +18,7 @@ After analyzing all 5 specification documents against the current implementation
 | Core interactive sandbox terminal | ✅ Complete | xterm.js + WebSocket with PTY detection |
 | MDX content loading with frontmatter validation | ✅ Complete | Zod schemas, 12 step files exist |
 | TerminalSidebar with collapsible UI | ✅ Complete | Desktop (400px) + MobileBottomSheet |
-| **TryIt component** | ✅ Complete | Editable commands, expected output, Enter key support (enhanced 2026-01-25) |
+| **TryIt component** | ✅ Complete | Editable commands, expected output, Enter key support |
 | TerminalContext for state management | ✅ Complete | State machine, command queue, session persistence |
 | Progress tracking with localStorage | ✅ Complete | ProgressStore with SSR-compatible cookie sync |
 | Glossary data module | ✅ Complete | 35 command mappings, 8 categories, search/filter |
@@ -29,15 +27,21 @@ After analyzing all 5 specification documents against the current implementation
 | **Terminal state callbacks** | ✅ Complete | Invoked via `useEffect` (InteractiveTerminal.tsx:227-235) |
 | **gVisor runtime integration** | ✅ Complete | Runtime field set when enabled (container.ts:176-178) |
 | **ShrinkingLayout component** | ✅ Complete | Applies margin-right when sidebar open (ShrinkingLayout.tsx:52-63) |
-| **All routes exist** | ✅ Complete | Home, overview, 12 steps, cheatsheet, **glossary** ✅ NEW, help, about, terms (17 total) |
+| **All routes exist** | ✅ Complete | Home, overview, 12 steps, cheatsheet, **glossary**, help, about, terms (17 total) |
+| **Mobile bottom sheet swipe gesture** | ✅ Complete | Touch handlers, 100px threshold (MobileBottomSheet.tsx:170-233) |
+| **'t' key keyboard shortcut** | ✅ Complete | Toggle terminal (useKeyboardNavigation.ts:191-197) |
+| **Bidirectional comparison** | ✅ Complete | DirectionToggle, PreferencesStore, useDirection, DirectionContext |
+| **Cheat Sheet page** | ✅ Complete | `/jj-git/cheatsheet` route with command mapping table |
+| **Logo Preview page** | ✅ Complete | `/logo-preview` route for asset management |
+| **Per-tool-pair Docker images** | ✅ Complete | Base + tool-pair structure (base/, tool-pairs/jj-git/) |
 
 ### Missing Features (Specified but Not Implemented)
 
 | Specification | Status | Missing Components |
 |--------------|--------|-------------------|
-| **bidirectional-comparison.md** | ✅ **COMPLETE** | DirectionToggle, PreferencesStore, useDirection, glossary route (2026-01-25) |
-| **terminal-sidebar.md** | ⚠️ 85% Complete | Swipe gesture, focus trap, `t` key shortcut |
-| **sandbox-integration.md** | ✅ **COMPLETE** | TryIt R3 ✅ COMPLETE, R4 ✅ COMPLETE (per-tool-pair images) |
+| **bidirectional-comparison.md** | ✅ **COMPLETE** | All components implemented (verified 2026-01-25) |
+| **terminal-sidebar.md** | ⚠️ 95% Complete | Focus trap in sidebar only |
+| **sandbox-integration.md** | ✅ **COMPLETE** | All requirements implemented (verified 2026-01-25) |
 | **multi-environment-sandbox.md** | ❌ 0% Complete | Environment registry, config.yml, init protocol, multi-environment Dockerfiles |
 | **toolkata.md** | ✅ Complete | Base requirements already implemented |
 
@@ -45,21 +49,47 @@ After analyzing all 5 specification documents against the current implementation
 
 ## Gap Analysis by Specification
 
-### 1. bidirectional-comparison.md
+### 1. toolkata.md (Base Requirements)
 
-**Status:** ✅ **COMPLETE** (2026-01-25)
+**Status:** ✅ **COMPLETE**
+
+All user stories, acceptance criteria, and technical constraints have been implemented:
+- Home page with tool comparison cards
+- Comparison overview page with step navigation
+- Step pages with MDX content, command comparisons, interactive terminal
+- Cheat sheet page with command mappings
+- Interactive sandbox with session management
+- Progress tracking with localStorage
+- Performance targets met (lazy loading, static generation)
+- Accessibility (WCAG 2.1 AA) with semantic HTML, skip links, focus indicators
+- Security hardening in Docker containers
+- Responsive design (mobile-first, 320px minimum)
 
 **Verification:**
-- ✅ `DirectionToggle` component EXISTS at `packages/web/components/ui/DirectionToggle.tsx`
-- ✅ `PreferencesStore` class EXISTS at `packages/web/core/PreferencesStore.ts`
-- ✅ `useDirection` hook EXISTS at `packages/web/hooks/useDirection.ts`
-- ✅ `DirectionContext` EXISTS at `packages/web/contexts/DirectionContext.tsx`
-- ✅ `SideBySide` component NOW supports direction swap via DirectionContext
-- ✅ `StepProgress` component NOW includes DirectionToggle in header
-- ✅ `Providers` component NOW includes DirectionProvider
-- ✅ `GlossaryClient` component NOW respects direction preference (swaps columns)
-- ✅ **Glossary page route EXISTS** at `/packages/web/app/[toolPair]/glossary/page.tsx`
-- ✅ Glossary data EXISTS at `/packages/web/content/glossary/jj-git.ts` (35 entries, 8 categories)
+- ✅ All routes exist and load correctly
+- ✅ Interactive terminal with xterm.js integration
+- ✅ WebSocket communication with sandbox API
+- ✅ Session management with timeout handling
+- ✅ localStorage persistence for progress
+- ✅ Security: no network access, read-only rootfs, resource limits, gVisor support
+
+---
+
+### 2. bidirectional-comparison.md
+
+**Status:** ✅ **COMPLETE** (verified 2026-01-25)
+
+**Verification:**
+- ✅ `DirectionToggle` component exists at `packages/web/components/ui/DirectionToggle.tsx`
+- ✅ `PreferencesStore` class exists at `packages/web/core/PreferencesStore.ts`
+- ✅ `useDirection` hook exists at `packages/web/hooks/useDirection.ts`
+- ✅ `DirectionContext` exists at `packages/web/contexts/DirectionContext.tsx`
+- ✅ `SideBySide` component supports direction swap via DirectionContext
+- ✅ `StepProgress` component includes DirectionToggle in header
+- ✅ `Providers` component includes DirectionProvider
+- ✅ `GlossaryClient` component respects direction preference (swaps columns)
+- ✅ Glossary page route exists at `/packages/web/app/[toolPair]/glossary/page.tsx`
+- ✅ Glossary data exists at `/packages/web/content/glossary/jj-git.ts` (35 entries, 8 categories)
 
 **Acceptance Criteria Met:**
 - ✅ Toggle displays as `[git ↔ jj]` in header
@@ -74,20 +104,22 @@ After analyzing all 5 specification documents against the current implementation
 **Files Created:**
 1. `packages/web/core/PreferencesStore.ts` - localStorage for direction preference
 2. `packages/web/hooks/useDirection.ts` - Hook to read/write direction preference
-3. `packages/web/components/ui/DirectionToggle.tsx` - Toggle switch with `role="switch"`, `aria-checked`
+3. `packages/web/components/ui/DirectionToggle.tsx` - Toggle switch with accessibility
 4. `packages/web/contexts/DirectionContext.tsx` - React Context for direction state
+5. `packages/web/app/[toolPair]/glossary/page.tsx` - Glossary page route
+6. `packages/web/content/glossary/jj-git.ts` - 35 command mappings with categories
 
 **Files Modified:**
-1. `packages/web/components/ui/SideBySide.tsx` - Now client component, uses DirectionContext to swap columns
+1. `packages/web/components/ui/SideBySide.tsx` - Now client component, uses DirectionContext
 2. `packages/web/components/ui/StepProgress.tsx` - Now client component, includes DirectionToggle
 3. `packages/web/components/Providers.tsx` - Added DirectionProvider wrapper
 4. `packages/web/components/ui/GlossaryClient.tsx` - Uses DirectionContext to swap columns
 
 ---
 
-### 2. terminal-sidebar.md
+### 3. terminal-sidebar.md
 
-**Status:** ✅ **MOSTLY IMPLEMENTED** (85% complete)
+**Status:** ⚠️ **MOSTLY IMPLEMENTED** (95% complete)
 
 **Already Implemented:**
 - ✅ TerminalSidebar component exists with 400px width
@@ -96,32 +128,41 @@ After analyzing all 5 specification documents against the current implementation
 - ✅ TerminalContext for state management
 - ✅ Floating ToggleButton (TerminalToggle.tsx)
 - ✅ Session persistence across navigation
+- ✅ Swipe-to-close gesture on mobile bottom sheet (MobileBottomSheet.tsx:170-233)
+- ✅ Keyboard shortcut `t` to toggle sidebar (useKeyboardNavigation.ts:191-197)
+- ✅ ShrinkingLayout applies margin-right when sidebar open
+- ✅ Terminal state synchronization via callbacks
 
-**Missing Components:**
-- ❌ Swipe-to-close gesture on mobile bottom sheet
-- ❌ Focus trap within sidebar (uses `inert` on body instead)
-- ❌ Keyboard shortcut `t` to toggle sidebar
+**Missing Components (P3.2):**
+- ⚠️ **Focus trap NOT implemented** - No useFocusTrap or custom implementation
+- ⚠️ **Focus return to trigger NOT implemented** - No trigger ref stored
+- ⚠️ **aria-modal is dynamic `{isOpen}`** - Should be `true` when open (line 272)
+
+**Verification (2026-01-25):**
+- Current implementation has `aria-modal={isOpen}` at line 272 (should be `true`)
+- No focus trap library or custom implementation found
+- No reference stored for trigger element
+- Close button focuses on open (lines 205-213) but doesn't trap Tab cycles within sidebar
+- Escape key handler exists (lines 216-227)
 
 **Files to Modify:**
-1. `packages/web/components/ui/MobileBottomSheet.tsx` - Add swipe gesture
-2. `packages/web/components/ui/TerminalSidebar.tsx` - Improve focus management
-3. `packages/web/hooks/useKeyboardNavigation.ts` - Add `t` key handler
+1. `packages/web/components/ui/TerminalSidebar.tsx` - Add focus trap, return focus to trigger, fix aria-modal
 
 ---
 
-### 3. sandbox-integration.md
+### 4. sandbox-integration.md
 
-**Status:** ✅ **COMPLETE** (100% complete - R4 COMPLETED 2026-01-25)
+**Status:** ✅ **COMPLETE** (100% complete)
 
 **Verification:**
 - ✅ **R1:** Terminal state callbacks ARE invoked (InteractiveTerminal.tsx:227-235)
 - ✅ **R2:** Shrinking layout IS implemented (ShrinkingLayout.tsx:52-63)
-- ✅ **R3:** TryIt enhanced with editable commands and expected output (COMPLETED 2026-01-25)
-- ✅ **R4:** Per-tool-pair Docker images (COMPLETED 2026-01-25)
+- ✅ **R3:** TryIt enhanced with editable commands and expected output
+- ✅ **R4:** Per-tool-pair Docker images
   - `packages/sandbox-api/docker/base/Dockerfile` exists
   - `packages/sandbox-api/docker/tool-pairs/jj-git/Dockerfile` exists
-  - Image naming is `toolkata-sandbox:jj-git` with `:latest` tag for compatibility
-  - ContainerService uses `getImageName(toolPair)` to select correct image
+  - Image naming is `toolkata-sandbox:jj-git`
+  - ContainerService uses tool-pair to select correct image
 - ✅ **R5:** gVisor runtime IS configured (container.ts:176-178)
 - ✅ TerminalContext state machine exists with proper transitions
 - ✅ TerminalSidebar displays terminal with status indicator
@@ -129,7 +170,7 @@ After analyzing all 5 specification documents against the current implementation
 
 ---
 
-### 4. multi-environment-sandbox.md
+### 5. multi-environment-sandbox.md
 
 **Status:** ❌ **NOT IMPLEMENTED** (0% complete)
 
@@ -142,8 +183,8 @@ After analyzing all 5 specification documents against the current implementation
 - ❌ ContainerService only accepts `toolPair: string` parameter (no environment selection)
 - ❌ WebSocket handler does NOT accept `init` message type
 - ❌ `/api/v1/environments` endpoint does NOT exist
-- ❌ Only one Dockerfile exists (`packages/sandbox-api/docker/Dockerfile`)
-- ❌ Current architecture: single-container with dev/prod environment switching (not multi-environment)
+- ❌ Only bash environment exists (current jj-git Dockerfile)
+- ❌ No per-environment Dockerfiles (node, python)
 
 **Missing Components (All):**
 - ❌ Environment registry system at `packages/sandbox-api/src/environments/`
@@ -158,205 +199,88 @@ After analyzing all 5 specification documents against the current implementation
 1. `packages/sandbox-api/src/environments/types.ts` - EnvironmentConfig interface
 2. `packages/sandbox-api/src/environments/index.ts` - getEnvironment(), listEnvironments()
 3. `packages/sandbox-api/src/environments/builtin.ts` - bash, node, python configs
-4. `packages/sandbox-api/src/environments/plugins/.gitkeep` - Plugin directory
-5. `packages/sandbox-api/docker/bash/Dockerfile` - Move current Dockerfile here
-6. `packages/sandbox-api/docker/node/Dockerfile` - FROM bash, install Node.js LTS
-7. `packages/sandbox-api/docker/python/Dockerfile` - FROM bash, install Python 3
-8. `packages/web/content/comparisons/jj-git/config.yml` - Default sandbox settings
+4. `packages/sandbox-api/src/environments/layer.ts` - Effect Layer for DI
+5. `packages/sandbox-api/src/environments/plugins/.gitkeep` - Plugin directory
+6. `packages/sandbox-api/docker/bash/Dockerfile` - Move current jj-git Dockerfile
+7. `packages/sandbox-api/docker/node/Dockerfile` - FROM bash, install Node.js LTS
+8. `packages/sandbox-api/docker/python/Dockerfile` - FROM bash, install Python 3
+9. `packages/web/content/comparisons/jj-git/config.yml` - Default sandbox settings
+10. `scripts/docker-build-all.sh` - Build all environment images
 
 **Files to Modify:**
-1. `packages/web/lib/content/schemas.ts` - Add `sandbox?: { enabled?, environment?, timeout?, init? }` to stepFrontmatterSchema
-2. `packages/web/lib/content-core/loader.ts` - Load `config.yml`, resolve defaults with fallback
-3. `packages/web/services/sandbox-client.ts` - Send `environment`, `init`, `timeout` in session creation
-4. `packages/web/components/ui/InteractiveTerminal.tsx` - Accept `sandboxConfig` prop, handle init messages
-5. `packages/web/app/[toolPair]/[step]/page.tsx` - Load sandbox config from frontmatter
-6. `packages/sandbox-api/src/services/container.ts` - Accept `environment` param, lookup image
-7. `packages/sandbox-api/src/services/session.ts` - Store `init`, `timeout` on session
-8. `packages/sandbox-api/src/services/websocket.ts` - Handle `init` message, execute silently
-9. `packages/sandbox-api/src/routes/sessions.ts` - Accept `environment`, `init`, `timeout` in POST body
-10. `packages/sandbox-api/src/routes/index.ts` - Add GET `/api/v1/environments` endpoint
-11. `packages/sandbox-api/src/index.ts` - Startup image validation
+1. `packages/web/lib/content/schemas.ts` - Add `sandbox?: { enabled?, environment?, timeout?, init? }`
+2. `packages/web/lib/content-core/loader.ts` - Load `config.yml`, resolve defaults
+3. `packages/web/services/sandbox-client.ts` - Send `environment`, `init`, `timeout`
+4. `packages/web/components/ui/InteractiveTerminal.tsx` - Accept `sandboxConfig` prop
+5. `packages/web/contexts/TerminalContext.tsx` - Add sandbox config to state
+6. `packages/web/app/[toolPair]/[step]/page.tsx` - Load sandbox config from frontmatter
+7. `packages/sandbox-api/src/services/container.ts` - Accept `environment` param
+8. `packages/sandbox-api/src/services/session.ts` - Store `init`, `timeout` on session
+9. `packages/sandbox-api/src/services/websocket.ts` - Handle `init` message type
+10. `packages/sandbox-api/src/routes/sessions.ts` - Accept `environment`, `init`, `timeout`
+11. `packages/sandbox-api/src/routes/index.ts` - Add GET `/api/v1/environments` endpoint
+12. `packages/sandbox-api/src/index.ts` - Startup image validation
 
 ---
 
 ## Prioritized Task List
 
-### P0 - Critical Foundation (Quick Wins)
+### ✅ COMPLETE - P0 & P1 (Quick Wins & High Value Features)
 
-#### P0.1: Enhanced TryIt Component ✅ COMPLETED (2026-01-25)
-**Status:** ✅ **COMPLETE**
+| Task | Status | Effort | Notes |
+|------|--------|--------|-------|
+| P0.1: Enhanced TryIt Component | ✅ Complete | 2h | Editable commands, expected output, Enter key |
+| P1.1: Glossary Page Route | ✅ Complete | 1h | 35 command mappings, search/filter UI |
+| P1.2: Bidirectional Comparison | ✅ Complete | 5h | DirectionToggle, PreferencesStore, useDirection |
+| P1.3: Per-Tool-Pair Docker Images | ✅ Complete | 3h | Base + tool-pair structure |
+| P3.1: Mobile Swipe Gesture | ✅ Complete | 2h | Touch handlers, 100px threshold |
+| P3.3: Keyboard Navigation ('t' key) | ✅ Complete | 0.5h | Toggle terminal shortcut |
 
-**Why:** Editable commands + expected output are core UX improvements. TryIt is used throughout MDX content, so this enhances every lesson immediately.
-
-**Files:** `packages/web/components/ui/TryIt.tsx`
-
-**Changes Made:**
-- ✅ Added `expectedOutput?: string` prop
-- ✅ Added `editable?: boolean` prop (default true)
-- ✅ Replaced static `<code>` display with editable `<input>`
-- ✅ Track edited command value in local state
-- ✅ Style expected output as muted terminal text
-- ✅ Update button to send input value instead of original command
-- ✅ Added `$` prompt prefix for terminal aesthetic
-- ✅ Added Enter key support to run command
-
-**Acceptance Criteria:**
-- ✅ Command appears in input field (not static code)
-- ✅ User can edit command before clicking "Run"
-- ✅ Expected output displays below command when provided
-- ✅ "Run" button sends current input value
-- ✅ Falls back to original command if not edited
-
-**Validation:** Type check, lint, and build all pass.
+**Total Completed:** ~13.5 hours of implementation
 
 ---
 
-### P1 - High Value Features (User-Facing)
+### P2 - Multi-Environment System (19 hours) - NEXT PRIORITY
 
-#### P1.1: Glossary Page Route ✅ COMPLETED (2026-01-25)
-**Status:** ✅ **COMPLETE**
-
-**Why:** Data already exists (35 command mappings) - just needs a page. High-value reference feature, quickest win.
-
-**Files Created:**
-- `packages/web/app/[toolPair]/glossary/page.tsx`
-
-**Changes Made:**
-- ✅ Created new route page that renders `<GlossaryClientWrapper />`
-- ✅ Reused existing GlossaryClient component (already complete)
-- ✅ Followed same layout pattern as cheatsheet page
-- ✅ Added generateStaticParams for jj-git pairing
-- ✅ Added generateMetadata for SEO
-
-**Acceptance Criteria:**
-- ✅ Route `/jj-git/glossary` loads successfully (verified in build output)
-- ✅ Displays 35 command mappings in table (inherited from GlossaryClient)
-- ✅ Search and filter work (already implemented in GlossaryClient)
-- ✅ Responsive on mobile (horizontal scroll inherited from GlossaryClient)
-- ✅ Copy buttons work (inherited from GlossaryClient)
-
-**Validation:** Type check, lint, and build all pass.
-
----
-
-#### P1.2: Bidirectional Comparison - Direction Toggle ✅ COMPLETED (2026-01-25)
-**Status:** ✅ **COMPLETE**
-
-**Why:** Key user-facing feature for "bilingual" developers. Enables viewing comparisons from either perspective (git→jj OR jj→git).
-
-**Files Created:**
-- `packages/web/core/PreferencesStore.ts` - localStorage for direction preference
-- `packages/web/hooks/useDirection.ts` - Hook to read/write direction preference
-- `packages/web/components/ui/DirectionToggle.tsx` - Toggle switch in terminal bracket style `[git ↔ jj]`
-- `packages/web/contexts/DirectionContext.tsx` - React Context for direction state
-
-**Files Modified:**
-- `packages/web/components/ui/SideBySide.tsx` - Now client component, uses DirectionContext to swap columns
-- `packages/web/components/ui/StepProgress.tsx` - Now client component, includes DirectionToggle in header
-- `packages/web/components/Providers.tsx` - Added DirectionProvider wrapper
-- `packages/web/components/ui/GlossaryClient.tsx` - Uses DirectionContext to swap columns
-
-**Changes Made:**
-- ✅ PreferencesStore follows ProgressStore pattern for localStorage persistence
-- ✅ useDirection hook manages direction state with hydration
-- ✅ DirectionToggle component with terminal bracket style `[git ↔ jj]`
-- ✅ DirectionContext provides direction to all child components
-- ✅ SideBySide swaps columns when reversed (jj left/green, git right/orange)
-- ✅ StepProgress includes DirectionToggle in navigation header
-- ✅ GlossaryClient respects direction preference
-- ✅ All accessible: `role="switch"`, `aria-checked`, keyboard (Enter/Space), min-h-[44px] touch target
-
-**Acceptance Criteria:**
-- ✅ Toggle displays as `[git ↔ jj]` in header
-- ✅ Click swaps to `[jj ↔ git]` and updates all SideBySide components
-- ✅ Preference stored in localStorage under `toolkata_preferences`
-- ✅ On page load, reads preference and applies (default: git→jj)
-- ✅ SideBySide columns swap when reversed (jj left/green, git right/orange)
-- ✅ Glossary page respects direction preference
-- ✅ Touch target >= 44px for mobile
-- ✅ Accessible: `role="switch"`, `aria-checked`, keyboard support
-
-**Validation:** Type check, lint, and build all pass.
-
----
-
-#### P1.3: Per-Tool-Pair Docker Images ✅ COMPLETED (2026-01-25)
-**Status:** ✅ **COMPLETE**
-
-**Why:** Foundation for multi-environment support. Improves modularity and prepares architecture for future tool pairs.
-
-**Files Created:**
-- `packages/sandbox-api/docker/base/Dockerfile` - Chainguard wolfi-base, sandbox user, shell config
-- `packages/sandbox-api/docker/base/entrypoint.sh` - Base entrypoint without git/jj
-- `packages/sandbox-api/docker/tool-pairs/jj-git/Dockerfile` - FROM base, install git+jj, configure identities
-- `packages/sandbox-api/docker/tool-pairs/jj-git/entrypoint.sh` - jj-git entrypoint with git/jj version display
-- `scripts/docker-build-all.sh` - Build base image + all tool-pair images
-
-**Files Modified:**
-- `packages/sandbox-api/src/services/container.ts` - Updated to use `toolkata-sandbox:${toolPair}` image naming
-
-**Changes Made:**
-- ✅ Base Dockerfile creates minimal image (~150MB without git/jj)
-- ✅ jj-git Dockerfile extends base, adds git+jj (~197MB)
-- ✅ Build script builds both images in correct order (base → tool-pairs)
-- ✅ ContainerService.getImageName(toolPair) returns correct image name
-- ✅ Added Labels to container for tool-pair identification
-- ✅ Updated error message to reference docker-build-all.sh
-- ✅ Backward compatibility: jj-git image tagged as latest
-
-**Acceptance Criteria:**
-- ✅ Base image builds successfully (~150MB without git/jj)
-- ✅ jj-git image builds successfully (~197MB with git+jj)
-- ✅ Build script builds both images in correct order
-- ✅ ContainerService uses correct image based on toolPair
-- ✅ All existing tests pass (git/jj workflow, UTF-8, security hardening)
-- ✅ Type check, lint, and build all pass
-
-**Validation:** Type check, lint, and build all pass.
-
-**Note:** Original `packages/sandbox-api/docker/Dockerfile` left in place for backward compatibility. Use new `docker-build-all.sh` script for building.
-
----
-
-### P2 - Multi-Environment System (Complex Feature)
-
-#### P2.1: Environment Registry (Backend)
+- [x] **P2.1: Environment Registry (Backend)** ✅ COMPLETE (2026-01-25)
 **Why:** Core infrastructure for multi-environment sandbox. Defines available environments (bash, node, python) and their configurations.
 
-**Files to Create:**
+**Files Created:**
 - `packages/sandbox-api/src/environments/types.ts` - EnvironmentConfig interface, EnvironmentError types
 - `packages/sandbox-api/src/environments/index.ts` - getEnvironment(), listEnvironments() services
 - `packages/sandbox-api/src/environments/builtin.ts` - Registry of bash, node, python configs
-- `packages/sandbox-api/src/environments/plugins/.gitkeep` - Plugin directory for future
+- `packages/sandbox-api/src/environments/registry.ts` - Central registry with getEnvironment, listEnvironments functions
+- `packages/sandbox-api/src/environments/plugins/.gitkeep` - Plugin directory with documentation
 
 **Changes:**
-- Define EnvironmentConfig with: name, dockerImage, defaultTimeout, initCommands, description
-- Create getEnvironment(name) Effect service that returns config or NotFound error
-- Create listEnvironments() Effect service that returns all available environments
-- Register bash (current), node (future), python (future) environments
+- Defined EnvironmentConfig with: name, dockerImage, defaultTimeout, defaultInitCommands, description, category
+- Created getEnvironment(name) Effect service that returns config or NotFound error
+- Created listEnvironments() Effect service that returns all available environments
+- Registered bash, node, python environments
+- Exported EnvironmentServiceLive layer for dependency injection
 
 **Acceptance Criteria:**
-- Environment registry can be queried for available environments
-- getEnvironment("bash") returns valid config
-- getEnvironment("unknown") returns NotFound error
-- listEnvironments() returns array of all registered environments
-- Uses Effect-TS patterns (TaggedClass errors, Layer composition)
+- ✅ Environment registry can be queried for available environments
+- ✅ getEnvironment("bash") returns valid config with dockerImage
+- ✅ getEnvironment("unknown") returns NotFound error with availableEnvironments list
+- ✅ listEnvironments() returns array of all registered environments
+- ✅ Uses Effect-TS patterns (TaggedClass errors, Layer composition)
 
-**Effort:** 3 hours
+**Effort:** 3 hours (actual)
 
 **Dependencies:** P1.3 (per-tool-pair image structure must exist first)
 
 ---
 
-#### P2.2: Frontend Configuration Loading
+- [ ] **P2.2: Frontend Configuration Loading**
 **Why:** Required for per-step sandbox config. Enables content authors to disable terminal or specify environment per step.
 
 **Files to Create:**
-- `packages/web/content/comparisons/jj-git/config.yml` - Define default sandbox settings for jj-git
+- `packages/web/content/comparisons/jj-git/config.yml` - Define default sandbox settings
 
 **Files to Modify:**
-- `packages/web/lib/content/schemas.ts` - Add `sandbox?: { enabled?, environment?, timeout?, init? }` to stepFrontmatterSchema
-- `packages/web/lib/content-core/loader.ts` - Load `config.yml`, resolve defaults with fallback
+- `packages/web/lib/content/schemas.ts` - Add `sandbox?: { enabled?, environment?, timeout?, init? }`
+- `packages/web/lib/content-core/loader.ts` - Load `config.yml`, resolve defaults
 - `packages/web/lib/content/types.ts` - Add SandboxConfig type
 
 **Changes:**
@@ -378,16 +302,15 @@ After analyzing all 5 specification documents against the current implementation
 
 ---
 
-#### P2.3: Backend Services Extension
+- [ ] **P2.3: Backend Services Extension**
 **Why:** Wire environment system into container/session creation. Enables per-session environment selection and init commands.
 
 **Files to Modify:**
-- `packages/sandbox-api/src/services/container.ts` - Accept `environment` param, lookup image from registry
+- `packages/sandbox-api/src/services/container.ts` - Accept `environment` param, lookup image
 - `packages/sandbox-api/src/services/session.ts` - Store `init`, `timeout` on session
-- `packages/sandbox-api/src/services/websocket.ts` - Handle `init` message type, execute silently
-- `packages/sandbox-api/src/routes/sessions.ts` - Accept `environment`, `init`, `timeout` in POST body
+- `packages/sandbox-api/src/services/websocket.ts` - Handle `init` message, execute silently
+- `packages/sandbox-api/src/routes/sessions.ts` - Accept `environment`, `init`, `timeout`
 - `packages/sandbox-api/src/routes/index.ts` - Add GET `/api/v1/environments` endpoint
-- `packages/sandbox-api/src/environments/layer.ts` - Create Environment Layer for dependency injection
 
 **Changes:**
 - ContainerService.create() accepts `environment?: string` parameter
@@ -398,6 +321,7 @@ After analyzing all 5 specification documents against the current implementation
 - WebSocket executes init commands silently (suppresses output to client)
 - WebSocket sends `{type: "initComplete", success: boolean}` when done
 - POST /api/v1/sessions accepts environment, init, timeout in request body
+- GET /api/v1/environments returns list of available environments
 
 **Acceptance Criteria:**
 - Session creation with `environment: "node"` uses node Docker image
@@ -413,20 +337,21 @@ After analyzing all 5 specification documents against the current implementation
 
 ---
 
-#### P2.4: Frontend Integration
+- [ ] **P2.4: Frontend Integration**
 **Why:** Connect frontend to multi-environment backend. Enables step pages to request specific environments and init commands.
 
 **Files to Modify:**
-- `packages/web/services/sandbox-client.ts` - Send `environment`, `init`, `timeout` in session creation
-- `packages/web/components/ui/InteractiveTerminal.tsx` - Accept `sandboxConfig` prop, handle init messages
+- `packages/web/services/sandbox-client.ts` - Send `environment`, `init`, `timeout`
+- `packages/web/components/ui/InteractiveTerminal.tsx` - Accept `sandboxConfig` prop
 - `packages/web/contexts/TerminalContext.tsx` - Add sandbox config to state
-- `packages/web/app/[toolPair]/[step]/page.tsx` - Load sandbox config from frontmatter, pass to terminal
+- `packages/web/app/[toolPair]/[step]/page.tsx` - Load sandbox config from frontmatter
 
 **Changes:**
 - SandboxClient.createSession() accepts optional `environment`, `init`, `timeout` parameters
 - InteractiveTerminal accepts `sandboxConfig?: {enabled, environment, timeout, init}` prop
 - InteractiveTerminal doesn't render if `sandboxConfig.enabled === false`
 - InteractiveTerminal handles `initComplete` WebSocket message
+- TerminalContext stores current sandbox config for re-initialization detection
 - Step pages load sandbox config from frontmatter and pass to terminal
 - Step change auto-detects config change and triggers re-initialization
 
@@ -444,16 +369,16 @@ After analyzing all 5 specification documents against the current implementation
 
 ---
 
-#### P2.5: Multi-Environment Docker Images
+- [ ] **P2.5: Multi-Environment Docker Images**
 **Why:** Provide actual runtime environments (bash, node, python). Enables content authors to create lessons for different programming languages.
 
 **Files to Create:**
-- `packages/sandbox-api/docker/bash/Dockerfile` - Move current Dockerfile here (base + git/jj)
-- `packages/sandbox-api/docker/node/Dockerfile` - FROM bash, install Node.js LTS, npm
-- `packages/sandbox-api/docker/python/Dockerfile` - FROM bash, install Python 3, pip
+- `packages/sandbox-api/docker/bash/Dockerfile` - Move current jj-git Dockerfile here
+- `packages/sandbox-api/docker/node/Dockerfile` - FROM bash, install Node.js LTS
+- `packages/sandbox-api/docker/python/Dockerfile` - FROM bash, install Python 3
+- `scripts/docker-build-all.sh` - Build all 3 environment images
 
 **Files to Modify:**
-- `scripts/docker-build-all.sh` - Build all 3 environment images
 - `scripts/hetzner/deploy.sh` - Call `docker:build` before restart
 - `packages/sandbox-api/src/environments/builtin.ts` - Update image references
 
@@ -478,12 +403,12 @@ After analyzing all 5 specification documents against the current implementation
 
 ---
 
-#### P2.6: Startup Validation
+- [ ] **P2.6: Startup Validation**
 **Why:** Fail fast if images missing at server startup. Prevents runtime errors when user requests unavailable environment.
 
 **Files to Modify:**
-- `packages/sandbox-api/src/index.ts` - Add image existence check before HTTP server starts
 - `packages/sandbox-api/src/environments/index.ts` - Add validateAllImages() Effect
+- `packages/sandbox-api/src/index.ts` - Add image existence check before HTTP server starts
 
 **Changes:**
 - On server startup, check that all registered environment images exist
@@ -506,88 +431,87 @@ After analyzing all 5 specification documents against the current implementation
 
 ### P3 - Polish & UX Improvements
 
-#### P3.1: Mobile Bottom Sheet Swipe Gesture
+- [x] **P3.1: Mobile Bottom Sheet Swipe Gesture** ✅ COMPLETE
+**Status:** ✅ **COMPLETE** (verified 2026-01-25)
+
 **Why:** Expected mobile UX pattern. Bottom sheets should be dismissible with swipe down.
 
-**Files:** `packages/web/components/ui/MobileBottomSheet.tsx`
-
-**Changes:**
-- Add touch event handlers for drag gesture
-- Track Y position during drag
-- Close sheet if dragged down > 100px
-- Provide visual feedback during drag (opacity/transform)
-- Use `prefer-reduced-motion` to disable animation if requested
+**Verification:**
+- ✅ Swipe gesture EXISTS at MobileBottomSheet.tsx:170-233
+- ✅ Touch handlers: `handleTouchStart`, `handleTouchMove`, `handleTouchEnd`
+- ✅ Swipe threshold: 100px (line 131)
+- ✅ Visual feedback with transform and opacity (lines 227-230)
+- ✅ `prefer-reduced-motion` support
 
 **Acceptance Criteria:**
-- Swipe down closes bottom sheet on mobile
-- Drag threshold: 100px down
-- Visual feedback during drag (sheet follows finger partially)
-- Sheet springs back if drag < threshold
-- Animation disabled for `prefer-reduced-motion`
-- Works on iOS Safari (webkit prefix handling)
-
-**Effort:** 2 hours
-
-**Dependencies:** None
+- ✅ Swipe down closes bottom sheet on mobile
+- ✅ Drag threshold: 100px down
+- ✅ Visual feedback during drag (sheet follows finger partially)
+- ✅ Sheet springs back if drag < threshold
+- ✅ Works on iOS Safari (webkit prefix handling)
 
 ---
 
-#### P3.2: Focus Management Improvements
+- [ ] **P3.2: Focus Management Improvements**
 **Why:** Accessibility - focus trap in sidebar, return focus on close. Improves keyboard navigation experience.
+
+**Current Status (2026-01-25):**
+- ❌ Focus trap NOT implemented (no useFocusTrap or custom implementation)
+- ❌ Focus return to trigger NOT implemented (no trigger ref stored)
+- ⚠️ aria-modal is dynamic `{isOpen}` instead of `true` when open (line 272)
+- ✅ Escape key handler exists (lines 216-227)
+- ✅ Close button focuses on open (lines 205-213)
 
 **Files:** `packages/web/components/ui/TerminalSidebar.tsx`
 
 **Changes:**
-- Implement focus trap when sidebar opens
-- Trap focus within sidebar (Tab cycles within, not escape)
+- Install or implement focus trap library (e.g., `@components-focus-trap/react` or custom hook)
+- Store trigger element ref when sidebar opens
+- Wrap sidebar content in focus trap when open
 - Return focus to trigger element when sidebar closes
-- Add `aria-modal="true"` to sidebar
-- Manage focus for floating toggle button
+- Fix `aria-modal` to be `true` (not dynamic) when sidebar is open
 
 **Acceptance Criteria:**
-- Focus moves to sidebar when opened
+- Focus moves to sidebar close button when opened
 - Tab cycles within sidebar (doesn't escape to main content)
-- Escape closes sidebar and returns focus to trigger
-- Sidebar close button receives initial focus
+- Escape closes sidebar and returns focus to trigger element
 - TryIt button focus restored after sidebar close
 - Works with keyboard only (no mouse)
+- Screen readers announce modal state correctly
 
-**Effort:** 1.5 hours
+**Effort:** 2 hours
 
-**Dependencies:** None
+**Dependencies:** None (can be done independently)
 
 ---
 
-#### P3.3: Keyboard Navigation Enhancements
+- [x] **P3.3: Keyboard Navigation Enhancements** ✅ COMPLETE
+**Status:** ✅ **COMPLETE** (verified 2026-01-25)
+
 **Why:** Power user feature - `t` to toggle terminal. Improves efficiency for keyboard-heavy users.
 
-**Files:** `packages/web/hooks/useKeyboardNavigation.ts`
-
-**Changes:**
-- Add `t` key handler to toggle sidebar
-- Only trigger when not focused on input field
-- Prevent default browser behavior
-- Add to keyboard shortcut help (`?` key modal)
+**Verification:**
+- ✅ `t` key handler EXISTS at useKeyboardNavigation.ts:191-197
+- ✅ Calls `onToggleTerminal()` callback
+- ✅ Prevents modifier key combinations (Ctrl, Meta, Alt)
+- ✅ Respects input field focus state
 
 **Acceptance Criteria:**
-- `t` key toggles terminal sidebar open/closed
-- `t` doesn't trigger when focused on input/textarea
-- `t` works on all pages within tool pair
-- Keyboard shortcut help lists `t` as "Toggle terminal"
-- Works with Shift+T too
-
-**Effort:** 30 minutes
-
-**Dependencies:** None
+- ✅ `t` key toggles terminal sidebar open/closed
+- ✅ `t` doesn't trigger when focused on input/textarea
+- ✅ `t` works on all pages within tool pair
+- ✅ Works with Shift+T too
 
 ---
 
-#### P3.4: Testing & Documentation
+- [ ] **P3.4: Testing & Documentation**
 **Why:** Ensure quality and maintainability. Prevents regressions and helps future contributors.
 
 **Changes:**
 - Add Playwright tests for bidirectional comparison (toggle click, persistence)
 - Add Playwright tests for glossary page (search, filter, copy)
+- Add Playwright tests for swipe gesture (mobile bottom sheet)
+- Add Playwright tests for 't' key toggle
 - Add Playwright tests for step change with re-init (multi-environment)
 - Document multi-environment plugin API in README
 - Update IMPLEMENTATION_PLAN.md with completion status
@@ -595,6 +519,8 @@ After analyzing all 5 specification documents against the current implementation
 **Acceptance Criteria:**
 - Direction toggle test verifies preference persists after refresh
 - Glossary search test verifies results filter correctly
+- Swipe gesture test verifies bottom sheet closes on drag down
+- 't' key test verifies terminal toggle functionality
 - Step navigation test verifies re-init triggers on environment change
 - Plugin API documentation explains how to add new environments
 - All tests pass consistently
@@ -609,12 +535,12 @@ After analyzing all 5 specification documents against the current implementation
 
 ```
 P0 (Quick Wins) - Can be done in parallel
-└── P0.1: Enhanced TryIt (2h) [NO DEPENDENCIES]
+└── P0.1: Enhanced TryIt (2h) ✅ COMPLETE [NO DEPENDENCIES]
 
 P1 (High Value) - Mostly independent
-├── P1.1: Glossary Page Route (1h) [NO DEPENDENCIES - QUICKEST WIN]
-├── P1.2: Bidirectional Comparison (5h) [DO AFTER P1.1 so glossary page exists]
-└── P1.3: Per-Tool-Pair Docker Images (3h) [REQUIRED FOR P2]
+├── P1.1: Glossary Page Route (1h) ✅ COMPLETE [NO DEPENDENCIES - QUICKEST WIN]
+├── P1.2: Bidirectional Comparison (5h) ✅ COMPLETE [DO AFTER P1.1 so glossary page exists]
+└── P1.3: Per-Tool-Pair Docker Images (3h) ✅ COMPLETE [REQUIRED FOR P2]
 
 P2 (Multi-Environment) - Complex, depends on P1.3
 ├── P2.1: Environment Registry (3h) [depends on P1.3]
@@ -625,9 +551,9 @@ P2 (Multi-Environment) - Complex, depends on P1.3
 └── P2.6: Startup Validation (1h) [depends on P2.5]
 
 P3 (Polish) - Can be done anytime
-├── P3.1: Mobile Swipe Gesture (2h) [NO DEPENDENCIES]
-├── P3.2: Focus Management (1.5h) [NO DEPENDENCIES]
-├── P3.3: Keyboard Nav (30min) [NO DEPENDENCIES]
+├── P3.1: Mobile Swipe Gesture (2h) ✅ ALREADY IMPLEMENTED [NO DEPENDENCIES]
+├── P3.2: Focus Management (2h) [NO DEPENDENCIES]
+├── P3.3: Keyboard Nav (0.5h) ✅ ALREADY IMPLEMENTED [NO DEPENDENCIES]
 └── P3.4: Testing & Documentation (4h) [depends on P1.1, P1.2, P2.4]
 ```
 
@@ -635,53 +561,33 @@ P3 (Polish) - Can be done anytime
 
 ## Quick Start Implementation Path
 
-### For Fastest User-Facing Impact (8 hours, 3 major features)
+### ✅ COMPLETE - Phase 1 & 2 (13.5 hours)
 
-**Recommended order:** P0.1 → P1.1 → P1.2
-
-1. **P1.1: Glossary Page Route** (1 hour) - QUICK WIN
-   - Create `/jj-git/glossary` route
-   - Reuse existing GlossaryClient component
-   - Data already exists (35 command mappings)
-   - Immediate value for users
-
-2. **P0.1: Enhanced TryIt** (2 hours)
-   - Add editable commands + expected output
-   - Improves every lesson immediately
-   - TryIt used throughout MDX content
-
-3. **P1.2: Bidirectional Comparison** (5 hours)
-   - Direction toggle for "bilingual" developers
-   - High-value feature for power users
-   - Glossary page already exists from P1.1
-
-**Total: ~8 hours for 3 major features**
+**Completed:**
+- ✅ P0.1: Enhanced TryIt (2h) - Editable commands, expected output
+- ✅ P1.1: Glossary Page (1h) - Route exists with full search/filter
+- ✅ P1.2: Direction Toggle (5h) - Full bidirectional support
+- ✅ P1.3: Per-Tool-Pair Docker Images (3h) - Base + tool-pair structure
+- ✅ P3.1: Swipe Gesture (2h) - Already implemented
+- ✅ P3.3: Keyboard Nav (0.5h) - Already implemented
 
 ---
 
-### For Complete Implementation (37.5 hours)
+### Remaining Implementation (25 hours)
 
-**Phase 1: Quick Wins** (8 hours)
-- P1.1: Glossary Page (1h)
-- P0.1: Enhanced TryIt (2h)
-- P1.2: Direction Toggle (5h)
+**Phase 3: Multi-Environment** (19 hours) - ⏳ NEXT PRIORITY
+- P2.1: Environment Registry (3h) - Backend infrastructure
+- P2.2: Config Loading (3h) - Frontend config.yml support [parallel with P2.1]
+- P2.3: Backend Services (5h) - Container/Session/WebSocket extensions
+- P2.4: Frontend Integration (4h) - Connect to backend
+- P2.5: Docker Images (3h) - node, python images [parallel with P2.2-P2.4]
+- P2.6: Startup Validation (1h) - Fail fast on missing images
 
-**Phase 2: Foundation** (3 hours)
-- P1.3: Per-Tool-Pair Docker Images (3h)
-
-**Phase 3: Multi-Environment** (19 hours)
-- P2.1: Environment Registry (3h)
-- P2.2: Config Loading (3h) [parallel with P2.1]
-- P2.3: Backend Services (5h)
-- P2.4: Frontend Integration (4h)
-- P2.5: Docker Images (3h) [parallel with P2.2-P2.4]
-- P2.6: Startup Validation (1h)
-
-**Phase 4: Polish** (7.5 hours)
-- P3.1: Swipe Gesture (2h)
-- P3.2: Focus Management (1.5h)
-- P3.3: Keyboard Nav (30min)
-- P3.4: Testing & Docs (4h) [do after features are complete]
+**Phase 4: Polish** (6 hours)
+- P3.1: Swipe Gesture (2h) ✅ ALREADY IMPLEMENTED
+- P3.2: Focus Management (2h) - Focus trap library integration
+- P3.3: Keyboard Nav (0.5h) ✅ ALREADY IMPLEMENTED
+- P3.4: Testing & Docs (4h) - Playwright tests, plugin API docs
 
 ---
 
@@ -702,6 +608,12 @@ bun run build
 
 # Run Playwright tests
 cd packages/web && bun run test
+
+# Build Docker images
+bun run docker:build
+
+# Run sandbox API
+bun run --cwd packages/sandbox-api dev
 ```
 
 ---
@@ -712,72 +624,100 @@ cd packages/web && bun run test
 
 | Component | Location | Status | Notes |
 |-----------|----------|--------|-------|
-| **Content Loading** | `packages/web/lib/content/` | ✅ Complete | MDX parsing, frontmatter validation, 12 step files exist |
+| **Content Loading** | `packages/web/lib/content/` | ✅ Complete | MDX parsing, frontmatter validation, 12 step files |
 | **ContentService** | `packages/web/services/content.ts` | ✅ Complete | Effect-TS service with caching, loadStep/listStep helpers |
 | **SandboxClient** | `packages/web/services/sandbox-client.ts` | ✅ Complete | Session lifecycle, WebSocket support, API key auth |
 | **InteractiveTerminal** | `packages/web/components/ui/InteractiveTerminal.tsx` | ✅ Complete | xterm.js, WebSocket, PTY detection, circuit breaker |
 | **TerminalContext** | `packages/web/contexts/TerminalContext.tsx` | ✅ Complete | State machine, command queue, session persistence |
-| **TerminalSidebar** | `packages/web/components/ui/TerminalSidebar.tsx` | ✅ Complete | Resizable, lazy-loaded terminal, status indicator |
+| **TerminalSidebar** | `packages/web/components/ui/TerminalSidebar.tsx` | ⚠️ 95% | Missing focus trap (P3.2) |
 | **ShrinkingLayout** | `packages/web/components/ui/ShrinkingLayout.tsx` | ✅ Complete | Applies margin-right when sidebar open |
-| **TryIt** | `packages/web/components/ui/TryIt.tsx` | ⚠️ Partial | Command execution works, lacks editable/expectedOutput |
-| **SideBySide** | `packages/web/components/ui/SideBySide.tsx` | ⚠️ Partial | Displays comparison, lacks isReversed prop |
+| **TryIt** | `packages/web/components/ui/TryIt.tsx` | ✅ Complete | Editable commands, expected output, Enter key |
+| **SideBySide** | `packages/web/components/ui/SideBySide.tsx` | ✅ Complete | Bidirectional support via DirectionContext |
 | **GlossaryClient** | `packages/web/components/ui/GlossaryClient.tsx` | ✅ Complete | Search/filter UI, 35 command mappings |
+| **Glossary Route** | `packages/web/app/[toolPair]/glossary/page.tsx` | ✅ Complete | Route exists with full functionality |
+| **DirectionToggle** | `packages/web/components/ui/DirectionToggle.tsx` | ✅ Complete | Toggle switch with `role="switch"` |
+| **PreferencesStore** | `packages/web/core/PreferencesStore.ts` | ✅ Complete | localStorage persistence for direction |
+| **useDirection hook** | `packages/web/hooks/useDirection.ts` | ✅ Complete | Direction state management with hydration |
+| **DirectionContext** | `packages/web/contexts/DirectionContext.tsx` | ✅ Complete | React Context for direction state |
 | **ProgressStore** | `packages/web/core/ProgressStore.ts` | ✅ Complete | localStorage persistence, step completion tracking |
 | **ContainerService** | `packages/sandbox-api/src/services/container.ts` | ✅ Complete | Docker lifecycle, gVisor support, security hardening |
 | **SessionService** | `packages/sandbox-api/src/services/session.ts` | ✅ Complete | Timeout management, activity tracking, auto-cleanup |
 | **WebSocketService** | `packages/sandbox-api/src/services/websocket.ts` | ✅ Complete | PTY proxy, input validation, message size limits |
 | **RateLimitService** | `packages/sandbox-api/src/services/rate-limit.ts` | ✅ Complete | Per-IP limits, sliding windows, dev mode bypass |
-| **Dockerfile** | `packages/sandbox-api/docker/Dockerfile` | ⚠️ Partial | Works for jj-git, lacks per-tool-pair structure |
+| **Base Dockerfile** | `packages/sandbox-api/docker/base/Dockerfile` | ✅ Complete | Chainguard wolfi-base, ~150MB |
+| **jj-git Dockerfile** | `packages/sandbox-api/docker/tool-pairs/jj-git/Dockerfile` | ✅ Complete | Extends base, git+jj, ~197MB |
 
 ### Missing Components
 
-| Component | Required By | Priority |
-|-----------|-------------|----------|
-| DirectionToggle | bidirectional-comparison.md | P1 |
-| PreferencesStore | bidirectional-comparison.md | P1 |
-| useDirection hook | bidirectional-comparison.md | P1 |
-| Glossary page route | bidirectional-comparison.md | P1 |
-| Environment registry | multi-environment-sandbox.md | P2 |
-| Per-environment Dockerfiles | multi-environment-sandbox.md | P2 |
-| Init command protocol | multi-environment-sandbox.md | P2 |
-
-### Key Findings
-
-1. **Terminal Integration is Production-Ready**: The InteractiveTerminal component is sophisticated with PTY detection, message buffering, circuit breaker, and proper cleanup.
-
-2. **Backend is Solid Effect-TS**: All backend services follow Effect-TS patterns correctly with TaggedClass errors, Layer composition, and proper error handling.
-
-3. **Content System is Complete**: 12 MDX step files exist with proper frontmatter, loading infrastructure works, glossary data is ready.
-
-4. **Main Gaps are Frontend Features**: Bidirectional comparison, glossary page route, and TryIt enhancements are all straightforward frontend additions.
-
-5. **Multi-Environment Requires Refactoring**: The biggest change is restructuring Docker images and adding environment registry - this is architectural work.
+| Component | Required By | Priority | Status |
+|-----------|-------------|----------|--------|
+| Environment registry | multi-environment-sandbox.md | P2 | ❌ Not started |
+| Frontend config.yml loading | multi-environment-sandbox.md | P2 | ❌ Not started |
+| Per-environment Dockerfiles | multi-environment-sandbox.md | P2 | ❌ Not started |
+| Init command protocol | multi-environment-sandbox.md | P2 | ❌ Not started |
+| `/api/v1/environments` endpoint | multi-environment-sandbox.md | P2 | ❌ Not started |
+| Focus trap in sidebar | terminal-sidebar.md | P3 | ⚠️ Partial (aria-modal fix needed) |
 
 ---
 
-## Notes
+## Implementation Summary
 
-1. **VERIFIED by parallel subagent analysis (2026-01-25):**
-   - ✅ Terminal state synchronization callbacks ARE invoked (InteractiveTerminal.tsx:227-235)
-   - ✅ gVisor runtime IS configured when enabled (container.ts:176-178)
-   - ✅ ShrinkingLayout component EXISTS and works (ShrinkingLayout.tsx:52-63)
-   - ✅ All 16 routes exist and load correctly
-   - ✅ Glossary data is complete (35 mappings across 8 categories)
-   - ✅ GlossaryClient component EXISTS with full search/filter functionality
-   - ❌ Glossary page route does NOT exist (only accessible via cheatsheet)
+**Completed (13.5 hours):**
+- ✅ Enhanced TryIt component (editable commands, expected output)
+- ✅ Glossary page route (35 command mappings, search/filter)
+- ✅ Bidirectional comparison (DirectionToggle, PreferencesStore, useDirection)
+- ✅ Per-tool-pair Docker images (base + tool-pair structure)
+- ✅ Mobile swipe gesture (already implemented)
+- ✅ 't' key keyboard shortcut (already implemented)
 
-2. **Glossary is the quickest win** - Data exists, component exists, just needs a route. P1.1 can be done in 1 hour.
+**Remaining (25 hours):**
+- **P2: Multi-Environment System** (19h) - Environment registry, config loading, backend services, frontend integration, Docker images, startup validation
+- **P3.2: Focus Management** (2h) - Focus trap library integration, return focus to trigger
+- **P3.4: Testing & Documentation** (4h) - Playwright tests, plugin API docs
 
-3. **TryIt enhancement is high-impact** - Used throughout all 12 lesson steps, so P0.1 improves the entire tutorial experience immediately.
+---
 
-4. **Bidirectional comparison is spec-ready but completely unimplemented** - Requires 4 new files and modifications to 3 existing files. No code exists yet.
+## Key Findings
 
-5. **Multi-environment is the most complex feature** - Requires coordinated changes across frontend (3 files), backend (7 files), and infrastructure (4 Dockerfiles).建议 splitting into phases.
+1. **✅ P0-P1 COMPLETE**: All quick wins and high-value features are implemented (TryIt, Glossary, Bidirectional, Per-tool-pair Docker images).
 
-6. **All backend services follow Effect-TS patterns correctly** - TaggedClass errors, Layer composition, proper error handling. This consistency makes P2 implementation straightforward.
+2. **✅ P3.1 & P3.3 COMPLETE**: Mobile swipe gesture and 't' key toggle already implemented.
 
-7. **Per-tool-pair Docker images are the gateway to multi-environment** - P1.3 establishes the pattern that P2 builds upon (base + tool-pair → base + environments).
+3. **❌ P2 Multi-Environment NOT STARTED**: Requires 19 hours of coordinated work across frontend (4 files), backend (6 files), and infrastructure (3 Dockerfiles).
 
-8. **Mobile UX polish (P3)** can be done anytime - No dependencies, but swipe gesture is the most expected pattern for mobile users.
+4. **Backend Architecture is Solid**: All services follow Effect-TS patterns correctly with TaggedClass errors, Layer composition, and proper error handling.
 
-9. **Codebase quality is high** - TypeScript strict mode, Biome linting, proper abstractions. This makes implementation faster and less error-prone.
+5. **Content System is Complete**: 12 MDX step files exist with proper frontmatter, loading infrastructure works, glossary data is ready.
+
+6. **Next Priority**: P2 Multi-Environment System is the only major feature remaining. This enables content authors to:
+   - Disable terminal for conceptual lessons
+   - Specify different runtime environments (bash, node, python)
+   - Provide initialization commands that run silently
+   - Set custom timeouts for long-running setup
+
+7. **Remaining Polish**: P3.2 (focus trap) and P3.4 (testing/docs) can be done independently at any time.
+
+---
+
+## Architectural Notes
+
+### Multi-Environment Design Philosophy
+
+The multi-environment system follows the same architectural patterns as the existing codebase:
+
+1. **Effect-TS for Composition**: Environment registry is an Effect service with proper error handling
+2. **Configuration Resolution**: Three-tier fallback (step frontmatter → tool-pair config → global defaults)
+3. **Security by Default**: Init commands run silently, no output leaked until completion
+4. **Fail Fast**: Server startup validates all images exist before accepting connections
+5. **Plugin Architecture**: New environments can be added without modifying core code
+
+### Why This Matters
+
+The multi-environment system transforms toolkata from a "git/jj comparison site" into a "general developer learning platform":
+
+- **Node.js lessons**: Users can learn npm, package.json, TypeScript
+- **Python lessons**: Users can learn pip, venv, Django basics
+- **Custom environments**: Plugin system allows community contributions
+- **Per-step control**: Conceptual lessons can hide the terminal entirely
+
+This is the foundation for scaling beyond jj→git to any tool comparison.
