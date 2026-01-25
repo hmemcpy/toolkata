@@ -39,7 +39,7 @@ function Option1ColumnSwap() {
             Single page with toggle switch
           </p>
         </div>
-        <DirectionToggle />
+        <DirectionToggle toolPair="cats-zio" />
       </div>
       <div className="mb-4">
         <p className="text-sm text-[var(--color-text-muted)] mb-2">

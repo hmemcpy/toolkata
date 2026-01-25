@@ -3,16 +3,18 @@
  *
  * Features:
  * - Client-side component for interactive direction switching
- * - Terminal bracket style: [git ↔ jj]
+ * - Terminal bracket style: [from ↔ to]
+ * - Dynamic labels based on tool pair (e.g., [git ↔ jj] or [ZIO ↔ Cats Effect])
  * - Accessibility: role="switch", aria-checked, keyboard support
  * - Touch target >= 44px for mobile
- * - Displays reversed state: [jj ↔ git]
+ * - Displays reversed state: [to ↔ from]
  *
  * @example
  * ```tsx
  * import { DirectionToggle } from "@/components/ui/DirectionToggle"
  *
- * <DirectionToggle />
+ * <DirectionToggle toolPair="jj-git" />
+ * <DirectionToggle toolPair="cats-zio" />
  * ```
  */
 
@@ -20,15 +22,32 @@
 
 import type React from "react"
 import { useDirection } from "../../hooks/useDirection"
+import { getPairing } from "../../content/pairings"
+
+/**
+ * Props for DirectionToggle component.
+ */
+export interface DirectionToggleProps {
+  /**
+   * The tool pairing slug (e.g., "jj-git", "cats-zio").
+   * Used to determine the from/to tool names.
+   */
+  readonly toolPair: string
+}
 
 /**
  * DirectionToggle component.
  *
  * Renders a toggle switch in terminal bracket style that allows
- * switching between git→jj and jj→git comparison direction.
+ * switching between from→to and to→from comparison direction.
  */
-export function DirectionToggle(): React.JSX.Element {
-  const { direction, isReversed, toggleDirection } = useDirection()
+export function DirectionToggle({ toolPair }: DirectionToggleProps): React.JSX.Element {
+  const { isReversed, toggleDirection } = useDirection()
+  const pairing = getPairing(toolPair)
+
+  // Get tool names from pairing, fallback to generic names
+  const fromName = pairing?.from.name ?? "from"
+  const toName = pairing?.to.name ?? "to"
 
   const handleClick = () => {
     toggleDirection()
@@ -43,16 +62,18 @@ export function DirectionToggle(): React.JSX.Element {
   }
 
   // Terminal bracket style with direction indicator
-  // git→jj shows: [git ↔ jj]
-  // jj→git shows: [jj ↔ git]
-  const label = isReversed ? "[jj ↔ git]" : "[git ↔ jj]"
+  // Normal: [from ↔ to] (e.g., [git ↔ jj] or [ZIO ↔ Cats Effect])
+  // Reversed: [to ↔ from]
+  const label = isReversed ? `[${toName} ↔ ${fromName}]` : `[${fromName} ↔ ${toName}]`
+  const currentDirection = isReversed ? `${toName} to ${fromName}` : `${fromName} to ${toName}`
+  const nextDirection = isReversed ? `${fromName} to ${toName}` : `${toName} to ${fromName}`
 
   return (
     <button
       type="button"
       role="switch"
       aria-checked={isReversed}
-      aria-label={`Toggle direction: currently ${direction}. Click to switch to ${isReversed ? "git to jj" : "jj to git"}.`}
+      aria-label={`Toggle direction: currently ${currentDirection}. Click to switch to ${nextDirection}.`}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       className={[
