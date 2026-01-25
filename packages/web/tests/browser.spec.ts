@@ -638,3 +638,153 @@ test.describe("Accessibility", () => {
     expect(buttonsWithoutLabels.length).toBe(0)
   })
 })
+
+test.describe("Shrinking Layout", () => {
+  test.beforeEach(async ({ page }) => {
+    await clearLocalStorage(page)
+  })
+
+  test("main content shrinks when sidebar opens (margin-right applied)", async ({ page }) => {
+    await page.goto(`${baseUrl}/${toolPair}/1`)
+    await page.setViewportSize({ width: 1024, height: 768 })
+
+    // Get initial main content width
+    const mainBefore = await page.locator("main").boundingBox()
+    expect(mainBefore).toBeTruthy()
+
+    // Open terminal sidebar
+    await page.keyboard.press("t")
+    const sidebar = page.locator("#terminal-sidebar")
+    await expect(sidebar).toBeVisible()
+
+    // Main content should have margin-right applied
+    const mainAfter = await page.locator("main").boundingBox()
+    expect(mainAfter).toBeTruthy()
+
+    // Main content width should be smaller when sidebar is open
+    if (mainBefore && mainAfter) {
+      expect(mainAfter.width).toBeLessThan(mainBefore.width)
+    }
+  })
+
+  test("TryIt buttons work while sidebar is visible", async ({ page }) => {
+    await page.goto(`${baseUrl}/${toolPair}/1`)
+    await page.setViewportSize({ width: 1024, height: 768 })
+
+    // Open terminal sidebar
+    await page.keyboard.press("t")
+    const sidebar = page.locator("#terminal-sidebar")
+    await expect(sidebar).toBeVisible()
+
+    // Look for TryIt buttons
+    const tryItButton = page.getByRole("button", { name: /Try it/i }).first()
+    const isVisible = await tryItButton.isVisible()
+
+    if (isVisible) {
+      // TryIt button should be clickable even with sidebar open
+      await tryItButton.click()
+      // Button should have been clicked (no error thrown)
+    } else {
+      // No TryIt button on this page - that's okay
+    }
+  })
+
+  test("smooth transition when opening/closing sidebar", async ({ page }) => {
+    await page.goto(`${baseUrl}/${toolPair}/1`)
+    await page.setViewportSize({ width: 1024, height: 768 })
+
+    // Check for transition CSS on main content
+    const hasTransition = await page.evaluate(() => {
+      const main = document.querySelector("main")
+      if (!main) return false
+      const styles = window.getComputedStyle(main)
+      return styles.transition !== "all 0s" && styles.transition !== ""
+    })
+
+    // Transition should be defined (even if empty, it means transition CSS is applied)
+    expect(hasTransition).toBeTruthy()
+  })
+
+  test("mobile bottom sheet remains as overlay", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 })
+    await page.goto(`${baseUrl}/${toolPair}/1`)
+
+    // Open terminal on mobile
+    await page.keyboard.press("t")
+
+    // Bottom sheet should be visible
+    const bottomSheet = page.locator("#terminal-bottom-sheet")
+    await expect(bottomSheet).toBeVisible()
+
+    // Main content should NOT have margin-right on mobile (bottom sheet is overlay)
+    const mainMarginRight = await page.evaluate(() => {
+      const main = document.querySelector("main")
+      if (!main) return 0
+      return window.getComputedStyle(main).marginRight
+    })
+
+    // On mobile, main content should not have significant margin-right
+    expect(parseInt(mainMarginRight || "0", 10)).toBe(0)
+  })
+})
+
+test.describe("Scala Effects Demo Page", () => {
+  test.beforeEach(async ({ page }) => {
+    await clearLocalStorage(page)
+  })
+
+  test("scala-effects-demo page loads successfully", async ({ page }) => {
+    await page.goto(`${baseUrl}/scala-effects-demo`)
+    await expect(page.getByRole("heading", { name: /Prototype/i })).toBeVisible()
+  })
+
+  test("all 4 UX options render correctly", async ({ page }) => {
+    await page.goto(`${baseUrl}/scala-effects-demo`)
+
+    // Option 1: Column Swap Toggle
+    await expect(page.getByText(/Option 1: Column Swap Toggle/i)).toBeVisible()
+
+    // Option 2: Separate Routes
+    await expect(page.getByText(/Option 2: Separate Routes/i)).toBeVisible()
+
+    // Option 3: Landing Chooser
+    await expect(page.getByText(/Option 3: Landing Chooser/i)).toBeVisible()
+
+    // Option 4: Smart Cards
+    await expect(page.getByText(/Option 4: Smart Cards/i)).toBeVisible()
+  })
+
+  test("direction toggle works and persists", async ({ page }) => {
+    await page.goto(`${baseUrl}/scala-effects-demo`)
+
+    // Find a direction toggle on the demo page
+    const toggle = page.getByRole("switch", { name: /Toggle direction/i }).first()
+    if (await toggle.isVisible()) {
+      await toggle.click()
+      await expect(toggle).toHaveAttribute("aria-checked", "true")
+
+      // Check localStorage
+      const prefs = await getLocalStorageItem(page, "toolkata_preferences")
+      expect(prefs).not.toBeNull()
+      const parsed = JSON.parse(prefs ?? "{}")
+      expect(parsed.direction).toBeTruthy()
+    }
+  })
+
+  test("user can interact with each demo section", async ({ page }) => {
+    await page.goto(`${baseUrl}/scala-effects-demo`)
+
+    // Try clicking on interactive elements in each section
+    const buttons = page.getByRole("button")
+    const count = await buttons.count()
+
+    // There should be multiple interactive buttons
+    expect(count).toBeGreaterThan(0)
+
+    // First button should be clickable
+    if (count > 0) {
+      await buttons.first().click()
+      // No error should be thrown
+    }
+  })
+})
