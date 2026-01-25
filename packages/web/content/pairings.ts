@@ -54,7 +54,7 @@ export interface ToolPairing {
     | "Version Control"
     | "Package Management"
     | "Build Tools"
-    | "Libraries & Frameworks"
+    | "Frameworks & Libraries"
     | "Other"
 
   /**
@@ -81,10 +81,30 @@ export interface ToolPairing {
 /**
  * Registry of all tool pairings.
  *
- * Published: jj-git (Version Control), cats-effect-zio (Libraries & Frameworks).
+ * Published: jj-git (Version Control), cats-effect-zio (Frameworks & Libraries).
  * Others are placeholders for future expansion.
  */
 export const toolPairings = [
+  {
+    slug: "cats-zio",
+    from: {
+      name: "Cats Effect",
+      description: "Cats Effect 3",
+      color: "#8b5cf6",
+      icon: "scala",
+    },
+    to: {
+      name: "ZIO",
+      description: "ZIO 2.0 for Cats Effect users",
+      color: "#0066ff",
+      icon: "scala",
+    },
+    category: "Frameworks & Libraries" as const,
+    steps: 10,
+    estimatedTime: "~45 min",
+    status: "published" as const,
+    toUrl: "https://zio.dev/",
+  },
   {
     slug: "jj-git",
     from: {
@@ -104,26 +124,6 @@ export const toolPairings = [
     estimatedTime: "~40 min",
     status: "published" as const,
     toUrl: "https://github.com/jj-vcs/jj",
-  },
-  {
-    slug: "cats-zio",
-    from: {
-      name: "Cats Effect",
-      description: "Cats Effect 3",
-      color: "#8b5cf6",
-      icon: "scala",
-    },
-    to: {
-      name: "ZIO",
-      description: "ZIO 2.0 for Cats Effect users",
-      color: "#0066ff",
-      icon: "scala",
-    },
-    category: "Libraries & Frameworks" as const,
-    steps: 10,
-    estimatedTime: "~45 min",
-    status: "published" as const,
-    toUrl: "https://zio.dev/",
   },
   // Future pairings (commented out until content is ready)
   // {
