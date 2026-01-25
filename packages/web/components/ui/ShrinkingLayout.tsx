@@ -48,14 +48,22 @@ export interface ShrinkingLayoutProps {
  * Applies a right margin to children on desktop when sidebar is open.
  * This allows the main content to "shrink" and make room for the sidebar
  * while remaining interactive.
+ *
+ * Does NOT apply margin when:
+ * - Sandbox is disabled (e.g., cats-zio uses Scastie, no terminal sidebar)
+ * - Sandbox config is not yet loaded (prevents layout shift on initial render)
  */
 export function ShrinkingLayout({ children }: ShrinkingLayoutProps): ReactNode {
-  const { isOpen, sidebarWidth } = useTerminalContext()
+  const { isOpen, sidebarWidth, sandboxConfig } = useTerminalContext()
+
+  // Don't apply margin if sandbox is disabled or config not yet loaded
+  const sandboxEnabled = sandboxConfig !== undefined && sandboxConfig.enabled !== false
+  const shouldShrink = isOpen && sandboxEnabled
 
   return (
     <div
       className="transition-[margin] duration-[var(--transition-sidebar)] ease-in-out"
-      style={{ marginRight: isOpen ? `${sidebarWidth}px` : 0 }}
+      style={{ marginRight: shouldShrink ? `${sidebarWidth}px` : 0 }}
     >
       {children}
     </div>
