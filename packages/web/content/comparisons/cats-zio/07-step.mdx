@@ -13,192 +13,194 @@ Both libraries use lightweight fibers for concurrency. ZIO has built-in supervis
 ## Forking Fibers
 
 <ScalaComparisonBlock
-  zioCode={`// ZIO - fork a fiber
-val zioForked: ZIO[Any, Nothing, Fiber[Nothing, Int]] =
-  ZIO.succeed(42).fork
+  catsEffectCode={`import cats.effect.IO
 
-// ZIO - fork and forget
-val zioForkDaemon: ZIO[Any, Nothing, Unit] =
-  ZIO.succeed(println("Running in background"))
-    .forkDaemon`}
-  catsEffectCode={`// Cats Effect - spawn a fiber
-val ceSpawned: IO[Nothing, Fiber[IO, Throwable, Int]] =
+// Start a fiber
+val fiber: IO[Fiber[IO, Throwable, Int]] =
   IO.pure(42).start
 
-// Cats Effect - start and forget
-val ceBackground: IO[Nothing, Unit] =
-  IO.delay(println("Running in background"))
+// Fire and forget
+val background: IO[Unit] =
+  IO.println("Running in background")
     .start
     .void`}
+  zioCode={`import zio._
+
+// Fork a fiber
+val fiber: UIO[Fiber[Nothing, Int]] =
+  ZIO.succeed(42).fork
+
+// Fork daemon (outlives parent)
+val daemon: UIO[Fiber[Nothing, Unit]] =
+  ZIO.succeed(println("Background"))
+    .forkDaemon`}
+  catsEffectComment="start - spawn a fiber"
   zioComment="fork / forkDaemon - start concurrent execution"
-  catsEffectComment="spawn / start - start concurrent execution"
 />
 
-## Join and Await
+## Joining Fibers
 
 <ScalaComparisonBlock
-  zioCode={`// ZIO - join fiber (await result)
-val zioJoin: ZIO[Any, Nothing, Int] =
-  for {
-    fiber <- ZIO.succeed(42).fork
-    result <- fiber.join
-  } yield result
+  catsEffectCode={`import cats.effect.IO
+import cats.effect.Outcome
 
-// ZIO - joinAll (wait for multiple)
-val zioJoinAll: ZIO[Any, Nothing, List[Int]] =
-  for {
-    fibers <- ZIO.foreach(List(1, 2, 3))(i =>
-      ZIO.succeed(i * 2).fork
-    )
-    results <- ZIO.collectAll(fibers.map(_.join))
-  } yield results`}
-  catsEffectCode={`// Cats Effect - join fiber (await result)
-val ceJoin: IO[Nothing, Int] =
-  for {
-    fiber <- IO.pure(42).start
-    result <- fiber.join
-  } yield result
+// Join fiber and get result
+val joined: IO[Int] = for {
+  fib <- IO.pure(42).start
+  result <- fib.joinWithNever
+} yield result
 
-// Cats Effect - join multiple
-import cats.syntax.all.*
-val ceJoinAll: IO[Nothing, List[Int]] =
-  for {
-    fibers <- List(1, 2, 3).traverse(i =>
-      IO.pure(i * 2).start
-    )
-    results <- fibers.traverse(_.join)
-  } yield results`}
-  zioComment="join / collectAll - await fiber results"
-  catsEffectComment="join / traverse - await fiber results"
+// Join with outcome
+val withOutcome: IO[Outcome[IO, Throwable, Int]] =
+  IO.pure(42).start.flatMap(_.join)`}
+  zioCode={`import zio._
+
+// Join fiber and get result
+val joined: UIO[Int] = for {
+  fib <- ZIO.succeed(42).fork
+  result <- fib.join
+} yield result
+
+// Await with Exit
+val withExit: UIO[Exit[Nothing, Int]] =
+  ZIO.succeed(42).fork.flatMap(_.await)`}
+  catsEffectComment="joinWithNever / join"
+  zioComment="join / await"
 />
 
-## Race Conditions
+## Racing
 
 <ScalaComparisonBlock
-  zioCode={`// ZIO - race (first to finish wins)
-val zioRace: ZIO[Any, Nothing, Int] =
-  ZIO.succeed(42).race(ZIO.succeed(100))
+  catsEffectCode={`import cats.effect.IO
 
-// ZIO - raceBoth (get winner and loser)
-val zioRaceBoth: ZIO[Any, Nothing, (Int, Int)] =
-  ZIO.succeed(42).raceBoth(ZIO.succeed(100)) {
-    case (winner, loser) => ZIO.succeed((winner, loser))
-  }`}
-  catsEffectCode={`// Cats Effect - race (first to finish wins)
-val ceRace: IO[Nothing, Int] =
-  IO.pure(42).race(IO.pure(100))
+// First to complete wins, loser canceled
+val raced: IO[Either[Int, String]] =
+  IO.pure(42).race(IO.pure("hello"))
 
-// Cats Effect - raceOutcome (both results)
-val ceRaceOutcome: IO[Nothing, (Int, Outcome[IO, Throwable, Int])] =
-  IO.pure(42).raceOutcome(IO.pure(100)).map {
-    case Left((a, ob)) => (a, ob)
-    case Right((ob, a)) => (a, ob)
-  }`}
-  zioComment="race / raceBoth - compete fibers"
-  catsEffectComment="race / raceOutcome - compete fibers"
+// Both results
+val both: IO[Either[
+  (Outcome[IO, Throwable, Int], Fiber[IO, Throwable, String]),
+  (Fiber[IO, Throwable, Int], Outcome[IO, Throwable, String])
+]] = IO.pure(42).racePair(IO.pure("hello"))`}
+  zioCode={`import zio._
+
+// First to complete wins, loser canceled
+val raced: UIO[Either[Int, String]] =
+  ZIO.succeed(42).race(ZIO.succeed("hello"))
+
+// Get both (winner first)
+val both: UIO[(Int, Fiber[Nothing, String])] =
+  ZIO.succeed(42).raceWith(ZIO.succeed("hello"))(
+    (exit, fib) => exit.fold(_ => fib.join.map(s => (0, ???)), a => ZIO.succeed((a, fib))),
+    (exit, fib) => exit.fold(_ => fib.join.map(a => (a, ???)), _ => ZIO.never)
+  )`}
+  catsEffectComment="race / racePair"
+  zioComment="race / raceWith"
 />
 
 ## Timeout
 
 <ScalaComparisonBlock
-  zioCode={`// ZIO - timeout
-import zio.Duration.*
+  catsEffectCode={`import cats.effect.IO
+import scala.concurrent.duration._
 
-val zioTimeout: ZIO[Any, Nothing, Option[Int]] =
-  ZIO.succeed(42)
-    .timeout(5.seconds)
-    .someOrFailException`}
-  catsEffectCode={`// Cats Effect - timeout
-import scala.concurrent.duration.*
+// Timeout returns Option
+val withTimeout: IO[Option[Int]] =
+  IO.sleep(10.seconds).as(42)
+    .timeout(1.second)
 
-val ceTimeout: IO[Nothing, Int] =
-  IO.pure(42)
-    .timeout(5.seconds)
-    .flatMap {
-      case Some(value) => IO.pure(value)
-      case None => IO.raiseError(new TimeoutException)
-    }`}
-  zioComment="timeout - cancel if too slow"
-  catsEffectComment="timeout - cancel if too slow"
+// Timeout or raise
+val timeoutOrFail: IO[Int] =
+  IO.sleep(10.seconds).as(42)
+    .timeoutTo(1.second, IO.raiseError(
+      new java.util.concurrent.TimeoutException
+    ))`}
+  zioCode={`import zio._
+import zio.Duration._
+
+// Timeout returns Option
+val withTimeout: UIO[Option[Int]] =
+  ZIO.sleep(10.seconds).as(42)
+    .timeout(1.second)
+
+// Timeout or fail
+val timeoutOrFail: IO[java.util.concurrent.TimeoutException, Int] =
+  ZIO.sleep(10.seconds).as(42)
+    .timeoutFail(new java.util.concurrent.TimeoutException)(1.second)`}
+  catsEffectComment="timeout / timeoutTo"
+  zioComment="timeout / timeoutFail"
 />
 
 ## Cancellation
 
 <ScalaComparisonBlock
-  zioCode={`// ZIO - interrupt a fiber
-val zioInterrupt: ZIO[Any, Nothing, Unit] =
-  for {
-    fiber <- ZIO.never.fork
-    _ <- fiber.interrupt
-  } yield ()
+  catsEffectCode={`import cats.effect.IO
 
-// ZIO - interrupt fiber join
-val zioInterruptJoin: ZIO[Any, Nothing, Exit[Nothing, Unit]] =
-  for {
-    fiber <- ZIO.never.fork
-    exit <- fiber.interruptFork
-  } yield exit`}
-  catsEffectCode={`// Cats Effect - cancel a fiber
-val ceCancel: IO[Nothing, Unit] =
-  for {
-    fiber <- IO.never.start
-    _ <- fiber.cancel
-  } yield ()
+// Cancel a fiber
+val canceled: IO[Unit] = for {
+  fib <- IO.never[Int].start
+  _ <- fib.cancel
+} yield ()
 
-// Cats Effect - cancel and join
-val ceCancelJoin: IO[Nothing, Outcome[IO, Throwable, Unit]] =
-  for {
-    fiber <- IO.never.start
-    outcome <- fiber.cancel.join
-  } yield outcome`}
-  zioComment="interrupt / interruptFork - cancel fibers"
-  catsEffectComment="cancel - cancel fibers"
+// Uncancelable region
+val uncancelable: IO[Int] =
+  IO.uncancelable { poll =>
+    // poll(io) makes io cancelable again
+    IO.pure(42)
+  }`}
+  zioCode={`import zio._
+
+// Interrupt a fiber
+val interrupted: UIO[Unit] = for {
+  fib <- ZIO.never.fork
+  _ <- fib.interrupt
+} yield ()
+
+// Uninterruptible region
+val uninterruptible: UIO[Int] =
+  ZIO.uninterruptible {
+    ZIO.succeed(42)
+  }`}
+  catsEffectComment="cancel / uncancelable"
+  zioComment="interrupt / uninterruptible"
 />
 
 <Callout variant="warning">
-Cancellation in both libraries is cooperative. Effects must check for
-cancellation to respect it. Use `IO.uncancelable` to prevent cancellation.
+Cancellation/interruption is cooperative. Long-running computations should
+check for cancellation periodically using `IO.canceled` or `ZIO.checkInterrupted`.
 </Callout>
 
 ## Supervision
 
 <ScalaComparisonBlock
-  zioCode={`// ZIO - supervised fibers auto-join on failure
-val zioSupervised: ZIO[Any, Nothing, Unit] =
-  ZIO.supervised {
-    for {
-      _ <- ZIO.succeed(println("Child")).fork
-      _ <- ZIO.sleep(1.second)
-    } yield ()
-  }
+  catsEffectCode={`import cats.effect._
 
-// ZIO - custom supervision strategy
-val zioSupervisor: ZIO[Any, Nothing, Unit] =
-  ZIO.supervised(Supervisor.track) {
-    for {
-      _ <- ZIO.succeed(println("Child")).fork
-      _ <- ZIO.sleep(1.second)
-    } yield ()
-  }`}
-  catsEffectCode={`// Cats Effect - manual supervision with Resource
-val ceSupervised: Resource[IO, Fiber[IO, Throwable, Unit]] =
-  Resource.make(IO.never.start)(fiber =>
-    fiber.cancel.handleErrorWith(_ => IO.unit)
-  )
+// Supervise with Resource
+def supervised[A](io: IO[A]): Resource[IO, Fiber[IO, Throwable, A]] =
+  Resource.make(io.start)(_.cancel)
 
-val ceUseSupervised: IO[Throwable, Unit] =
-  ceSupervised.use { fiber =>
-    for {
-      _ <- IO.delay(println("Child"))
-      _ <- IO.sleep(1.second)
-    } yield ()
+// All fibers canceled when Resource releases
+val program: IO[Unit] =
+  supervised(IO.never[Int]).use { fib =>
+    IO.sleep(1.second)
   }`}
-  zioComment="supervised - automatic fiber supervision"
-  catsEffectComment="Manual supervision with Resource"
+  zioCode={`import zio._
+
+// Supervised scope - children interrupted on completion
+val program: UIO[Unit] = ZIO.scoped {
+  for {
+    _ <- ZIO.never.forkScoped
+    _ <- ZIO.sleep(1.second)
+  } yield ()
+}
+
+// All forkScoped fibers interrupted when scope exits`}
+  catsEffectComment="Resource-based supervision"
+  zioComment="forkScoped - automatic supervision"
 />
 
 ## Next Steps
 
 With concurrency covered, let's explore streaming with ZStream and fs2.
 
-[Next →](/cats-effect-zio/8)
+[Next: Streaming →](/cats-zio/8)

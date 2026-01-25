@@ -13,136 +13,192 @@ Both ZIO and Cats Effect guarantee referential transparency through their effect
 ## Map (Transform Success)
 
 <ScalaComparisonBlock
-  zioCode={`// ZIO - map success value
-val zioMap: ZIO[Any, Nothing, Int] =
-  ZIO.succeed(21)
-    .map(_ * 2)
-    .map(_ + 10)
+  catsEffectCode={`import cats.effect.IO
 
-// Result: UIO[Int] = 52`}
-  catsEffectCode={`// Cats Effect - map success value
-val ceMap: IO[Nothing, Int] =
+// Transform success value
+val mapped: IO[Int] =
   IO.pure(21)
     .map(_ * 2)
     .map(_ + 10)
 
-// Result: IO[Int] = 52`}
-  zioComment="map - transform success value"
+// Result: IO containing 52`}
+  zioCode={`import zio._
+
+// Transform success value
+val mapped: UIO[Int] =
+  ZIO.succeed(21)
+    .map(_ * 2)
+    .map(_ + 10)
+
+// Result: UIO containing 52`}
   catsEffectComment="map - transform success value"
+  zioComment="map - transform success value"
 />
 
 ## FlatMap (Chain Effects)
 
 <ScalaComparisonBlock
-  zioCode={`// ZIO - flatMap (for-comprehension)
-val zioFlatMap: ZIO[Any, Nothing, Int] =
-  for {
-    x <- ZIO.succeed(10)
-    y <- ZIO.succeed(20)
-    z <- ZIO.succeed(x + y)
-  } yield z * 2
+  catsEffectCode={`import cats.effect.IO
 
-// Equivalent to:
-val zioFlatMap2 = ZIO.succeed(10)
-  .flatMap(x => ZIO.succeed(20)
-  .flatMap(y => ZIO.succeed(x + y)
-  .map(z => z * 2)))`}
-  catsEffectCode={`// Cats Effect - flatMap (for-comprehension)
-val ceFlatMap: IO[Nothing, Int] =
-  for {
-    x <- IO.pure(10)
-    y <- IO.pure(20)
-    z <- IO.pure(x + y)
-  } yield z * 2
+// For-comprehension
+val program: IO[Int] = for {
+  x <- IO.pure(10)
+  y <- IO.pure(20)
+  z <- IO.pure(x + y)
+} yield z * 2
 
-// Equivalent to:
-val ceFlatMap2 = IO.pure(10)
-  .flatMap(x => IO.pure(20)
-  .flatMap(y => IO.pure(x + y)
-  .map(z => z * 2)))`}
-  zioComment="flatMap / for-comprehension - chain effects"
-  catsEffectComment="flatMap / for-comprehension - chain effects"
+// Equivalent to nested flatMap
+val manual: IO[Int] =
+  IO.pure(10).flatMap { x =>
+    IO.pure(20).flatMap { y =>
+      IO.pure(x + y).map { z =>
+        z * 2
+      }
+    }
+  }`}
+  zioCode={`import zio._
+
+// For-comprehension
+val program: UIO[Int] = for {
+  x <- ZIO.succeed(10)
+  y <- ZIO.succeed(20)
+  z <- ZIO.succeed(x + y)
+} yield z * 2
+
+// Equivalent to nested flatMap
+val manual: UIO[Int] =
+  ZIO.succeed(10).flatMap { x =>
+    ZIO.succeed(20).flatMap { y =>
+      ZIO.succeed(x + y).map { z =>
+        z * 2
+      }
+    }
+  }`}
+  catsEffectComment="flatMap / for-comprehension"
+  zioComment="flatMap / for-comprehension"
 />
 
-## Error Propagation in FlatMap
+## Error Short-Circuiting
 
 <ScalaComparisonBlock
-  zioCode={`// ZIO - errors short-circuit
-val zioErrorChain: ZIO[Any, String, Int] =
-  ZIO.fail("error")
-    .flatMap(_ => ZIO.succeed(42))
-    .flatMap(_ => ZIO.succeed(100))
+  catsEffectCode={`import cats.effect.IO
+
+// Errors short-circuit the chain
+val shortCircuit: IO[Int] = for {
+  _ <- IO.raiseError[Unit](new Exception("fail"))
+  _ <- IO.println("never runs")
+  x <- IO.pure(42)
+} yield x
+
+// Result: Exception("fail")`}
+  zioCode={`import zio._
+
+// Errors short-circuit the chain
+val shortCircuit: IO[String, Int] = for {
+  _ <- ZIO.fail("error")
+  _ <- ZIO.succeed(println("never runs"))
+  x <- ZIO.succeed(42)
+} yield x
+
 // Result: ZIO.fail("error")`}
-  catsEffectCode={`// Cats Effect - errors short-circuit
-val ceErrorChain: IO[String, Int] =
-  IO.raiseError("error")
-    .flatMap(_ => IO.pure(42))
-    .flatMap(_ => IO.pure(100))
-// Result: IO.raiseError("error")`}
-  zioComment="Errors in flatMap short-circuit"
-  catsEffectComment="Errors in flatMap short-circuit"
+  catsEffectComment="Errors propagate, skipping subsequent steps"
+  zioComment="Errors propagate, skipping subsequent steps"
 />
 
 <Callout variant="tip">
 Both libraries short-circuit on errors in flatMap chains. This is called
-"error propagation" and is fundamental to typed error handling.
+"fail-fast" semantics and is fundamental to monadic error handling.
 </Callout>
 
-## Zip (Parallel Execution)
+## Parallel Composition
 
 <ScalaComparisonBlock
-  zioCode={`// ZIO - zip (parallel by default)
-val zioZip: ZIO[Any, Nothing, (Int, String)] =
-  ZIO.succeed(42).zip(ZIO.succeed("hello"))
+  catsEffectCode={`import cats.effect.IO
+import cats.syntax.all._
 
-// ZIO - zipWith (combine results)
-val zioZipWith: ZIO[Any, Nothing, String] =
-  ZIO.succeed(42).zipWith(ZIO.succeed(10))(_ + _)`}
-  catsEffectCode={`// Cats Effect - parZip2 (parallel)
-import cats.effect.syntax.all.*
-import cats.Parallel
-
-val ceZip: IO[Nothing, (Int, String)] =
+// Parallel tuple
+val parallel: IO[(Int, String)] =
   (IO.pure(42), IO.pure("hello")).parTupled
 
-// Cats Effect - map2 (combine parallel)
-val ceMap2: IO[Nothing, Int] =
-  (IO.pure(42), IO.pure(10)).parMapN(_ + _)`}
-  zioComment="zip / zipWith - combine parallel effects"
-  catsEffectComment="parTupled / parMapN - combine parallel effects"
+// Parallel map
+val parMapped: IO[Int] =
+  (IO.pure(1), IO.pure(2), IO.pure(3))
+    .parMapN(_ + _ + _)`}
+  zioCode={`import zio._
+
+// Parallel zip
+val parallel: UIO[(Int, String)] =
+  ZIO.succeed(42) <&> ZIO.succeed("hello")
+
+// Parallel map
+val parMapped: UIO[Int] =
+  ZIO.succeed(1)
+    .zipWithPar(ZIO.succeed(2))(_ + _)
+    .zipWithPar(ZIO.succeed(3))(_ + _)`}
+  catsEffectComment="parTupled / parMapN - parallel execution"
+  zioComment="<&> / zipWithPar - parallel execution"
 />
 
 ## Sequencing Collections
 
 <ScalaComparisonBlock
-  zioCode={`// ZIO - collectAll (sequential)
-val zioSeq: ZIO[Any, Nothing, List[Int]] =
+  catsEffectCode={`import cats.effect.IO
+import cats.syntax.all._
+
+// Sequential
+val sequential: IO[List[Int]] =
+  List(IO.pure(1), IO.pure(2), IO.pure(3))
+    .sequence
+
+// Parallel
+val parallel: IO[List[Int]] =
+  List(IO.pure(1), IO.pure(2), IO.pure(3))
+    .parSequence`}
+  zioCode={`import zio._
+
+// Sequential
+val sequential: UIO[List[Int]] =
   ZIO.collectAll(
     List(ZIO.succeed(1), ZIO.succeed(2), ZIO.succeed(3))
   )
 
-// ZIO - collectAllPar (parallel)
-val zioPar: ZIO[Any, Nothing, List[Int]] =
+// Parallel
+val parallel: UIO[List[Int]] =
   ZIO.collectAllPar(
     List(ZIO.succeed(1), ZIO.succeed(2), ZIO.succeed(3))
   )`}
-  catsEffectCode={`// Cats Effect - sequence (sequential)
-import cats.syntax.all.*
+  catsEffectComment="sequence / parSequence"
+  zioComment="collectAll / collectAllPar"
+/>
 
-val ceSeq: IO[Nothing, List[Int]] =
-  List(IO.pure(1), IO.pure(2), IO.pure(3))
-    .sequence
+## Traverse
 
-// Cats Effect - parSequence (parallel)
-val cePar: IO[Nothing, List[Int]] =
-  List(IO.pure(1), IO.pure(2), IO.pure(3))
-    .parSequence`}
-  zioComment="collectAll / collectAllPar - sequence effects"
-  catsEffectComment="sequence / parSequence - sequence effects"
+<ScalaComparisonBlock
+  catsEffectCode={`import cats.effect.IO
+import cats.syntax.all._
+
+// Traverse with effect
+val traversed: IO[List[Int]] =
+  List(1, 2, 3).traverse(n => IO.pure(n * 2))
+
+// Parallel traverse
+val parTraversed: IO[List[Int]] =
+  List(1, 2, 3).parTraverse(n => IO.pure(n * 2))`}
+  zioCode={`import zio._
+
+// Traverse with effect
+val traversed: UIO[List[Int]] =
+  ZIO.foreach(List(1, 2, 3))(n => ZIO.succeed(n * 2))
+
+// Parallel traverse
+val parTraversed: UIO[List[Int]] =
+  ZIO.foreachPar(List(1, 2, 3))(n => ZIO.succeed(n * 2))`}
+  catsEffectComment="traverse / parTraverse"
+  zioComment="foreach / foreachPar"
 />
 
 ## Next Steps
 
 With functional composition covered, let's explore dependency injection patterns.
 
-[Next →](/cats-effect-zio/5)
+[Next: Dependency Injection →](/cats-zio/5)

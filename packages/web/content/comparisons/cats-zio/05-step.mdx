@@ -1,183 +1,202 @@
 ---
 title: "Dependency Injection"
 step: 5
-description: "ZLayers vs Tagless Final patterns"
+description: "ZLayer vs Tagless Final patterns"
 zioCommands: []
 ceCommands: []
 ---
 
 # Dependency Injection
 
-ZIO and Cats Effect take different approaches to dependency injection. ZIO uses `ZLayer` with the environment parameter `R`. Cats Effect uses `Resource` and tagless final patterns.
+ZIO and Cats Effect take fundamentally different approaches to dependency injection.
 
-## ZIO Environment Pattern
+## The Core Difference
 
 <ScalaComparisonBlock
-  zioCode={`// ZIO - define service interface
+  catsEffectCode={`import cats.effect.IO
+
+// Cats Effect: Pass dependencies as parameters
+// or use Kleisli/Reader pattern
 trait Logger {
-  def log(msg: String): ZIO[Any, Nothing, Unit]
+  def log(msg: String): IO[Unit]
 }
 
-object Logger {
-  def log(msg: String): ZIO[Logger, Nothing, Unit] =
-    ZIO.serviceWithLog(_.log(msg))
-}
+def program(logger: Logger): IO[Unit] =
+  logger.log("Hello")`}
+  zioCode={`import zio._
 
-// ZIO - implementation
-case class ConsoleLogger() extends Logger {
-  def log(msg: String): ZIO[Any, Nothing, Unit] =
-    ZIO.succeed(println(msg))
-}
-
-// ZIO - layer
-val loggerLayer: ULayer[Logger] =
-  ZLayer.succeed(ConsoleLogger())`}
-  catsEffectCode={`// Cats Effect - define service interface
+// ZIO: Dependencies in the R type parameter
 trait Logger {
-  def log(msg: String): IO[Nothing, Unit]
+  def log(msg: String): UIO[Unit]
 }
 
-object Logger {
-  def log(msg: String): IO[Logger, Unit] =
-    IO.askWith(logger => logger.log(msg))
-}
-
-// Cats Effect - implementation
-case class ConsoleLogger() extends Logger {
-  def log(msg: String): IO[Nothing, Unit] =
-    IO.delay(println(msg))
-}
-
-// Cats Effect - resource (not layer)
-val loggerResource: Resource[IO, Logger] =
-  Resource.pure(ConsoleLogger())`}
-  zioComment="ZLayer - dependency injection through R parameter"
-  catsEffectComment="Resource - dependency management, not injection"
+// Effect requires Logger in environment
+val program: ZIO[Logger, Nothing, Unit] =
+  ZIO.serviceWithZIO[Logger](_.log("Hello"))`}
+  catsEffectComment="Dependencies as function parameters"
+  zioComment="Dependencies encoded in the type system"
 />
 
-## Using Dependencies
+## ZIO Service Pattern
 
 <ScalaComparisonBlock
-  zioCode={`// ZIO - program with dependencies
-val zioProgram: ZIO[Logger, Nothing, Unit] =
-  for {
-    _ <- Logger.log("Starting")
-    _ <- Logger.log("Complete")
-  } yield ()
+  catsEffectCode={`import cats.effect.IO
 
-// ZIO - provide layer
-val zioRun: ZIO[Any, Nothing, Unit] =
-  zioProgram.provideLayer(loggerLayer)
+// Define trait
+trait UserService {
+  def getUser(id: Int): IO[Option[User]]
+}
 
-// Or provide from some layer
-val zioRun2: ZIO[Any, Nothing, Unit] =
-  zioProgram.provideSomeLayer[Logger](loggerLayer)`}
-  catsEffectCode={`// Cats Effect - Kleisli for dependencies
-import cats.data.Kleisli
+// Implementation
+class UserServiceLive extends UserService {
+  def getUser(id: Int): IO[Option[User]] =
+    IO.pure(Some(User(id, "Alice")))
+}
 
-type LoggerIO[A] = Kleisli[IO, Logger, A]
+// Use directly
+val service = new UserServiceLive
+service.getUser(1)`}
+  zioCode={`import zio._
 
-val ceProgram: LoggerIO[Unit] =
-  for {
-    logger <- Kleisli.ask[IO, Logger]
-    _ <- Kleisli.liftF(logger.log("Starting"))
-    _ <- Kleisli.liftF(logger.log("Complete"))
-  } yield ()
+// Define trait
+trait UserService {
+  def getUser(id: Int): UIO[Option[User]]
+}
 
-// Cats Effect - run with dependency
-val ceRun: IO[Throwable, Unit] =
-  ceProgram.run(ConsoleLogger())`}
-  zioComment="provideLayer - inject dependencies into R"
-  catsEffectComment="Kleisli.run - pass dependencies through functions"
+// Companion with accessor
+object UserService {
+  def getUser(id: Int): ZIO[UserService, Nothing, Option[User]] =
+    ZIO.serviceWithZIO[UserService](_.getUser(id))
+}
+
+// Implementation as ZLayer
+val live: ULayer[UserService] = ZLayer.succeed {
+  new UserService {
+    def getUser(id: Int) = ZIO.some(User(id, "Alice"))
+  }
+}`}
+  catsEffectComment="Direct instantiation"
+  zioComment="ZLayer for dependency management"
 />
 
-## Tagless Final Pattern
+## Cats Effect: Tagless Final
 
 <ScalaComparisonBlock
-  zioCode={`// ZIO - tagless final (less common)
-trait Logging[F[_]] {
-  def log(msg: String): F[Unit]
+  catsEffectCode={`import cats.effect.IO
+import cats.Monad
+
+// Abstract over effect type F[_]
+trait UserService[F[_]] {
+  def getUser(id: Int): F[Option[User]]
 }
 
-object Logging {
-  def apply[F[_]](implicit L: Logging[F]): Logging[F] = L
-
-  def log[F[_]](msg: String)(implicit L: Logging[F]): F[Unit] =
-    L.log(msg)
+// Companion with summoner
+object UserService {
+  def apply[F[_]](implicit ev: UserService[F]): UserService[F] = ev
 }
 
-// ZIO - instance for ZIO
-implicit val loggingZIO: Logging[UIO] =
-  new Logging[UIO] {
-    def log(msg: String): UIO[Unit] =
-      ZIO.succeed(println(msg))
-  }`}
-  catsEffectCode={`// Cats Effect - tagless final (common pattern)
-trait Logging[F[_]] {
-  def log(msg: String): F[Unit]
+// Instance for IO
+implicit val ioUserService: UserService[IO] =
+  new UserService[IO] {
+    def getUser(id: Int) = IO.pure(Some(User(id, "Alice")))
+  }
+
+// Use with type class constraint
+def program[F[_]: UserService: Monad]: F[String] =
+  UserService[F].getUser(1).map(_.fold("Not found")(_.name))`}
+  zioCode={`import zio._
+
+// ZIO rarely uses tagless final
+// Instead, use the environment pattern
+
+trait UserService {
+  def getUser(id: Int): UIO[Option[User]]
 }
 
-object Logging {
-  def apply[F[_]](implicit L: Logging[F]): Logging[F] = L
-
-  def log[F[_]](msg: String)(implicit L: Logging[F]): F[Unit] =
-    L.log(msg)
-}
-
-// Cats Effect - instance for IO
-implicit val loggingIO: Logging[IO] =
-  new Logging[IO] {
-    def log(msg: String): IO[Unit] =
-      IO.delay(println(msg))
-  }`}
-  zioComment="Tagless final works but ZLayer is preferred"
-  catsEffectComment="Tagless final is the standard pattern"
+// The effect type is always ZIO
+def program: ZIO[UserService, Nothing, String] =
+  UserService.getUser(1).map(_.fold("Not found")(_.name))`}
+  catsEffectComment="Tagless Final - abstract over F[_]"
+  zioComment="ZIO uses environment (R) instead"
 />
 
-## Multiple Dependencies
+## Composing Dependencies
 
 <ScalaComparisonBlock
-  zioCode={`// ZIO - compose layers
-trait Database { def query: ZIO[Any, Nothing, Int] }
-trait Cache { def get: ZIO[Any, Nothing, Option[Int]] }
+  catsEffectCode={`import cats.effect._
 
+trait Database { def query: IO[Int] }
+trait Cache { def get: IO[Option[Int]] }
+
+// Pass multiple dependencies
+def program(db: Database, cache: Cache): IO[Int] =
+  cache.get.flatMap {
+    case Some(v) => IO.pure(v)
+    case None => db.query
+  }
+
+// Or use a case class
+case class Deps(db: Database, cache: Cache)
+
+def programWithDeps(deps: Deps): IO[Int] =
+  program(deps.db, deps.cache)`}
+  zioCode={`import zio._
+
+trait Database { def query: UIO[Int] }
+trait Cache { def get: UIO[Option[Int]] }
+
+// Compose with & (intersection type)
+val program: ZIO[Database & Cache, Nothing, Int] =
+  ZIO.serviceWithZIO[Cache](_.get).flatMap {
+    case Some(v) => ZIO.succeed(v)
+    case None => ZIO.serviceWithZIO[Database](_.query)
+  }
+
+// Compose layers with ++
 val appLayer: ULayer[Database & Cache] =
-  ZLayer.succeed(Database()) ++ ZLayer.succeed(Cache())
-
-val zioApp: ZIO[Database & Cache, Nothing, Unit] =
-  for {
-    db <- ZIO.service[Database]
-    cache <- ZIO.service[Cache]
-    _ <- db.query
-  } yield ()`}
-  catsEffectCode={`// Cats Effect - Resource composition
-trait Database { def query: IO[Nothing, Int] }
-trait Cache { def get: IO[Nothing, Option[Int]] }
-
-val appResource: Resource[IO, (Database, Cache)] =
-  for {
-    db <- Resource.pure(Database())
-    cache <- Resource.pure(Cache())
-  } yield (db, cache)
-
-val ceApp: Resource[IO, Unit] =
-  appResource.use { case (db, cache) =>
-    for {
-      _ <- db.query
-      _ <- cache.get
-    } yield ()
-  }`}
-  zioComment="++ operator composes ZLayers"
-  catsEffectComment="Resource.forProductN composes dependencies"
+  databaseLayer ++ cacheLayer`}
+  catsEffectComment="Compose via parameters or wrapper"
+  zioComment="Compose via intersection types and ++"
 />
 
 <Callout variant="tip">
-ZIO's ZLayer provides compile-time dependency injection through the type system.
-Cats Effect prefers tagless final or manual Resource composition.
+ZIO's environment pattern provides compile-time verification that all dependencies are satisfied.
+Cats Effect relies on the compiler checking function parameters.
 </Callout>
+
+## Providing Dependencies
+
+<ScalaComparisonBlock
+  catsEffectCode={`import cats.effect._
+
+trait Config { val port: Int }
+
+def server(config: Config): IO[Unit] =
+  IO.println(s"Starting on port \${config.port}")
+
+// Provide at call site
+val program: IO[Unit] =
+  server(new Config { val port = 8080 })`}
+  zioCode={`import zio._
+
+trait Config { val port: Int }
+
+val server: ZIO[Config, Nothing, Unit] =
+  ZIO.serviceWith[Config](c =>
+    println(s"Starting on port \${c.port}")
+  )
+
+// Provide layer
+val program: UIO[Unit] =
+  server.provideLayer(
+    ZLayer.succeed(new Config { val port = 8080 })
+  )`}
+  catsEffectComment="Pass dependencies at call site"
+  zioComment="provideLayer eliminates R requirement"
+/>
 
 ## Next Steps
 
-Now let's look at resource management and lifecycle handling.
+Dependency injection differs significantly. Now let's look at resource management.
 
-[Next →](/cats-effect-zio/6)
+[Next: Resource Management →](/cats-zio/6)

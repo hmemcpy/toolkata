@@ -13,56 +13,67 @@ The fundamental difference between ZIO and Cats Effect starts with the type sign
 ## The Type Signatures
 
 <ScalaComparisonBlock
-  zioCode={`import zio.*
+  catsEffectCode={`import cats.effect.IO
+
+// Cats Effect 3: IO has ONE type parameter
+// Error type is always Throwable (not in signature)
+val ceEffect: IO[Int] = IO.pure(42)`}
+  zioCode={`import zio._
 
 // ZIO has THREE type parameters
-val zioEffect: ZIO[String, Throwable, Int] =
+// ZIO[R, E, A] = Environment, Error, Success
+val zioEffect: ZIO[Any, Nothing, Int] =
   ZIO.succeed(42)`}
-  catsEffectCode={`import cats.effect.*
-
-// Cats Effect 3: IO has TWO type parameters
-val ceEffect: IO[Throwable, Int] =
-  IO.pure(42)`}
+  catsEffectComment="IO[A] - Success type only (error is Throwable)"
   zioComment="ZIO[R, E, A] - Environment, Error, Success"
-  catsEffectComment="IO[E, A] - Error, Success (no environment)"
 />
 
 ## The Parameters
 
 | Parameter | ZIO | Cats Effect | Purpose |
 |-----------|-----|-------------|---------|
-| **R** | `ZIO[R, E, A]` | None | Environment/Dependencies |
-| **E** | `ZIO[R, E, A]` | `IO[E, A]` | Error type |
-| **A** | `ZIO[R, E, A]` | `IO[E, A]` | Success type |
+| **R** | `ZIO[R, E, A]` | N/A | Environment/Dependencies |
+| **E** | `ZIO[R, E, A]` | Always `Throwable` | Error type |
+| **A** | `ZIO[R, E, A]` | `IO[A]` | Success type |
 
 ## Key Insight
 
-**ZIO** has an explicit environment parameter `R` for dependency injection.
+**ZIO** has an explicit environment parameter `R` for dependency injection, and a typed error channel `E`.
 
-**Cats Effect** doesn't - you use `Kleisli` or `Resource` for dependencies.
+**Cats Effect** uses `Throwable` for all errors. Dependencies are handled via `Kleisli`, `Reader`, or passed as parameters.
 
 <Callout variant="tip">
-In practice, CE3's `IO[E, A]` is equivalent to ZIO's `ZIO[Any, E, A]`.
+Cats Effect's `IO[A]` is roughly equivalent to ZIO's `ZIO[Any, Throwable, A]` (also known as `Task[A]`).
 </Callout>
 
-## UIO vs IO
+## Common Type Aliases
 
-In ZIO, you often use `UIO[A]` for effects that can't fail:
+<ScalaComparisonBlock
+  catsEffectCode={`import cats.effect.IO
 
-```scala
-// ZIO - no error type
-val zioNoError: UIO[Int] = ZIO.succeed(42)
-```
+// IO[A] is the only effect type
+// Error handling uses MonadError[IO, Throwable]
+val program: IO[Int] = IO.pure(42)
 
-In Cats Effect, just use `IO[A]` with `Nothing` error type:
+// For "can't fail" semantics, use types
+// but IO still allows Throwable internally
+val safe: IO[Int] = IO.pure(42)`}
+  zioCode={`import zio._
 
-```scala
-// CE3 - Nothing means never fails
-val ceNoError: IO[Int] = IO.pure(42)
-```
+// UIO[A] = ZIO[Any, Nothing, A] (can't fail)
+val uio: UIO[Int] = ZIO.succeed(42)
+
+// Task[A] = ZIO[Any, Throwable, A]
+val task: Task[Int] = ZIO.attempt(42)
+
+// IO[E, A] = ZIO[Any, E, A] (custom error)
+val io: IO[String, Int] = ZIO.fail("oops")`}
+  catsEffectComment="IO[A] - single effect type"
+  zioComment="UIO, Task, IO - type aliases for common patterns"
+/>
 
 ## Next Steps
 
 Now that you understand the signature difference, let's look at creating effects in both libraries.
 
-[Next →](/cats-effect-zio/2)
+[Next: Creating Effects →](/cats-zio/2)

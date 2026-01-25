@@ -10,176 +10,206 @@ ceCommands: []
 
 Both libraries provide robust resource management with guaranteed cleanup.
 
-## ZManaged vs Resource
+## Basic Resource Pattern
 
 <ScalaComparisonBlock
-  zioCode={`// ZIO - ZManaged for resource safety
-import zio.*
+  catsEffectCode={`import cats.effect._
+import java.io._
 
-def openFile(path: String): ZIO[Any, IOException, File] =
-  ZIO.effect(new java.io.File(path))
-
-def closeFile(file: File): ZIO[Any, IOException, Unit] =
-  ZIO.effect(file.close())
-
-// ZManaged - acquire and release
-val managedFile: ZManaged[Any, IOException, File] =
-  ZManaged.acquireRelease(openFile("data.txt"))(file =>
-    closeFile(file).orDie
+// Resource.make(acquire)(release)
+val fileResource: Resource[IO, BufferedReader] =
+  Resource.make(
+    IO.blocking(new BufferedReader(new FileReader("data.txt")))
+  )(reader =>
+    IO.blocking(reader.close()).handleErrorWith(_ => IO.unit)
   )
 
-// Use managed resource
-val zioRead: ZIO[Any, IOException, String] =
-  managedFile.use { file =>
-    ZIO.effect(scala.io.Source.fromFile(file).mkString)
+// Use the resource
+val content: IO[String] =
+  fileResource.use { reader =>
+    IO.blocking(reader.readLine())
   }`}
-  catsEffectCode={`// Cats Effect - Resource for resource safety
-import cats.effect.*
+  zioCode={`import zio._
+import java.io._
 
-def openFile(path: String): IO[IOException, File] =
-  IO.delay(new java.io.File(path))
-
-def closeFile(file: File): IO[IOException, Unit] =
-  IO.delay(file.close())
-
-// Resource - acquire and release
-val fileResource: Resource[IO, File] =
-  Resource.make(openFile("data.txt"))(file =>
-    closeFile(file).handleErrorWith(_ => IO.unit)
+// ZIO.acquireRelease(acquire)(release)
+val fileScoped: ZIO[Scope, Throwable, BufferedReader] =
+  ZIO.acquireRelease(
+    ZIO.attemptBlocking(new BufferedReader(new FileReader("data.txt")))
+  )(reader =>
+    ZIO.succeed(reader.close())
   )
 
-// Use resource
-val ceRead: IO[IOException, String] =
-  fileResource.use { file =>
-    IO.delay(scala.io.Source.fromFile(file).mkString)
-  }`}
-  zioComment="ZManaged - resource with acquire/release"
-  catsEffectComment="Resource - resource with acquire/release"
+// Use with scoped
+val content: Task[String] = ZIO.scoped {
+  fileScoped.flatMap { reader =>
+    ZIO.attemptBlocking(reader.readLine())
+  }
+}`}
+  catsEffectComment="Resource.make - acquire/release pattern"
+  zioComment="ZIO.acquireRelease with Scope"
 />
 
-## acquireRelease Shortcut
+## Resource Composition
 
 <ScalaComparisonBlock
-  zioCode={`// ZIO - acquireRelease without ZManaged
-val zioScoped: ZIO[Any, IOException, String] =
-  ZIO.acquireRelease(openFile("data.txt"))(file =>
-    closeFile(file).orDie
-  ).use { file =>
-    ZIO.effect(scala.io.Source.fromFile(file).mkString)
+  catsEffectCode={`import cats.effect._
+
+val dbResource: Resource[IO, Database] = ???
+val cacheResource: Resource[IO, Cache] = ???
+
+// Compose with for-comprehension
+val appResource: Resource[IO, (Database, Cache)] =
+  for {
+    db <- dbResource
+    cache <- cacheResource
+  } yield (db, cache)
+
+// Both released in reverse order
+val program: IO[Unit] =
+  appResource.use { case (db, cache) =>
+    IO.println("Using both resources")
   }`}
-  catsEffectCode={`// Cats Effect - Resource.make
-val ceScoped: IO[IOException, String] =
-  Resource.make(openFile("data.txt"))(file =>
-    closeFile(file).handleErrorWith(_ => IO.unit)
-  ).use { file =>
-    IO.delay(scala.io.Source.fromFile(file).mkString)
-  }`}
-  zioComment="acquireRelease - scoped resource use"
-  catsEffectComment="Resource.make - scoped resource use"
+  zioCode={`import zio._
+
+val dbScoped: ZIO[Scope, Throwable, Database] = ???
+val cacheScoped: ZIO[Scope, Throwable, Cache] = ???
+
+// Compose in for-comprehension
+val program: Task[Unit] = ZIO.scoped {
+  for {
+    db <- dbScoped
+    cache <- cacheScoped
+    _ <- ZIO.succeed(println("Using both resources"))
+  } yield ()
+}
+
+// Both released in reverse order`}
+  catsEffectComment="Resource composition via flatMap"
+  zioComment="Scoped composition via flatMap"
 />
 
 <Callout variant="tip">
-Both libraries guarantee resource cleanup even if the effect fails or is
-interrupted. Cleanup runs in the opposite order of acquisition.
+Both libraries guarantee cleanup runs in reverse order of acquisition,
+even if the program fails or is interrupted.
 </Callout>
 
-## Multiple Resources
+## Bracket Pattern
 
 <ScalaComparisonBlock
-  zioCode={`// ZIO - compose managed resources
-val zioBoth: ZManaged[Any, IOException, (File, Socket)] =
-  managedFile.zip(managedSocket)
+  catsEffectCode={`import cats.effect.IO
 
-// Use both
-val zioUseBoth: ZIO[Any, IOException, String] =
-  zioBoth.use { case (file, socket) =>
-    ZIO.succeed("Both resources available")
-  }`}
-  catsEffectCode={`// Cats Effect - compose resources
-val ceBoth: Resource[IO, (File, Socket)] =
-  for {
-    file <- fileResource
-    socket <- socketResource
-  } yield (file, socket)
+// bracket(acquire)(release)(use)
+val result: IO[String] =
+  IO.blocking(openConnection())
+    .bracket(conn => IO.blocking(conn.close())) { conn =>
+      IO.blocking(conn.fetch())
+    }`}
+  zioCode={`import zio._
 
-// Use both
-val ceUseBoth: IO[IOException, String] =
-  ceBoth.use { case (file, socket) =>
-    IO.pure("Both resources available")
-  }`}
-  zioComment="zip - compose managed resources"
-  catsEffectComment="for-comprehension - compose resources"
+// ZIO.acquireReleaseWith(acquire)(release)(use)
+val result: Task[String] =
+  ZIO.acquireReleaseWith(
+    ZIO.attemptBlocking(openConnection())
+  )(conn =>
+    ZIO.succeed(conn.close())
+  )(conn =>
+    ZIO.attemptBlocking(conn.fetch())
+  )`}
+  catsEffectComment="bracket - inline resource usage"
+  zioComment="acquireReleaseWith - inline resource usage"
 />
 
-## Scoped Effects
+## fromAutoCloseable
 
 <ScalaComparisonBlock
-  zioCode={`// ZIO - scoped for temporary resources
-val zioScoped: ZIO[Any, IOException, Unit] =
-  ZIO.scoped {
-    for {
-      file <- ZIO.acquireRelease(openFile("data.txt"))(closeFile)
-      _ <- ZIO.succeed(println("Using file"))
-    } yield ()
-  }`}
-  catsEffectCode={`// Cats Effect - Resource.use is already scoped
-val ceScoped: IO[IOException, Unit] =
-  fileResource.use { file =>
-    IO.delay(println("Using file"))
-  }`}
-  zioComment="scoped - automatic resource scope"
-  catsEffectComment="Resource.use - automatic resource scope"
-/>
+  catsEffectCode={`import cats.effect._
+import java.io._
 
-## MonadCancel
+// Automatically close AutoCloseable
+val reader: Resource[IO, BufferedReader] =
+  Resource.fromAutoCloseable(
+    IO.blocking(new BufferedReader(new FileReader("data.txt")))
+  )`}
+  zioCode={`import zio._
+import java.io._
 
-<ScalaComparisonBlock
-  zioCode={`// ZIO - ZManaged uses MonadCancel internally
-// You rarely use MonadCancel directly
-
-val zioCancelable: ZIO[Any, Nothing, Unit] =
-  ZIO.acquireRelease(ZIO.unit)(_ => ZIO.unit).use {
-    _ => ZIO.never
-  }`}
-  catsEffectCode={`// Cats Effect - MonadCancel for cancellation
-import cats.effect.kernel.MonadCancel
-
-val ceCancelable: IO[Nothing, Unit] =
-  MonadCancel[IO].guaranteeCase(IO.unit) {
-    case Outcome.Canceled() => IO.unit
-    case _ => IO.unit
-  }`}
-  zioComment="ZManaged abstracts MonadCancel"
-  catsEffectComment="MonadCancel - low-level cancellation"
+// Automatically close AutoCloseable
+val reader: ZIO[Scope, Throwable, BufferedReader] =
+  ZIO.fromAutoCloseable(
+    ZIO.attemptBlocking(new BufferedReader(new FileReader("data.txt")))
+  )`}
+  catsEffectComment="Resource.fromAutoCloseable"
+  zioComment="ZIO.fromAutoCloseable"
 />
 
 ## Finalizers
 
 <ScalaComparisonBlock
-  zioCode={`// ZIO - ensuring (always runs)
-val zioEnsuring: ZIO[Any, Nothing, Int] =
-  ZIO.succeed(42)
-    .ensuring(ZIO.succeed(println("Cleanup")))
+  catsEffectCode={`import cats.effect.IO
 
-// ZIO - on error
-val zioOnError: ZIO[Any, String, Int] =
-  ZIO.fail("error")
-    .onError(_ => ZIO.succeed(println("Logged error")))`}
-  catsEffectCode={`// Cats Effect - guarantee (always runs)
-val ceGuarantee: IO[Nothing, Int] =
+// guarantee - always runs
+val withCleanup: IO[Int] =
   IO.pure(42)
-    .guarantee(IO.delay(println("Cleanup")))
+    .guarantee(IO.println("Always runs"))
 
-// Cats Effect - onError
-val ceOnError: IO[String, Int] =
-  IO.raiseError("error")
-    .onError(_ => IO.delay(println("Logged error")))`}
-  zioComment="ensuring / onError - add finalizers"
-  catsEffectComment="guarantee / onError - add finalizers"
+// guaranteeCase - runs with outcome
+val withOutcome: IO[Int] =
+  IO.pure(42)
+    .guaranteeCase {
+      case Outcome.Succeeded(_) => IO.println("Success!")
+      case Outcome.Errored(e) => IO.println(s"Failed: $e")
+      case Outcome.Canceled() => IO.println("Canceled!")
+    }`}
+  zioCode={`import zio._
+
+// ensuring - always runs
+val withCleanup: UIO[Int] =
+  ZIO.succeed(42)
+    .ensuring(ZIO.succeed(println("Always runs")))
+
+// onExit - runs with exit value
+val withOutcome: UIO[Int] =
+  ZIO.succeed(42)
+    .onExit {
+      case Exit.Success(_) => ZIO.succeed(println("Success!"))
+      case Exit.Failure(cause) => ZIO.succeed(println(s"Failed: $cause"))
+    }`}
+  catsEffectComment="guarantee / guaranteeCase"
+  zioComment="ensuring / onExit"
+/>
+
+## Resource Allocation
+
+<ScalaComparisonBlock
+  catsEffectCode={`import cats.effect._
+
+// Allocate and get finalizer separately
+val allocated: IO[(Database, IO[Unit])] =
+  dbResource.allocated
+
+// Use then release manually
+val program: IO[Unit] = allocated.flatMap { case (db, release) =>
+  db.query *> release
+}`}
+  zioCode={`import zio._
+
+// Reserving a resource
+val reserved: UIO[Reservation[Any, Throwable, Database]] =
+  dbScoped.reserve
+
+// Manual acquire/release
+val program: Task[Unit] = reserved.flatMap { r =>
+  r.acquire.flatMap { db =>
+    db.query *> r.release(Exit.unit)
+  }
+}`}
+  catsEffectComment="allocated - manual resource control"
+  zioComment="reserve - manual resource control"
 />
 
 ## Next Steps
 
-Resource management patterns are similar. Now let's explore concurrency and fibers.
+Resource management is similar in both libraries. Now let's explore fiber supervision.
 
-[Next →](/cats-effect-zio/7)
+[Next: Fiber Supervision →](/cats-zio/7)
