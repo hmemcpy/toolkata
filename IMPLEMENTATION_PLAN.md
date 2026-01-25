@@ -232,6 +232,15 @@ This plan covers multiple specifications for toolkata improvements, prioritized 
 
 **Validation**: `bun run lint` passes without errors.
 
+- [x] **Fix React hooks order violation in MobileBottomSheet** — All hooks (`useEffect` and 3 `useCallback`) were placed AFTER early returns, violating Rules of Hooks. When `sandboxConfig?.enabled === false` or `!isOpen`, the component returned early before hooks were called, causing "change in the order of Hooks" errors on subsequent renders.
+
+**Fix**: Moved ALL hooks BEFORE the early returns. The `useEffect` internally checks `if (!isOpen) return` to skip logic when closed.
+
+**Files**:
+- `packages/web/components/ui/MobileBottomSheet.tsx` (MODIFIED - moved useEffect before early returns)
+
+**Validation**: Dev server console no longer shows hooks order error.
+
 ---
 
 ## Architecture Notes

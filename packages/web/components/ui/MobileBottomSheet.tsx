@@ -153,17 +153,8 @@ export function MobileBottomSheet({ toolPair }: MobileBottomSheetProps): ReactNo
   const [startY, setStartY] = useState(0)
   const [currentY, setCurrentY] = useState(0)
 
-  // If sandbox is disabled, don't render the sheet at all
-  if (sandboxConfig?.enabled === false) {
-    return null
-  }
-
-  // Don't render if closed (mobile only - handled by CSS media query)
-  if (!isOpen) {
-    return null
-  }
-
   // Handle Escape key to close sheet
+  // NOTE: All hooks MUST be before any early returns to satisfy Rules of Hooks
   useEffect(() => {
     if (!isOpen) return
 
@@ -215,6 +206,16 @@ export function MobileBottomSheet({ toolPair }: MobileBottomSheetProps): ReactNo
     setIsDragging(false)
     setCurrentY(0)
   }, [isDragging, currentY, closeSidebar])
+
+  // If sandbox is disabled, don't render the sheet at all
+  if (sandboxConfig?.enabled === false) {
+    return null
+  }
+
+  // Don't render if closed (mobile only - handled by CSS media query)
+  if (!isOpen) {
+    return null
+  }
 
   // Calculate transform based on drag
   const transform = currentY > 0 ? `translateY(${currentY}px)` : "translateY(0)"
