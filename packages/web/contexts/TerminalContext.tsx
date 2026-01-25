@@ -123,7 +123,6 @@ export interface TerminalContextValue {
    */
   readonly setContextCommands: (commands: readonly string[]) => void
 
-
   /**
    * Whether the info panel is collapsed.
    */
@@ -340,11 +339,12 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       // Check if config changed in meaningful ways
       const configChanged =
         !previous !== !newConfig ||
-        (previous && newConfig &&
+        (previous &&
+          newConfig &&
           (previous.enabled !== newConfig.enabled ||
-           previous.environment !== newConfig.environment ||
-           previous.timeout !== newConfig.timeout ||
-           JSON.stringify(previous.init) !== JSON.stringify(newConfig.init)))
+            previous.environment !== newConfig.environment ||
+            previous.timeout !== newConfig.timeout ||
+            JSON.stringify(previous.init) !== JSON.stringify(newConfig.init)))
 
       setSandboxConfigState(newConfig)
       previousSandboxConfigRef.current = newConfig

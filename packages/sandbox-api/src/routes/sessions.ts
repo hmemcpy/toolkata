@@ -254,7 +254,10 @@ const createSessionRoutes = (
       }
 
       // Validate timeout if provided
-      if (timeout !== undefined && (typeof timeout !== "number" || timeout <= 0 || timeout > 30 * 60 * 1000)) {
+      if (
+        timeout !== undefined &&
+        (typeof timeout !== "number" || timeout <= 0 || timeout > 30 * 60 * 1000)
+      ) {
         const error = new HttpRouteError({
           cause: "BadRequest",
           message: "Invalid timeout: must be a number between 1 and 1800000 (30 minutes)",
@@ -272,10 +275,15 @@ const createSessionRoutes = (
       if (circuitStatus.isOpen) {
         // Log circuit breaker trigger
         await Effect.runPromise(
-          auditService.log("warn", AuditEventType.CIRCUIT_BREAKER_OPEN, circuitStatus.reason ?? "Circuit open", {
-            clientIp,
-            ...circuitStatus.metrics,
-          }),
+          auditService.log(
+            "warn",
+            AuditEventType.CIRCUIT_BREAKER_OPEN,
+            circuitStatus.reason ?? "Circuit open",
+            {
+              clientIp,
+              ...circuitStatus.metrics,
+            },
+          ),
         )
         return c.json<ErrorResponse>(
           {

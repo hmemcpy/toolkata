@@ -164,11 +164,7 @@ export function StepPageClientWrapper({
       </article>
 
       {/* Navigation Footer */}
-      <NavigationWrapper
-        toolPair={toolPair}
-        currentStep={currentStep}
-        totalSteps={totalSteps}
-      />
+      <NavigationWrapper toolPair={toolPair} currentStep={currentStep} totalSteps={totalSteps} />
 
       {/* Keyboard Shortcuts Modal */}
       <KeyboardShortcutsModal isOpen={isOpen} onClose={onClose} />

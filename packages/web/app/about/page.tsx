@@ -39,17 +39,11 @@ export default function AboutPage() {
 
         {/* Content */}
         <div className="space-y-6 font-mono text-sm text-[var(--color-text-muted)]">
-          <p>
-            Interactive tutorials for learning tool X if you already know tool Y.
-          </p>
+          <p>Interactive tutorials for learning tool X if you already know tool Y.</p>
 
-          <p>
-            Side-by-side command comparisons. Sandboxed terminal for practice.
-          </p>
+          <p>Side-by-side command comparisons. Sandboxed terminal for practice.</p>
 
-          <p>
-            Progress stored in browser. No account required.
-          </p>
+          <p>Progress stored in browser. No account required.</p>
 
           <div className="pt-4 border-t border-[var(--color-border)] space-y-2">
             <p>

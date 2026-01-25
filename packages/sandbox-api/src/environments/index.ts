@@ -2,7 +2,11 @@ import { Context, Effect, Layer } from "effect"
 import type { EnvironmentConfig } from "./types.js"
 import type { EnvironmentInfo } from "./types.js"
 import { EnvironmentError } from "./types.js"
-import { getEnvironment as getEnvFromRegistry, listEnvironments as listEnvsFromRegistry, listEnvironmentNames } from "./registry.js"
+import {
+  getEnvironment as getEnvFromRegistry,
+  listEnvironments as listEnvsFromRegistry,
+  listEnvironmentNames,
+} from "./registry.js"
 import { getDefaultEnvironment } from "./registry.js"
 
 /**
@@ -78,7 +82,9 @@ const make = Effect.sync(() => {
     return Effect.succeed(env)
   }
 
-  const getDefault: Effect.Effect<EnvironmentConfig, never> = Effect.sync(() => getDefaultEnvironment())
+  const getDefault: Effect.Effect<EnvironmentConfig, never> = Effect.sync(() =>
+    getDefaultEnvironment(),
+  )
 
   const list: Effect.Effect<readonly EnvironmentInfo[], never> = Effect.sync(() =>
     Object.freeze(listEnvsFromRegistry()),

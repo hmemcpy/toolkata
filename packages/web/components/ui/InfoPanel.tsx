@@ -96,9 +96,7 @@ export function InfoPanel(): ReactNode {
   const isTerminalReady = state === "CONNECTED" || state === "TIMEOUT_WARNING"
 
   // Filter common commands to exclude any that are already in contextCommands
-  const filteredCommonCommands = COMMON_COMMANDS.filter(
-    (cmd) => !contextCommands.includes(cmd),
-  )
+  const filteredCommonCommands = COMMON_COMMANDS.filter((cmd) => !contextCommands.includes(cmd))
 
   return (
     <div className="flex h-full flex-col overflow-hidden">

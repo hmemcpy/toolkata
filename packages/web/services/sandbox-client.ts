@@ -207,11 +207,13 @@ const make = Effect.succeed<SandboxClientShape>({
         // Build request body with optional sandbox config
         const requestBody: CreateSessionRequest = {
           toolPair: options.toolPair,
-          ...((options.environment || options.init || options.timeout) ? {
-            ...(options.environment ? { environment: options.environment } : {}),
-            ...(options.init ? { init: options.init } : {}),
-            ...(options.timeout ? { timeout: options.timeout } : {}),
-          } : {}),
+          ...(options.environment || options.init || options.timeout
+            ? {
+                ...(options.environment ? { environment: options.environment } : {}),
+                ...(options.init ? { init: options.init } : {}),
+                ...(options.timeout ? { timeout: options.timeout } : {}),
+              }
+            : {}),
         }
 
         const response = await fetch(`${apiUrl}/api/v1/sessions`, {

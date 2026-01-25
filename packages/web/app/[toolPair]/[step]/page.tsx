@@ -101,7 +101,9 @@ export default async function StepPage(props: {
   const toolConfig =
     toolConfigResult._tag === "Right"
       ? toolConfigResult.right
-      : ({ sandbox: { enabled: true, environment: "bash" as const, timeout: 60, init: [] as const } } as const)
+      : ({
+          sandbox: { enabled: true, environment: "bash" as const, timeout: 60, init: [] as const },
+        } as const)
 
   const sandboxConfig: SandboxConfig = resolveSandboxConfig(
     frontmatter.sandbox as RawSandboxConfig | undefined,

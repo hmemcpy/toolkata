@@ -71,7 +71,7 @@ success "Code synced"
 # ============================================================
 # 2. BUILD & SETUP ON SERVER
 # ============================================================
-info "Installing dependencies and building Docker image..."
+info "Installing dependencies and building Docker images..."
 
 ssh "$SSH_USER@$SERVER_IP" \
   SANDBOX_API_KEY="$SANDBOX_API_KEY" \
@@ -85,13 +85,13 @@ cd /opt/sandbox-api
 echo "Installing dependencies..."
 bun install --frozen-lockfile
 
-echo "Building Docker image..."
-docker build -t toolkata-sandbox:latest -f docker/Dockerfile docker/
+echo "Building all Docker images (base + environments)..."
+./scripts/docker-build-all.sh
 
 echo "Done!"
 REMOTE
 
-success "Dependencies installed and Docker image built"
+success "Dependencies installed and Docker images built"
 
 # ============================================================
 # 3. SETUP USER AND LOG DIRECTORY

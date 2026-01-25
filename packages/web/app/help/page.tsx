@@ -71,31 +71,41 @@ export default function HelpPage() {
                 <tbody className="text-[var(--color-text-muted)]">
                   <tr className="border-b border-[var(--color-border)]">
                     <td className="p-3">
-                      <kbd className="bg-[var(--color-bg)] px-2 py-1 rounded text-[var(--color-text)]">←</kbd>
+                      <kbd className="bg-[var(--color-bg)] px-2 py-1 rounded text-[var(--color-text)]">
+                        ←
+                      </kbd>
                     </td>
                     <td className="p-3">Previous step</td>
                   </tr>
                   <tr className="border-b border-[var(--color-border)]">
                     <td className="p-3">
-                      <kbd className="bg-[var(--color-bg)] px-2 py-1 rounded text-[var(--color-text)]">→</kbd>
+                      <kbd className="bg-[var(--color-bg)] px-2 py-1 rounded text-[var(--color-text)]">
+                        →
+                      </kbd>
                     </td>
                     <td className="p-3">Next step</td>
                   </tr>
                   <tr className="border-b border-[var(--color-border)]">
                     <td className="p-3">
-                      <kbd className="bg-[var(--color-bg)] px-2 py-1 rounded text-[var(--color-text)]">?</kbd>
+                      <kbd className="bg-[var(--color-bg)] px-2 py-1 rounded text-[var(--color-text)]">
+                        ?
+                      </kbd>
                     </td>
                     <td className="p-3">Show keyboard shortcuts</td>
                   </tr>
                   <tr className="border-b border-[var(--color-border)]">
                     <td className="p-3">
-                      <kbd className="bg-[var(--color-bg)] px-2 py-1 rounded text-[var(--color-text)]">Esc</kbd>
+                      <kbd className="bg-[var(--color-bg)] px-2 py-1 rounded text-[var(--color-text)]">
+                        Esc
+                      </kbd>
                     </td>
                     <td className="p-3">Close sidebar / Exit terminal focus</td>
                   </tr>
                   <tr>
                     <td className="p-3">
-                      <kbd className="bg-[var(--color-bg)] px-2 py-1 rounded text-[var(--color-text)]">t</kbd>
+                      <kbd className="bg-[var(--color-bg)] px-2 py-1 rounded text-[var(--color-text)]">
+                        t
+                      </kbd>
                     </td>
                     <td className="p-3">Toggle terminal sidebar</td>
                   </tr>
@@ -116,20 +126,21 @@ export default function HelpPage() {
                   <span className="text-[var(--color-accent)]">Q:</span> How is my progress saved?
                 </p>
                 <p className="text-[var(--color-text-muted)] text-sm">
-                  <span className="text-[var(--color-text-dim)]">A:</span> Progress is stored in your
-                  browser&apos;s localStorage. No account required. Clear your browser data to reset.
+                  <span className="text-[var(--color-text-dim)]">A:</span> Progress is stored in
+                  your browser&apos;s localStorage. No account required. Clear your browser data to
+                  reset.
                 </p>
               </div>
 
               <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
                 <p className="text-[var(--color-text)] mb-2">
-                  <span className="text-[var(--color-accent)]">Q:</span> What happens when the sandbox
-                  expires?
+                  <span className="text-[var(--color-accent)]">Q:</span> What happens when the
+                  sandbox expires?
                 </p>
                 <p className="text-[var(--color-text-muted)] text-sm">
-                  <span className="text-[var(--color-text-dim)]">A:</span> Sessions last 5 minutes. When
-                  expired, click &quot;Restart&quot; to get a fresh sandbox. Your lesson progress is
-                  preserved.
+                  <span className="text-[var(--color-text-dim)]">A:</span> Sessions last 5 minutes.
+                  When expired, click &quot;Restart&quot; to get a fresh sandbox. Your lesson
+                  progress is preserved.
                 </p>
               </div>
 
@@ -145,8 +156,8 @@ export default function HelpPage() {
 
               <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
                 <p className="text-[var(--color-text)] mb-2">
-                  <span className="text-[var(--color-accent)]">Q:</span> The sandbox isn&apos;t working.
-                  What do I do?
+                  <span className="text-[var(--color-accent)]">Q:</span> The sandbox isn&apos;t
+                  working. What do I do?
                 </p>
                 <p className="text-[var(--color-text-muted)] text-sm">
                   <span className="text-[var(--color-text-dim)]">A:</span> Click &quot;Use static

@@ -124,7 +124,9 @@ const _parseMessage = (data: string): WebSocketMessage => {
         } satisfies TerminalInput
       }
       if (msgType === "init") {
-        const commands = Array.isArray(parsed["commands"]) ? (parsed["commands"] as readonly string[]) : []
+        const commands = Array.isArray(parsed["commands"])
+          ? (parsed["commands"] as readonly string[])
+          : []
         const timeout = typeof parsed["timeout"] === "number" ? parsed["timeout"] : undefined
         return {
           type: "init",
@@ -297,7 +299,9 @@ const make = Effect.gen(function* () {
         return
       }
 
-      console.log(`[WebSocketService] Executing ${commands.length} init commands for ${connection.sessionId}`)
+      console.log(
+        `[WebSocketService] Executing ${commands.length} init commands for ${connection.sessionId}`,
+      )
 
       // Execute each command silently
       for (const command of commands) {

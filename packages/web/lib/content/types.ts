@@ -70,14 +70,26 @@ export type RawSandboxConfig = {
  */
 export function resolveSandboxConfig(
   stepConfig: RawSandboxConfig | undefined,
-  toolPairConfig: { sandbox: { enabled?: boolean; environment?: string; timeout?: number; init?: readonly string[] } } | undefined,
+  toolPairConfig:
+    | {
+        sandbox: {
+          enabled?: boolean
+          environment?: string
+          timeout?: number
+          init?: readonly string[]
+        }
+      }
+    | undefined,
 ): SandboxConfig {
   return {
-    enabled: stepConfig?.enabled ?? toolPairConfig?.sandbox?.enabled ?? DEFAULT_SANDBOX_CONFIG.enabled,
-    environment: (stepConfig?.environment as "bash" | "node" | "python" | undefined) ??
+    enabled:
+      stepConfig?.enabled ?? toolPairConfig?.sandbox?.enabled ?? DEFAULT_SANDBOX_CONFIG.enabled,
+    environment:
+      (stepConfig?.environment as "bash" | "node" | "python" | undefined) ??
       (toolPairConfig?.sandbox?.environment as "bash" | "node" | "python" | undefined) ??
       DEFAULT_SANDBOX_CONFIG.environment,
-    timeout: stepConfig?.timeout ?? toolPairConfig?.sandbox?.timeout ?? DEFAULT_SANDBOX_CONFIG.timeout,
+    timeout:
+      stepConfig?.timeout ?? toolPairConfig?.sandbox?.timeout ?? DEFAULT_SANDBOX_CONFIG.timeout,
     init: stepConfig?.init ?? toolPairConfig?.sandbox?.init ?? DEFAULT_SANDBOX_CONFIG.init,
   } as const
 }

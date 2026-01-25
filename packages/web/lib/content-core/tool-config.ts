@@ -51,10 +51,7 @@ export const DEFAULT_TOOL_CONFIG: ToolConfig = {
 /**
  * Parse and validate config.yml content.
  */
-function parseToolConfig(
-  yaml: string,
-  _filePath: string,
-): Effect.Effect<ToolConfig, ContentError> {
+function parseToolConfig(yaml: string, _filePath: string): Effect.Effect<ToolConfig, ContentError> {
   const extracted = extractYamlValues(yaml)
 
   if (!extracted.defaults?.sandbox) {

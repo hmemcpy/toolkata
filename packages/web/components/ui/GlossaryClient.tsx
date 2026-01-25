@@ -166,8 +166,12 @@ export function GlossaryClient({
   // Table header labels (swap when reversed)
   const tableLeftLabel = isReversed ? toLabel : fromLabel
   const tableRightLabel = isReversed ? fromLabel : toLabel
-  const tableLeftColor = isReversed ? "text-[var(--color-accent)]" : "text-[var(--color-accent-alt)]"
-  const tableRightColor = isReversed ? "text-[var(--color-accent-alt)]" : "text-[var(--color-accent)]"
+  const tableLeftColor = isReversed
+    ? "text-[var(--color-accent)]"
+    : "text-[var(--color-accent-alt)]"
+  const tableRightColor = isReversed
+    ? "text-[var(--color-accent-alt)]"
+    : "text-[var(--color-accent)]"
 
   return (
     <div>
@@ -250,10 +254,14 @@ export function GlossaryClient({
           <div className="overflow-x-auto">
             {/* Table header */}
             <div className="grid grid-cols-2 gap-4 border-b border-[var(--color-border)] bg-[var(--color-bg)] px-6 py-3">
-              <div className={`text-xs font-mono font-medium uppercase tracking-wide ${tableLeftColor}`}>
+              <div
+                className={`text-xs font-mono font-medium uppercase tracking-wide ${tableLeftColor}`}
+              >
                 {tableLeftLabel}
               </div>
-              <div className={`text-xs font-mono font-medium uppercase tracking-wide ${tableRightColor}`}>
+              <div
+                className={`text-xs font-mono font-medium uppercase tracking-wide ${tableRightColor}`}
+              >
                 {tableRightLabel}
               </div>
             </div>

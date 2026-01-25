@@ -56,7 +56,7 @@ export function TryIt({
   command,
   description,
   expectedOutput,
-  editable = true
+  editable = true,
 }: TryItProps): React.JSX.Element {
   const { executeCommand } = useTerminalContext()
   const [buttonState, setButtonState] = useState<ButtonState>("idle")
@@ -90,7 +90,8 @@ export function TryIt({
   }, [command])
 
   const commonInputProps = {
-    className: "flex-1 bg-transparent font-mono text-sm text-[var(--color-accent)] outline-none placeholder:text-[var(--color-text-dim)]",
+    className:
+      "flex-1 bg-transparent font-mono text-sm text-[var(--color-accent)] outline-none placeholder:text-[var(--color-text-dim)]",
     "aria-label": description ?? `Command: ${command}`,
     title: description,
   }

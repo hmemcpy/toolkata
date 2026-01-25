@@ -110,8 +110,6 @@ export interface AuditServiceShape {
 // Service tag
 export class AuditService extends Context.Tag("AuditService")<AuditService, AuditServiceShape>() {}
 
-
-
 // Helper: Write audit log to console (structured JSON format)
 const writeLog = (entry: AuditLogEntry): void => {
   // Output structured JSON logs for easy parsing by log aggregators

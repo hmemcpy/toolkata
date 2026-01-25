@@ -20,7 +20,10 @@ export interface Container {
 
 // Service interface
 export interface ContainerServiceShape {
-  readonly create: (toolPair: string, environment?: string) => Effect.Effect<Container, ContainerError>
+  readonly create: (
+    toolPair: string,
+    environment?: string,
+  ) => Effect.Effect<Container, ContainerError>
   readonly destroy: (containerId: string) => Effect.Effect<void, ContainerError>
   readonly get: (containerId: string) => Effect.Effect<Container, ContainerError>
   readonly cleanupOrphaned: Effect.Effect<number, never>

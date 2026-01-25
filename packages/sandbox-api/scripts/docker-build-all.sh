@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build all toolkata sandbox Docker images (base + tool-pairs)
+# Build all toolkata sandbox Docker images (base + environments)
 #
 # Usage:
 #   ./scripts/docker-build-all.sh          # Build all and test
@@ -7,7 +7,7 @@
 #
 # Build order:
 #   1. Base image (toolkata-sandbox-base:latest)
-#   2. Tool-pair images (toolkata-sandbox:jj-git, etc.)
+#   2. Environment images (toolkata-env:bash, node, python)
 #
 # Exit codes:
 #   0 - Success
@@ -19,7 +19,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOCKER_DIR="$SCRIPT_DIR/../docker"
 BASE_IMAGE_NAME="toolkata-sandbox-base"
-IMAGE_NAME="toolkata-sandbox"
+ENV_IMAGE_NAME="toolkata-env"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 
 # Colors for output
@@ -72,45 +72,68 @@ fi
 BASE_SIZE=$(docker images "$BASE_IMAGE_NAME:$IMAGE_TAG" --format "{{.Size}}")
 log_info "Base image size: $BASE_SIZE"
 
-# Step 2: Build tool-pair images
-log_step "Building tool-pair images..."
+# Step 2: Build environment images
+log_step "Building environment images..."
 
-# Build jj-git tool-pair image
-log_info "Building jj-git tool-pair image: $IMAGE_NAME:jj-git"
-docker build -t "$IMAGE_NAME:jj-git" "$DOCKER_DIR/tool-pairs/jj-git"
+# Build bash environment image
+log_info "Building bash environment image: $ENV_IMAGE_NAME:bash"
+docker build -t "$ENV_IMAGE_NAME:bash" "$DOCKER_DIR/environments/bash"
 
 if [ $? -ne 0 ]; then
-    log_error "jj-git image build failed"
+    log_error "bash environment image build failed"
     exit 1
 fi
 
-JJ_GIT_SIZE=$(docker images "$IMAGE_NAME:jj-git" --format "{{.Size}}")
-log_info "jj-git image size: $JJ_GIT_SIZE"
+BASH_SIZE=$(docker images "$ENV_IMAGE_NAME:bash" --format "{{.Size}}")
+log_info "bash environment size: $BASH_SIZE"
 
-# Tag jj-git as latest for backward compatibility
-docker tag "$IMAGE_NAME:jj-git" "$IMAGE_NAME:latest"
-log_info "Tagged $IMAGE_NAME:jj-git as $IMAGE_NAME:latest for backward compatibility"
+# Build node environment image
+log_info "Building node environment image: $ENV_IMAGE_NAME:node"
+docker build -t "$ENV_IMAGE_NAME:node" "$DOCKER_DIR/environments/node"
+
+if [ $? -ne 0 ]; then
+    log_error "node environment image build failed"
+    exit 1
+fi
+
+NODE_SIZE=$(docker images "$ENV_IMAGE_NAME:node" --format "{{.Size}}")
+log_info "node environment size: $NODE_SIZE"
+
+# Build python environment image
+log_info "Building python environment image: $ENV_IMAGE_NAME:python"
+docker build -t "$ENV_IMAGE_NAME:python" "$DOCKER_DIR/environments/python"
+
+if [ $? -ne 0 ]; then
+    log_error "python environment image build failed"
+    exit 1
+fi
+
+PYTHON_SIZE=$(docker images "$ENV_IMAGE_NAME:python" --format "{{.Size}}")
+log_info "python environment size: $PYTHON_SIZE"
 
 # Step 3: Run tests if enabled
 if [ "$RUN_TESTS" = true ]; then
-    log_step "Running tests on jj-git image..."
+    log_step "Running tests..."
 
-    # Test 1: Basic tools availability
-    log_info "Test 1: Checking git and jj are installed..."
-    docker run --rm "$IMAGE_NAME:jj-git" /bin/bash -c '
+    # Test bash environment
+    log_info "Testing bash environment..."
+
+    # Test 1: Basic tools availability in bash
+    log_info "  Test 1: Checking git and jj are installed..."
+    docker run --rm "$ENV_IMAGE_NAME:bash" /bin/bash -c '
         set -e
         git --version > /dev/null
         jj --version > /dev/null
         echo "git and jj are available"
     '
     if [ $? -ne 0 ]; then
-        log_error "Test 1 failed: git/jj not available"
+        log_error "Test 1 failed: git/jj not available in bash environment"
         exit 2
     fi
 
-    # Test 2: Initialize repo and make commits
-    log_info "Test 2: Testing jj git workflow..."
-    docker run --rm "$IMAGE_NAME:jj-git" /bin/bash -c '
+    # Test 2: Initialize repo and make commits in bash
+    log_info "  Test 2: Testing jj git workflow in bash..."
+    docker run --rm "$ENV_IMAGE_NAME:bash" /bin/bash -c '
         set -e
 
         # Initialize repo
@@ -138,13 +161,13 @@ if [ "$RUN_TESTS" = true ]; then
         echo "jj workflow works correctly"
     '
     if [ $? -ne 0 ]; then
-        log_error "Test 2 failed: jj workflow broken"
+        log_error "Test 2 failed: jj workflow broken in bash environment"
         exit 2
     fi
 
-    # Test 3: UTF-8 support
-    log_info "Test 3: Testing UTF-8 support..."
-    docker run --rm "$IMAGE_NAME:jj-git" /bin/bash -c '
+    # Test 3: UTF-8 support in bash
+    log_info "  Test 3: Testing UTF-8 support in bash..."
+    docker run --rm "$ENV_IMAGE_NAME:bash" /bin/bash -c '
         set -e
 
         jj git init --colocate
@@ -168,13 +191,13 @@ if [ "$RUN_TESTS" = true ]; then
         echo "UTF-8 support works correctly"
     '
     if [ $? -ne 0 ]; then
-        log_error "Test 3 failed: UTF-8 support broken"
+        log_error "Test 3 failed: UTF-8 support broken in bash environment"
         exit 2
     fi
 
-    # Test 4: Verify no dangerous tools
-    log_info "Test 4: Verifying security hardening..."
-    docker run --rm "$IMAGE_NAME:jj-git" /bin/bash -c '
+    # Test 4: Verify no dangerous tools in bash
+    log_info "  Test 4: Verifying security hardening in bash..."
+    docker run --rm "$ENV_IMAGE_NAME:bash" /bin/bash -c '
         set -e
 
         # These should NOT exist
@@ -190,13 +213,13 @@ if [ "$RUN_TESTS" = true ]; then
         echo "Security hardening verified"
     '
     if [ $? -ne 0 ]; then
-        log_error "Test 4 failed: Dangerous tools found"
+        log_error "Test 4 failed: Dangerous tools found in bash environment"
         exit 2
     fi
 
-    # Test 5: Verify user is non-root
-    log_info "Test 5: Verifying non-root user..."
-    docker run --rm "$IMAGE_NAME:jj-git" /bin/bash -c '
+    # Test 5: Verify user is non-root in bash
+    log_info "  Test 5: Verifying non-root user in bash..."
+    docker run --rm "$ENV_IMAGE_NAME:bash" /bin/bash -c '
         set -e
 
         CURRENT_USER=$(whoami)
@@ -208,15 +231,143 @@ if [ "$RUN_TESTS" = true ]; then
         echo "Running as non-root user: $CURRENT_USER"
     '
     if [ $? -ne 0 ]; then
-        log_error "Test 5 failed: Running as root"
+        log_error "Test 5 failed: Running as root in bash environment"
         exit 2
     fi
 
-    log_info "All tests passed!"
+    log_info "bash environment tests passed!"
+
+    # Test node environment
+    log_info "Testing node environment..."
+
+    # Test 6: Node.js is available
+    log_info "  Test 6: Checking Node.js is installed..."
+    docker run --rm "$ENV_IMAGE_NAME:node" /bin/bash -c '
+        set -e
+        node --version > /dev/null
+        npm --version > /dev/null
+        echo "Node.js and npm are available"
+    '
+    if [ $? -ne 0 ]; then
+        log_error "Test 6 failed: Node.js/npm not available in node environment"
+        exit 2
+    fi
+
+    # Test 7: Node.js can run a simple script
+    log_info "  Test 7: Testing Node.js can run scripts..."
+    docker run --rm "$ENV_IMAGE_NAME:node" /bin/bash -c '
+        set -e
+
+        # Create a simple JS file
+        cat > test.js << EOF
+console.log("Hello from Node.js");
+console.log("Node version:", process.version);
+EOF
+
+        # Run it
+        OUTPUT=$(node test.js)
+        echo "$OUTPUT" | grep -q "Hello from Node.js"
+
+        echo "Node.js script execution works"
+    '
+    if [ $? -ne 0 ]; then
+        log_error "Test 7 failed: Node.js script execution broken"
+        exit 2
+    fi
+
+    # Test 8: npm can install packages
+    log_info "  Test 8: Testing npm install..."
+    docker run --rm "$ENV_IMAGE_NAME:node" /bin/bash -c '
+        set -e
+
+        # Create a simple package.json
+        cat > package.json << EOF
+{
+  "name": "test",
+  "version": "1.0.0"
+}
+EOF
+
+        # Try to install a small package (non-interactively)
+        npm install --silent --no-audit --no-fund typescript@5.3.0 2>/dev/null || npm install typescript@5.3.0
+
+        # Verify it was installed
+        [ -d node_modules/typescript ]
+
+        echo "npm install works"
+    '
+    if [ $? -ne 0 ]; then
+        log_error "Test 8 failed: npm install broken"
+        exit 2
+    fi
+
+    log_info "node environment tests passed!"
+
+    # Test python environment
+    log_info "Testing python environment..."
+
+    # Test 9: Python is available
+    log_info "  Test 9: Checking Python is installed..."
+    docker run --rm "$ENV_IMAGE_NAME:python" /bin/bash -c '
+        set -e
+        python3 --version > /dev/null
+        pip3 --version > /dev/null
+        echo "Python and pip are available"
+    '
+    if [ $? -ne 0 ]; then
+        log_error "Test 9 failed: Python/pip not available in python environment"
+        exit 2
+    fi
+
+    # Test 10: Python can run a simple script
+    log_info "  Test 10: Testing Python can run scripts..."
+    docker run --rm "$ENV_IMAGE_NAME:python" /bin/bash -c '
+        set -e
+
+        # Create a simple Python file
+        cat > test.py << EOF
+print("Hello from Python")
+import sys
+print(f"Python version: {sys.version_info.major}.{sys.version_info.minor}")
+EOF
+
+        # Run it
+        OUTPUT=$(python3 test.py)
+        echo "$OUTPUT" | grep -q "Hello from Python"
+
+        echo "Python script execution works"
+    '
+    if [ $? -ne 0 ]; then
+        log_error "Test 10 failed: Python script execution broken"
+        exit 2
+    fi
+
+    # Test 11: pip can install packages
+    log_info "  Test 11: Testing pip install..."
+    docker run --rm "$ENV_IMAGE_NAME:python" /bin/bash -c '
+        set -e
+
+        # Install a small package
+        pip3 install --quiet --no-input typer 2>/dev/null || pip3 install typer
+
+        # Verify it was installed
+        python3 -c "import typer; print('typer imported successfully')"
+
+        echo "pip install works"
+    '
+    if [ $? -ne 0 ]; then
+        log_error "Test 11 failed: pip install broken"
+        exit 2
+    fi
+
+    log_info "python environment tests passed!"
+
+    log_info "All environment tests passed!"
 fi
 
 log_step "Summary"
-log_info "Base image:      $BASE_IMAGE_NAME:$IMAGE_TAG ($BASE_SIZE)"
-log_info "jj-git image:    $IMAGE_NAME:jj-git ($JJ_GIT_SIZE)"
-log_info "jj-git (latest): $IMAGE_NAME:latest (tagged for compatibility)"
+log_info "Base image:     $BASE_IMAGE_NAME:$IMAGE_TAG ($BASE_SIZE)"
+log_info "bash env:       $ENV_IMAGE_NAME:bash ($BASH_SIZE)"
+log_info "node env:       $ENV_IMAGE_NAME:node ($NODE_SIZE)"
+log_info "python env:     $ENV_IMAGE_NAME:python ($PYTHON_SIZE)"
 log_info "Done. All images ready."

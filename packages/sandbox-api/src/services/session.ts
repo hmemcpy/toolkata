@@ -112,7 +112,10 @@ const make = Effect.gen(function* () {
       const initCommands = options.initCommands ?? []
       const timeout = options.timeout ?? TIMEOUTS.maxLifetime
 
-      return yield* Effect.all([containerService.create(options.toolPair, environment), Ref.get(storeRef)]).pipe(
+      return yield* Effect.all([
+        containerService.create(options.toolPair, environment),
+        Ref.get(storeRef),
+      ]).pipe(
         Effect.flatMap(([container, store]) =>
           Effect.gen(function* () {
             const sessionId = generateSessionId()

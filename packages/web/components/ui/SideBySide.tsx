@@ -131,7 +131,9 @@ export function SideBySide({
       {/* Desktop: side-by-side, Mobile: stacked */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {/* Left column */}
-        <div className={`overflow-hidden rounded border border-[var(--color-border)] ${leftColumn.bgClass}`}>
+        <div
+          className={`overflow-hidden rounded border border-[var(--color-border)] ${leftColumn.bgClass}`}
+        >
           <div className="border-b border-[var(--color-border)] px-4 py-2">
             <span className="text-xs font-semibold text-[var(--color-text-muted)]">
               {leftColumn.label}
@@ -173,7 +175,9 @@ export function SideBySide({
         </div>
 
         {/* Right column */}
-        <div className={`overflow-hidden rounded border border-[var(--color-border)] ${rightColumn.bgClass}`}>
+        <div
+          className={`overflow-hidden rounded border border-[var(--color-border)] ${rightColumn.bgClass}`}
+        >
           <div className="border-b border-[var(--color-border)] px-4 py-2">
             <span className="text-xs font-semibold text-[var(--color-text-muted)]">
               {rightColumn.label}
@@ -204,7 +208,8 @@ export function SideBySide({
           summary={`Side-by-side comparison of ${tableLeftLabel} and ${tableRightLabel} commands`}
         >
           <caption>
-            Command comparison: {tableLeftLabel} commands on the left, {tableRightLabel} commands on the right
+            Command comparison: {tableLeftLabel} commands on the left, {tableRightLabel} commands on
+            the right
           </caption>
           <thead>
             <tr>
