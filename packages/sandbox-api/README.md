@@ -398,6 +398,246 @@ ls -la /opt/sandbox-api
 sudo chown -R sandboxapi:sandboxapi /opt/sandbox-api
 ```
 
+## Multi-Environment Plugin API
+
+The sandbox API supports multiple runtime environments (bash, node, python) through an extensible plugin system.
+
+### Available Environments
+
+| Environment | Docker Image | Description |
+|-------------|--------------|-------------|
+| `bash` | `toolkata-env:bash` | Base environment with git, jj, and bash |
+| `node` | `toolkata-env:node` | Node.js 20.x LTS with npm (extends bash) |
+| `python` | `toolkata-env:python` | Python 3 with pip (extends bash) |
+
+### Adding a New Environment
+
+#### 1. Create the Dockerfile
+
+Create a new directory under `docker/environments/`:
+
+```bash
+mkdir -p packages/sandbox-api/docker/environments/rust
+```
+
+Create `packages/sandbox-api/docker/environments/rust/Dockerfile`:
+
+```dockerfile
+# Extend the base bash environment
+FROM toolkata-env:bash
+
+# Install Rust toolchain
+RUN apk add --no-cache rust cargo
+
+# Set working directory
+WORKDIR /home/sandbox
+
+# Switch to sandbox user
+USER sandbox
+
+# Verify installation
+RUN rustc --version && cargo --version
+```
+
+#### 2. Register the Environment
+
+Add the environment config to `src/environments/builtin.ts`:
+
+```typescript
+import { EnvironmentConfig } from "./types"
+
+export const RUST_ENVIRONMENT: EnvironmentConfig = {
+  name: "rust",
+  dockerImage: "toolkata-env:rust",
+  defaultTimeout: 300, // 5 minutes
+  defaultInitCommands: [], // Optional: commands to run on session start
+  description: "Rust programming language with cargo",
+  category: "languages",
+}
+
+// Add to the registry
+export const BUILTIN_ENVIRONMENTS = readonlyArray([
+  BASH_ENVIRONMENT,
+  NODE_ENVIRONMENT,
+  PYTHON_ENVIRONMENT,
+  RUST_ENVIRONMENT, // Add here
+] as const)
+```
+
+#### 3. Build the Docker Image
+
+Update `scripts/docker-build-all.sh` to build your new environment:
+
+```bash
+#!/bin/bash
+set -e
+
+# Build base
+echo "Building base environment..."
+docker build -t toolkata-env:base -f docker/base/Dockerfile .
+
+# Build bash
+echo "Building bash environment..."
+docker build -t toolkata-env:bash -f docker/environments/bash/Dockerfile .
+
+# Build node
+echo "Building node environment..."
+docker build -t toolkata-env:node -f docker/environments/node/Dockerfile .
+
+# Build python
+echo "Building python environment..."
+docker build -t toolkata-env:python -f docker/environments/python/Dockerfile .
+
+# Build rust (NEW)
+echo "Building rust environment..."
+docker build -t toolkata-env:rust -f docker/environments/rust/Dockerfile .
+
+echo "All environment images built successfully!"
+```
+
+Build the images:
+
+```bash
+cd packages/sandbox-api
+bun run docker:build:all
+```
+
+#### 4. Use the Environment in Content
+
+Add the environment to step frontmatter or `config.yml`:
+
+**In MDX frontmatter:**
+```yaml
+---
+title: "Your First Rust Function"
+step: 5
+description: "Write and compile a Rust function"
+sandbox:
+  environment: rust
+  timeout: 300
+  init:
+    - "cargo new hello-world"
+    - "cd hello-world"
+---
+```
+
+**In `config.yml`:**
+```yaml
+sandbox:
+  enabled: true
+  environment: rust
+  timeout: 300
+```
+
+### Environment Configuration Schema
+
+```typescript
+interface EnvironmentConfig {
+  /** Unique identifier for this environment */
+  readonly name: string
+
+  /** Docker image name (must be built and available) */
+  readonly dockerImage: string
+
+  /** Default session timeout in seconds (max 1800 = 30 minutes) */
+  readonly defaultTimeout: number
+
+  /** Commands to execute silently when session starts */
+  readonly defaultInitCommands: readonly string[]
+
+  /** Human-readable description */
+  readonly description: string
+
+  /** Category for grouping (e.g., "languages", "tools") */
+  readonly category: string
+}
+```
+
+### API Endpoints
+
+#### GET /api/v1/environments
+
+List all available environments:
+
+```bash
+curl https://sandbox.toolkata.com/api/v1/environments
+```
+
+Response:
+```json
+{
+  "environments": [
+    {
+      "name": "bash",
+      "description": "Base bash environment with git and jj",
+      "category": "languages",
+      "defaultTimeout": 60
+    },
+    {
+      "name": "node",
+      "description": "Node.js 20.x LTS with npm",
+      "category": "languages",
+      "defaultTimeout": 120
+    },
+    {
+      "name": "python",
+      "description": "Python 3 with pip",
+      "category": "languages",
+      "defaultTimeout": 120
+    }
+  ]
+}
+```
+
+#### POST /api/v1/sessions
+
+Create a session with a specific environment:
+
+```bash
+curl -X POST https://sandbox.toolkata.com/api/v1/sessions \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "toolPair": "jj-git",
+    "environment": "node",
+    "timeout": 120,
+    "init": ["npm install -g typescript"]
+  }'
+```
+
+### Startup Validation
+
+The server validates all environment images on startup. If an image is missing, the server will exit with a clear error:
+
+```
+Error: Missing Docker images for environments:
+- rust: toolkata-env:rust
+
+Run 'bun run docker:build:all' to build all environment images.
+```
+
+### Security Considerations for Custom Environments
+
+- **No network access**: All containers run with `--network=none`
+- **Read-only rootfs**: Use `--read-only` flag
+- **Non-root user**: All containers run as the `sandbox` user
+- **No package managers in base**: Don't include `apt`, `apk`, `curl`, `wget` unless necessary
+- **Minimal attack surface**: Only install tools required for the lesson
+- **Resource limits**: Enforce memory and CPU limits
+
+### Testing Custom Environments
+
+Add tests to `scripts/docker-build-all.sh`:
+
+```bash
+# Test rust environment
+echo "Testing rust environment..."
+docker run --rm --network=none toolkata-env:rust rustc --version
+docker run --rm --network=none toolkata-env:rust cargo --version
+docker run --rm --network=none toolkata-env:rust sh -c "echo 'fn main() {}' | rustc -"
+echo "Rust environment tests passed!"
+```
+
 ## Development
 
 Run locally (without gVisor):
@@ -408,6 +648,16 @@ bun run dev
 
 # Or with Docker build
 docker build -t toolkata-sandbox:latest ./docker
+```
+
+Build all environment images:
+
+```bash
+# Build with tests
+bun run docker:build:all
+
+# Build without tests (faster)
+bun run docker:build:all:no-test
 ```
 
 Run tests:
