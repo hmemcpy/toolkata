@@ -241,6 +241,26 @@ This plan covers multiple specifications for toolkata improvements, prioritized 
 
 **Validation**: Dev server console no longer shows hooks order error.
 
+- [x] **Fix terminal flash on cats-zio pages** — Terminal components (TerminalToggle, TerminalSidebar, MobileBottomSheet) showed briefly before sandbox config was loaded from context. The check `sandboxConfig?.enabled === false` didn't cover the `undefined` case during initial render.
+
+**Fix**: Changed condition to `sandboxConfig === undefined || sandboxConfig.enabled === false` to hide terminal UI until config is explicitly loaded.
+
+**Files**:
+- `packages/web/components/ui/TerminalToggle.tsx` (MODIFIED)
+- `packages/web/components/ui/TerminalSidebar.tsx` (MODIFIED)
+- `packages/web/components/ui/MobileBottomSheet.tsx` (MODIFIED)
+
+**Validation**: Terminal FAB no longer appears on cats-zio pages.
+
+- [x] **Fix cats-zio overview page content** — The overview page at `/cats-zio` was showing jj-git specific content (step titles, descriptions, "Why jj?" bullet points). Content was hardcoded for jj-git only.
+
+**Fix**: Added tool-pair specific content for cats-zio (step metadata, estimated times, "Why Cats Effect?" section).
+
+**Files**:
+- `packages/web/app/[toolPair]/page.tsx` (MODIFIED - added cats-zio specific content)
+
+**Validation**: `/cats-zio` overview now shows Cats Effect 3 specific steps and introduction.
+
 ---
 
 ## Architecture Notes

@@ -86,29 +86,13 @@ export default async function ComparisonOverviewPage(props: {
       }
     : undefined
 
-  // TODO: Load steps from ContentService when MDX content exists
-  // For now, use static metadata based on the plan
-  const steps: readonly StepMeta[] = [
-    {
-      step: 1,
-      title: "Installation & Setup",
-      description: "Installing jj, colocated repos",
-      slug: "01-step",
-    },
-    {
-      step: 2,
-      title: "Mental Model",
-      description: "Working copy as commit, no staging",
-      slug: "02-step",
-    },
+  // Default steps for jj-git (also used as fallback)
+  const jjGitSteps: readonly StepMeta[] = [
+    { step: 1, title: "Installation & Setup", description: "Installing jj, colocated repos", slug: "01-step" },
+    { step: 2, title: "Mental Model", description: "Working copy as commit, no staging", slug: "02-step" },
     { step: 3, title: "Creating Commits", description: "jj describe, jj new", slug: "03-step" },
     { step: 4, title: "Viewing History", description: "jj log, revsets basics", slug: "04-step" },
-    {
-      step: 5,
-      title: "Navigating Commits",
-      description: "jj edit, jj new <parent>",
-      slug: "05-step",
-    },
+    { step: 5, title: "Navigating Commits", description: "jj edit, jj new <parent>", slug: "05-step" },
     { step: 6, title: "Amending & Squashing", description: "jj squash, jj split", slug: "06-step" },
     { step: 7, title: "Bookmarks", description: "Bookmarks replace branches", slug: "07-step" },
     { step: 8, title: "Handling Conflicts", description: "First-class conflicts", slug: "08-step" },
@@ -116,23 +100,41 @@ export default async function ComparisonOverviewPage(props: {
     { step: 10, title: "Undo & Recovery", description: "jj undo, jj op log", slug: "10-step" },
     { step: 11, title: "Working with Remotes", description: "jj git push/fetch", slug: "11-step" },
     { step: 12, title: "Revsets", description: "Advanced commit selection", slug: "12-step" },
-  ] as const
+  ]
 
-  // Estimated time per step (for display)
-  const estimatedTimes = new Map<number, string>([
-    [1, "~2 min"],
-    [2, "~3 min"],
-    [3, "~3 min"],
-    [4, "~2 min"],
-    [5, "~3 min"],
-    [6, "~4 min"],
-    [7, "~3 min"],
-    [8, "~4 min"],
-    [9, "~4 min"],
-    [10, "~3 min"],
-    [11, "~3 min"],
-    [12, "~5 min"],
+  // Steps for cats-zio
+  const catsZioSteps: readonly StepMeta[] = [
+    { step: 1, title: "R/E/A Signature", description: "IO type vs ZIO's R/E/A", slug: "01-step" },
+    { step: 2, title: "Creating Effects", description: "IO.pure, IO.delay, IO.async", slug: "02-step" },
+    { step: 3, title: "Error Handling", description: "MonadError, handleErrorWith", slug: "03-step" },
+    { step: 4, title: "Map/FlatMap Purity", description: "Effect composition basics", slug: "04-step" },
+    { step: 5, title: "Tagless Final vs ZLayer", description: "Dependency injection patterns", slug: "05-step" },
+    { step: 6, title: "Resource Management", description: "Resource, bracket, use", slug: "06-step" },
+    { step: 7, title: "Fiber Supervision", description: "Concurrent effects, supervision", slug: "07-step" },
+    { step: 8, title: "Streaming", description: "fs2 vs ZStream", slug: "08-step" },
+    { step: 9, title: "Application Structure", description: "IOApp, main entry point", slug: "09-step" },
+    { step: 10, title: "Interop", description: "ZIO-CE interop, migration", slug: "10-step" },
+  ]
+
+  // Select steps based on tool pair
+  const steps = toolPair === "cats-zio" ? catsZioSteps : jjGitSteps
+
+  // Default estimated times for jj-git
+  const jjGitTimes = new Map<number, string>([
+    [1, "~2 min"], [2, "~3 min"], [3, "~3 min"], [4, "~2 min"],
+    [5, "~3 min"], [6, "~4 min"], [7, "~3 min"], [8, "~4 min"],
+    [9, "~4 min"], [10, "~3 min"], [11, "~3 min"], [12, "~5 min"],
   ])
+
+  // Estimated times for cats-zio
+  const catsZioTimes = new Map<number, string>([
+    [1, "~4 min"], [2, "~5 min"], [3, "~5 min"], [4, "~3 min"],
+    [5, "~6 min"], [6, "~5 min"], [7, "~5 min"], [8, "~6 min"],
+    [9, "~4 min"], [10, "~4 min"],
+  ])
+
+  // Select estimated times based on tool pair
+  const estimatedTimes = toolPair === "cats-zio" ? catsZioTimes : jjGitTimes
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
@@ -182,34 +184,68 @@ export default async function ComparisonOverviewPage(props: {
                 Why {pairing.to.name}?
               </h2>
               <div className="prose prose-invert max-w-none">
-                <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
-                  {pairing.to.name} ({pairing.to.description}) rethinks version control from first
-                  principles. Built for developers who want a safer, more intuitive workflow.
-                </p>
-                <ul className="space-y-2 text-sm text-[#d1d5dc]">
-                  <li className="flex items-start gap-2">
-                    <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                    <span>Working copy IS a commit (no staging area complexity)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                    <span>Change IDs survive rebases (stable identifiers)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                    <span>Conflicts are first-class (stored in commits, not blocking)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                    <span>Automatic descendant rebasing (no more --update-refs)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                    <span>
-                      Compatible with existing {pairing.from.name} repos (use both tools together)
-                    </span>
-                  </li>
-                </ul>
+                {toolPair === "cats-zio" ? (
+                  <>
+                    <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
+                      Cats Effect 3 is the standard effect system for Scala&apos;s Typelevel ecosystem.
+                      While ZIO and Cats Effect share the same core principles, they differ in
+                      implementation details and API design.
+                    </p>
+                    <ul className="space-y-2 text-sm text-[#d1d5dc]">
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Simpler type signature: IO[A] vs ZIO&apos;s R/E/A</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Tagless Final for dependency injection (vs ZLayer)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Deep integration with Cats ecosystem and type classes</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>fs2 for streaming (composable, pull-based)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Interop libraries available for gradual migration</span>
+                      </li>
+                    </ul>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
+                      {pairing.to.name} ({pairing.to.description}) rethinks version control from first
+                      principles. Built for developers who want a safer, more intuitive workflow.
+                    </p>
+                    <ul className="space-y-2 text-sm text-[#d1d5dc]">
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Working copy IS a commit (no staging area complexity)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Change IDs survive rebases (stable identifiers)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Conflicts are first-class (stored in commits, not blocking)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Automatic descendant rebasing (no more --update-refs)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>
+                          Compatible with existing {pairing.from.name} repos (use both tools together)
+                        </span>
+                      </li>
+                    </ul>
+                  </>
+                )}
               </div>
             </section>
           </div>

@@ -259,8 +259,9 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
     }
   }, [isOpen, closeSidebar])
 
-  // If sandbox is disabled, don't render the sidebar at all
-  if (sandboxConfig?.enabled === false) {
+  // Don't render if sandbox config not yet loaded (prevents flash on initial render)
+  // or if sandbox is explicitly disabled for this tool pair
+  if (sandboxConfig === undefined || sandboxConfig.enabled === false) {
     return null
   }
 

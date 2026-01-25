@@ -49,8 +49,9 @@ export function TerminalToggle({ className = "" }: TerminalToggleProps): ReactNo
   const sandboxEnabled = sandboxConfig?.enabled ?? true
   const { isUnavailable, reason } = useSandboxStatus({ enabled: sandboxEnabled })
 
-  // Hide when sandbox is disabled for the current page
-  if (sandboxConfig?.enabled === false) {
+  // Don't render if sandbox config not yet loaded (prevents flash on initial render)
+  // or if sandbox is explicitly disabled for this tool pair
+  if (sandboxConfig === undefined || sandboxConfig.enabled === false) {
     return null
   }
 

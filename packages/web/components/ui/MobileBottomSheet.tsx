@@ -207,13 +207,11 @@ export function MobileBottomSheet({ toolPair }: MobileBottomSheetProps): ReactNo
     setCurrentY(0)
   }, [isDragging, currentY, closeSidebar])
 
-  // If sandbox is disabled, don't render the sheet at all
-  if (sandboxConfig?.enabled === false) {
-    return null
-  }
-
-  // Don't render if closed (mobile only - handled by CSS media query)
-  if (!isOpen) {
+  // Don't render if:
+  // 1. Sandbox config not yet loaded (prevents flash on initial render)
+  // 2. Sandbox is explicitly disabled for this tool pair (e.g., cats-zio uses Scastie)
+  // 3. Sheet is closed
+  if (sandboxConfig === undefined || sandboxConfig.enabled === false || !isOpen) {
     return null
   }
 
