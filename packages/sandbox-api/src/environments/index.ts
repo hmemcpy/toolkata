@@ -1,4 +1,5 @@
-import { Context, Effect, Layer } from "effect"
+import { Context, Data, Effect, Layer } from "effect"
+import Docker from "dockerode"
 import type { EnvironmentConfig } from "./types.js"
 import type { EnvironmentInfo } from "./types.js"
 import { EnvironmentError } from "./types.js"
@@ -56,6 +57,16 @@ export interface EnvironmentServiceShape {
    * @returns Array of environment name strings
    */
   readonly listNames: Effect.Effect<readonly string[], never>
+
+  /**
+   * Validate that all registered environment Docker images exist
+   *
+   * Checks that all registered environment images are present in Docker.
+   * This should be called at server startup to fail fast if images are missing.
+   *
+   * @returns Effect that succeeds if all images exist, fails with MissingImagesError if any are missing
+   */
+  readonly validateAllImages: Effect.Effect<void, MissingImagesError>
 }
 
 // Service tag
@@ -97,7 +108,54 @@ const make = Effect.sync(() => {
     Object.freeze(listEnvironmentNames()),
   )
 
-  return { get, getDefault, list, has, listNames } satisfies EnvironmentServiceShape
+  // Create Docker client for image validation
+  const docker = new Docker({
+    socketPath: process.env["DOCKER_HOST"] ?? "/var/run/docker.sock",
+  })
+
+  // Validate all environment images exist at startup
+  const validateAllImages = Effect.gen(function* () {
+    const environments = listEnvsFromRegistry()
+    const missingImages: Array<{ envName: string; imageName: string }> = []
+
+    // Check each environment's image
+    for (const env of environments) {
+      const imageExists = yield* Effect.tryPromise({
+        try: async () => {
+          try {
+            await docker.getImage(env.dockerImage).inspect()
+            return true
+          } catch {
+            return false
+          }
+        },
+        catch: () => false,
+      })
+
+      if (!imageExists) {
+        missingImages.push({ envName: env.name, imageName: env.dockerImage })
+      }
+    }
+
+    // If any images are missing, fail with clear error message
+    if (missingImages.length > 0) {
+      const missingList = missingImages
+        .map((m) => `  - ${m.envName}: ${m.imageName}`)
+        .join("\n")
+      const message = `Missing ${missingImages.length} environment image(s):\n${missingList}\n\nBuild images with: bun run docker:build:all`
+      return yield* Effect.fail(
+        new MissingImagesError({
+          cause: "MissingImages",
+          message,
+          missingImages: Object.freeze(missingImages),
+        }),
+      )
+    }
+
+    console.log(`[EnvironmentService] All ${environments.length} environment images validated`)
+  })
+
+  return { get, getDefault, list, has, listNames, validateAllImages } satisfies EnvironmentServiceShape
 })
 
 // Live layer
@@ -106,3 +164,10 @@ export const EnvironmentServiceLive = Layer.effect(EnvironmentService, make)
 // Re-export types for convenience
 export type { EnvironmentConfig, EnvironmentInfo, EnvironmentError } from "./types.js"
 export { bashEnvironment, nodeEnvironment, pythonEnvironment } from "./builtin.js"
+
+// MissingImagesError for startup validation
+export class MissingImagesError extends Data.TaggedClass("MissingImagesError")<{
+  readonly cause: "MissingImages"
+  readonly message: string
+  readonly missingImages: ReadonlyArray<{ readonly envName: string; readonly imageName: string }>
+}> {}

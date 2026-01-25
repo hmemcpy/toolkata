@@ -42,7 +42,7 @@ After analyzing all 5 specification documents against the current implementation
 | **bidirectional-comparison.md** | ✅ **COMPLETE** | All components implemented (verified 2026-01-25) |
 | **terminal-sidebar.md** | ⚠️ 95% Complete | Focus trap in sidebar only |
 | **sandbox-integration.md** | ✅ **COMPLETE** | All requirements implemented (verified 2026-01-25) |
-| **multi-environment-sandbox.md** | ⚠️ 85% Complete | Startup validation (P2.6) only |
+| **multi-environment-sandbox.md** | ✅ **COMPLETE** | All requirements implemented (P2.1-P2.6 verified 2026-01-25) |
 | **toolkata.md** | ✅ Complete | Base requirements already implemented |
 
 ---
@@ -172,7 +172,7 @@ All user stories, acceptance criteria, and technical constraints have been imple
 
 ### 5. multi-environment-sandbox.md
 
-**Status:** ⚠️ **85% COMPLETE** (P2.1-P2.5 done, P2.6 remaining)
+**Status:** ✅ **COMPLETE** (verified 2026-01-25)
 
 **Verification:**
 - ✅ `packages/sandbox-api/src/environments/` directory EXISTS with registry
@@ -184,9 +184,9 @@ All user stories, acceptance criteria, and technical constraints have been imple
 - ✅ WebSocket handler DOES accept `init` message type
 - ✅ `/api/v1/environments` endpoint EXISTS
 - ✅ Per-environment Dockerfiles EXIST (bash, node, python)
-- ❌ No startup validation - server doesn't check if images exist before starting
+- ✅ Startup validation EXISTS - server checks images exist before starting
 
-**Completed Components (P2.1-P2.5):**
+**Completed Components (P2.1-P2.6):**
 - ✅ Environment registry system at `packages/sandbox-api/src/environments/`
 - ✅ Frontmatter schema extension for `sandbox` field
 - ✅ Tool pair `config.yml` loading and resolution
@@ -194,10 +194,7 @@ All user stories, acceptance criteria, and technical constraints have been imple
 - ✅ Init command protocol in WebSocket handler
 - ✅ `/api/v1/environments` endpoint
 - ✅ Session creation extended for environment/init/timeout params
-
-**Missing Components (P2.6 only):**
-- ❌ Startup validation - check images exist before HTTP server starts
-- ❌ Clear error message if images missing
+- ✅ Startup validation - validateAllImages() Effect checks all images exist
 
 ---
 
@@ -394,27 +391,32 @@ All user stories, acceptance criteria, and technical constraints have been imple
 
 ---
 
-- [ ] **P2.6: Startup Validation**
+- [x] **P2.6: Startup Validation** ✅ COMPLETE (2026-01-25)
 **Why:** Fail fast if images missing at server startup. Prevents runtime errors when user requests unavailable environment.
 
-**Files to Modify:**
-- `packages/sandbox-api/src/environments/index.ts` - Add validateAllImages() Effect
-- `packages/sandbox-api/src/index.ts` - Add image existence check before HTTP server starts
+**Files Modified:**
+- `packages/sandbox-api/src/environments/index.ts` - Added validateAllImages() Effect, MissingImagesError type
+- `packages/sandbox-api/src/index.ts` - Added validation call before HTTP server starts
 
 **Changes:**
-- On server startup, check that all registered environment images exist
-- Use Dockerode to list images and verify presence
-- Log error and exit with code 1 if any image is missing
-- Provide clear error message listing missing images
+- Added `validateAllImages` method to EnvironmentServiceShape interface
+- Created MissingImagesError TaggedClass with structured error data (envName, imageName)
+- validateAllImages Effect checks all registered environments' Docker images exist
+- Uses Dockerode's `getImage().inspect()` to verify image presence
+- On missing images, fails with clear error listing each missing environment and its image
+- Validation called in mainProgram before HTTP server starts (after gVisor and security validation)
+- MissingImagesError converted to ConfigError for consistent error handling
+- Success case logs count of validated images
 
 **Acceptance Criteria:**
-- Server checks for bash, node, python images on startup
-- Missing images cause server to exit with clear error
-- Startup logs show which images are missing
-- All images present → server starts normally
-- Checks happen before HTTP server listens
+- ✅ Server checks for bash, node, python images on startup
+- ✅ Missing images cause server to exit with clear error
+- ✅ Error message lists each missing environment with its image name
+- ✅ All images present → server starts normally with validation log
+- ✅ Checks happen before HTTP server listens
+- ✅ Error message includes build command: `bun run docker:build:all`
 
-**Effort:** 1 hour
+**Effort:** 1 hour (actual)
 
 **Dependencies:** P2.5 (all environment images must be defined)
 
@@ -564,15 +566,15 @@ P3 (Polish) - Can be done anytime
 
 ---
 
-### Remaining Implementation (22 hours)
+### Remaining Implementation (6 hours)
 
-**Phase 3: Multi-Environment** (16 hours) - ⏳ NEXT PRIORITY
+**Phase 3: Multi-Environment** (19 hours) - ✅ COMPLETE
 - ✅ P2.1: Environment Registry (3h) - Backend infrastructure
 - ✅ P2.2: Config Loading (3h) - Frontend config.yml support
 - ✅ P2.3: Backend Services (5h) - Container/Session/WebSocket extensions
 - ✅ P2.4: Frontend Integration (4h) - Connect to backend
 - ✅ P2.5: Docker Images (3h) - node, python images
-- [ ] P2.6: Startup Validation (1h) - Fail fast on missing images
+- ✅ P2.6: Startup Validation (1h) - Fail fast on missing images
 
 **Phase 4: Polish** (6 hours)
 - P3.1: Swipe Gesture (2h) ✅ ALREADY IMPLEMENTED
@@ -641,19 +643,19 @@ bun run --cwd packages/sandbox-api dev
 | **bash Environment** | `packages/sandbox-api/docker/environments/bash/` | ✅ Complete | FROM base, install git+jj |
 | **node Environment** | `packages/sandbox-api/docker/environments/node/` | ✅ Complete | FROM bash, install Node.js 20.x |
 | **python Environment** | `packages/sandbox-api/docker/environments/python/` | ✅ Complete | FROM bash, install Python 3 |
+| **Startup Validation** | `packages/sandbox-api/src/environments/index.ts` | ✅ Complete | validateAllImages() Effect with MissingImagesError |
 
 ### Missing Components
 
 | Component | Required By | Priority | Status |
 |-----------|-------------|----------|--------|
-| Startup validation | multi-environment-sandbox.md | P2 | ❌ Not started |
 | Focus trap in sidebar | terminal-sidebar.md | P3 | ⚠️ Partial (aria-modal fix needed) |
 
 ---
 
 ## Implementation Summary
 
-**Completed (22.5 hours):**
+**Completed (23.5 hours):**
 - ✅ Enhanced TryIt component (editable commands, expected output)
 - ✅ Glossary page route (35 command mappings, search/filter)
 - ✅ Bidirectional comparison (DirectionToggle, PreferencesStore, useDirection)
@@ -665,9 +667,9 @@ bun run --cwd packages/sandbox-api dev
 - ✅ P2.3: Backend Services Extension (5h) - Container/Session/WebSocket
 - ✅ P2.4: Frontend Integration (4h) - Connect to multi-environment backend
 - ✅ P2.5: Multi-Environment Docker Images (3h) - bash, node, python images
+- ✅ P2.6: Startup Validation (1h) - validateAllImages() Effect
 
-**Remaining (22 hours):**
-- **P2: Multi-Environment System** (1h) - Startup validation only
+**Remaining (6 hours):**
 - **P3.2: Focus Management** (2h) - Focus trap library integration, return focus to trigger
 - **P3.4: Testing & Documentation** (4h) - Playwright tests, plugin API docs
 
@@ -679,16 +681,17 @@ bun run --cwd packages/sandbox-api dev
 
 2. **✅ P3.1 & P3.3 COMPLETE**: Mobile swipe gesture and 't' key toggle already implemented.
 
-3. **✅ P2.1-P2.5 COMPLETE**: Multi-environment system is 95% done - only startup validation (P2.6) remains.
+3. **✅ P2.1-P2.6 COMPLETE**: Multi-environment system is fully implemented including startup validation.
 
 4. **Backend Architecture is Solid**: All services follow Effect-TS patterns correctly with TaggedClass errors, Layer composition, and proper error handling.
 
 5. **Content System is Complete**: 12 MDX step files exist with proper frontmatter, loading infrastructure works, glossary data is ready.
 
-6. **Next Priority**: P2.6 (Startup Validation) is the final piece of the multi-environment system. This will:
-   - Check that all registered environment images exist on server startup
-   - Fail fast with clear error if images are missing
-   - Prevent runtime errors when users request unavailable environments
+6. **✅ Multi-Environment System COMPLETE**: All P2 tasks (P2.1-P2.6) are implemented. The system supports bash, node, python environments with:
+   - Environment registry for extensible configurations
+   - Per-step sandbox configuration via frontmatter and config.yml
+   - Init commands for environment setup
+   - Startup validation to ensure all Docker images exist
 
 7. **Remaining Polish**: P3.2 (focus trap) and P3.4 (testing/docs) can be done independently at any time.
 

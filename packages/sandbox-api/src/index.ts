@@ -30,7 +30,7 @@ import {
 } from "./services/circuit-breaker.js"
 import { SessionService, SessionServiceLive, type SessionServiceShape } from "./services/session.js"
 import { WebSocketService, WebSocketServiceLive } from "./services/websocket.js"
-import { EnvironmentServiceLive } from "./environments/index.js"
+import { EnvironmentServiceLive, EnvironmentService } from "./environments/index.js"
 import {
   getAllowedOrigins,
   SandboxConfig,
@@ -324,6 +324,19 @@ const mainProgram = Effect.gen(function* () {
       }),
     )
   }
+
+  // Get environment service and validate all images exist
+  const environmentService = yield* EnvironmentService
+  yield* environmentService.validateAllImages.pipe(
+    Effect.catchTag("MissingImagesError", (error) =>
+      Effect.fail(
+        new ConfigError({
+          cause: "InvalidValue",
+          message: error.message,
+        }),
+      ),
+    ),
+  )
 
   const http = yield* HttpServer
   const sessionService = yield* SessionService
