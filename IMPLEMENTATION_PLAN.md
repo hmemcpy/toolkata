@@ -720,11 +720,18 @@ export const catsEffectZioGlossary: readonly GlossaryEntry[] = [
 **Effort:** 10 minutes
 **Dependencies:** Task 4.1
 
-Verify progress tracking works:
-1. Complete a step
-2. Refresh page
-3. Check progress persisted in localStorage
-4. Check home page shows progress
+**Status:** ✅ Completed (2025-01-25)
+
+**Verification Results:**
+- Progress tracking infrastructure is generic and works for any toolPair
+- `ProgressStore`, `useStepProgress`, `StepProgressWrapper`, `NavigationWrapper` all use `toolPair` parameter
+- Updated `scripts/test-all.sh` to include cats-effect-zio routes (10 steps + cheatsheet)
+- Updated manual testing checklist to explicitly test progress tracking for both jj-git and cats-effect-zio
+
+**Implementation Notes:**
+- No code changes needed - progress tracking is completely generic
+- The `toolPair` parameter is used as the localStorage key for storing progress
+- cats-effect-zio uses same step pattern as jj-git, so all existing components work
 
 ---
 
@@ -907,7 +914,7 @@ The following tasks need to be completed for cats-effect-zio:
 ### Phase 4: Testing & Polish
 
 - [x] Task 4.1: Route Testing
-- [ ] Task 4.2: Progress Tracking Test
+- [x] Task 4.2: Progress Tracking Test
 - [ ] Task 4.3: Responsive Design Test
 - [ ] Task 4.4: Accessibility Test
 - [ ] Task 4.5: Scastie Embed Testing

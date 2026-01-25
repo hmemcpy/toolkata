@@ -24,7 +24,11 @@ echo "=================================="
 echo ""
 
 # Test all routes
-ROUTES=("" "/jj-git" "/jj-git/1" "/jj-git/2" "/jj-git/3" "/jj-git/4" "/jj-git/5" "/jj-git/6" "/jj-git/7" "/jj-git/8" "/jj-git/9" "/jj-git/10" "/jj-git/11" "/jj-git/12" "/jj-git/cheatsheet")
+ROUTES=(
+  ""
+  "/jj-git" "/jj-git/1" "/jj-git/2" "/jj-git/3" "/jj-git/4" "/jj-git/5" "/jj-git/6" "/jj-git/7" "/jj-git/8" "/jj-git/9" "/jj-git/10" "/jj-git/11" "/jj-git/12" "/jj-git/cheatsheet"
+  "/cats-effect-zio" "/cats-effect-zio/1" "/cats-effect-zio/2" "/cats-effect-zio/3" "/cats-effect-zio/4" "/cats-effect-zio/5" "/cats-effect-zio/6" "/cats-effect-zio/7" "/cats-effect-zio/8" "/cats-effect-zio/9" "/cats-effect-zio/10" "/cats-effect-zio/cheatsheet"
+)
 
 for route in "${ROUTES[@]}"; do
   url="$BASE_URL$route"
@@ -65,7 +69,8 @@ check_element "" "Skip to main content" "Skip link present"
 check_element "" 'id="main"' "Main landmark present"
 
 # Check for proper heading
-check_element "/jj-git" "jj" "Overview page has content"
+check_element "/jj-git" "jj" "jj-git overview page has content"
+check_element "/cats-effect-zio" "Cats Effect" "cats-effect-zio overview page has content"
 
 echo ""
 echo "Phase 3: Manual Testing Checklist"
@@ -90,7 +95,7 @@ echo "      - Layout remains usable"
 echo "      - Text doesn't overflow"
 echo ""
 echo "Interactive Features:"
-echo "  [ ] Progress tracking persists across refreshes"
+echo "  [ ] Progress tracking persists across refreshes (test both jj-git and cats-effect-zio)"
 echo "  [ ] localStorage cleared resets progress"
 echo "  [ ] Terminal connecting state shows loading"
 echo "  [ ] Terminal connected state shows green indicator"
