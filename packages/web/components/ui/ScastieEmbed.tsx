@@ -25,9 +25,15 @@ declare global {
       embedId: string,
       code: string,
       options: {
-        readonly theme: "light" | "dark"
-        readonly scalaVersion: string
-        readonly dependencies: readonly string[]
+        readonly theme?: "light" | "dark"
+        readonly scalaVersion?: string
+        readonly dependencies?: readonly string[]
+        readonly isWorksheetMode?: boolean
+        readonly sbtConfig?: string
+        readonly targetType?: "jvm" | "js" | "dotty" | "typelevel"
+        readonly base64UUID?: string
+        readonly user?: string
+        readonly update?: number
       },
     ) => void
   }
@@ -36,18 +42,79 @@ declare global {
 interface ScastieEmbedProps {
   /**
    * The Scala code to display in the playground.
+   * Not used when snippetId is provided.
    */
-  readonly code: string
+  readonly code?: string
+
+  /**
+   * Base64 UUID of a saved Scastie snippet to embed.
+   * When provided, the code prop is ignored and the saved snippet is loaded.
+   *
+   * @example
+   * ```tsx
+   * <ScastieEmbed snippetId="CJ8KTL98QAiWvoVUPI3kXg" />
+   * ```
+   */
+  readonly snippetId?: string
+
+  /**
+   * Username for user-specific snippets.
+   * Use with snippetId to load a user's saved snippet.
+   *
+   * @example
+   * ```tsx
+   * <ScastieEmbed
+   *   snippetId="33D4P3ysQCq2em2MRiv5sQ"
+   *   user="MasseGuillaume"
+   * />
+   * ```
+   */
+  readonly user?: string
+
+  /**
+   * Update index for snippet version.
+   * Use with snippetId and user to load a specific version.
+   *
+   * @example
+   * ```tsx
+   * <ScastieEmbed
+   *   snippetId="33D4P3ysQCq2em2MRiv5sQ"
+   *   user="MasseGuillaume"
+   *   update={1}
+   * />
+   * ```
+   */
+  readonly update?: number
 
   /**
    * Scala version (default: "3.3.1").
+   * Only used when snippetId is not provided.
    */
   readonly scalaVersion?: string
 
   /**
    * List of dependencies (e.g., ["org.typelevel::cats-effect::3.5.0"]).
+   * Only used when snippetId is not provided.
    */
   readonly dependencies?: readonly string[]
+
+  /**
+   * Whether to use worksheet mode (default: false).
+   * Only used when snippetId is not provided.
+   */
+  readonly isWorksheetMode?: boolean
+
+  /**
+   * Additional sbt configuration (default: "").
+   * Only used when snippetId is not provided.
+   */
+  readonly sbtConfig?: string
+
+  /**
+   * Target type for compilation (default: "jvm").
+   * Only used when snippetId is not provided.
+   */
+  readonly targetType?: "jvm" | "js" | "dotty" | "typelevel"
 
   /**
    * Theme for the playground (default: "dark").
@@ -119,11 +186,21 @@ function loadScastieScript(): Promise<boolean> {
  *
  * Displays an interactive Scala playground using Scastie's embedded API.
  * Falls back to static code display if Scastie is unavailable.
+ *
+ * Supports two modes:
+ * 1. Saved snippet: Provide `snippetId` to load a pre-configured snippet
+ * 2. Inline code: Provide `code` with optional scalaVersion, dependencies, etc.
  */
 export function ScastieEmbed({
-  code,
+  code = "",
+  snippetId,
+  user,
+  update,
   scalaVersion = "3.3.1",
   dependencies = [],
+  isWorksheetMode = false,
+  sbtConfig = "",
+  targetType = "jvm",
   theme = "dark",
   fallback,
 }: ScastieEmbedProps) {
@@ -154,11 +231,24 @@ export function ScastieEmbed({
           const embedId = `scastie-${Math.random().toString(36).substr(2, 9)}`
           containerRef.current.id = embedId
 
-          window.ScastieEmbed(embedId, code, {
-            theme,
-            scalaVersion,
-            dependencies: dependencies as string[],
-          })
+          // Build options based on mode
+          const options = snippetId
+            ? ({
+                theme,
+                base64UUID: snippetId,
+                ...(user !== undefined && { user }),
+                ...(update !== undefined && { update }),
+              } as const)
+            : ({
+                theme,
+                scalaVersion,
+                dependencies: dependencies as string[],
+                isWorksheetMode,
+                ...(sbtConfig && { sbtConfig }),
+                targetType,
+              } as const)
+
+          window.ScastieEmbed(embedId, code, options)
         } catch (error) {
           console.error("Error embedding Scastie:", error)
           setHasError(true)
@@ -171,7 +261,7 @@ export function ScastieEmbed({
     return () => {
       cancelled = true
     }
-  }, [code, theme, scalaVersion, dependencies])
+  }, [code, snippetId, user, update, theme, scalaVersion, dependencies, isWorksheetMode, sbtConfig, targetType])
 
   // Fallback: static code block
   if (hasError || !isLoaded) {

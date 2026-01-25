@@ -42,11 +42,12 @@ This plan covers multiple specifications for toolkata improvements, prioritized 
 | Feature | Spec | Impact | Complexity |
 |---------|------|--------|------------|
 | ~~**cats-zio config.yml**~~ | cats-zio-improvements.md R1 | ~~Blocks cats-zio usage~~ | ~~Low~~ |
-| **Shiki rehype plugin** | cats-zio-improvements.md R2 | No syntax highlighting | Medium |
-| **ScalaComparisonBlock highlighting** | cats-zio-improvements.md R2 | No Scala highlighting | Medium |
-| **Shrinking layout** | sandbox-integration.md R2 | Overlay blocks content | Medium |
-| **scala-effects-demo page** | cats-zio-improvements.md R3 | No UX prototype | High |
-| **Scastie UUID snippets** | cats-zio-improvements.md R4 | Only inline code works | Low |
+| ~~**Shiki rehype plugin**~~ | cats-zio-improvements.md R2 | ~~No syntax highlighting~~ | ~~Medium~~ |
+| ~~**ScalaComparisonBlock highlighting**~~ | cats-zio-improvements.md R2 | ~~No Scala highlighting~~ | ~~Medium~~ |
+| ~~**Shrinking layout**~~ | sandbox-integration.md R2 | ~~Overlay blocks content~~ | ~~Medium~~ |
+| ~~**scala-effects-demo page**~~ | cats-zio-improvements.md R3 | ~~No UX prototype~~ | ~~High~~ |
+| ~~**Scastie UUID snippets**~~ | cats-zio-improvements.md R4 | ~~Only inline code works~~ | ~~Low~~ |
+| **Dark theme verification** | cats-zio-improvements.md R4 | Verify Scastie theme works | Low |
 
 ---
 
@@ -175,17 +176,27 @@ This plan covers multiple specifications for toolkata improvements, prioritized 
 
 ### P4: Scastie Improvements (Enhancement)
 
-- [ ] **Support UUID snippets in ScastieEmbed** — Add `snippetId` prop to load saved Scastie snippets instead of inline code.
+- [x] **Support UUID snippets in ScastieEmbed** — Added `snippetId` prop to load saved Scastie snippets instead of inline code. Also added `user` and `update` props for user-specific snippets and version control.
 
-**Why**: Current ScastieEmbed only supports inline code via `code` prop and `window.ScastieEmbed(embedId, code, options)`. Saved snippets (UUID) would enable pre-configured examples with dependencies already set up.
+**Why**: Current ScastieEmbed only supported inline code via `code` prop. Saved snippets (UUID) enable pre-configured examples with dependencies already set up.
 
 **Files**:
-- `packages/web/components/ui/ScastieEmbed.tsx` (MODIFY - add `snippetId` prop, update embed logic)
+- `packages/web/components/ui/ScastieEmbed.tsx` (MODIFIED - added snippetId, user, update props, updated embed logic)
+
+**Changes made**:
+- Added `snippetId`, `user`, `update` props to `ScastieEmbedProps` interface
+- Made `code` prop optional (required only when not using snippetId)
+- Added `isWorksheetMode`, `sbtConfig`, `targetType` props for inline code mode
+- Updated global `Window.ScastieEmbed` type declaration to make all properties optional
+- Updated embed logic to build options based on mode (snippet vs inline code)
+- Snippet mode uses `base64UUID` option, inline mode uses `code` + other options
+
+**Validation**: `bun run build && bun run typecheck` passes.
 
 - [ ] **Verify dark theme is applied** — Current implementation passes `theme` prop (default "dark") to `window.ScastieEmbed()`. Verify it works in practice.
 
 **Files**:
-- `packages/web/components/ui/ScastieEmbed.tsx` (VERIFY at line 157-161)
+- `packages/web/components/ui/ScastieEmbed.tsx` (VERIFY - line 250-251, theme is passed in options)
 
 **Validation**: Scastie embeds load with dark theme, UUID snippets work.
 
@@ -245,13 +256,14 @@ packages/web/content/comparisons/
 
 | File | Purpose |
 |------|---------|
-| `packages/web/content/comparisons/cats-zio/config.yml` | **CREATE** - Disable sandbox |
-| `packages/web/next.config.ts` | **MODIFY** - Add Shiki rehype plugin |
-| `packages/web/app/globals.css` | **MODIFY** - Shiki CSS overrides |
-| `packages/web/components/ui/ScalaComparisonBlock.tsx` | **MODIFY** - Add highlighting |
-| `packages/web/components/ui/TerminalSidebar.tsx` | **MODIFY** - Remove overlay backdrop |
-| `packages/web/components/ui/StepPageClientWrapper.tsx` | **MODIFY** - Shrinking layout margin |
-| `packages/web/app/scala-effects-demo/page.tsx` | **CREATE** - UX prototype |
+| `packages/web/content/comparisons/cats-zio/config.yml` | **CREATED** - Disable sandbox |
+| `packages/web/next.config.ts` | **MODIFIED** - Add Shiki rehype plugin |
+| `packages/web/app/globals.css` | **MODIFIED** - Shiki CSS overrides |
+| `packages/web/components/ui/ScalaComparisonBlock.tsx` | **MODIFIED** - Add highlighting |
+| `packages/web/components/ui/TerminalSidebar.tsx` | **MODIFIED** - Remove overlay backdrop |
+| `packages/web/components/ui/StepPageClientWrapper.tsx` | **MODIFIED** - Shrinking layout margin |
+| `packages/web/app/scala-effects-demo/page.tsx` | **CREATED** - UX prototype |
+| `packages/web/components/ui/ScastieEmbed.tsx` | **MODIFIED** - UUID snippet support |
 
 ---
 
@@ -321,15 +333,15 @@ Internal:
 
 ## Task Count
 
-**Total pending tasks**: 24
-**Completed tasks**: 12 (P0: cats-zio config.yml; P1: Shiki rehype plugin, next.config.ts, CSS overrides, prose styles, ScalaComparisonBlock highlighting; P2: shrinking layout; P3: UX prototype with 4 options)
+**Total pending tasks**: 23
+**Completed tasks**: 13 (P0: cats-zio config.yml; P1: Shiki rehype plugin, next.config.ts, CSS overrides, prose styles, ScalaComparisonBlock highlighting; P2: shrinking layout; P3: UX prototype with 4 options; P4: Scastie UUID snippet support)
 
 Priority breakdown:
 - P0: 0 tasks (all critical blockers completed)
 - P1: 0 tasks (syntax highlighting completed)
 - P2: 0 tasks (shrinking layout completed)
 - P3: 0 tasks (UX prototype completed)
-- P4: 2 tasks (Scastie enhancements)
+- P4: 1 task (dark theme verification)
 - P5: 3 tasks (content research)
 
 ---
