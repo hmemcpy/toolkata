@@ -1,23 +1,23 @@
 ---
-title: "Cats Effect for ZIO Developers"
-description: "Learn Cats Effect 3 if you already know ZIO 2"
+title: "ZIO for Cats Effect Developers"
+description: "Learn ZIO 2 if you already know Cats Effect 3"
 estimatedTime: "~45 min"
 ---
 
-# Cats Effect ← ZIO
+# ZIO ← Cats Effect
 
-**Cats Effect 3** for developers who know **ZIO 2**.
+**ZIO 2** for developers who know **Cats Effect 3**.
 
-## Why Learn Cats Effect?
+## Why Learn ZIO?
 
-Cats Effect is the standard effect system for Scala's Typelevel ecosystem. While ZIO and Cats Effect share the same core principles, they differ in implementation details and API design.
+ZIO is a powerful effect system with built-in dependency injection and typed errors. While ZIO and Cats Effect share the same core principles, they differ in implementation details and API design.
 
 ### Key Differences
 
-- **Error Channel:** CE3 has `IO[E, A]` with typed errors (no environment parameter)
-- **Dependency Injection:** Uses `Resource` and `Kleisli` instead of `ZLayer`
-- **Interop:** Better integration with Cats ecosystem libraries
-- **Type Classes:** Embraces Cats type classes (Functor, Monad, etc.)
+- **Environment:** ZIO has `ZIO[R, E, A]` with environment parameter for DI
+- **Dependency Injection:** Uses `ZLayer` instead of Tagless Final
+- **Error Handling:** Typed error channel with accumulation support
+- **Streaming:** ZStream for high-performance push-based streaming
 
 ## What You'll Learn
 
@@ -56,6 +56,6 @@ ecosystem integration.
 
 - Scala 3 or Scala 2.13
 - Basic familiarity with functional programming concepts
-- Experience with ZIO 2.x
+- Experience with Cats Effect 3
 
-[Start Learning →](/cats-effect-zio/1)
+[Start Learning →](/cats-zio/1)

@@ -187,26 +187,26 @@ export default async function ComparisonOverviewPage(props: {
                 {toolPair === "cats-zio" ? (
                   <>
                     <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
-                      Cats Effect 3 is the standard effect system for Scala&apos;s Typelevel ecosystem.
-                      While ZIO and Cats Effect share the same core principles, they differ in
-                      implementation details and API design.
+                      ZIO 2 is a powerful effect system with built-in dependency injection and
+                      typed errors. If you know Cats Effect, you&apos;ll find the core concepts familiar
+                      but with a different API philosophy.
                     </p>
                     <ul className="space-y-2 text-sm text-[#d1d5dc]">
                       <li className="flex items-start gap-2">
                         <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                        <span>Simpler type signature: IO[A] vs ZIO&apos;s R/E/A</span>
+                        <span>R/E/A type signature with environment parameter</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                        <span>Tagless Final for dependency injection (vs ZLayer)</span>
+                        <span>ZLayer for type-safe dependency injection</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                        <span>Deep integration with Cats ecosystem and type classes</span>
+                        <span>Typed error channel with error accumulation</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                        <span>fs2 for streaming (composable, pull-based)</span>
+                        <span>ZStream for high-performance streaming</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-[var(--color-accent)] mt-0.5">•</span>

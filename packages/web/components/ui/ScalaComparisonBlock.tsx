@@ -1,18 +1,17 @@
 /**
- * ScalaComparisonBlock - Side-by-side ZIO vs Cats Effect code comparison.
+ * ScalaComparisonBlock - Side-by-side Cats Effect vs ZIO code comparison.
  *
- * Displays two code blocks side by side for comparing ZIO and Cats Effect code.
- * Uses color coding to distinguish between the two libraries.
- * Respects direction toggle: normal shows ZIO left, Cats Effect right.
- * When reversed, shows Cats Effect left, ZIO right.
+ * Displays two code blocks side by side for comparing Cats Effect and ZIO code.
+ * Tutorial direction: Cats Effect (what you know) → ZIO (what you're learning).
+ * Cats Effect shown on left (purple), ZIO on right (blue).
  *
  * @example
  * ```tsx
  * <ScalaComparisonBlock
- *   zioCode="ZIO.succeed(42)"
  *   catsEffectCode="IO.pure(42)"
- *   zioComment="Lift pure value into effect"
- *   catsEffectComment="Same in Cats Effect"
+ *   zioCode="ZIO.succeed(42)"
+ *   catsEffectComment="Cats Effect 3 syntax"
+ *   zioComment="ZIO 2 equivalent"
  * />
  * ```
  */
@@ -56,7 +55,8 @@ interface ScalaComparisonBlockProps {
 /**
  * Side-by-side comparison block for Scala code.
  *
- * Shows ZIO code (blue) on the left and Cats Effect code (purple) on the right.
+ * Shows Cats Effect code (purple) on the left and ZIO code (blue) on the right.
+ * This matches the tutorial direction: Cats Effect → ZIO.
  * Uses Shiki for client-side syntax highlighting.
  */
 export function ScalaComparisonBlock({
@@ -112,34 +112,7 @@ export function ScalaComparisonBlock({
 
   return (
     <div className="my-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-      {/* ZIO column (blue) */}
-      <div className="overflow-hidden rounded border border-[var(--color-border)] bg-[var(--color-zio-bg)]">
-        <div className="border-b border-[var(--color-border)] px-4 py-2">
-          <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-zio)]">
-            ZIO
-          </span>
-        </div>
-        <div className="p-4">
-          {isLoading ? (
-            <pre className="overflow-x-auto text-sm text-[var(--color-text)]">
-              <code>{zioCode}</code>
-            </pre>
-          ) : (
-            <div
-              className="shiki-container text-sm"
-              dangerouslySetInnerHTML={{ __html: zioHtml }}
-              style={{ background: "transparent" }}
-            />
-          )}
-          {zioComment && (
-            <p className="mt-2 text-xs text-[var(--color-text-muted)]">
-              {zioComment}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Cats Effect column (purple) */}
+      {/* Cats Effect column (purple) - what you know */}
       <div className="overflow-hidden rounded border border-[var(--color-border)] bg-[var(--color-ce-bg)]">
         <div className="border-b border-[var(--color-border)] px-4 py-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-ce)]">
@@ -161,6 +134,33 @@ export function ScalaComparisonBlock({
           {catsEffectComment && (
             <p className="mt-2 text-xs text-[var(--color-text-muted)]">
               {catsEffectComment}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* ZIO column (blue) - what you're learning */}
+      <div className="overflow-hidden rounded border border-[var(--color-border)] bg-[var(--color-zio-bg)]">
+        <div className="border-b border-[var(--color-border)] px-4 py-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-zio)]">
+            ZIO
+          </span>
+        </div>
+        <div className="p-4">
+          {isLoading ? (
+            <pre className="overflow-x-auto text-sm text-[var(--color-text)]">
+              <code>{zioCode}</code>
+            </pre>
+          ) : (
+            <div
+              className="shiki-container text-sm"
+              dangerouslySetInnerHTML={{ __html: zioHtml }}
+              style={{ background: "transparent" }}
+            />
+          )}
+          {zioComment && (
+            <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+              {zioComment}
             </p>
           )}
         </div>

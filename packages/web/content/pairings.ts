@@ -108,22 +108,22 @@ export const toolPairings = [
   {
     slug: "cats-zio",
     from: {
-      name: "ZIO",
-      description: "ZIO-2 / Scala",
-      color: "#0066ff",
-      icon: "code",
+      name: "Cats Effect",
+      description: "Cats Effect 3",
+      color: "#8b5cf6",
+      icon: "scala",
     },
     to: {
-      name: "Cats Effect",
-      description: "Cats Effect 3 / Scala",
-      color: "#8b5cf6",
-      icon: "code",
+      name: "ZIO",
+      description: "ZIO 2.0 for Cats Effect experts",
+      color: "#0066ff",
+      icon: "scala",
     },
     category: "Libraries & Frameworks" as const,
     steps: 10,
     estimatedTime: "~45 min",
     status: "published" as const,
-    toUrl: "https://typelevel.org/cats-effect/",
+    toUrl: "https://zio.dev/",
   },
   // Future pairings (commented out until content is ready)
   // {
