@@ -700,12 +700,18 @@ export const catsEffectZioGlossary: readonly GlossaryEntry[] = [
 **Effort:** 15 minutes
 **Dependencies:** All Phase 1-3 tasks
 
-Test all routes load correctly:
-- `/cats-effect-zio` - Overview page
-- `/cats-effect-zio/1` through `/cats-effect-zio/10` - Step pages
-- `/cats-effect-zio/cheatsheet` - Cheat sheet
+**Status:** ✅ Completed (2025-01-25)
 
-**Command:** `bun run dev` and manually verify each route.
+**Verification Results:**
+- `/cats-effect-zio` - Overview page: 200 OK
+- `/cats-effect-zio/1` through `/cats-effect-zio/10` - All step pages: 200 OK
+- `/cats-effect-zio/cheatsheet` - Cheat sheet: 200 OK
+- Home page shows "Programming Languages" category
+- Content renders correctly (titles, API mappings like "IO.pure")
+
+**Build Verification:**
+- Production build passes with all routes generated
+- Static files exist in `.next/server/app/cats-effect-zio/` for steps 1-10 and cheatsheet
 
 ---
 
@@ -840,12 +846,12 @@ Test in:
 
 The Cats Effect ← ZIO comparison is complete when:
 
-- [ ] All 10 step pages render without errors
-- [ ] Cheat sheet page displays all command mappings
+- [x] All 10 step pages render without errors (verified 200 OK for steps 1-10)
+- [x] Cheat sheet page displays all command mappings (verified)
 - [ ] Progress tracking works across sessions
 - [ ] Mobile responsive design works
 - [ ] Keyboard navigation works
-- [ ] Home page shows "Programming Languages" category
+- [x] Home page shows "Programming Languages" category (verified)
 - [x] TypeScript compiles with zero errors
 - [x] Production build succeeds
 
@@ -900,7 +906,7 @@ The following tasks need to be completed for cats-effect-zio:
 
 ### Phase 4: Testing & Polish
 
-- [ ] Task 4.1: Route Testing
+- [x] Task 4.1: Route Testing
 - [ ] Task 4.2: Progress Tracking Test
 - [ ] Task 4.3: Responsive Design Test
 - [ ] Task 4.4: Accessibility Test
