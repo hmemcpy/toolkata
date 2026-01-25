@@ -1,0 +1,19 @@
+# Default sandbox settings for jj-git comparison
+#
+# These defaults apply to all steps unless overridden in step frontmatter.
+#
+# Override in step frontmatter:
+# ---
+# sandbox:
+#   enabled: false
+#   environment: "node"
+#   timeout: 120
+#   init: ["npm install"]
+# ---
+
+defaults:
+  sandbox:
+    enabled: true
+    environment: "bash"
+    timeout: 60
+    init: []

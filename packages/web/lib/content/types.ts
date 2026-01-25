@@ -10,6 +10,77 @@ import { defineContentType } from "../content-core"
 import { indexFrontmatterSchema, stepFrontmatterSchema } from "./schemas"
 
 /**
+ * Sandbox configuration for terminal behavior.
+ *
+ * Resolved from three sources (in priority order):
+ * 1. Step frontmatter
+ * 2. Tool-pair config.yml
+ * 3. Global defaults
+ */
+export interface SandboxConfig {
+  readonly enabled: boolean
+  readonly environment: "bash" | "node" | "python"
+  readonly timeout: number
+  readonly init: readonly string[]
+}
+
+/**
+ * Global defaults for sandbox configuration.
+ */
+export const DEFAULT_SANDBOX_CONFIG: SandboxConfig = {
+  enabled: true,
+  environment: "bash",
+  timeout: 60,
+  init: [],
+}
+
+/**
+ * Raw sandbox config from frontmatter (all fields optional).
+ */
+export type RawSandboxConfig = {
+  readonly enabled?: boolean
+  readonly environment?: "bash" | "node" | "python"
+  readonly timeout?: number
+  readonly init?: readonly string[]
+}
+
+/**
+ * Resolve sandbox configuration from three sources.
+ *
+ * Priority order (later overrides earlier):
+ * 1. Global defaults
+ * 2. Tool-pair config.yml
+ * 3. Step frontmatter
+ *
+ * @param stepConfig - Sandbox config from step frontmatter (optional)
+ * @param toolPairConfig - Sandbox config from tool-pair config.yml
+ * @returns Resolved sandbox configuration
+ *
+ * @example
+ * ```ts
+ * const resolved = resolveSandboxConfig(
+ *   { enabled: false, environment: "node" },  // from step frontmatter
+ *   { enabled: true, environment: "bash", timeout: 60 }  // from config.yml
+ * )
+ * // Result: { enabled: false, environment: "node", timeout: 60, init: [] }
+ * // Note: step's enabled=false and environment="node" override config.yml
+ * ```
+ */
+export function resolveSandboxConfig(
+  stepConfig: RawSandboxConfig | undefined,
+  toolPairConfig: { sandbox: { enabled?: boolean; environment?: string; timeout?: number; init?: readonly string[] } } | undefined,
+): SandboxConfig {
+  return {
+    enabled: stepConfig?.enabled ?? toolPairConfig?.sandbox?.enabled ?? DEFAULT_SANDBOX_CONFIG.enabled,
+    environment: (stepConfig?.environment as "bash" | "node" | "python" | undefined) ??
+      (toolPairConfig?.sandbox?.environment as "bash" | "node" | "python" | undefined) ??
+      DEFAULT_SANDBOX_CONFIG.environment,
+    timeout: stepConfig?.timeout ?? toolPairConfig?.sandbox?.timeout ?? DEFAULT_SANDBOX_CONFIG.timeout,
+    init: stepConfig?.init ?? toolPairConfig?.sandbox?.init ?? DEFAULT_SANDBOX_CONFIG.init,
+  } as const
+}
+
+/**
  * Content root directory (relative to packages/web).
  */
 export const CONTENT_ROOT = "./content/comparisons"

@@ -6,6 +6,7 @@
  * - File loading with frontmatter parsing (gray-matter)
  * - In-memory caching with TTL support
  * - Composable services using Effect-TS layers
+ * - Tool-pair configuration loading from config.yml
  */
 
 // Core types
@@ -25,3 +26,7 @@ export type { ContentConfigService } from "./config"
 
 export { CacheService, CacheServiceLive } from "./cache"
 export type { CacheServiceShape } from "./cache"
+
+// Tool-pair configuration
+export { loadToolConfig, DEFAULT_TOOL_CONFIG } from "./tool-config"
+export type { ToolConfig, RawToolConfig } from "./tool-config"

@@ -1,6 +1,29 @@
 import { z } from "zod"
 
 /**
+ * Sandbox configuration schema for step frontmatter.
+ *
+ * Controls terminal behavior, runtime environment, and initialization.
+ *
+ * @example
+ * ```yaml
+ * sandbox:
+ *   enabled: true
+ *   environment: "node"
+ *   timeout: 120
+ *   init: ["npm install"]
+ * ```
+ */
+export const sandboxConfigSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    environment: z.enum(["bash", "node", "python"]).optional(),
+    timeout: z.number().int().positive().optional(),
+    init: z.array(z.string()).optional(),
+  })
+  .optional()
+
+/**
  * MDX frontmatter schema for tutorial steps.
  *
  * Validates the frontmatter of content/*.mdx files to ensure
@@ -14,6 +37,10 @@ import { z } from "zod"
  * description: "Learn the fundamental difference in how jj handles commits"
  * gitCommands: ["git add", "git commit"]
  * jjCommands: ["jj describe", "jj new"]
+ * sandbox:
+ *   enabled: true
+ *   environment: "node"
+ *   init: ["npm install"]
  * ---
  * ```
  */
@@ -23,6 +50,7 @@ export const stepFrontmatterSchema = z.object({
   description: z.string().min(1, "Description is required").optional(),
   gitCommands: z.array(z.string()).optional(),
   jjCommands: z.array(z.string()).optional(),
+  sandbox: sandboxConfigSchema,
 })
 
 /**

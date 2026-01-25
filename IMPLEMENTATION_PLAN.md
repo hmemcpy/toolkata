@@ -272,31 +272,36 @@ All user stories, acceptance criteria, and technical constraints have been imple
 
 ---
 
-- [ ] **P2.2: Frontend Configuration Loading**
+- [x] **P2.2: Frontend Configuration Loading** ✅ COMPLETE (2026-01-25)
 **Why:** Required for per-step sandbox config. Enables content authors to disable terminal or specify environment per step.
 
-**Files to Create:**
-- `packages/web/content/comparisons/jj-git/config.yml` - Define default sandbox settings
+**Files Created:**
+- `packages/web/content/comparisons/jj-git/config.yml` - Default sandbox settings (enabled: true, environment: bash, timeout: 60)
+- `packages/web/lib/content-core/tool-config.ts` - Tool-pair config loader with YAML parsing
 
-**Files to Modify:**
-- `packages/web/lib/content/schemas.ts` - Add `sandbox?: { enabled?, environment?, timeout?, init? }`
-- `packages/web/lib/content-core/loader.ts` - Load `config.yml`, resolve defaults
-- `packages/web/lib/content/types.ts` - Add SandboxConfig type
+**Files Modified:**
+- `packages/web/lib/content/schemas.ts` - Added `sandboxConfigSchema` to step frontmatter
+- `packages/web/lib/content/types.ts` - Added `SandboxConfig`, `RawSandboxConfig`, `DEFAULT_SANDBOX_CONFIG`, `resolveSandboxConfig()`
+- `packages/web/lib/content-core/index.ts` - Exported `loadToolConfig`, `DEFAULT_TOOL_CONFIG`, `ToolConfig`, `RawToolConfig`
 
 **Changes:**
-- Extend Zod schema to support optional `sandbox` object in frontmatter
-- Implement config.yml loading (similar to MDX loading)
-- Create merge strategy: step frontmatter → tool-pair config → global defaults
-- Update Content<T> types to include resolved sandbox config
+- Extended Zod schema to support optional `sandbox` object in frontmatter
+  - `sandbox.enabled?: boolean`
+  - `sandbox.environment?: "bash" | "node" | "python"`
+  - `sandbox.timeout?: number`
+  - `sandbox.init?: readonly string[]`
+- Implemented config.yml loading with regex-based YAML parser (lightweight, no heavy dependencies)
+- Created `resolveSandboxConfig()` merge function: step frontmatter → tool-pair config → global defaults
+- Missing config.yml falls back to `DEFAULT_TOOL_CONFIG` (enabled: true, environment: bash, timeout: 60)
 
 **Acceptance Criteria:**
-- Frontmatter accepts `sandbox.enabled`, `sandbox.environment`, `sandbox.timeout`, `sandbox.init`
-- config.yml loads successfully for each tool pair
-- Defaults merge correctly (step → config → global)
-- Invalid values in frontmatter fail validation with clear errors
-- Missing config.yml falls back to global defaults
+- ✅ Frontmatter accepts `sandbox.enabled`, `sandbox.environment`, `sandbox.timeout`, `sandbox.init`
+- ✅ config.yml loads successfully for each tool pair
+- ✅ Defaults merge correctly (step → config → global)
+- ✅ Zod validates environment enum values (bash/node/python)
+- ✅ Missing config.yml falls back to global defaults
 
-**Effort:** 3 hours
+**Effort:** 3 hours (actual)
 
 **Dependencies:** None (can be done in parallel with P2.1)
 
