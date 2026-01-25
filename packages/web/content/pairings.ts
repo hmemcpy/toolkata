@@ -106,7 +106,7 @@ export const toolPairings = [
     toUrl: "https://github.com/jj-vcs/jj",
   },
   {
-    slug: "cats-effect-zio",
+    slug: "cats-zio",
     from: {
       name: "ZIO",
       description: "ZIO-2 / Scala",

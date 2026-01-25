@@ -17,14 +17,18 @@ import { BackButton } from "../../../components/ui/BackButton"
 import { Footer } from "../../../components/ui/Footer"
 import { Header } from "../../../components/ui/Header"
 import { GlossaryClientWrapper } from "../../../components/ui/GlossaryClientWrapper"
+import { catsZioGlossary, getCategories as getCatsZioCategories } from "../../../content/glossary/cats-zio"
 import { getPairing, isValidPairingSlug } from "../../../content/pairings"
-import { jjGitGlossary } from "../../../content/glossary/jj-git"
+import {
+  getCategories as getJJCategories,
+  jjGitGlossary,
+} from "../../../content/glossary/jj-git"
 
 /**
  * Generate static params for all known tool pairings.
  */
 export function generateStaticParams(): Array<{ readonly toolPair: string }> {
-  return [{ toolPair: "jj-git" }]
+  return [{ toolPair: "jj-git" }, { toolPair: "cats-zio" }]
 }
 
 /**
@@ -81,6 +85,10 @@ export default async function GlossaryPage({
     notFound()
   }
 
+  // Select glossary and categories based on tool pair
+  const entries = toolPair === "cats-zio" ? catsZioGlossary : jjGitGlossary
+  const categories = toolPair === "cats-zio" ? getCatsZioCategories() : getJJCategories()
+
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
       <Header />
@@ -98,7 +106,8 @@ export default async function GlossaryPage({
 
         {/* Client wrapper for interactive glossary */}
         <GlossaryClientWrapper
-          entries={jjGitGlossary}
+          entries={entries}
+          categories={categories}
           toolPair={toolPair}
           pairingFrom={pairing.from.name}
           pairingTo={pairing.to.name}

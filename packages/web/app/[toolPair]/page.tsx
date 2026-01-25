@@ -15,7 +15,7 @@ import type { StepMeta } from "../../services/content"
  * for all published tool comparisons, improving performance and SEO.
  */
 export function generateStaticParams() {
-  const pairings = [{ slug: "jj-git" }]
+  const pairings = [{ slug: "jj-git" }, { slug: "cats-zio" }]
   return pairings.map((pairing) => ({ toolPair: pairing.slug }))
 }
 
