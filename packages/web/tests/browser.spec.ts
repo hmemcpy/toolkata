@@ -724,7 +724,7 @@ test.describe("Shrinking Layout", () => {
     })
 
     // On mobile, main content should not have significant margin-right
-    expect(parseInt(mainMarginRight || "0", 10)).toBe(0)
+    expect(Number.parseInt(mainMarginRight || "0", 10)).toBe(0)
   })
 })
 

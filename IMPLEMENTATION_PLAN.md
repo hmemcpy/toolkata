@@ -225,6 +225,13 @@ This plan covers multiple specifications for toolkata improvements, prioritized 
 
 **Validation**: `bun run lint` passes without errors.
 
+- [x] **Fix Biome lint suggestion for parseInt** — Changed `parseInt()` to `Number.parseInt()` in browser test to follow ES2015 namespace convention. Biome suggested using `Number.parseInt` instead of global `parseInt`.
+
+**Files**:
+- `packages/web/tests/browser.spec.ts` (MODIFIED - line 727)
+
+**Validation**: `bun run lint` passes without errors.
+
 ---
 
 ## Architecture Notes
