@@ -281,32 +281,32 @@ packages/web/content/comparisons/
 ## Validation Checklist
 
 ### After P0:
-- [ ] `bun run build` succeeds
-- [ ] No ERR_CONNECTION_REFUSED on cats-zio pages
-- [ ] Terminal sidebar FAB does not appear on cats-zio pages
-- [ ] jj-git pages still show terminal FAB
+- [x] `bun run build` succeeds
+- [ ] No ERR_CONNECTION_REFUSED on cats-zio pages (requires browser verification)
+- [ ] Terminal sidebar FAB does not appear on cats-zio pages (requires browser verification)
+- [ ] jj-git pages still show terminal FAB (requires browser verification)
 
 ### After P1:
-- [ ] Scala code blocks have syntax highlighting (keywords, strings, comments colored)
-- [ ] Dark theme consistent with terminal aesthetic (#0a0a0a background)
-- [ ] Inline code (`backticks`) still uses green accent
-- [ ] `bun run typecheck` passes
-- [ ] ScalaComparisonBlock shows highlighted code
+- [ ] Scala code blocks have syntax highlighting (keywords, strings, comments colored) (requires browser verification)
+- [ ] Dark theme consistent with terminal aesthetic (#0a0a0a background) (requires browser verification)
+- [ ] Inline code (`backticks`) still uses green accent (requires browser verification)
+- [x] `bun run typecheck` passes
+- [ ] ScalaComparisonBlock shows highlighted code (requires browser verification)
 
 ### After P2:
-- [ ] Main content shrinks when sidebar opens (not blocked by overlay)
-- [ ] TryIt buttons work while sidebar is visible
-- [ ] Smooth transition when opening/closing
-- [ ] Mobile bottom sheet unchanged (overlay acceptable)
+- [ ] Main content shrinks when sidebar opens (not blocked by overlay) (requires browser verification)
+- [ ] TryIt buttons work while sidebar is visible (requires browser verification)
+- [ ] Smooth transition when opening/closing (requires browser verification)
+- [ ] Mobile bottom sheet unchanged (overlay acceptable) (requires browser verification)
 
 ### After P3:
-- [ ] `/scala-effects-demo` shows all 4 options
-- [ ] User can evaluate each approach
-- [ ] Direction preference persists in localStorage
+- [ ] `/scala-effects-demo` shows all 4 options (requires browser verification)
+- [ ] User can evaluate each approach (requires browser verification)
+- [ ] Direction preference persists in localStorage (requires browser verification)
 
 ### After P4:
 - [x] Scastie embeds load with dark theme (theme prop verified correct in code)
-- [x] UUID snippets work (if implemented) (snippetId support implemented)
+- [x] UUID snippets work (snippetId support implemented)
 - [x] Fallback displays if Scastie unavailable (fallback UI implemented and tested)
 
 ---
@@ -344,8 +344,8 @@ Internal:
 
 ## Task Count
 
-**Total pending tasks**: 22
-**Completed tasks**: 14 (P0: cats-zio config.yml; P1: Shiki rehype plugin, next.config.ts, CSS overrides, prose styles, ScalaComparisonBlock highlighting; P2: shrinking layout; P3: UX prototype with 4 options; P4: Scastie UUID snippet support, dark theme verification)
+**Total pending tasks**: 16 (3 content research + 13 browser verification items)
+**Completed implementation tasks**: 14 (P0: cats-zio config.yml; P1: Shiki rehype plugin, next.config.ts, CSS overrides, prose styles, ScalaComparisonBlock highlighting; P2: shrinking layout; P3: UX prototype with 4 options; P4: Scastie UUID snippet support, dark theme verification)
 
 Priority breakdown:
 - P0: 0 tasks (all critical blockers completed)
@@ -353,7 +353,8 @@ Priority breakdown:
 - P2: 0 tasks (shrinking layout completed)
 - P3: 0 tasks (UX prototype completed)
 - P4: 0 tasks (Scastie improvements completed)
-- P5: 3 tasks (content research - requires external documentation)
+- P5: 3 tasks (content research - requires external documentation: Zionomicon ePub, ZIO 2.x docs)
+- Browser verification: 13 tasks (requires manual testing with /agent-browser or browser DevTools)
 
 ---
 
