@@ -29,6 +29,9 @@
         "noUnusedImports": "error",
         "noUnusedVariables": "error"
       },
+      "security": {
+        "noDangerouslySetInnerHtml": "off"
+      },
       "a11y": {
         "useSemanticElements": "off",
         "noNoninteractiveTabindex": "off"
