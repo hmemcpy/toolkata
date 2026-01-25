@@ -146,22 +146,30 @@ This plan covers multiple specifications for toolkata improvements, prioritized 
 
 ### P3: Bidirectional UX Prototype
 
-- [ ] **Create /scala-effects-demo route** — New page demonstrating 4 bidirectional UX options for user evaluation.
+- [x] **Create /scala-effects-demo route** — New page demonstrating 4 bidirectional UX options for user evaluation.
 
 **Why**: Spec R3 requires a prototype page showing different approaches before committing to one.
 
 **Files**:
-- `packages/web/app/scala-effects-demo/page.tsx` (CREATE)
+- `packages/web/app/scala-effects-demo/page.tsx` (CREATED)
+- `packages/web/app/scala-effects-demo/UxPrototypeClient.tsx` (CREATED)
 
-- [ ] **Implement Option 1: Column swap toggle** — Reuse DirectionToggle pattern, swap ZIO/CE columns in ScalaComparisonBlock based on direction.
+- [x] **Implement Option 1: Column swap toggle** — Reuse DirectionToggle pattern, swap ZIO/CE columns in ScalaComparisonBlock based on direction.
 
-- [ ] **Implement Option 2: Separate routes mockup** — Show how `/zio-cats` and `/cats-zio` would look with reversed default direction.
+- [x] **Implement Option 2: Separate routes mockup** — Show how `/zio-cats` and `/cats-zio` would look with reversed default direction.
 
-- [ ] **Implement Option 3: Landing chooser** — "I know ZIO" / "I know Cats Effect" buttons that set direction and navigate.
+- [x] **Implement Option 3: Landing chooser** — "I know ZIO" / "I know Cats Effect" buttons that set direction and navigate.
 
-- [ ] **Implement Option 4: Smart cards** — Two home page cards leading to same content with direction preset in URL or localStorage.
+- [x] **Implement Option 4: Smart cards** — Two home page cards leading to same content with direction preset in URL or localStorage.
 
 **Validation**: Navigate to `/scala-effects-demo`, all 4 options render and are interactive.
+
+**Implementation notes**:
+- Created client-side component `UxPrototypeClient.tsx` with 4 interactive demo sections
+- Each option demonstrates a different UX pattern for bidirectional comparison
+- All options are interactive and update the global direction preference
+- Includes comparison table summarizing pros/cons of each approach
+- Follows terminal aesthetic with minimal design
 
 ---
 
@@ -313,14 +321,14 @@ Internal:
 
 ## Task Count
 
-**Total pending tasks**: 29
-**Completed tasks**: 7 (P1: Shiki rehype plugin, next.config.ts, CSS overrides, prose styles, ScalaComparisonBlock highlighting; P2: shrinking layout)
+**Total pending tasks**: 24
+**Completed tasks**: 12 (P0: cats-zio config.yml; P1: Shiki rehype plugin, next.config.ts, CSS overrides, prose styles, ScalaComparisonBlock highlighting; P2: shrinking layout; P3: UX prototype with 4 options)
 
 Priority breakdown:
 - P0: 0 tasks (all critical blockers completed)
 - P1: 0 tasks (syntax highlighting completed)
 - P2: 0 tasks (shrinking layout completed)
-- P3: 5 tasks (UX prototype - high complexity)
+- P3: 0 tasks (UX prototype completed)
 - P4: 2 tasks (Scastie enhancements)
 - P5: 3 tasks (content research)
 
