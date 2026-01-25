@@ -88,6 +88,12 @@ export interface TerminalContextValue {
   readonly isOpen: boolean
 
   /**
+   * Element that triggered opening the sidebar.
+   * Used to restore focus when sidebar closes.
+   */
+  readonly triggerRef: React.RefObject<HTMLElement | null>
+
+  /**
    * Current sidebar width in pixels.
    */
   readonly sidebarWidth: number
@@ -145,8 +151,10 @@ export interface TerminalContextValue {
 
   /**
    * Open the terminal sidebar (or bottom sheet on mobile).
+   *
+   * @param trigger - Optional element that triggered opening (for focus return).
    */
-  readonly openSidebar: () => void
+  readonly openSidebar: (trigger?: HTMLElement | null) => void
 
   /**
    * Close the terminal sidebar (or bottom sheet on mobile).
@@ -155,8 +163,10 @@ export interface TerminalContextValue {
 
   /**
    * Toggle the sidebar open/closed state.
+   *
+   * @param trigger - Optional element that triggered opening (for focus return).
    */
-  readonly toggleSidebar: () => void
+  readonly toggleSidebar: (trigger?: HTMLElement | null) => void
 
   /**
    * Execute a command in the terminal.
@@ -284,6 +294,9 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
   // Ref to terminal for imperative operations
   const terminalRef = useRef<TerminalRef | null>(null)
 
+  // Ref to element that triggered opening the sidebar (for focus return)
+  const triggerRef = useRef<HTMLElement | null>(null)
+
   // Queue for commands sent while terminal is CONNECTING
   const commandQueueRef = useRef<readonly string[]>([])
 
@@ -376,25 +389,56 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
   /**
    * Open the sidebar.
    */
-  const openSidebar = useCallback(() => {
+  const openSidebar = useCallback((trigger?: HTMLElement | null) => {
+    // Store trigger element for focus return when sidebar closes
+    if (trigger) {
+      triggerRef.current = trigger
+    }
     setIsOpenState(true)
     localStorage.setItem(SIDEBAR_OPEN_KEY, "true")
   }, [])
 
   /**
    * Close the sidebar.
+   *
+   * Returns focus to the trigger element if one was stored.
    */
   const closeSidebar = useCallback(() => {
     setIsOpenState(false)
     localStorage.setItem(SIDEBAR_OPEN_KEY, "false")
+
+    // Return focus to trigger element after a small delay
+    // to allow sidebar close animation to start
+    setTimeout(() => {
+      if (triggerRef.current) {
+        triggerRef.current.focus()
+        triggerRef.current = null
+      }
+    }, 50)
   }, [])
 
   /**
    * Toggle the sidebar open/closed state.
    */
-  const toggleSidebar = useCallback(() => {
+  const toggleSidebar = useCallback((trigger?: HTMLElement | null) => {
     setIsOpenState((prev) => {
       const next = !prev
+
+      // Store trigger element when opening
+      if (next && trigger) {
+        triggerRef.current = trigger
+      }
+
+      // Return focus to trigger when closing
+      if (!next) {
+        setTimeout(() => {
+          if (triggerRef.current) {
+            triggerRef.current.focus()
+            triggerRef.current = null
+          }
+        }, 50)
+      }
+
       localStorage.setItem(SIDEBAR_OPEN_KEY, String(next))
       return next
     })
@@ -432,8 +476,12 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
    */
   const executeCommand = useCallback(
     (command: string) => {
-      // Open sidebar if closed
+      // Open sidebar if closed, capturing current active element as trigger
       if (!isOpen) {
+        const activeElement = document.activeElement as HTMLElement | null
+        if (activeElement) {
+          triggerRef.current = activeElement
+        }
         setIsOpenState(true)
         localStorage.setItem(SIDEBAR_OPEN_KEY, "true")
       }
@@ -509,6 +557,7 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
     () => ({
       state,
       isOpen,
+      triggerRef,
       sidebarWidth,
       setSidebarWidth,
       sessionTimeRemaining,

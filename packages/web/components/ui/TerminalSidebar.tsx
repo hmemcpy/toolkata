@@ -32,6 +32,7 @@ import { useTerminalContext } from "../../contexts/TerminalContext"
 import type { InteractiveTerminalRef } from "./InteractiveTerminal"
 import { SplitPane } from "./SplitPane"
 import { InfoPanel } from "./InfoPanel"
+import { useFocusTrap } from "../../hooks/useFocusTrap"
 
 const MIN_SIDEBAR_WIDTH = 300
 const MAX_SIDEBAR_WIDTH = 800
@@ -162,7 +163,7 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
     flushCommandQueue,
   } = useTerminalContext()
   const closeButtonRef = useRef<HTMLButtonElement>(null)
-  const sidebarRef = useRef<HTMLDivElement>(null)
+  const sidebarRef = useFocusTrap<HTMLDivElement>(isOpen, { onEscape: closeSidebar })
   const terminalRef = useRef<InteractiveTerminalRef | null>(null)
 
   // Resizing state
@@ -213,20 +214,6 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
     }
   }, [isOpen])
 
-  // Handle Escape key to close sidebar
-  useEffect(() => {
-    if (!isOpen) return
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        closeSidebar()
-      }
-    }
-
-    document.addEventListener("keydown", handleEscape)
-    return () => document.removeEventListener("keydown", handleEscape)
-  }, [isOpen, closeSidebar])
-
   // Callback when PTY is ready to receive commands
   const handlePtyReady = useCallback(() => {
     flushCommandQueue()
@@ -275,7 +262,7 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
         style={{ width: `${sidebarWidth}px` }}
         id="terminal-sidebar"
         role="dialog"
-        aria-modal={isOpen}
+        aria-modal={isOpen ? true : undefined}
         aria-hidden={!isOpen}
         aria-label="Terminal sidebar"
       >

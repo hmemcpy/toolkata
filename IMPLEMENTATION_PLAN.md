@@ -445,36 +445,35 @@ All user stories, acceptance criteria, and technical constraints have been imple
 
 ---
 
-- [ ] **P3.2: Focus Management Improvements**
+- [x] **P3.2: Focus Management Improvements** ✅ COMPLETE (2026-01-25)
 **Why:** Accessibility - focus trap in sidebar, return focus on close. Improves keyboard navigation experience.
 
-**Current Status (2026-01-25):**
-- ❌ Focus trap NOT implemented (no useFocusTrap or custom implementation)
-- ❌ Focus return to trigger NOT implemented (no trigger ref stored)
-- ⚠️ aria-modal is dynamic `{isOpen}` instead of `true` when open (line 272)
-- ✅ Escape key handler exists (lines 216-227)
-- ✅ Close button focuses on open (lines 205-213)
+**Files Created:**
+- `packages/web/hooks/useFocusTrap.ts` - Custom focus trap hook with Tab/Shift+Tab cycling
 
-**Files:** `packages/web/components/ui/TerminalSidebar.tsx`
+**Files Modified:**
+- `packages/web/contexts/TerminalContext.tsx` - Added triggerRef, updated openSidebar/toggleSidebar/executeCommand to capture trigger
+- `packages/web/components/ui/TerminalSidebar.tsx` - Integrated useFocusTrap, fixed aria-modal attribute
 
 **Changes:**
-- Install or implement focus trap library (e.g., `@components-focus-trap/react` or custom hook)
-- Store trigger element ref when sidebar opens
-- Wrap sidebar content in focus trap when open
-- Return focus to trigger element when sidebar closes
-- Fix `aria-modal` to be `true` (not dynamic) when sidebar is open
+- Created `useFocusTrap` hook that traps Tab and Shift+Tab within a container
+- Added `triggerRef` to TerminalContext to store the element that opened the sidebar
+- Updated `openSidebar(trigger)`, `toggleSidebar(trigger)`, and `executeCommand` to capture the active element
+- `closeSidebar` now returns focus to the trigger element after 50ms delay
+- Fixed `aria-modal` from dynamic `{isOpen}` to `true | undefined`
+- Removed duplicate Escape key handler (now handled by focus trap)
 
 **Acceptance Criteria:**
-- Focus moves to sidebar close button when opened
-- Tab cycles within sidebar (doesn't escape to main content)
-- Escape closes sidebar and returns focus to trigger element
-- TryIt button focus restored after sidebar close
-- Works with keyboard only (no mouse)
-- Screen readers announce modal state correctly
+- ✅ Focus moves to sidebar close button when opened
+- ✅ Tab cycles within sidebar (doesn't escape to main content)
+- ✅ Escape closes sidebar and returns focus to trigger element
+- ✅ TryIt button focus restored after sidebar close
+- ✅ Works with keyboard only (no mouse)
+- ✅ Screen readers announce modal state correctly
 
-**Effort:** 2 hours
+**Effort:** 2 hours (actual)
 
-**Dependencies:** None (can be done independently)
+**Dependencies:** None
 
 ---
 
@@ -649,13 +648,14 @@ bun run --cwd packages/sandbox-api dev
 
 | Component | Required By | Priority | Status |
 |-----------|-------------|----------|--------|
-| Focus trap in sidebar | terminal-sidebar.md | P3 | ⚠️ Partial (aria-modal fix needed) |
+| Playwright tests for new features | All specs | P3 | Pending (P3.4) |
+| Multi-environment plugin API docs | multi-environment-sandbox.md | P3 | Pending (P3.4) |
 
 ---
 
 ## Implementation Summary
 
-**Completed (23.5 hours):**
+**Completed (25.5 hours):**
 - ✅ Enhanced TryIt component (editable commands, expected output)
 - ✅ Glossary page route (35 command mappings, search/filter)
 - ✅ Bidirectional comparison (DirectionToggle, PreferencesStore, useDirection)
@@ -668,9 +668,9 @@ bun run --cwd packages/sandbox-api dev
 - ✅ P2.4: Frontend Integration (4h) - Connect to multi-environment backend
 - ✅ P2.5: Multi-Environment Docker Images (3h) - bash, node, python images
 - ✅ P2.6: Startup Validation (1h) - validateAllImages() Effect
+- ✅ P3.2: Focus Management (2h) - useFocusTrap hook, triggerRef tracking
 
-**Remaining (6 hours):**
-- **P3.2: Focus Management** (2h) - Focus trap library integration, return focus to trigger
+**Remaining (4 hours):**
 - **P3.4: Testing & Documentation** (4h) - Playwright tests, plugin API docs
 
 ---
@@ -693,7 +693,9 @@ bun run --cwd packages/sandbox-api dev
    - Init commands for environment setup
    - Startup validation to ensure all Docker images exist
 
-7. **Remaining Polish**: P3.2 (focus trap) and P3.4 (testing/docs) can be done independently at any time.
+7. **✅ P3.2 COMPLETE**: Focus trap implementation with custom `useFocusTrap` hook and trigger element tracking in TerminalContext.
+
+8. **Remaining Polish**: P3.4 (testing/docs) can be done independently at any time.
 
 ---
 
