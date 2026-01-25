@@ -6,14 +6,28 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_GIT_SHA: process.env["VERCEL_GIT_COMMIT_SHA"] ?? "dev",
   },
+  // Disable Turbopack MDX compiler to allow rehype plugins
+  experimental: {
+    mdxRs: false,
+  },
 }
 
 const withMDX = createMDX({
-  // Optional: Add custom remark/rehype plugins here
-  // mdxOptions: {
-  //   remarkPlugins: [],
-  //   rehypePlugins: [],
-  // },
+  options: {
+    remarkPlugins: [],
+    rehypePlugins: [
+      [
+        "@shikijs/rehype",
+        {
+          themes: {
+            light: "github-light",
+            dark: "github-dark",
+          },
+          defaultColor: false,
+        },
+      ],
+    ],
+  },
 })
 
 export default withMDX(nextConfig)

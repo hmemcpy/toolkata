@@ -71,42 +71,45 @@ This plan covers multiple specifications for toolkata improvements, prioritized 
 
 ### P1: Syntax Highlighting
 
-- [ ] **Install @shikijs/rehype** — Add rehype-shiki plugin: `bun add -d @shikijs/rehype`
+- [x] **Install @shikijs/rehype** — Added `@shikijs/rehype` and `shiki` packages. Also installed `@shikijs/transformers` initially but removed since transformers require functions (not serializable for Turbopack).
 
 **Why**: Shiki is installed but not integrated into MDX pipeline. The rehype plugin processes code blocks during MDX compilation.
 
-- [ ] **Configure Shiki in next.config.ts** — Enable `@shikijs/rehype` plugin with `github-dark` theme for MDX processing. Map theme background to `--color-surface` (#0a0a0a).
+- [x] **Configure Shiki in next.config.ts** — Enabled `@shikijs/rehype` plugin with `github-dark` and `github-light` themes. Had to disable MDX Rust compiler (`experimental.mdxRs: false`) because Turbopack can't serialize rehype plugin options. Used string format `"@shikijs/rehype"` instead of imported function.
 
 **Why**: next.config.ts has commented-out rehypePlugins section. Need to enable Shiki with terminal-aesthetic dark theme.
 
 **Files**:
-- `packages/web/next.config.ts` (MODIFY)
+- `packages/web/next.config.ts` (MODIFIED)
 
-- [ ] **Add Shiki CSS overrides** — Add CSS in `globals.css` to override Shiki's default colors: background transparent, ensure code inherits line-height.
+**Bug discovered**: Turbopack (Rust-based MDX compiler) cannot serialize rehype plugin options. Solution: set `experimental.mdxRs: false` and use string-based plugin reference.
+
+- [x] **Add Shiki CSS overrides** — Added CSS in `globals.css` to override Shiki's default colors: background transparent, ensure code inherits line-height, preserve inline code green accent.
 
 **Why**: Shiki applies inline styles that may conflict with terminal aesthetic. CSS overrides ensure consistent appearance.
 
 **Files**:
-- `packages/web/app/globals.css` (MODIFY)
+- `packages/web/app/globals.css` (MODIFIED)
 
-- [ ] **Update prose code block styles** — Modify prose styles in `StepPageClientWrapper.tsx` to work with Shiki-generated HTML (pre > code structure).
+- [x] **Update prose code block styles** — Modified prose styles in `StepPageClientWrapper.tsx` to work with Shiki-generated HTML. Added `prose-pre:code:bg-transparent prose-pre:code:text-inherit prose-pre:code:p-0` to prevent overriding Shiki's token colors.
 
 **Why**: Current prose styles target hardcoded colors. Shiki generates `<pre><code>` with inline styles that need proper cascade.
 
 **Files**:
-- `packages/web/components/ui/StepPageClientWrapper.tsx` (MODIFY)
+- `packages/web/components/ui/StepPageClientWrapper.tsx` (MODIFIED)
 
-- [ ] **Add syntax highlighting to ScalaComparisonBlock** — Use Shiki's `codeToHtml` API for client-side highlighting. Keep ZIO (blue) and CE (purple) backgrounds, add Scala token colors.
+- [x] **Add syntax highlighting to ScalaComparisonBlock** — Used Shiki's `createHighlighter` and `codeToHtml` API for client-side highlighting. Added `"use client"` directive, state for HTML output, loading state, and cancellation on unmount.
 
 **Why**: ScalaComparisonBlock uses raw `<code>{zioCode}</code>` without any highlighting. Server-side Shiki won't work for dynamic props.
 
 **Files**:
-- `packages/web/components/ui/ScalaComparisonBlock.tsx` (MODIFY)
+- `packages/web/components/ui/ScalaComparisonBlock.tsx` (MODIFIED)
 
 **Validation**:
 - Scala code blocks show colored keywords, strings, comments
 - Dark theme matches terminal aesthetic (#0a0a0a background)
 - Inline code (`backticks`) still uses green accent
+- `bun run build && bun run typecheck` passes
 
 ---
 

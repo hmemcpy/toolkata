@@ -237,3 +237,37 @@ textarea:focus,
 select:focus {
   box-shadow: var(--focus-ring);
 }
+
+/* Shiki syntax highlighting overrides */
+/* Shiki adds inline styles to pre/code blocks, override to match terminal aesthetic */
+.prose pre {
+  background: var(--color-surface) !important;
+}
+
+/* Ensure Shiki code blocks inherit proper line-height */
+.prose pre code {
+  line-height: var(--line-height-normal);
+  background: transparent !important;
+}
+
+/* Inline code should still use green accent (not Shiki) */
+.prose :not(pre) > code {
+  color: var(--color-accent);
+  background: rgba(57, 217, 108, 0.1);
+  padding: 0.125em 0.25em;
+  border-radius: var(--radius-sm);
+  font-size: 0.875em;
+}
+
+/* Dark theme Shiki overrides - match github-dark to terminal aesthetic */
+.shiki,
+.shiki span {
+  color: var(--color-text) !important;
+  background: var(--color-surface) !important;
+}
+
+/* Light theme Shiki overrides */
+html.light .shiki,
+html.light .shiki span {
+  background: #ffffff !important;
+}
