@@ -50,7 +50,12 @@ export interface ToolPairing {
   /**
    * Category for grouping on home page.
    */
-  readonly category: "Version Control" | "Package Management" | "Build Tools" | "Other"
+  readonly category:
+    | "Version Control"
+    | "Package Management"
+    | "Build Tools"
+    | "Programming Languages"
+    | "Other"
 
   /**
    * Total number of tutorial steps.
@@ -76,7 +81,8 @@ export interface ToolPairing {
 /**
  * Registry of all tool pairings.
  *
- * MVP: Only jj-git is published. Others are placeholders for future expansion.
+ * Published: jj-git (Version Control), cats-effect-zio (Programming Languages).
+ * Others are placeholders for future expansion.
  */
 export const toolPairings = [
   {
@@ -98,6 +104,26 @@ export const toolPairings = [
     estimatedTime: "~40 min",
     status: "published" as const,
     toUrl: "https://github.com/jj-vcs/jj",
+  },
+  {
+    slug: "cats-effect-zio",
+    from: {
+      name: "ZIO",
+      description: "ZIO-2 / Scala",
+      color: "#0066ff",
+      icon: "code",
+    },
+    to: {
+      name: "Cats Effect",
+      description: "Cats Effect 3 / Scala",
+      color: "#8b5cf6",
+      icon: "code",
+    },
+    category: "Programming Languages" as const,
+    steps: 10,
+    estimatedTime: "~45 min",
+    status: "published" as const,
+    toUrl: "https://typelevel.org/cats-effect/",
   },
   // Future pairings (commented out until content is ready)
   // {
