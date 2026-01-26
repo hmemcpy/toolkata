@@ -83,9 +83,9 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 ### P3 - Search Improvements (Can defer to later PR)
 
 - [x] **Add zio-cats steps to TerminalSearch** — Add 15 entries to `SEARCHABLE_STEPS` array (zio-cats currently missing)
-- [ ] **Create search data loader** — Function in `lib/` to build searchable steps from pairings + step metadata arrays
-- [ ] **Update TerminalSearch component** — Replace hardcoded `SEARCHABLE_STEPS` with dynamic data (address TODO on line 20-21)
-- [ ] **Add tags to search matching** — Include pairing tags in filter logic alongside title/description
+- [x] **Create search data loader** — Function in `lib/` to build searchable steps from pairings + step metadata arrays
+- [x] **Update TerminalSearch component** — Replace hardcoded `SEARCHABLE_STEPS` with dynamic data (address TODO on line 20-21)
+- [x] **Add tags to search matching** — Include pairing tags in filter logic alongside title/description
 
 ### P4 - Infrastructure Validation
 
