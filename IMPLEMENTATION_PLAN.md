@@ -61,14 +61,14 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 
 ### P0 - Schema Updates (Blocking)
 
-- [ ] **Update ToolPairing interface** — Add `tags?: readonly string[]` and `language?: "typescript" | "scala" | "shell"` fields to `content/pairings.ts:24-79`
-- [ ] **Update jj-git pairing with new fields** — Add `language: "shell"`, `tags: ["git", "jj", "vcs", "version-control"]` to the jj-git entry (lines 109-127)
-- [ ] **Update zio-cats pairing with new fields** — Add `language: "scala"`, `tags: ["scala", "zio", "cats-effect", "functional"]` to the zio-cats entry (lines 88-107)
+- [x] **Update ToolPairing interface** — Add `tags?: readonly string[]` and `language?: "typescript" | "scala" | "shell"` fields to `content/pairings.ts:24-79`
+- [x] **Update jj-git pairing with new fields** — Add `language: "shell"`, `tags: ["git", "jj", "vcs", "version-control"]` to the jj-git entry (lines 109-127)
+- [x] **Update zio-cats pairing with new fields** — Add `language: "scala"`, `tags: ["scala", "zio", "cats-effect", "functional"]` to the zio-cats entry (lines 88-107)
 
 ### P1 - Icon Support
 
-- [ ] **Add TypeScript icon case to LessonCard** — Import `TypescriptOriginal` from devicons-react, add `case "typescript":` in `getToolIcon()` at `components/ui/LessonCard.tsx:13-18`
-- [ ] **Add Git icon case to LessonCard** — Import `GitOriginal` from devicons-react, add `case "git-branch":` (currently returns null)
+- [x] **Add TypeScript icon case to LessonCard** — Import `TypescriptOriginal` from devicons-react, add `case "typescript":` in `getToolIcon()` at `components/ui/LessonCard.tsx:13-18`
+- [x] **Add Git icon case to LessonCard** — Import `GitOriginal` from devicons-react, add `case "git-branch":` (currently returns null)
 - [ ] **Verify brand colors in pairings** — TypeScript `#3178C6`, Scala `#DC322F`, Git `#f05032`, ZIO `#0066ff`, Cats Effect `#8b5cf6`
 
 ### P2 - CrossLanguageBlock Component
@@ -89,7 +89,7 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 
 ### P4 - Infrastructure Validation
 
-- [ ] **Run full validation** — `bun run build && bun run typecheck && bun run lint`
+- [x] **Run full validation** — `bun run build && bun run typecheck && bun run lint`
 - [ ] **Manual test existing pairings** — Verify jj-git and zio-cats still work with schema changes
 - [ ] **Test CrossLanguageBlock rendering** — Create minimal test MDX with component to verify Shiki highlighting works for both Scala and TypeScript
 - [ ] **Create infrastructure PR** — Commit with descriptive message, push PR 1
@@ -163,7 +163,7 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 - PR 1 (Infrastructure): 19 tasks
 - PR 2 (Content): 35 tasks
 
-**Progress**: 0/54 tasks complete (0%)
+**Progress**: 5/54 tasks complete (9%)
 
 ---
 

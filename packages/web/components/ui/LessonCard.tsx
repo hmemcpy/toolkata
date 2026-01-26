@@ -1,4 +1,6 @@
+import GitOriginal from "devicons-react/icons/GitOriginal"
 import ScalaOriginal from "devicons-react/icons/ScalaOriginal"
+import TypescriptOriginal from "devicons-react/icons/TypescriptOriginal"
 import Link from "next/link"
 import type { JSX } from "react"
 import type { ToolPairing } from "../../content/pairings"
@@ -13,6 +15,10 @@ function getToolIcon(iconName: string | undefined, size = 24): JSX.Element | nul
   switch (iconName) {
     case "scala":
       return <ScalaOriginal size={size} />
+    case "typescript":
+      return <TypescriptOriginal size={size} />
+    case "git-branch":
+      return <GitOriginal size={size} />
     default:
       return null
   }

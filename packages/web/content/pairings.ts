@@ -76,6 +76,16 @@ export interface ToolPairing {
    * GitHub URL for the "to" tool (for footer link).
    */
   readonly toUrl?: string
+
+  /**
+   * Searchable tags for discoverability.
+   */
+  readonly tags?: readonly string[]
+
+  /**
+   * Primary programming language of the target tool.
+   */
+  readonly language?: "typescript" | "scala" | "shell" | "other"
 }
 
 /**
@@ -104,6 +114,8 @@ export const toolPairings = [
     estimatedTime: "~70 min",
     status: "published" as const,
     toUrl: "https://zio.dev/",
+    language: "scala" as const,
+    tags: ["scala", "zio", "cats-effect", "functional"] as const,
   },
   {
     slug: "jj-git",
@@ -124,6 +136,8 @@ export const toolPairings = [
     estimatedTime: "~40 min",
     status: "published" as const,
     toUrl: "https://github.com/jj-vcs/jj",
+    language: "shell" as const,
+    tags: ["git", "jj", "vcs", "version-control"] as const,
   },
   // Future pairings (commented out until content is ready)
   // {
