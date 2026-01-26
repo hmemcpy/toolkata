@@ -6,6 +6,53 @@ import type { JSX } from "react"
 import type { ToolPairing } from "../../content/pairings"
 
 /**
+ * Jujutsu (jj) icon - rotating arrows representing version control evolution.
+ */
+function JjIcon({ size = 24 }: { readonly size?: number }): JSX.Element {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="text-[var(--color-text-dim)]"
+      role="img"
+      aria-label="jj version control icon"
+    >
+      <title>jj version control</title>
+      {/* Rotating arrows */}
+      <path
+        d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.364 2.636"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.364-2.636"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M15 5.636L18.364 2.272 21.636 5.544"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9 18.364L5.636 21.728 2.364 18.456"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/**
  * Get the icon component for a tool pairing based on the icon name.
  * Returns null if no icon is defined.
  */
@@ -19,6 +66,8 @@ function getToolIcon(iconName: string | undefined, size = 24): JSX.Element | nul
       return <TypescriptOriginal size={size} />
     case "git-branch":
       return <GitOriginal size={size} />
+    case "arrows-clockwise":
+      return <JjIcon size={size} />
     default:
       return null
   }

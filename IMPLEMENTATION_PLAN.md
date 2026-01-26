@@ -18,7 +18,7 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 | SideBySide | ✅ Complete | `components/ui/SideBySide.tsx` |
 | TerminalSearch | ⚠️ Partial | `components/ui/TerminalSearch.tsx` (hardcoded jj-git only, see TODO line 20-21) |
 | devicons-react | ✅ Installed | `package.json` (v1.5.0) |
-| LessonCard icons | ⚠️ Partial | Only `scala` icon handled in `getToolIcon()`, `git-branch`/`arrows-clockwise` return null |
+| LessonCard icons | ✅ Complete | `scala`, `typescript`, `git-branch`, `arrows-clockwise` (jj) all handled |
 | zio-cats tutorial | ✅ Complete | 15 steps in `content/comparisons/zio-cats/` |
 | jj-git tutorial | ✅ Complete | 12 steps in `content/comparisons/jj-git/` |
 | Glossary system | ✅ Complete | `jj-git.ts`, `zio-cats.ts` with search/filter/categories |
@@ -32,10 +32,9 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 | Component | Status | Required For |
 |-----------|--------|--------------|
 | CrossLanguageBlock | ❌ Not created | Effect-ZIO tutorial (Scala↔TypeScript side-by-side) |
-| `tags` field in ToolPairing | ❌ Missing | Searchable tags feature |
-| `language` field in ToolPairing | ❌ Missing | Language-based categorization |
-| TypeScript icon in LessonCard | ❌ Missing | Effect-ZIO card display (icon: "typescript") |
-| Git icon in LessonCard | ❌ Missing | jj-git card display (icon: "git-branch" returns null) |
+| `tags` field in ToolPairing | ✅ Complete | Added to interface, populated in jj-git and zio-cats |
+| `language` field in ToolPairing | ✅ Complete | Added to interface, populated in jj-git and zio-cats |
+| jj icon in LessonCard | ✅ Complete | Custom SVG with `arrows-clockwise` icon |
 | Dynamic search data | ❌ Missing | Search uses hardcoded `SEARCHABLE_STEPS` (jj-git only) |
 | effect-zio content directory | ❌ Missing | All 15 steps + index.mdx + config.yml |
 | effect-zio glossary | ❌ Missing | ZIO→Effect command mappings in `content/glossary/effect-zio.ts` |
@@ -68,8 +67,9 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 ### P1 - Icon Support
 
 - [x] **Add TypeScript icon case to LessonCard** — Import `TypescriptOriginal` from devicons-react, add `case "typescript":` in `getToolIcon()` at `components/ui/LessonCard.tsx:13-18`
-- [x] **Add Git icon case to LessonCard** — Import `GitOriginal` from devicons-react, add `case "git-branch":` (currently returns null)
-- [ ] **Verify brand colors in pairings** — TypeScript `#3178C6`, Scala `#DC322F`, Git `#f05032`, ZIO `#0066ff`, Cats Effect `#8b5cf6`
+- [x] **Add Git icon case to LessonCard** — Import `GitOriginal` from devicons-react, add `case "git-branch":`
+- [x] **Add jj icon case to LessonCard** — Create custom `JjIcon` SVG component with `arrows-clockwise`, add `case "arrows-clockwise":`
+- [ ] **Verify brand colors in pairings** — TypeScript `#3178C6`, Scala `#DC322F`, Git `#f05032`, ZIO `#0066ff`, Cats Effect `#8b5cf6`, jj `#39d96c`
 
 ### P2 - CrossLanguageBlock Component
 
@@ -159,11 +159,11 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 
 ## Task Count
 
-**Total**: 54 tasks
-- PR 1 (Infrastructure): 19 tasks
+**Total**: 55 tasks
+- PR 1 (Infrastructure): 20 tasks
 - PR 2 (Content): 35 tasks
 
-**Progress**: 5/54 tasks complete (9%)
+**Progress**: 6/55 tasks complete (11%)
 
 ---
 
