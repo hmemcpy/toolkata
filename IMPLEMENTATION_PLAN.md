@@ -630,26 +630,14 @@ ZIO.logError("Database connection failed")
 
 ### P3: Landing Page & Glossary
 
-- [ ] **Update index.mdx** — Add "Enterprise Integration" section for steps 11-15
+- [x] **Update index.mdx** — Add "Enterprise Integration" section for steps 11-15
 
 **Why**: Landing page should list all available content including new steps.
 
-**File**: `packages/web/content/comparisons/cats-zio/index.mdx`
-
-**Changes**:
-1. Update `estimatedTime` frontmatter from `"~45 min"` to `"~70 min"`
-2. Add new section after step 10:
-```markdown
-┌─ Enterprise Integration ─────────────────────────────────┐
-│                                                            │
-│  ○  11. Software Transactional Memory           ~5 min   │
-│  ○  12. Concurrent Structures                   ~6 min   │
-│  ○  13. Configuration                           ~5 min   │
-│  ○  14. HTTP Clients and Servers                ~6 min   │
-│  ○  15. Database Access                         ~6 min   │
-│                                                            │
-└────────────────────────────────────────────────────────────┘
-```
+**Completed** 2026-01-26:
+- Updated `estimatedTime` from `"~45 min"` to `"~70 min"`
+- Added "Enterprise Integration" section with steps 11-15 (STM, Concurrent Structures, Configuration, HTTP, Database)
+- Added STM to "Key Differences" section highlighting ZIO's built-in STM vs cats-stm as separate library
 
 ---
 
@@ -761,8 +749,8 @@ No strict dependencies between steps - each should be standalone. However:
 - [x] Step 8: Streaming (added groupedWithin, error recovery, backpressure sections)
 - [x] Step 9: Application Structure (added Bootstrap, ZIO.config, service access patterns)
 
-**Progress**: 16/20 main tasks complete (80%)
-**Remaining work**: Landing page updates (index.mdx, glossary), validation
+**Progress**: 17/20 main tasks complete (85%)
+**Remaining work**: Landing page glossary update, validation
 
 **Learned**:
 - MDX string interpolation requires escaping `${}` as `\${}` to avoid JSX interpretation
