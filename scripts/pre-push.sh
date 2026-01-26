@@ -5,7 +5,7 @@ echo "🔍 Running pre-push checks..."
 
 # Run lint
 echo "  • lint..."
-bun run lint --quiet
+bun run lint
 
 # Run typecheck
 echo "  • typecheck..."
