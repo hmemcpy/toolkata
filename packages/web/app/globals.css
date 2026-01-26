@@ -275,6 +275,16 @@ select:focus {
   background: transparent !important;
 }
 
+/* Remove focus outline from Shiki pre elements (they have tabindex="0") */
+.shiki-container pre:focus {
+  outline: none;
+}
+
+/* Remove padding from code element (typography plugin adds 6px left padding) */
+.shiki-container code {
+  padding: 0 !important;
+}
+
 /* Light theme Shiki overrides */
 html.light .shiki {
   background: #ffffff !important;
