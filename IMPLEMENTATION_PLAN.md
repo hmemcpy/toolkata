@@ -122,7 +122,7 @@ All Zionomicon chapters are available at `/tmp/zionomicon/EPUB/text/`. Key chapt
 - [x] **Update Step 3: Error Handling** — Add `foldZIO`, `foldCauseZIO`, error recovery patterns
 - [x] **Update Step 4: Map/FlatMap Purity** — Add `as`, `tap`, `filterOrFail` utility operators
 - [ ] **Update Step 5: Dependency Injection** — Add `ZLayer.derive` modern pattern
-- [ ] **Update Step 6: Resource Management** — Add `Scope` interface explanation
+- [x] **Update Step 6: Resource Management** — Add `Scope` interface explanation
 - [ ] **Update Step 7: Fiber Supervision** — Add `forkDaemon`/`forkScoped`, `raceEither`
 - [ ] **Update Step 8: Streaming** — Add `mapZIO`, `filterZIO`, error recovery
 - [ ] **Update Step 9: Application Structure** — Add Bootstrap, `ZIO.config`, service access
@@ -538,7 +538,7 @@ val layer = defaultLayer.orElse(fallbackLayer)
 
 ---
 
-- [ ] **Update Step 6: Resource Management** — Add `Scope` interface
+- [x] **Update Step 6: Resource Management** — Add `Scope` interface
 
 **Why**: The Scope model from Zionomicon ch016-018 is fundamental to ZIO 2.x.
 
@@ -546,29 +546,13 @@ val layer = defaultLayer.orElse(fallbackLayer)
 
 **Updates from Zionomicon ch016-018**:
 
-**Scope interface**:
-```scala
-trait Scope {
-  def addFinalizer(finalizer: ZIO[Any, Nothing, Any]): ZIO[Any, Nothing, Unit]
-  def close(exit: Exit[Any, Any]): ZIO[Any, Nothing, Unit]
-}
-
-object Scope {
-  def make: UIO[Scope.Closeable]
-}
-```
-
-**acquireRelease with Scope**:
-```scala
-def acquireRelease[R, E, A](
-  acquire: ZIO[R, E, A]
-)(release: A => ZIO[R, Nothing, Any]): ZIO[R with Scope, E, A]
-```
-
-**fromAutoCloseable**:
-```scala
-ZIO.fromAutoCloseable(ZIO.attempt(new FileInputStream("file.txt")))
-```
+**Completed** 2026-01-26:
+- Added `Scope` interface section with full trait definition (`addFinalizer`, `addFinalizerExit`)
+- Added `Scope.Closeable` trait and `Scope.make` constructor
+- Added `acquireRelease with Scope` section comparing `Resource.make` vs `ZIO.acquireRelease`/`ZIO.scoped`
+- Added `Scope-Based Composition` section showing multi-resource composition
+- Added helpful callouts explaining Scope separation of concerns
+- Updated frontmatter with `ZIO.acquireRelease`, `ZIO.scoped`, `Scope.make`, `ZIO.fromAutoCloseable`
 
 ---
 

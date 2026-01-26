@@ -2,8 +2,8 @@
 title: "Resource Management"
 step: 6
 description: "Resource safety and lifecycle management"
-zioCommands: []
-ceCommands: []
+zioCommands: ["ZIO.acquireRelease", "ZIO.scoped", "Scope.make", "ZIO.fromAutoCloseable"]
+ceCommands: ["Resource.make", "Resource.use", "Resource.fromAutoCloseable", "bracket"]
 ---
 
 # Resource Management
@@ -68,6 +68,47 @@ even if the program fails or is interrupted.
   catsEffectComment="allocated - manual resource control"
   zioComment="reserve - manual resource control"
 />
+
+## The Scope Interface
+
+ZIO 2.x uses the `Scope` interface as a composable way to manage resource lifecycles. Understanding Scope is key to working with resources in ZIO.
+
+<ScalaComparisonBlock
+  catsEffectCode={`import cats.effect._\n\n// Resource is a self-contained description\n// that carries its own finalization logic\nval fileResource: Resource[IO, BufferedReader] =\n  Resource.make(acquireFile)(releaseFile)\n\n// Use with .use - finalization is automatic\nval program: IO[String] = fileResource.use { reader =>\n  IO.blocking(reader.readLine())\n}`}
+  zioCode={`import zio._\n\n// Scope interface for resource management\ntrait Scope {\n  // Add a finalizer that runs when scope closes\n  def addFinalizer(finalizer: UIO[Any]): UIO[Unit]\n\n  // Add finalizer that can inspect exit value\n  def addFinalizerExit(\n    finalizer: Exit[Any, Any] => UIO[Any]\n  ): UIO[Unit]\n}\n\nobject Scope {\n  // Create a new closeable scope\n  def make: UIO[Scope.Closeable]\n\n  // Closeable extends Scope with close ability\n  trait Closeable extends Scope {\n    def close(exit: Exit[Any, Any]): UIO[Unit]\n  }\n\n  // Run a scoped effect\n  def scoped[R, E, A](\n   zio: ZIO[R with Scope, E, A]\n  ): ZIO[R, E, A]\n}`}
+  catsEffectComment="Resource carries finalization with it"
+  zioComment="Scope manages finalizers centrally"
+/>
+
+<Callout variant="tip">
+The `Scope` interface separates adding finalizers from closing the scope. This allows you to pass a `Scope` to other code that can register finalizers without being able to prematurely close the scope.
+</Callout>
+
+### acquireRelease with Scope
+
+The `ZIO.acquireRelease` operator uses `Scope` under the hood:
+
+<ScalaComparisonBlock
+  catsEffectCode={`import cats.effect._\n\n// Resource.make is the primary constructor\nval fileResource: Resource[IO, BufferedReader] =\n  Resource.make(\n    IO.blocking(new BufferedReader(new FileReader("data.txt")))\n  )(reader =>\n    IO.blocking(reader.close()).handleErrorWith(_ => IO.unit)\n  )`}
+  zioCode={`import zio._\n\n// ZIO.acquireRelease requires Scope in environment\nval fileScoped: ZIO[Scope, Throwable, BufferedReader] =\n  ZIO.acquireRelease(\n    ZIO.attemptBlocking(new BufferedReader(new FileReader("data.txt")))\n  )(reader =>\n    ZIO.succeed(reader.close())\n  )\n\n// Use with ZIO.scoped\nval content: Task[String] = ZIO.scoped {\n  fileScoped.flatMap { reader =>\n    ZIO.attemptBlocking(reader.readLine())\n  }\n}`}
+  catsEffectComment="Resource.make - self-contained"
+  zioComment="ZIO.acquireRelease - requires Scope"
+/>
+
+### Scope-Based Composition
+
+Multiple resources compose naturally with `Scope`:
+
+<ScalaComparisonBlock
+  catsEffectCode={`import cats.effect._\n\nval dbResource: Resource[IO, Database] = ???\nval cacheResource: Resource[IO, Cache] = ???\n\n// Compose with for-comprehension\nval appResource: Resource[IO, (Database, Cache)] =\n  for {\n    db <- dbResource\n    cache <- cacheResource\n  } yield (db, cache)\n\n// Use - both released in reverse order\nval program: IO[Unit] =\n  appResource.use { case (db, cache) =>\n    db.query *> cache.get\n  }`}
+  zioCode={`import zio._\n\nval dbScoped: ZIO[Scope, Throwable, Database] = ???\nval cacheScoped: ZIO[Scope, Throwable, Cache] = ???\n\n// Compose in for-comprehension\nval program: Task[Unit] = ZIO.scoped {\n  for {\n    db <- dbScoped\n    cache <- cacheScoped\n    _ <- db.query\n    _ <- cache.get\n  } yield ()\n}\n\n// Both released in reverse order when scope closes`}
+  catsEffectComment="Resource composition via flatMap"
+  zioComment="Scoped composition via flatMap"
+/>
+
+<Callout variant="note">
+Cats Effect `Resource` is a self-contained data structure that carries its finalization logic. ZIO `Scope` is an environment service that manages finalizers centrally. Both approaches guarantee cleanup runs in reverse order of acquisition.
+</Callout>
 
 ## Next Steps
 
