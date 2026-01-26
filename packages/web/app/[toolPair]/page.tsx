@@ -15,7 +15,11 @@ import type { StepMeta } from "../../services/content"
  * for all published tool comparisons, improving performance and SEO.
  */
 export function generateStaticParams() {
-  const pairings = [{ slug: "jj-git" }, { slug: "zio-cats" }]
+  const pairings = [
+    { slug: "jj-git" },
+    { slug: "zio-cats" },
+    { slug: "effect-zio" },
+  ]
   return pairings.map((pairing) => ({ toolPair: pairing.slug }))
 }
 
@@ -176,8 +180,37 @@ export default async function ComparisonOverviewPage(props: {
     { step: 15, title: "Database", description: "ZIO JDBC vs Doobie/Skunk", slug: "15-step" },
   ]
 
+  // Steps for effect-zio
+  const effectZioSteps: readonly StepMeta[] = [
+    {
+      step: 1,
+      title: "Effect<A, E, R> vs ZIO[-R, +E, +A]",
+      description: "Type parameter order difference",
+      slug: "01-step",
+    },
+    { step: 2, title: "Creating Effects", description: "Effect.succeed, Effect.fail", slug: "02-step" },
+    { step: 3, title: "Error Handling", description: "Typed errors and defects", slug: "03-step" },
+    { step: 4, title: "Composition with Generators", description: "Effect.gen vs for-comprehension", slug: "04-step" },
+    { step: 5, title: "Services and Context.Tag", description: "Dependency injection patterns", slug: "05-step" },
+    { step: 6, title: "Layers", description: "Layer.succeed, Layer.provide", slug: "06-step" },
+    { step: 7, title: "Resource Management", description: "Effect.acquireRelease, Scope", slug: "07-step" },
+    { step: 8, title: "Fibers and Forking", description: "Effect.fork, Fiber.join", slug: "08-step" },
+    { step: 9, title: "Concurrent Combinators", description: "Effect.all, Effect.race", slug: "09-step" },
+    { step: 10, title: "Ref and Concurrent State", description: "Ref.make, Ref.update", slug: "10-step" },
+    { step: 11, title: "STM", description: "Software Transactional Memory", slug: "11-step" },
+    { step: 12, title: "Streaming", description: "Stream transformations and Sinks", slug: "12-step" },
+    { step: 13, title: "Schema (Validation)", description: "Schema<A,I,R>, decode/encode", slug: "13-step" },
+    { step: 14, title: "Platform & HTTP", description: "HttpClient, cross-platform abstractions", slug: "14-step" },
+    { step: 15, title: "Database Access", description: "@effect/sql, SqlClient", slug: "15-step" },
+  ]
+
   // Select steps based on tool pair
-  const steps = toolPair === "zio-cats" ? catsZioSteps : jjGitSteps
+  const steps =
+    toolPair === "zio-cats"
+      ? catsZioSteps
+      : toolPair === "effect-zio"
+        ? effectZioSteps
+        : jjGitSteps
 
   // Default estimated times for jj-git
   const jjGitTimes = new Map<number, string>([
@@ -214,8 +247,32 @@ export default async function ComparisonOverviewPage(props: {
     [15, "~6 min"],
   ])
 
+  // Estimated times for effect-zio
+  const effectZioTimes = new Map<number, string>([
+    [1, "~5 min"],
+    [2, "~5 min"],
+    [3, "~5 min"],
+    [4, "~4 min"],
+    [5, "~6 min"],
+    [6, "~5 min"],
+    [7, "~5 min"],
+    [8, "~6 min"],
+    [9, "~5 min"],
+    [10, "~5 min"],
+    [11, "~6 min"],
+    [12, "~6 min"],
+    [13, "~6 min"],
+    [14, "~6 min"],
+    [15, "~6 min"],
+  ])
+
   // Select estimated times based on tool pair
-  const estimatedTimes = toolPair === "zio-cats" ? catsZioTimes : jjGitTimes
+  const estimatedTimes =
+    toolPair === "zio-cats"
+      ? catsZioTimes
+      : toolPair === "effect-zio"
+        ? effectZioTimes
+        : jjGitTimes
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">

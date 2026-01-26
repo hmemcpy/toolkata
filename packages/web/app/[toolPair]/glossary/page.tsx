@@ -20,12 +20,17 @@ import { GlossaryClientWrapper } from "../../../components/ui/GlossaryClientWrap
 import { zioCatsGlossary } from "../../../content/glossary/zio-cats"
 import { getPairing, isValidPairingSlug } from "../../../content/pairings"
 import { jjGitGlossary } from "../../../content/glossary/jj-git"
+import { getEffectZioGlossary } from "../../../content/glossary/effect-zio"
 
 /**
  * Generate static params for all known tool pairings.
  */
 export function generateStaticParams(): Array<{ readonly toolPair: string }> {
-  return [{ toolPair: "jj-git" }, { toolPair: "zio-cats" }]
+  return [
+    { toolPair: "jj-git" },
+    { toolPair: "zio-cats" },
+    { toolPair: "effect-zio" },
+  ]
 }
 
 /**
@@ -83,7 +88,12 @@ export default async function GlossaryPage({
   }
 
   // Select glossary based on tool pair
-  const entries = toolPair === "zio-cats" ? zioCatsGlossary : jjGitGlossary
+  const entries =
+    toolPair === "zio-cats"
+      ? zioCatsGlossary
+      : toolPair === "effect-zio"
+        ? getEffectZioGlossary()
+        : jjGitGlossary
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">

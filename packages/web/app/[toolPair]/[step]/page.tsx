@@ -22,6 +22,7 @@ export function generateStaticParams() {
   const pairings = [
     { slug: "jj-git", steps: 12 },
     { slug: "zio-cats", steps: 15 },
+    { slug: "effect-zio", steps: 15 },
   ] as const
 
   return pairings.flatMap((pairing) =>

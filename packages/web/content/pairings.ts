@@ -139,6 +139,28 @@ export const toolPairings = [
     language: "shell" as const,
     tags: ["git", "jj", "vcs", "version-control"] as const,
   },
+  {
+    slug: "effect-zio",
+    from: {
+      name: "ZIO",
+      description: "ZIO 2",
+      color: "#DC322F",
+      icon: "scala",
+    },
+    to: {
+      name: "Effect",
+      description: "Effect.TS for ZIO developers",
+      color: "#3178C6",
+      icon: "typescript",
+    },
+    category: "Frameworks & Libraries" as const,
+    steps: 15,
+    estimatedTime: "~75 min",
+    status: "published" as const,
+    toUrl: "https://effect.website",
+    language: "typescript" as const,
+    tags: ["typescript", "effect", "zio", "scala", "functional"] as const,
+  },
   // Future pairings (commented out until content is ready)
   // {
   //   slug: "pijul-git",

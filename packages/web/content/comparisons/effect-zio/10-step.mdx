@@ -82,7 +82,7 @@ Both Effect and ZIO provide `Ref` for atomic mutable state. The APIs are nearly 
     |  for {
     |    ref    <- Ref.make(0)
     |    result <- ref.modify(n =>
-    |              (n * 2, s"doubled to ${n * 2}")
+    |              (n * 2, s"doubled to " + (n * 2).toString)
     |            )
     |  } yield result
     |// ref is now 2, result is "doubled to 2"
@@ -94,7 +94,7 @@ Both Effect and ZIO provide `Ref` for atomic mutable state. The APIs are nearly 
     |    const ref = yield* Ref.make(0)
     |    const result = yield* Ref.modify(ref, (n) => [
     |      n * 2, // new state
-    |      \`doubled to \${n * 2}\` // return value
+    |      "doubled to " + (n * 2).toString() // return value
     |    ])
     |    return result
     |  })
@@ -161,7 +161,7 @@ For effectful updates, use `SynchronizedRef` (like ZIO).
     |    yield* Ref.update(ref, (n) =>
     |      Effect.gen(function* () {
     |        yield* Effect.sync(() =>
-    |          console.log(\`Updating: \${n}\`)
+    |          console.log("Updating: " + n)
     |        )
     |        return n + 1
     |      })

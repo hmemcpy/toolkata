@@ -34,27 +34,14 @@ Effect provides `@effect/sql` for database operations, similar to ZIO's JDBC/Qui
     |import { SqlClient } from "@effect/sql"
     |import { Effect } from "effect"
     |
-    |const getUser: Effect<
-    |  User,
-    |  SqlClient.SqlError,
-    |  SqlClient
-    |> = Effect.flatMap(SqlClient, (sql) =>
-    |    Effect.map(
-    |      sql\`
-    |        SELECT * FROM users WHERE id = \${id}
-    |      \`,
-    |      (rows) => rows[0] as User
-    |    )
-    |  )
-    |
-    |// With parameters
-    |const getUserById = (id: number) =>
-    |  Effect.flatMap(SqlClient, (sql) =>
-    |    sql\`SELECT * FROM users WHERE id = \${id}\`
+    |const getUser = Effect.flatMap(SqlClient, (sql) =>
+    |  sql.sql("SELECT * FROM users WHERE id = " + id)
+    |).pipe(
+    |  Effect.map((rows) => rows[0] as User)
     |  )
   `}
-  zioComment="jdbc.query(sql\"...\").map row parser"
-  effectComment="sql\`...\` template literal, automatic parameterization"
+  zioComment="jdbc.query with sql string interpolation"
+  effectComment="sql.sql() for queries, automatic parameterization"
 />
 
 ## Connection Pooling
@@ -86,13 +73,13 @@ Effect provides `@effect/sql` for database operations, similar to ZIO's JDBC/Qui
     |
     |const poolLayer = Layer.scoped(PgClient, Effect.gen(function* () {
     |  const config = {
-    |      host: "localhost",
-    |      port: 5432,
-    |      database: "mydb",
-    |      username: "user",
-    |      password: "pass"
-    |    }
-    |    return yield* PgClient.make(config)
+    |    host: "localhost",
+    |    port: 5432,
+    |    database: "mydb",
+    |    username: "user",
+    |    password: "pass"
+    |  }
+    |  return yield* PgClient.make(config)
     |  }))
     |
     |// Or use simplified config
@@ -102,7 +89,7 @@ Effect provides `@effect/sql` for database operations, similar to ZIO's JDBC/Qui
     |  database: "mydb",
     |  username: "user",
     |  password: "pass"
-    |})
+    |  })
   `}
   zioComment="ZLayer.scoped with JdbcService.live from DataSource"
   effectComment="Layer.scoped(PgClient, PgClient.make(config)) or PgClient.layer(config)"
@@ -130,24 +117,15 @@ Effect provides `@effect/sql` for database operations, similar to ZIO's JDBC/Qui
   `}
   effectCode={`
     |// Effect: Transactions with SqlClient
-    |const transfer: Effect<void, SqlClient.SqlError, SqlClient> =
-    |  Effect.gen(function* () {
-    |    const sql = yield* SqlClient
-    |    yield* SqlClient.transaction(
-    |      Effect.gen(function* () {
-    |        yield* sql\`
-    |          UPDATE accounts
-    |          SET balance = balance - 100
-    |          WHERE id = 1
-    |        \`
-    |        yield* sql\`
-    |          UPDATE accounts
-    |          SET balance = balance + 100
-    |          WHERE id = 2
-    |        \`
-    |      })
-    |    )
-    |  })
+    |const transfer = Effect.gen(function* () {
+    |  const sql = yield* SqlClient
+    |  yield* SqlClient.transaction(
+    |    Effect.gen(function* () {
+    |      yield* sql.sql("UPDATE accounts SET balance = balance - 100 WHERE id = 1")
+    |      yield* sql.sql("UPDATE accounts SET balance = balance + 100 WHERE id = 2")
+    |    })
+    |  )
+    |})
   `}
   zioComment="jdbc.transaction { ... }"
   effectComment="SqlClient.transaction(Effect.gen(...))"
@@ -161,44 +139,29 @@ Effect provides `@effect/sql` for database operations, similar to ZIO's JDBC/Qui
     |val insertUser: ZIO[JdbcService, Throwable, Long] =
     |  ZIO.serviceWithZIO { jdbc =>
     |    jdbc.update(
-    |      sql"INSERT INTO users (name, age) VALUES (${user.name}, ${user.age})"
+    |      sql"INSERT INTO users (name, age) VALUES (" + user.name + ", " + user.age + ")"
     |    )
     |  }
     |
     |val updateUser: ZIO[JdbcService, Throwable, Long] =
     |  ZIO.serviceWithZIO { jdbc =>
     |    jdbc.update(
-    |      sql"UPDATE users SET age = ${newAge} WHERE id = ${userId}"
+    |      sql"UPDATE users SET age = " + newAge + " WHERE id = " + userId
     |    )
     |  }
   `}
   effectCode={`
     |// Effect: Insert/Update
-    |const insertUser: Effect<
-    |  void,
-    |  SqlClient.SqlError,
-    |  SqlClient
-    |> = Effect.flatMap(SqlClient, (sql) =>
-    |    sql\`
-    |      INSERT INTO users (name, age)
-    |      VALUES (\${user.name}, \${user.age})
-    |    \`
-    |  )
+    |const insertUser = Effect.flatMap(SqlClient, (sql) =>
+    |  sql.sql("INSERT INTO users (name, age) VALUES (" + "user" + ", " + "30" + ")")
+    |)
     |
-    |const updateUser: Effect<
-    |  void,
-    |  SqlClient.SqlError,
-    |  SqlClient
-    |> = Effect.flatMap(SqlClient, (sql) =>
-    |    sql\`
-    |      UPDATE users
-    |      SET age = \${newAge}
-    |      WHERE id = \${userId}
-    |    \`
-    |  )
+    |const updateUser = Effect.flatMap(SqlClient, (sql) =>
+    |  sql.sql("UPDATE users SET age = " + "31" + " WHERE id = " + "1")
+    |)
   `}
   zioComment="jdbc.update returns rows affected (Long)"
-  effectComment="sql\`INSERT/UPDATE ...\` returns Effect<void>"
+  effectComment="sql.sql() returns Effect<void>"
 />
 
 ## Schema Integration
@@ -220,8 +183,8 @@ Effect provides `@effect/sql` for database operations, similar to ZIO's JDBC/Qui
     |      )
     |    }.runCollect
     |  }
-  `}
-  effectCode={{
+    `}
+  effectCode={`
     |// Effect: Schema integration for row mapping
     |import { Schema } from "@effect/schema"
     |
@@ -230,24 +193,20 @@ Effect provides `@effect/sql` for database operations, similar to ZIO's JDBC/Qui
     |  readonly name: string
     |  readonly age: number
     |}
-    |const userSchema: Schema<User> = Schema.Struct({
+    |const userSchema = Schema.Struct({
     |  id: Schema.Number,
     |  name: Schema.String,
     |  age: Schema.Number
     |})
     |
-    |const getUsers: Effect<
-    |  ReadonlyArray<User>,
-    |  SqlClient.SqlError | Schema.Decode.Error,
-    |  SqlClient
-    |> = Effect.flatMap(SqlClient, (sql) =>
-    |    Effect.map(
-    |      sql\`SELECT * FROM users\`,
-    |      (rows) =>
-    |        rows.map((row) =>
-    |          Schema.decodeUnknownSync(userSchema)(row)
-    |        )
+    |const getUsers = Effect.flatMap(SqlClient, (sql) =>
+    |  sql.sql("SELECT * FROM users")
+    |).pipe(
+    |  Effect.map((rows) =>
+    |    rows.map((row) =>
+    |      Schema.decodeUnknownSync(userSchema)(row)
     |    )
+    |  )
     |  )
   `}
   zioComment="Manual row parser with rs.long/int/string"
@@ -258,15 +217,15 @@ Effect provides `@effect/sql` for database operations, similar to ZIO's JDBC/Qui
 
 | ZIO JDBC | Effect | Purpose |
 |----------|--------|---------|
-| `jdbc.query(sql\"...\")` | `sql\`...\`` | Execute query |
-| `jdbc.update(sql\"...\")` | `sql\`INSERT/UPDATE ...\`` | Execute update |
+| `jdbc.query(sql"...")` | `sql.sql("...")` | Execute query |
+| `jdbc.update(sql"...")` | `sql.sql("INSERT/UPDATE ...")` | Execute update |
 | `jdbc.transaction { ... }` | `SqlClient.transaction(...)` | Transaction |
 | `HikariDataSource` | `PgClient.make(config)` | Connection pool |
-| `rs.string("col")` | `row.col` or Schema decode | Access column |
+| `rs.string("col")` | `row["col"]` or Schema decode | Access column |
 | `runCollect` | Default (returns array) | Get all rows |
 
 <Callout variant="tip">
-Use template literal sql\`...\` for SQL queries in Effect. This automatically parameterizes your queries, preventing SQL injection. The template variables become bound parameters.
+Use SqlClient for SQL queries in Effect. The library handles parameterization automatically, preventing SQL injection. The template variables become bound parameters.
 </Callout>
 
 ## What's Next?

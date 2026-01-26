@@ -60,7 +60,7 @@ Both Effect and ZIO provide Software Transactional Memory for composable atomic 
     |             for {
     |               _ <- ref.update(_ + 10)
     |               _ <- ref.modify(n =>
-    |                      (n * 2, s"doubled to ${n * 2}")
+    |                      (n * 2, s"doubled to " + (n * 2).toString)
     |                    )
     |               _ <- ref.getAndSet(100)
     |             } yield ()
@@ -77,7 +77,7 @@ Both Effect and ZIO provide Software Transactional Memory for composable atomic 
     |        yield* TRef.update(ref, (n) => n + 10)
     |        yield* TRef.modify(ref, (n) => [
     |          n * 2,
-    |          \`doubled to \${n * 2}\`
+    |          "doubled to " + (n * 2).toString()
     |        ])
     |        yield* TRef.getAndUpdate(ref, () => 100)
     |      })
@@ -102,7 +102,9 @@ Both Effect and ZIO provide Software Transactional Memory for composable atomic 
     |    balance <- from.get
     |    _       <- if (balance >= amount)
     |                  from.set(balance - amount) *>
-    |                  to.set(to.get + amount)
+    |                  to.modify(toBalance =>
+    |                    (toBalance + amount, ())
+    |                  )
     |                else STM.die("Insufficient funds")
     |  } yield ()
     |

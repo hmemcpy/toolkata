@@ -119,7 +119,7 @@ Effect Schema provides runtime type validation and transformations, similar to z
     |// Or use refinement pattern
     |const positiveInt: Schema<number> = Schema.Number.pipe(
     |  Schema greaterThan(0, {
-    |    message: (n) => \`Must be positive, got \${n}\`
+    |    message: (n) => \`Must be positive, got " + n\`
     |  })
     |)
     |

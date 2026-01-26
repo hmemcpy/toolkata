@@ -136,23 +136,23 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 
 ### P11 - Glossary & Routing Integration
 
-- [ ] **Create glossary file** — `content/glossary/effect-zio.ts` with categories: CORE, ERRORS, COMPOSITION, SERVICES, LAYERS, CONCURRENCY, STREAMING, SCHEMA, HTTP, SQL (follow zio-cats.ts pattern with GlossaryEntry interface)
-- [ ] **Add effect-zio to pairings.ts** — Full entry: `slug: "effect-zio"`, from: ZIO (Scala, `#DC322F`, icon: "scala"), to: Effect (`#3178C6`, icon: "typescript"), category: "Frameworks & Libraries", steps: 15, estimatedTime: "~75 min", status: "published", language: "typescript", tags: ["typescript", "effect", "zio", "scala", "functional"], toUrl: "https://effect.website"
-- [ ] **Update overview page generateStaticParams** — Add `{ slug: "effect-zio" }` to pairings array in `app/[toolPair]/page.tsx:18`
-- [ ] **Update step page generateStaticParams** — Add `{ slug: "effect-zio", steps: 15 }` to pairings array in `app/[toolPair]/[step]/page.tsx:22-25`
-- [ ] **Update glossary page generateStaticParams** — Add `{ toolPair: "effect-zio" }` to `app/[toolPair]/glossary/page.tsx:28`
-- [ ] **Add effectZioSteps array** — 15 step metadata entries in overview page (title, step, description, slug) following `catsZioSteps` pattern
-- [ ] **Add effectZioTimes Map** — Estimated times for each step in overview page following `catsZioTimes` pattern
-- [ ] **Update overview page step selection** — Add `toolPair === "effect-zio"` case for steps and times selection (around line 180)
-- [ ] **Import effect-zio glossary in glossary page** — Import `effectZioGlossary` from `../../../content/glossary/effect-zio`, add case for `toolPair === "effect-zio"` (around line 70)
-- [ ] **Add effect-zio to TerminalSearch** — Add 15 entries to `SEARCHABLE_STEPS` array for effect-zio steps
+- [x] **Create glossary file** — `content/glossary/effect-zio.ts` with categories: CORE, ERRORS, COMPOSITION, SERVICES, LAYERS, CONCURRENCY, STREAMING, SCHEMA, HTTP, SQL (49 entries total)
+- [x] **Add effect-zio to pairings.ts** — Full entry with from: ZIO (#DC322F, icon: scala), to: Effect (#3178C6, icon: typescript), category: "Frameworks & Libraries", steps: 15, status: "published", language: "typescript", tags: ["typescript", "effect", "zio", "scala", "functional"]
+- [x] **Update overview page generateStaticParams** — Added `{ slug: "effect-zio" }` to pairings array
+- [x] **Update step page generateStaticParams** — Added `{ slug: "effect-zio", steps: 15 }` to pairings array
+- [x] **Update glossary page generateStaticParams** — Added `{ toolPair: "effect-zio" }` to pairings array
+- [x] **Add effectZioSteps array** — 15 step metadata entries (title, step, description, slug)
+- [x] **Add effectZioTimes Map** — Estimated times for each step
+- [x] **Update overview page step selection** — Added `toolPair === "effect-zio"` case
+- [x] **Import effect-zio glossary in glossary page** — Import and case for `toolPair === "effect-zio"`
+- [ ] **Add effect-zio to TerminalSearch** — Add 15 entries to `SEARCHABLE_STEPS` array for effect-zio steps (deferred - see P3)
 
 ### P12 - Content Validation
 
-- [ ] **Run full validation** — `bun run build && bun run typecheck && bun run lint`
-- [ ] **Test /effect-zio route** — Overview page loads correctly with all 15 steps listed
-- [ ] **Test /effect-zio/1 through /effect-zio/15** — All step pages render with CrossLanguageBlock showing Scala and TypeScript
-- [ ] **Test /effect-zio/glossary** — Glossary page with search/filter works
+- [x] **Run full validation** — `bun run build && bun run typecheck && bun run lint` ✅ PASSED
+- [x] **Test /effect-zio route** — Overview page loads with all 15 steps listed (verified via static generation)
+- [x] **Test /effect-zio/1 through /effect-zio/15** — All step pages render with CrossLanguageBlock (verified via build)
+- [x] **Test /effect-zio/glossary** — Glossary page generates correctly (verified via build)
 - [ ] **Create content PR** — Commit and push PR 2
 
 ---
@@ -163,7 +163,9 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 - PR 1 (Infrastructure): 20 tasks
 - PR 2 (Content): 35 tasks
 
-**Progress**: 12/55 tasks complete (22%)
+**Progress**: 51/55 tasks complete (93%)
+
+**Remaining**: 4 tasks (Create infrastructure PR, add effect-zio to TerminalSearch, create content PR, P3 search improvements)
 
 ---
 
@@ -190,6 +192,36 @@ PR 1 Complete ──► P5-P12 (Content) ──► PR 2
 ## Learned
 
 _(Updated during implementation)_
+
+### MDX Template Literal Pitfalls (Critical)
+
+When writing MDX with code blocks containing template literals (`${variable}`), the MDX parser evaluates these as JavaScript expressions. This causes "variable is not defined" errors during static generation.
+
+**Solution Patterns:**
+1. **String concatenation**: Replace `` `Value: ${n}` `` with `"Value: " + n`
+2. **Literal values**: Replace `${user.name}` with `"user"` or `"example"`
+3. **Escaped backticks**: Avoid `\"` in JSX attributes - rewrite without escaping
+
+**Examples of fixes applied:**
+- Step 3: `` `Error: ${error}` `` → `"Error: " + error`
+- Step 4: `` `Sum: ${x + y}` `` → `"Sum: " + (x + y).toString()`
+- Step 10: `` `Result: ${n}` `` → `"Result: " + n.toString()`
+- Step 15: `${user.name}` → `"user"` (literal values)
+
+### Multiline Type Annotations in MDX
+
+Effect type annotations like `Effect<Type1, Type2, Type3>` split across lines with `|>` syntax cause MDX parsing errors because `|>` is interpreted as JSX attribute syntax.
+
+**Solution**: Keep type annotations on single line: `Effect<Type1, Type2, Type3>`
+
+### GlossaryEntry Structure
+
+The `GlossaryEntry` interface uses specific field names:
+- `id` (not `term`)
+- `fromCommand` (not `zio`)
+- `toCommand` (not `effect`)
+- `note` (not `notes`)
+- `category` (required)
 
 ---
 

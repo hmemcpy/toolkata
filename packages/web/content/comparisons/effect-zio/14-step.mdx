@@ -34,23 +34,15 @@ Effect provides `@effect/platform` for cross-platform abstractions, similar to Z
     |import { HttpClient } from "@effect/platform"
     |import { Effect } from "effect"
     |
-    |const program: Effect<
-    |  HttpClientResponse.HttpClientResponse,
-    |  HttpClient.Error,
-    |  HttpClient
-    |> = Effect.flatMap(HttpClient, (client) =>
-    |    client.get("https://api.example.com/users")
+    |const program = Effect.flatMap(HttpClient, (client) =>
+    |  client.get("https://api.example.com/users")
     |  )
     |
     |// With method and body
-    |const post: Effect<
-    |  HttpClientResponse.HttpClientResponse,
-    |  HttpClient.Error,
-    |  HttpClient
-    |> = Effect.flatMap(HttpClient, (client) =>
-    |    client.post("https://api.example.com/users", {
+    |const post = Effect.flatMap(HttpClient, (client) =>
+    |  client.post("https://api.example.com/users", {
     |      body: JSON.stringify({ name: "Alice" })
-    |    })
+    |  })
     |  )
   `}
   zioComment="Client.request(url), Client.request(url, method, body)"
@@ -79,8 +71,7 @@ Effect provides `@effect/platform` for cross-platform abstractions, similar to Z
   `}
   effectCode={`
     |// Effect: Response handling
-    |const getUser: Effect<User, Error, HttpClient> =
-    |  Effect.gen(function* () {
+    |const getUser = Effect.gen(function* () {
     |    const client = yield* HttpClient
     |    const response = yield* client.get("/users/1")
     |    const body = yield* response.json
@@ -88,17 +79,12 @@ Effect provides `@effect/platform` for cross-platform abstractions, similar to Z
     |  })
     |
     |// With schema validation
-    |import { Schema } from "@effect/schema"
-    |const getUserWithSchema: Effect<
-    |  User,
-    |  Error | Schema.Decode.Error,
-    |  HttpClient
-    |> = Effect.gen(function* () {
+    |const getUserWithSchema = Effect.gen(function* () {
     |    const client = yield* HttpClient
     |    const response = yield* client.get("/users/1")
-    |    return yield* Schema.decodeUnknown(
-    |      userSchema
-    |    )(response.json)
+    |    const schema = { name: Schema.String }
+    |    const result = Schema.decodeUnknown(schema)(response.json)
+    |    return yield* result
     |  })
   `}
   zioComment="response.body.asString, response.body.to[User]"
@@ -123,11 +109,7 @@ Effect provides `@effect/platform` for cross-platform abstractions, similar to Z
   `}
   effectCode={`
     |// Effect: Request options
-    |const request: Effect<
-    |  HttpClientResponse.HttpClientResponse,
-    |  HttpClient.Error,
-    |  HttpClient
-    |> = Effect.flatMap(HttpClient, (client) =>
+    |const request = Effect.flatMap(HttpClient, (client) =>
     |    client.post("https://api.example.com/search", {
     |      headers: {
     |        Authorization: "Bearer token",
@@ -136,16 +118,9 @@ Effect provides `@effect/platform` for cross-platform abstractions, similar to Z
     |      body: JSON.stringify({ query: "scala" })
     |    })
     |  )
-    |
-    |// Or use request method
-    |const request2 = client.request("https://api.example.com/search", {
-    |  method: "POST",
-    |  headers: { /* ... */ },
-    |  body: JSON.stringify({ query: "scala" })
-    |})
   `}
   zioComment="Client.request with method, headers, body parameters"
-  effectComment="client.post/get with options object, client.request(method: ...)"
+  effectComment="client.post with options object, client.request(method: ...)"
 />
 
 ## HTTP Errors
@@ -163,32 +138,22 @@ Effect provides `@effect/platform` for cross-platform abstractions, similar to Z
     |      ZIO.succeed(Response.notFound)
     |  }
   `}
-  effectCode={{
+  effectCode={`
     |// Effect: HTTP error handling
-    |const safeRequest: Effect<
-    |  Either<HttpClient.Error, HttpClientResponse.HttpClientResponse>,
-    |  never,
-    |  HttpClient
-    |> = Effect.either(
+    |const safeRequest = Effect.either(
     |    Effect.flatMap(HttpClient, (client) =>
     |      client.get("/users/1")
     |    )
     |  )
     |
     |// Or catch specific errors
-    |const withFallback: Effect<
-    |  HttpClientResponse.HttpClientResponse,
-    |  never,
-    |  HttpClient
-    |> = Effect.catchAll(
+    |const withFallback = Effect.catchAll(
     |    Effect.flatMap(HttpClient, (client) =>
     |      client.get("/users/1")
     |    ),
     |    (error) =>
-    |      HttpClientError.isNoResponseBody(error)
-    |        ? Effect.succeed(
-    |            new HttpResponse({ status: 404 })
-    |          )
+    |      error._tag === "NoSuchFileSystemError"
+    |        ? Effect.succeed(new HttpResponse({ status: 404 }))
     |        : Effect.fail(error)
     |  )
   `}
@@ -216,22 +181,18 @@ Effect provides `@effect/platform` for cross-platform abstractions, similar to Z
     |import { FileSystem, Path } from "@effect/platform"
     |
     |// File system (works in Node, browser, Deno)
-    |const readFile: Effect<string, Error, FileSystem> =
-    |  Effect.flatMap(FileSystem, (fs) =>
-    |    fs.readFileString("data.txt")
+    |const readFile = Effect.flatMap(FileSystem, (fs) =>
+    |  fs.readFileString("data.txt")
     |  )
     |
     |// Path manipulation (cross-platform)
-    |const joinPath: Effect<string, never, Path> =
-    |  Effect.map(Path, (path) =>
+    |const joinPath = Effect.map(Path, (path) =>
     |    path.join("foo", "bar", "baz.txt")
     |  )
     |
     |// Terminal (cross-platform)
-    |import { Terminal } from "@effect/platform"
-    |const clear: Effect<void, Error, Terminal> =
-    |  Effect.flatMap(Terminal, (term) =>
-    |    term.clear()
+    |const clear = Effect.flatMap(Terminal, (term) =>
+    |  term.clear()
     |  )
   `}
   zioComment="ZIO provides platform-agnostic services like Console, ZIO.readFile"
