@@ -94,7 +94,7 @@ function findLineNumber(content: string, searchIndex: number): number {
 /**
  * Extract TryIt components from MDX content.
  *
- * Matches: <TryIt command="..." />
+ * Matches: <TryIt command="..." validate={false} />
  */
 function extractTryItSnippets(
   content: string,
@@ -104,13 +104,17 @@ function extractTryItSnippets(
 ): ExtractedSnippet[] {
   const snippets: ExtractedSnippet[] = []
 
-  // Match <TryIt command="..." /> - handles both single and double quotes
-  const tryItRegex = /<TryIt\s+[^>]*command=["']([^"']+)["'][^>]*\/>/g
+  // Match <TryIt command="..." /> - handles nested quotes properly
+  // command="..." allows single quotes inside
+  // command='...' allows double quotes inside
+  const doubleQuoteRegex = /<TryIt\s+[^>]*command="([^"]+)"[^>]*\/>/g
+  const singleQuoteRegex = /<TryIt\s+[^>]*command='([^']+)'[^>]*\/>/g
 
-  for (const match of content.matchAll(tryItRegex)) {
+  const processMatch = (match: RegExpMatchArray) => {
     const command = match[1]
+    const fullMatch = match[0]
     if (command?.trim()) {
-      snippets.push({
+      const snippet: ExtractedSnippet = {
         file,
         toolPair,
         step,
@@ -118,8 +122,23 @@ function extractTryItSnippets(
         language: "bash",
         source: "TryIt",
         code: command.trim(),
-      })
+      }
+
+      // Check for validate={false}
+      if (/{\s*false\s*}/.test(fullMatch) && /validate\s*=/.test(fullMatch)) {
+        snippets.push({ ...snippet, validate: false })
+      } else {
+        snippets.push(snippet)
+      }
     }
+  }
+
+  for (const match of content.matchAll(doubleQuoteRegex)) {
+    processMatch(match)
+  }
+
+  for (const match of content.matchAll(singleQuoteRegex)) {
+    processMatch(match)
   }
 
   return snippets
@@ -217,43 +236,6 @@ function parseJsArray(arrayStr: string): string[] {
   }
 
   return results
-}
-
-/**
- * Extract markdown code blocks from MDX content.
- *
- * Matches: ```bash, ```shell (only bash/shell for jj-git)
- */
-function extractCodeBlocks(
-  content: string,
-  file: string,
-  toolPair: string,
-  step: number,
-  languages: readonly string[] = ["bash", "shell"],
-): ExtractedSnippet[] {
-  const snippets: ExtractedSnippet[] = []
-
-  // Match code blocks with specified languages
-  const langPattern = languages.join("|")
-  const codeBlockRegex = new RegExp(`\`\`\`(${langPattern})\\n([\\s\\S]*?)\`\`\``, "g")
-
-  for (const match of content.matchAll(codeBlockRegex)) {
-    const lang = match[1] as "bash" | "shell"
-    const code = match[2]
-    if (code?.trim()) {
-      snippets.push({
-        file,
-        toolPair,
-        step,
-        lineStart: findLineNumber(content, match.index ?? 0),
-        language: lang === "shell" ? "bash" : lang, // Normalize shell to bash
-        source: "codeblock",
-        code: normalizeCode(code),
-      })
-    }
-  }
-
-  return snippets
 }
 
 /**
@@ -408,6 +390,15 @@ function extractCrossLanguageBlocks(
 
 /**
  * Extract all snippets from a single MDX file.
+ *
+ * Extracts from:
+ * - TryIt: Interactive sandbox commands
+ * - SideBySide: Git ↔ jj command comparisons (both fromCommands and toCommands)
+ * - ScalaComparisonBlock: ZIO vs Cats Effect code comparisons
+ * - CrossLanguageBlock: ZIO (Scala) vs Effect (TypeScript) comparisons
+ *
+ * Note: Regular markdown code blocks are NOT extracted - they're documentation
+ * examples that may reference files/state not present in the sandbox.
  */
 export function extractSnippetsFromContent(
   content: string,
@@ -420,7 +411,6 @@ export function extractSnippetsFromContent(
   // Extract from different component types
   snippets.push(...extractTryItSnippets(content, file, toolPair, step))
   snippets.push(...extractSideBySideSnippets(content, file, toolPair, step))
-  snippets.push(...extractCodeBlocks(content, file, toolPair, step, ["bash", "shell"]))
   snippets.push(...extractScalaComparisonBlocks(content, file, toolPair, step))
   snippets.push(...extractCrossLanguageBlocks(content, file, toolPair, step))
 
@@ -503,4 +493,35 @@ export function isPseudoCode(code: string): boolean {
   if (trimmed.startsWith("//") && !trimmed.includes("\n")) return true
 
   return false
+}
+
+/**
+ * Check if a snippet is an installation command that can't run in the sandbox.
+ * These are typically OS-level package manager commands.
+ */
+export function isInstallationCommand(code: string): boolean {
+  const trimmed = code.trim()
+
+  // Package manager installation patterns
+  const installPatterns = [
+    /^brew\s+(install|upgrade|tap)/, // Homebrew
+    /^cargo\s+install/, // Cargo
+    /^apt\s+(install|update|upgrade)/, // APT
+    /^apt-get\s+(install|update|upgrade)/, // APT
+    /^yum\s+(install|update|upgrade)/, // YUM
+    /^dnf\s+(install|update|upgrade)/, // DNF
+    /^pacman\s+-S\s/, // Pacman
+    /^pip\s+install/, // pip
+    /^pip3\s+install/, // pip3
+    /^npm\s+(install|global|ci)/, // npm
+    /^yarn\s+(add|global)/, // Yarn
+    /^pnpm\s+(install|add)/, // pnpm
+    /^bun\s+(install|add)/, // bun
+    /^curl\s+.*\|?\s*(bash|sh|sudo)/, // curl pipe to shell
+    /^wget\s+.*\|?\s*(bash|sh|sudo)/, // wget pipe to shell
+    /^npm\s+i\s/, // npm install shorthand
+    /^yarn\s+add\s+(@?[^@\s]+)/, // yarn add pattern
+  ]
+
+  return installPatterns.some((pattern) => pattern.test(trimmed))
 }

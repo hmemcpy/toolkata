@@ -14,7 +14,7 @@ import type { ResolvedValidationConfig } from "./config-resolver.js"
 
 const DEFAULT_SANDBOX_URL = "http://localhost:3001"
 const DEFAULT_API_KEY = "dev-api-key" // Default for local development
-const COMMAND_TIMEOUT_MS = 30_000
+const COMMAND_TIMEOUT_MS = 5_000 // 5 seconds per command
 const SESSION_TIMEOUT_MS = 5 * 60 * 1000 // 5 minutes
 
 /**
@@ -196,8 +196,10 @@ class SandboxSession {
       }
 
       this.ws.onmessage = (event: MessageEvent) => {
+        const data = typeof event.data === "string" ? event.data : String(event.data)
+
+        // Try to parse as JSON for structured messages (connected, initComplete, error)
         try {
-          const data = typeof event.data === "string" ? event.data : String(event.data)
           const msg = JSON.parse(data) as WsMessage
           this.handleMessage(msg)
 
@@ -209,7 +211,8 @@ class SandboxSession {
             reject(new Error(msg.message))
           }
         } catch {
-          // Ignore parse errors for non-JSON messages
+          // Not JSON - treat as raw PTY output
+          this.handleMessage({ type: "output", data })
         }
       }
 
@@ -303,7 +306,13 @@ class SandboxSession {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         cleanup()
-        reject(new Error(`Command timed out after ${timeoutMs}ms`))
+        // Include output buffer in timeout error for debugging
+        const bufferContent = this.outputBuffer.join("")
+        reject(
+          new Error(
+            `Command timed out after ${timeoutMs}ms. Buffer: ${bufferContent.substring(0, 200)}`,
+          ),
+        )
       }, timeoutMs)
 
       // We detect command completion by looking for the shell prompt
@@ -403,7 +412,32 @@ class SandboxSession {
 }
 
 /**
+ * Check if a snippet is a non-executable command (documentation-only).
+ * These are commands that can't be run in the sandbox but are valid documentation.
+ */
+function isNonExecutableCommand(code: string): boolean {
+  const trimmed = code.trim()
+
+  // Interactive editors (require user input)
+  if (/^(vim|vi|nano|emacs|code|subl)\s/.test(trimmed)) return true
+
+  // cd to non-existent directory (e.g., "cd repo" after clone)
+  if (/^cd\s+\w+$/.test(trimmed) && !/^cd\s+(\/|~|\.)/.test(trimmed)) return true
+
+  // Commands with placeholders
+  if (/\{[^}]+\}/.test(trimmed)) return true // {placeholder} syntax
+  if (/<[^>]+>/.test(trimmed) && !trimmed.startsWith("jj log")) return true // <placeholder> syntax
+
+  // URL-based commands that need network (git clone, remote add)
+  if (/https?:\/\//.test(trimmed)) return true
+
+  return false
+}
+
+
+/**
  * Validate a single snippet.
+ * Assumes setup has already been run for the step.
  */
 async function validateSnippet(
   session: SandboxSession,
@@ -429,6 +463,16 @@ async function validateSnippet(
       snippet,
       status: "skipped",
       output: "Pseudo-code detected",
+      durationMs: Date.now() - startTime,
+    }
+  }
+
+  // Skip non-executable commands (editors, placeholders, etc.)
+  if (isNonExecutableCommand(snippet.code)) {
+    return {
+      snippet,
+      status: "skipped",
+      output: "Non-executable command (documentation only)",
       durationMs: Date.now() - startTime,
     }
   }
@@ -483,7 +527,7 @@ async function validateSnippet(
 
 /**
  * Validate all snippets for a single step.
- * Creates one session and reuses it for all snippets in the step.
+ * Creates one session and validates each snippet in isolation (fresh workspace + setup).
  */
 export async function validateStep(
   toolPair: string,
@@ -533,7 +577,7 @@ export async function validateStep(
     await session.create(toolPair, config.environment)
     await session.connect()
 
-    // Run setup commands from config
+    // Run setup commands once for the step
     if (config.setup.length > 0) {
       if (verbose) {
         console.log(

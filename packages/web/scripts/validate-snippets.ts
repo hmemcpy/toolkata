@@ -328,6 +328,9 @@ async function validateToolPairFull(
   return { stepResults, summary }
 }
 
+// Script-level timeout (5 minutes for full validation, can be reduced for single steps)
+const SCRIPT_TIMEOUT_MS = 5 * 60 * 1000
+
 /**
  * Main entry point.
  */
@@ -338,6 +341,15 @@ async function main(): Promise<void> {
     printHelp()
     process.exit(0)
   }
+
+  // Set up script-level timeout
+  const timeoutId = setTimeout(() => {
+    console.error("\n\x1b[31mScript timeout: validation took too long (5 minutes max)\x1b[0m")
+    process.exit(124) // Standard timeout exit code
+  }, SCRIPT_TIMEOUT_MS)
+
+  // Ensure timeout doesn't keep process alive
+  timeoutId.unref()
 
   console.log("=== Snippet Validation ===")
 
@@ -375,6 +387,28 @@ async function main(): Promise<void> {
 
   // Ensure sandbox is running
   let sandboxManager: SandboxManager | null = null
+
+  // Set up signal handlers for graceful cleanup
+  const cleanup = async () => {
+    console.log("\nCleaning up...")
+    clearTimeout(timeoutId)
+    if (sandboxManager) {
+      await sandboxManager.cleanup()
+    }
+  }
+
+  process.on("SIGINT", async () => {
+    console.log("\nReceived SIGINT, cleaning up...")
+    await cleanup()
+    process.exit(130)
+  })
+
+  process.on("SIGTERM", async () => {
+    console.log("\nReceived SIGTERM, cleaning up...")
+    await cleanup()
+    process.exit(143)
+  })
+
   try {
     sandboxManager = await ensureSandboxRunning()
   } catch (err: unknown) {
@@ -382,6 +416,7 @@ async function main(): Promise<void> {
       `Error: Failed to start sandbox-api: ${err instanceof Error ? err.message : String(err)}`,
     )
     console.error("Make sure Docker is running and the sandbox-api can be started.")
+    clearTimeout(timeoutId)
     process.exit(1)
   }
 
@@ -414,10 +449,12 @@ async function main(): Promise<void> {
     // Exit with error code if strict mode and there are failures
     if (options.strict && totalFailed > 0) {
       console.log("\n\x1b[31mBuild failed due to snippet validation errors.\x1b[0m")
+      clearTimeout(timeoutId)
       process.exit(1)
     }
   } finally {
-    // Clean up sandbox
+    // Clean up sandbox and timeout
+    clearTimeout(timeoutId)
     if (sandboxManager) {
       await sandboxManager.cleanup()
     }

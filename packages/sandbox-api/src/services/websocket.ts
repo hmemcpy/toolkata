@@ -342,6 +342,10 @@ const make = Effect.gen(function* () {
           yield* Effect.sleep("200 millis")
         }
 
+        // Add settling delay after all commands to ensure they complete
+        // This is important for commands like git/jj init that may take longer
+        yield* Effect.sleep("1 second")
+
         console.log(`[WebSocketService] Init commands completed for ${connection.sessionId}`)
 
         // Disable output suppression before sending completion message

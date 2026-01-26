@@ -330,13 +330,19 @@ _(Updated during implementation)_
 - **Docker image bug fixed:** Environment Dockerfiles (bash, node, python) needed `USER root` before `apk add` and `USER sandbox` at end. Base image sets `USER sandbox`, so child images inherit and fail on package installation.
 - **Environment service bug fixed:** `validateAllImages()` was calling `listEnvsFromRegistry()` which returns `EnvironmentInfo[]` (without `dockerImage`). Added `listEnvironmentConfigs()` to return full `EnvironmentConfig[]` with `dockerImage` field.
 - **Snippet validation E2E tested:** Created session, connected WebSocket, ran init commands, executed snippets. Identified issue: installation commands (`brew install jj`, `cargo install jj-cli`) are extracted from code blocks in `<Tab>` components and fail because they can't run in sandbox.
-- **Next step:** Either add `validate={false}` to installation code blocks, add auto-detection for installation patterns, or use validation frontmatter to skip specific steps/snippets.
+- **WebSocket output bug fixed:** Server sends raw PTY text, not JSON. Headless validator was ignoring non-JSON messages. Fixed to treat non-JSON as raw PTY output.
+- **TryIt regex bug fixed:** Regex `[^"']+` stopped at ANY quote. Commands like `jj describe -m 'Task A'` were truncated to `jj describe -m`. Fixed with separate patterns for double-quoted vs single-quoted attributes.
+- **Config fix:** Changed `git config --global` to local config (no `--global` flag). Reordered: init repo first, then set local git config.
+- **Non-executable detection:** Added `isNonExecutableCommand()` to skip: interactive editors (vim, nano), cd to non-existent dirs, URL-based commands, placeholder syntax.
+- **Script timeout:** Added 5-minute script-level timeout with SIGINT/SIGTERM handlers for cleanup.
+- **Performance:** ~4.2s total for 3 commands (500ms settle time per command). Sandbox startup ~0.5s.
+- **Removed unused code:** `extractCodeBlocks` function removed (bash code blocks are documentation, not executable).
 
 ---
 
 ## Progress
 
-**P0**: 37/42 tasks complete (88%) — E2E validation tested, found snippet issues
+**P0**: 37/42 tasks complete (88%) — TryIt validation working E2E, SideBySide needs more work
 **P1**: 0/13 tasks complete (0%)
 **P2**: 0/25 tasks complete (0%)
 **Total**: 37/80 tasks complete (46%)
