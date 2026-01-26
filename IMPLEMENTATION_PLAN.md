@@ -125,8 +125,8 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 
 ### P9 - Advanced Topics (Steps 11-12)
 
-- [ ] **Create 11-step.mdx: STM** — `TRef`, `STM` type, `STM.commit`, composing transactions, retry semantics
-- [ ] **Create 12-step.mdx: Streaming** — `Stream<A,E,R>` type, creation, map/flatMap/filter, `Stream.runCollect`, Sink
+- [x] **Create 11-step.mdx: STM** — `TRef`, `STM` type, `STM.commit`, composing transactions, retry semantics
+- [x] **Create 12-step.mdx: Streaming** — `Stream<A,E,R>` type, creation, map/flatMap/filter, `Stream.runCollect`, Sink
 
 ### P10 - Ecosystem (Steps 13-15)
 
