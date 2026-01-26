@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useCallback, useEffect, useRef, useState } from "react"
+import type { SearchableStep } from "../../lib/search-data"
 import { getSearchableSteps } from "../../lib/search-data"
 
 /**
@@ -37,25 +38,26 @@ export function TerminalSearch() {
           })
 
           // Group by tool pair for diversity
-          const byPairing = new Map<string, typeof SEARCHABLE_STEPS>()
+          const byPairing = new Map<string, SearchableStep[]>()
           for (const step of matches) {
-            if (!byPairing.has(step.toolPair)) {
-              byPairing.set(step.toolPair, [])
-            }
-            byPairing.get(step.toolPair)!.push(step)
+            const existing = byPairing.get(step.toolPair) ?? []
+            byPairing.set(step.toolPair, [...existing, step])
           }
 
           // Round-robin through pairings, max 2 per pairing
-          const diverse: typeof SEARCHABLE_STEPS = []
+          const diverse: SearchableStep[] = []
           const pairingKeys = Array.from(byPairing.keys())
           let index = 0
 
           while (diverse.length < 6 && index < pairingKeys.length * 2) {
             for (const pairingKey of pairingKeys) {
-              const steps = byPairing.get(pairingKey)!
+              const steps = byPairing.get(pairingKey)
+              if (!steps) continue
+
               const stepIndex = Math.floor(index / pairingKeys.length)
               if (stepIndex < steps.length && stepIndex < 2) {
-                diverse.push(steps[stepIndex])
+                const step = steps[stepIndex]
+                if (step) diverse.push(step)
               }
               if (diverse.length >= 6) break
             }
