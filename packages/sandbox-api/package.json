@@ -9,7 +9,8 @@
     "docker:build": "./scripts/docker-build.sh",
     "docker:build:no-test": "./scripts/docker-build.sh --no-test",
     "docker:build:all": "./scripts/docker-build-all.sh",
-    "docker:build:all:no-test": "./scripts/docker-build-all.sh --no-test"
+    "docker:build:all:no-test": "./scripts/docker-build-all.sh --no-test",
+    "test:silent-init": "bun run scripts/test-silent-init.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

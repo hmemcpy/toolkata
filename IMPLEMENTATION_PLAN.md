@@ -95,7 +95,7 @@ Build a headless snippet validation system that extracts code from MDX, executes
 - [x] **Implement output suppression in executeInitCommands** — Added `suppressionState` Map to track per-session output suppression. When `silent: true`, the PTY data callback skips sending to socket. Cleanup on connection close.
 - [x] **Add `initComplete` response message** — After executeInitCommands completes, sends `{ type: "initComplete", success: boolean, error?: string }`. Also sends initComplete for empty commands.
 - [x] **Add init message handler in routes** — Added handler for `message.type === "init"` in `packages/sandbox-api/src/routes/websocket.ts` that calls `executeInitCommands` with `silent` flag
-- [ ] **Test silent init manually** — Create test script connecting via WebSocket, send `{ type: "init", commands: [...], silent: true }`, verify no output leakage and initComplete received
+- [x] **Test silent init manually** — Created `packages/sandbox-api/scripts/test-silent-init.ts` test script. Run with `bun run --cwd packages/sandbox-api test:silent-init` (requires sandbox-api running). Tests both silent and non-silent init commands, verifies initComplete received and output suppression.
 
 ### P0.2: Sandbox Manager (Auto-start)
 
@@ -322,7 +322,7 @@ _(Updated during implementation)_
 
 ## Progress
 
-**P0**: 4/39 tasks complete (10%)
+**P0**: 5/39 tasks complete (13%)
 **P1**: 0/13 tasks complete (0%)
 **P2**: 0/25 tasks complete (0%)
-**Total**: 4/77 tasks complete (5%)
+**Total**: 5/77 tasks complete (6%)
