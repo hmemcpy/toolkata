@@ -135,12 +135,6 @@ export function LessonCard({
           </h2>
         </div>
 
-        {/* Description as comment */}
-        <p className="text-xs text-[var(--color-text-muted)] mb-4 font-mono">
-          <span className="text-[var(--color-text-dim)]"># </span>
-          {pairing.to.description}
-        </p>
-
         {/* Progress bar and CTA - data from server-side cookies */}
         {isPublished ? (
           <div className="space-y-3">
@@ -175,6 +169,20 @@ export function LessonCard({
           <div className="font-mono text-xs text-[var(--color-text-dim)]">
             <span className="text-[var(--color-warning)]"># </span>
             coming soon...
+          </div>
+        )}
+
+        {/* Tags */}
+        {pairing.tags && pairing.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 pt-3 border-t border-[var(--color-border)] mt-3 font-mono text-[10px]">
+            {pairing.tags.map((tag) => (
+              <span
+                key={tag}
+                className="px-1.5 py-0.5 bg-[var(--color-bg)] border border-[var(--color-border)] text-[var(--color-text-dim)]"
+              >
+                {tag}
+              </span>
+            ))}
           </div>
         )}
       </div>
