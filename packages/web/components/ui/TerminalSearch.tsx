@@ -33,7 +33,8 @@ export function TerminalSearch() {
           // Filter matching steps
           const matches = SEARCHABLE_STEPS.filter((step) => {
             const tags = step.tags?.join(" ") ?? ""
-            const searchText = `${step.title} ${step.description} ${step.toName} ${step.fromName} ${tags}`.toLowerCase()
+            const searchText =
+              `${step.title} ${step.description} ${step.toName} ${step.fromName} ${tags}`.toLowerCase()
             return searchText.includes(query.toLowerCase())
           })
 

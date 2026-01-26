@@ -100,7 +100,7 @@ function extractTryItSnippets(
   content: string,
   file: string,
   toolPair: string,
-  step: number
+  step: number,
 ): ExtractedSnippet[] {
   const snippets: ExtractedSnippet[] = []
 
@@ -138,7 +138,7 @@ function extractSideBySideSnippets(
   content: string,
   file: string,
   toolPair: string,
-  step: number
+  step: number,
 ): ExtractedSnippet[] {
   const snippets: ExtractedSnippet[] = []
 
@@ -229,7 +229,7 @@ function extractCodeBlocks(
   file: string,
   toolPair: string,
   step: number,
-  languages: readonly string[] = ["bash", "shell"]
+  languages: readonly string[] = ["bash", "shell"],
 ): ExtractedSnippet[] {
   const snippets: ExtractedSnippet[] = []
 
@@ -269,7 +269,7 @@ function extractScalaComparisonBlocks(
   content: string,
   file: string,
   toolPair: string,
-  step: number
+  step: number,
 ): ExtractedSnippet[] {
   const snippets: ExtractedSnippet[] = []
 
@@ -344,7 +344,7 @@ function extractCrossLanguageBlocks(
   content: string,
   file: string,
   toolPair: string,
-  step: number
+  step: number,
 ): ExtractedSnippet[] {
   const snippets: ExtractedSnippet[] = []
 
@@ -413,7 +413,7 @@ export function extractSnippetsFromContent(
   content: string,
   file: string,
   toolPair: string,
-  step: number
+  step: number,
 ): ExtractedSnippet[] {
   const snippets: ExtractedSnippet[] = []
 
@@ -433,10 +433,7 @@ export function extractSnippetsFromContent(
 /**
  * Discover MDX files for a tool pair.
  */
-export async function discoverMdxFiles(
-  contentDir: string,
-  toolPair: string
-): Promise<string[]> {
+export async function discoverMdxFiles(contentDir: string, toolPair: string): Promise<string[]> {
   const pattern = join(contentDir, "comparisons", toolPair, "*.mdx")
   const files = await glob(pattern)
 
@@ -449,7 +446,7 @@ export async function discoverMdxFiles(
  */
 export async function extractSnippetsFromToolPair(
   contentDir: string,
-  toolPair: string
+  toolPair: string,
 ): Promise<ExtractedSnippet[]> {
   const files = await discoverMdxFiles(contentDir, toolPair)
   const allSnippets: ExtractedSnippet[] = []
@@ -469,7 +466,7 @@ export async function extractSnippetsFromToolPair(
  * Group snippets by step for session reuse during validation.
  */
 export function groupSnippetsByStep(
-  snippets: readonly ExtractedSnippet[]
+  snippets: readonly ExtractedSnippet[],
 ): Map<number, ExtractedSnippet[]> {
   const grouped = new Map<number, ExtractedSnippet[]>()
 

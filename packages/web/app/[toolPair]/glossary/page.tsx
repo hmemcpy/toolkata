@@ -26,11 +26,7 @@ import { getEffectZioGlossary } from "../../../content/glossary/effect-zio"
  * Generate static params for all known tool pairings.
  */
 export function generateStaticParams(): Array<{ readonly toolPair: string }> {
-  return [
-    { toolPair: "jj-git" },
-    { toolPair: "zio-cats" },
-    { toolPair: "effect-zio" },
-  ]
+  return [{ toolPair: "jj-git" }, { toolPair: "zio-cats" }, { toolPair: "effect-zio" }]
 }
 
 /**

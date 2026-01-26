@@ -130,7 +130,12 @@ const STEPS_BY_PAIRING = {
       description: "Type parameter order difference",
       slug: "01-step",
     },
-    { step: 2, title: "Creating Effects", description: "Effect.succeed, Effect.fail", slug: "02-step" },
+    {
+      step: 2,
+      title: "Creating Effects",
+      description: "Effect.succeed, Effect.fail",
+      slug: "02-step",
+    },
     { step: 3, title: "Error Handling", description: "Typed errors and defects", slug: "03-step" },
     {
       step: 4,
@@ -151,16 +156,31 @@ const STEPS_BY_PAIRING = {
       description: "Effect.acquireRelease, Scope",
       slug: "07-step",
     },
-    { step: 8, title: "Fibers and Forking", description: "Effect.fork, Fiber.join", slug: "08-step" },
+    {
+      step: 8,
+      title: "Fibers and Forking",
+      description: "Effect.fork, Fiber.join",
+      slug: "08-step",
+    },
     {
       step: 9,
       title: "Concurrent Combinators",
       description: "Effect.all, Effect.race",
       slug: "09-step",
     },
-    { step: 10, title: "Ref and Concurrent State", description: "Ref.make, Ref.update", slug: "10-step" },
+    {
+      step: 10,
+      title: "Ref and Concurrent State",
+      description: "Ref.make, Ref.update",
+      slug: "10-step",
+    },
     { step: 11, title: "STM", description: "Software Transactional Memory", slug: "11-step" },
-    { step: 12, title: "Streaming", description: "Stream transformations and Sinks", slug: "12-step" },
+    {
+      step: 12,
+      title: "Streaming",
+      description: "Stream transformations and Sinks",
+      slug: "12-step",
+    },
     {
       step: 13,
       title: "Schema (Validation)",

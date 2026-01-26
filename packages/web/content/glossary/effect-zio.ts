@@ -362,10 +362,7 @@ export function getEffectZioGlossary(): readonly GlossaryEntry[] {
 /**
  * Get glossary entries by category.
  */
-export function getEffectZioGlossaryByCategory(): Record<
-  string,
-  readonly GlossaryEntry[]
-> {
+export function getEffectZioGlossaryByCategory(): Record<string, readonly GlossaryEntry[]> {
   const grouped: Record<string, GlossaryEntry[]> = {}
 
   for (const entry of effectZioGlossary) {
@@ -380,9 +377,7 @@ export function getEffectZioGlossaryByCategory(): Record<
 /**
  * Search effect-zio glossary entries.
  */
-export function searchEffectZioGlossary(
-  query: string
-): readonly GlossaryEntry[] {
+export function searchEffectZioGlossary(query: string): readonly GlossaryEntry[] {
   const lowerQuery = query.toLowerCase()
 
   return effectZioGlossary.filter(
@@ -390,7 +385,7 @@ export function searchEffectZioGlossary(
       entry.fromCommand.toLowerCase().includes(lowerQuery) ||
       entry.toCommand.toLowerCase().includes(lowerQuery) ||
       entry.category.toLowerCase().includes(lowerQuery) ||
-      entry.note.toLowerCase().includes(lowerQuery)
+      entry.note.toLowerCase().includes(lowerQuery),
   )
 }
 

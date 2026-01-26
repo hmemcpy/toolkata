@@ -160,9 +160,9 @@ export default function HelpPage() {
                   working. What do I do?
                 </p>
                 <p className="text-[var(--color-text-muted)] text-sm">
-                  <span className="text-[var(--color-text-dim)]">A:</span> The sandbox may be temporarily
-                  unavailable. You can still follow the lessons by reading the content. If the problem
-                  persists, please report the bug so we can investigate.
+                  <span className="text-[var(--color-text-dim)]">A:</span> The sandbox may be
+                  temporarily unavailable. You can still follow the lessons by reading the content.
+                  If the problem persists, please report the bug so we can investigate.
                 </p>
               </div>
             </div>
@@ -202,7 +202,11 @@ export default function HelpPage() {
 
       <Footer />
 
-      <ReportBugModal isOpen={isBugModalOpen} onClose={() => setIsBugModalOpen(false)} context={{ page: "Help" }} />
+      <ReportBugModal
+        isOpen={isBugModalOpen}
+        onClose={() => setIsBugModalOpen(false)}
+        context={{ page: "Help" }}
+      />
     </div>
   )
 }

@@ -15,11 +15,7 @@ import type { StepMeta } from "../../services/content"
  * for all published tool comparisons, improving performance and SEO.
  */
 export function generateStaticParams() {
-  const pairings = [
-    { slug: "jj-git" },
-    { slug: "zio-cats" },
-    { slug: "effect-zio" },
-  ]
+  const pairings = [{ slug: "jj-git" }, { slug: "zio-cats" }, { slug: "effect-zio" }]
   return pairings.map((pairing) => ({ toolPair: pairing.slug }))
 }
 
@@ -188,29 +184,75 @@ export default async function ComparisonOverviewPage(props: {
       description: "Type parameter order difference",
       slug: "01-step",
     },
-    { step: 2, title: "Creating Effects", description: "Effect.succeed, Effect.fail", slug: "02-step" },
+    {
+      step: 2,
+      title: "Creating Effects",
+      description: "Effect.succeed, Effect.fail",
+      slug: "02-step",
+    },
     { step: 3, title: "Error Handling", description: "Typed errors and defects", slug: "03-step" },
-    { step: 4, title: "Composition with Generators", description: "Effect.gen vs for-comprehension", slug: "04-step" },
-    { step: 5, title: "Services and Context.Tag", description: "Dependency injection patterns", slug: "05-step" },
+    {
+      step: 4,
+      title: "Composition with Generators",
+      description: "Effect.gen vs for-comprehension",
+      slug: "04-step",
+    },
+    {
+      step: 5,
+      title: "Services and Context.Tag",
+      description: "Dependency injection patterns",
+      slug: "05-step",
+    },
     { step: 6, title: "Layers", description: "Layer.succeed, Layer.provide", slug: "06-step" },
-    { step: 7, title: "Resource Management", description: "Effect.acquireRelease, Scope", slug: "07-step" },
-    { step: 8, title: "Fibers and Forking", description: "Effect.fork, Fiber.join", slug: "08-step" },
-    { step: 9, title: "Concurrent Combinators", description: "Effect.all, Effect.race", slug: "09-step" },
-    { step: 10, title: "Ref and Concurrent State", description: "Ref.make, Ref.update", slug: "10-step" },
+    {
+      step: 7,
+      title: "Resource Management",
+      description: "Effect.acquireRelease, Scope",
+      slug: "07-step",
+    },
+    {
+      step: 8,
+      title: "Fibers and Forking",
+      description: "Effect.fork, Fiber.join",
+      slug: "08-step",
+    },
+    {
+      step: 9,
+      title: "Concurrent Combinators",
+      description: "Effect.all, Effect.race",
+      slug: "09-step",
+    },
+    {
+      step: 10,
+      title: "Ref and Concurrent State",
+      description: "Ref.make, Ref.update",
+      slug: "10-step",
+    },
     { step: 11, title: "STM", description: "Software Transactional Memory", slug: "11-step" },
-    { step: 12, title: "Streaming", description: "Stream transformations and Sinks", slug: "12-step" },
-    { step: 13, title: "Schema (Validation)", description: "Schema<A,I,R>, decode/encode", slug: "13-step" },
-    { step: 14, title: "Platform & HTTP", description: "HttpClient, cross-platform abstractions", slug: "14-step" },
+    {
+      step: 12,
+      title: "Streaming",
+      description: "Stream transformations and Sinks",
+      slug: "12-step",
+    },
+    {
+      step: 13,
+      title: "Schema (Validation)",
+      description: "Schema<A,I,R>, decode/encode",
+      slug: "13-step",
+    },
+    {
+      step: 14,
+      title: "Platform & HTTP",
+      description: "HttpClient, cross-platform abstractions",
+      slug: "14-step",
+    },
     { step: 15, title: "Database Access", description: "@effect/sql, SqlClient", slug: "15-step" },
   ]
 
   // Select steps based on tool pair
   const steps =
-    toolPair === "zio-cats"
-      ? catsZioSteps
-      : toolPair === "effect-zio"
-        ? effectZioSteps
-        : jjGitSteps
+    toolPair === "zio-cats" ? catsZioSteps : toolPair === "effect-zio" ? effectZioSteps : jjGitSteps
 
   // Default estimated times for jj-git
   const jjGitTimes = new Map<number, string>([
@@ -268,11 +310,7 @@ export default async function ComparisonOverviewPage(props: {
 
   // Select estimated times based on tool pair
   const estimatedTimes =
-    toolPair === "zio-cats"
-      ? catsZioTimes
-      : toolPair === "effect-zio"
-        ? effectZioTimes
-        : jjGitTimes
+    toolPair === "zio-cats" ? catsZioTimes : toolPair === "effect-zio" ? effectZioTimes : jjGitTimes
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
@@ -356,8 +394,8 @@ export default async function ComparisonOverviewPage(props: {
                   <>
                     <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
                       Effect is a modern functional effect system with TypeScript-first design and
-                      cross-platform support. If you know ZIO, you&apos;ll find the concepts familiar
-                      but with cleaner syntax and better type inference.
+                      cross-platform support. If you know ZIO, you&apos;ll find the concepts
+                      familiar but with cleaner syntax and better type inference.
                     </p>
                     <ul className="space-y-2 text-sm text-[#d1d5dc]">
                       <li className="flex items-start gap-2">

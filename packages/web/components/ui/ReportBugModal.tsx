@@ -37,7 +37,7 @@ export function ReportBugModal({ isOpen, onClose, context }: ReportBugModalProps
     }
 
     const timer = setTimeout(() => {
-      setCloseCountdown(c => c - 1)
+      setCloseCountdown((c) => c - 1)
     }, 1000)
 
     return () => clearTimeout(timer)
@@ -135,9 +135,7 @@ export function ReportBugModal({ isOpen, onClose, context }: ReportBugModalProps
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
           <div className="flex items-center gap-2">
             <span className="text-[var(--color-warning)]">⚠</span>
-            <h2 className="text-sm font-bold font-mono text-[var(--color-text)]">
-              Report Bug
-            </h2>
+            <h2 className="text-sm font-bold font-mono text-[var(--color-text)]">Report Bug</h2>
           </div>
           <button
             type="button"
@@ -166,13 +164,16 @@ export function ReportBugModal({ isOpen, onClose, context }: ReportBugModalProps
           )}
 
           <div>
-            <label htmlFor="description" className="block text-xs font-mono text-[var(--color-text-dim)] mb-1">
+            <label
+              htmlFor="description"
+              className="block text-xs font-mono text-[var(--color-text-dim)] mb-1"
+            >
               Description <span className="text-[var(--color-error)]">*</span>
             </label>
             <textarea
               id="description"
               value={description}
-              onChange={e => setDescription(e.target.value)}
+              onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe the bug... What happened? What did you expect?"
               rows={4}
               required
@@ -183,14 +184,17 @@ export function ReportBugModal({ isOpen, onClose, context }: ReportBugModalProps
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-xs font-mono text-[var(--color-text-dim)] mb-1">
+            <label
+              htmlFor="email"
+              className="block text-xs font-mono text-[var(--color-text-dim)] mb-1"
+            >
               Email (optional, for follow-up)
             </label>
             <input
               id="email"
               type="email"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="your@email.com"
               disabled={submitState === "submitting"}
               maxLength={100}
@@ -207,7 +211,9 @@ export function ReportBugModal({ isOpen, onClose, context }: ReportBugModalProps
           {submitState === "success" && (
             <div className="text-xs font-mono text-[var(--color-accent)] flex items-center gap-2">
               <span>✓</span>
-              <span>Thank you! Your report has been submitted. Closing in {closeCountdown}s...</span>
+              <span>
+                Thank you! Your report has been submitted. Closing in {closeCountdown}s...
+              </span>
             </div>
           )}
 

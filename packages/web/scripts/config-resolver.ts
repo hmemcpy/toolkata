@@ -151,7 +151,7 @@ const stepConfigCache = new Map<string, StepValidationConfig | null>()
  */
 export async function loadPairingConfig(
   contentDir: string,
-  toolPair: string
+  toolPair: string,
 ): Promise<PairingValidationConfig | null> {
   const cacheKey = `${contentDir}:${toolPair}`
   const cached = pairingConfigCache.get(cacheKey)
@@ -211,7 +211,7 @@ function buildPrelude(
         setup?: string[]
         wrapper?: string
       }
-    | undefined
+    | undefined,
 ): ValidationPrelude | undefined {
   if (!rawPrelude) return undefined
 
@@ -239,7 +239,7 @@ function buildEnvConfig(
         setup?: string[]
         wrapper?: string
       }
-    | undefined
+    | undefined,
 ): ValidationEnvironmentConfig {
   const prelude = buildPrelude(rawPrelude)
   if (prelude) {
@@ -269,7 +269,7 @@ function buildPairingConfig(
           wrapper?: string
         }
       }
-    | undefined
+    | undefined,
 ): PairingValidationConfig {
   const prelude = buildPrelude(rawPrelude)
   const secondaryEnv = rawSecondary?.environment
@@ -322,7 +322,7 @@ export async function loadStepConfig(mdxFilePath: string): Promise<StepValidatio
   const config = buildStepConfig(
     raw.validation.imports,
     raw.validation.setup,
-    raw.validation.wrapper
+    raw.validation.wrapper,
   )
 
   stepConfigCache.set(mdxFilePath, config)
@@ -335,7 +335,7 @@ export async function loadStepConfig(mdxFilePath: string): Promise<StepValidatio
 function buildStepConfig(
   imports: string[] | undefined,
   setup: string[] | undefined,
-  wrapper: string | undefined
+  wrapper: string | undefined,
 ): StepValidationConfig {
   // Build object conditionally to satisfy exactOptionalPropertyTypes
   if (imports && setup && wrapper) {
@@ -375,7 +375,7 @@ export function resolveConfig(
   pairingConfig: PairingValidationConfig | null,
   stepConfig: StepValidationConfig | null,
   componentConfig: ComponentValidationConfig | null,
-  language: "bash" | "scala" | "typescript"
+  language: "bash" | "scala" | "typescript",
 ): ResolvedValidationConfig {
   // Check if validation should be skipped
   if (componentConfig?.validate === false) {
@@ -470,7 +470,7 @@ export async function resolveSnippetConfig(
   toolPair: string,
   mdxFilePath: string,
   language: "bash" | "scala" | "typescript",
-  componentConfig?: ComponentValidationConfig
+  componentConfig?: ComponentValidationConfig,
 ): Promise<ResolvedValidationConfig> {
   const pairingConfig = await loadPairingConfig(contentDir, toolPair)
   const stepConfig = await loadStepConfig(mdxFilePath)

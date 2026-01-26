@@ -160,7 +160,9 @@ async function testSilentInit(): Promise<boolean> {
             console.error(`   ERROR: Init command output leaked! Received: ${raw.slice(0, 100)}...`)
           } else {
             // Some output might be acceptable (prompt, etc.) but our marker should not leak
-            console.log(`   Terminal output (pre-init): ${raw.slice(0, 50).replace(/\n/g, "\\n")}...`)
+            console.log(
+              `   Terminal output (pre-init): ${raw.slice(0, 50).replace(/\n/g, "\\n")}...`,
+            )
           }
         }
       }

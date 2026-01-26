@@ -316,10 +316,7 @@ const make = Effect.gen(function* () {
     Effect.gen(function* () {
       // Send initComplete even for empty commands
       if (commands.length === 0) {
-        yield* sendMessage(
-          connection,
-          JSON.stringify({ type: "initComplete", success: true }),
-        )
+        yield* sendMessage(connection, JSON.stringify({ type: "initComplete", success: true }))
         return
       }
 
@@ -353,10 +350,7 @@ const make = Effect.gen(function* () {
         }
 
         // Send initComplete success message
-        yield* sendMessage(
-          connection,
-          JSON.stringify({ type: "initComplete", success: true }),
-        )
+        yield* sendMessage(connection, JSON.stringify({ type: "initComplete", success: true }))
       } catch (error) {
         // Disable output suppression on error too
         if (silent) {
