@@ -42,7 +42,7 @@ export interface GlossaryEntry extends SharedGlossaryEntry {
  * API mappings organized by functional category with notes
  * for important differences.
  */
-export const catsZioGlossary: readonly GlossaryEntry[] = [
+export const zioCatsGlossary: readonly GlossaryEntry[] = [
   // BASICS
   {
     id: "basics-1",
@@ -547,7 +547,7 @@ export function getCategories(): readonly GlossaryCategory[] {
   ]
 
   const categories = new Set<GlossaryCategory>()
-  for (const entry of catsZioGlossary) {
+  for (const entry of zioCatsGlossary) {
     categories.add(entry.category)
   }
 
@@ -564,9 +564,9 @@ export function getCategories(): readonly GlossaryCategory[] {
  *
  * @example
  * ```ts
- * import { filterByCategory, catsZioGlossary } from "@/content/glossary/cats-effect-zio"
+ * import { filterByCategory, zioCatsGlossary } from "@/content/glossary/cats-effect-zio"
  *
- * const basics = filterByCategory(catsZioGlossary, "BASICS")
+ * const basics = filterByCategory(zioCatsGlossary, "BASICS")
  * // Returns 7 entries from BASICS category
  * ```
  */
@@ -589,12 +589,12 @@ export function filterByCategory(
  *
  * @example
  * ```ts
- * import { searchEntries, catsZioGlossary } from "@/content/glossary/cats-effect-zio"
+ * import { searchEntries, zioCatsGlossary } from "@/content/glossary/cats-effect-zio"
  *
- * const results = searchEntries(catsZioGlossary, "pure")
+ * const results = searchEntries(zioCatsGlossary, "pure")
  * // Returns entries containing "pure" in any field
  *
- * const empty = searchEntries(catsZioGlossary, "zzzzzzz")
+ * const empty = searchEntries(zioCatsGlossary, "zzzzzzz")
  * // Returns empty array (no matches)
  * ```
  */

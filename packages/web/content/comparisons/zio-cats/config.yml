@@ -1,6 +1,6 @@
-# Default sandbox settings for cats-zio comparison
+# Default sandbox settings for zio-cats comparison
 #
-# The cats-zio tutorial uses Scastie embeds for Scala code examples,
+# The zio-cats tutorial uses Scastie embeds for Scala code examples,
 # not a terminal sandbox. Terminal functionality is disabled.
 #
 # Override in step frontmatter:

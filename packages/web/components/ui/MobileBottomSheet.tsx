@@ -209,7 +209,7 @@ export function MobileBottomSheet({ toolPair }: MobileBottomSheetProps): ReactNo
 
   // Don't render if:
   // 1. Sandbox config not yet loaded (prevents flash on initial render)
-  // 2. Sandbox is explicitly disabled for this tool pair (e.g., cats-zio uses Scastie)
+  // 2. Sandbox is explicitly disabled for this tool pair (e.g., zio-cats uses Scastie)
   // 3. Sheet is closed
   if (sandboxConfig === undefined || sandboxConfig.enabled === false || !isOpen) {
     return null

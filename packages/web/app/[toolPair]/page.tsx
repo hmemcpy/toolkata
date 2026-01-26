@@ -15,7 +15,7 @@ import type { StepMeta } from "../../services/content"
  * for all published tool comparisons, improving performance and SEO.
  */
 export function generateStaticParams() {
-  const pairings = [{ slug: "jj-git" }, { slug: "cats-zio" }]
+  const pairings = [{ slug: "jj-git" }, { slug: "zio-cats" }]
   return pairings.map((pairing) => ({ toolPair: pairing.slug }))
 }
 
@@ -117,7 +117,7 @@ export default async function ComparisonOverviewPage(props: {
     { step: 12, title: "Revsets", description: "Advanced commit selection", slug: "12-step" },
   ]
 
-  // Steps for cats-zio
+  // Steps for zio-cats
   const catsZioSteps: readonly StepMeta[] = [
     { step: 1, title: "R/E/A Signature", description: "IO type vs ZIO's R/E/A", slug: "01-step" },
     {
@@ -177,7 +177,7 @@ export default async function ComparisonOverviewPage(props: {
   ]
 
   // Select steps based on tool pair
-  const steps = toolPair === "cats-zio" ? catsZioSteps : jjGitSteps
+  const steps = toolPair === "zio-cats" ? catsZioSteps : jjGitSteps
 
   // Default estimated times for jj-git
   const jjGitTimes = new Map<number, string>([
@@ -195,7 +195,7 @@ export default async function ComparisonOverviewPage(props: {
     [12, "~5 min"],
   ])
 
-  // Estimated times for cats-zio
+  // Estimated times for zio-cats
   const catsZioTimes = new Map<number, string>([
     [1, "~4 min"],
     [2, "~5 min"],
@@ -215,7 +215,7 @@ export default async function ComparisonOverviewPage(props: {
   ])
 
   // Select estimated times based on tool pair
-  const estimatedTimes = toolPair === "cats-zio" ? catsZioTimes : jjGitTimes
+  const estimatedTimes = toolPair === "zio-cats" ? catsZioTimes : jjGitTimes
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
@@ -265,7 +265,7 @@ export default async function ComparisonOverviewPage(props: {
                 Why {pairing.to.name}?
               </h2>
               <div className="prose prose-invert max-w-none">
-                {toolPair === "cats-zio" ? (
+                {toolPair === "zio-cats" ? (
                   <>
                     <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
                       ZIO 2 is a powerful effect system with built-in dependency injection and typed

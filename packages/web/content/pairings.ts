@@ -86,7 +86,7 @@ export interface ToolPairing {
  */
 export const toolPairings = [
   {
-    slug: "cats-zio",
+    slug: "zio-cats",
     from: {
       name: "Cats Effect",
       description: "Cats Effect 3",

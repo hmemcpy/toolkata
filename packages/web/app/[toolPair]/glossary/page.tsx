@@ -17,7 +17,7 @@ import { BackButton } from "../../../components/ui/BackButton"
 import { Footer } from "../../../components/ui/Footer"
 import { Header } from "../../../components/ui/Header"
 import { GlossaryClientWrapper } from "../../../components/ui/GlossaryClientWrapper"
-import { catsZioGlossary } from "../../../content/glossary/cats-zio"
+import { zioCatsGlossary } from "../../../content/glossary/zio-cats"
 import { getPairing, isValidPairingSlug } from "../../../content/pairings"
 import { jjGitGlossary } from "../../../content/glossary/jj-git"
 
@@ -25,7 +25,7 @@ import { jjGitGlossary } from "../../../content/glossary/jj-git"
  * Generate static params for all known tool pairings.
  */
 export function generateStaticParams(): Array<{ readonly toolPair: string }> {
-  return [{ toolPair: "jj-git" }, { toolPair: "cats-zio" }]
+  return [{ toolPair: "jj-git" }, { toolPair: "zio-cats" }]
 }
 
 /**
@@ -83,7 +83,7 @@ export default async function GlossaryPage({
   }
 
   // Select glossary based on tool pair
-  const entries = toolPair === "cats-zio" ? catsZioGlossary : jjGitGlossary
+  const entries = toolPair === "zio-cats" ? zioCatsGlossary : jjGitGlossary
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">

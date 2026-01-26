@@ -50,7 +50,7 @@ export interface ShrinkingLayoutProps {
  * while remaining interactive.
  *
  * Does NOT apply margin when:
- * - Sandbox is disabled (e.g., cats-zio uses Scastie, no terminal sidebar)
+ * - Sandbox is disabled (e.g., zio-cats uses Scastie, no terminal sidebar)
  * - Sandbox config is not yet loaded (prevents layout shift on initial render)
  */
 export function ShrinkingLayout({ children }: ShrinkingLayoutProps): ReactNode {
