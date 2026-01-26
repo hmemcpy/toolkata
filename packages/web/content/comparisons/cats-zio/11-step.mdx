@@ -15,8 +15,35 @@ Software Transactional Memory (STM) allows composing individual operations atomi
 With regular `Ref`, individual operations are atomic but don't compose:
 
 <ScalaComparisonBlock
-  zioCode={`import zio._\n\n// BUG: Not atomic across two Refs!\ndef transferUnsafe(\n  from: Ref[Int],\n  to: Ref[Int],\n  amount: Int\n): Task[Unit] =\n  for {\n    balance <- from.get\n    _ <- if (amount > balance)\n           ZIO.fail(new Throwable(\"insufficient funds\"))\n         else from.update(_ - amount) *> to.update(_ + amount)\n  } yield ()`}
-  catsEffectCode={`import cats.effect._\nimport cats.effect.std._\n\n// BUG: Not atomic across two Refs!\ndef transferUnsafe(\n  from: Ref[IO, Int],\n  to: Ref[IO, Int],\n  amount: Int\n): IO[Unit] =\n  for {\n    balance <- from.get\n    _ <- if (amount > balance)\n           IO.raiseError(new Throwable(\"insufficient funds\"))\n         else from.update(_ - amount) *> to.update(_ + amount)\n  } yield ()`}
+  zioCode={`import zio._
+
+// BUG: Not atomic across two Refs!
+def transferUnsafe(
+  from: Ref[Int],
+  to: Ref[Int],
+  amount: Int
+): Task[Unit] =
+  for {
+    balance <- from.get
+    _ <- if (amount > balance)
+           ZIO.fail(new Throwable("insufficient funds"))
+         else from.update(_ - amount) *> to.update(_ + amount)
+  } yield ()`}
+  catsEffectCode={`import cats.effect._
+import cats.effect.std._
+
+// BUG: Not atomic across two Refs!
+def transferUnsafe(
+  from: Ref[IO, Int],
+  to: Ref[IO, Int],
+  amount: Int
+): IO[Unit] =
+  for {
+    balance <- from.get
+    _ <- if (amount > balance)
+           IO.raiseError(new Throwable("insufficient funds"))
+         else from.update(_ - amount) *> to.update(_ + amount)
+  } yield ()`}
   zioComment="Ref operations don't compose atomically"
   catsEffectComment="Same problem with Cats Effect Ref"
 />
@@ -28,8 +55,52 @@ Between `from.get` and the updates, another fiber could transfer funds, causing 
 STM solves this with `TRef` — transactional references whose operations compose:
 
 <ScalaComparisonBlock
-  zioCode={`import zio._\nimport zio.stm._\n\n// Atomic transfer using STM\ndef transfer(\n  from: TRef[Int],\n  to: TRef[Int],\n  amount: Int\n): STM[Throwable, Unit] =\n  for {\n    balance <- from.get\n    _ <- if (amount > balance)\n           STM.fail(new Throwable(\"insufficient funds\"))\n         else from.update(_ - amount) *> to.update(_ + amount)\n  } yield ()\n\n// Commit to run the transaction\nval program: Task[Unit] =\n  for {\n    from <- TRef.make(100).commit\n    to   <- TRef.make(0).commit\n    _    <- transfer(from, to, 50).commit\n  } yield ()`}
-  catsEffectCode={`import cats.effect._\nimport cats.effect.std._\nimport coop._\n\n// Atomic transfer using cats-stm\ndef transfer(\n  from: TRef[IO, Int],\n  to: TRef[IO, Int],\n  amount: Int\n): STM[IO, Either[Throwable, Unit]] =\n  for {\n    balance <- from.get\n    _ <- if (amount > balance)\n           STM.raiseError(new Throwable(\"insufficient funds\"))\n         else from.update(_ - amount) *> to.update(_ + amount)\n  } yield ()\n\n// Commit to run the transaction\nval program: IO[Unit] =\n  for {\n    from <- TRef[IO].of(100)\n    to   <- TRef[IO].of(0)\n    _    <- transfer(from, to, 50).commit`}
+  zioCode={`import zio._
+import zio.stm._
+
+// Atomic transfer using STM
+def transfer(
+  from: TRef[Int],
+  to: TRef[Int],
+  amount: Int
+): STM[Throwable, Unit] =
+  for {
+    balance <- from.get
+    _ <- if (amount > balance)
+           STM.fail(new Throwable("insufficient funds"))
+         else from.update(_ - amount) *> to.update(_ + amount)
+  } yield ()
+
+// Commit to run the transaction
+val program: Task[Unit] =
+  for {
+    from <- TRef.make(100).commit
+    to   <- TRef.make(0).commit
+    _    <- transfer(from, to, 50).commit
+  } yield ()`}
+  catsEffectCode={`import cats.effect._
+import cats.effect.std._
+import coop._
+
+// Atomic transfer using cats-stm
+def transfer(
+  from: TRef[IO, Int],
+  to: TRef[IO, Int],
+  amount: Int
+): STM[IO, Either[Throwable, Unit]] =
+  for {
+    balance <- from.get
+    _ <- if (amount > balance)
+           STM.raiseError(new Throwable("insufficient funds"))
+         else from.update(_ - amount) *> to.update(_ + amount)
+  } yield ()
+
+// Commit to run the transaction
+val program: IO[Unit] =
+  for {
+    from <- TRef[IO].of(100)
+    to   <- TRef[IO].of(0)
+    _    <- transfer(from, to, 50).commit`}
   zioComment="TRef operations compose atomically"
   catsEffectComment="cats-stm requires separate library"
 />
@@ -45,8 +116,53 @@ ZIO includes STM built-in. Cats Effect requires the `coop-cats` library for STM 
 `STM.retry` suspends the transaction until a `TRef` changes — useful for waiting on conditions:
 
 <ScalaComparisonBlock
-  zioCode={`import zio._\nimport zio.stm._\n\n// Wait until sufficient funds\ndef autoDebit(\n  account: TRef[Int],\n  amount: Int\n): STM[Nothing, Unit] =\n  account.get.flatMap { balance =>\n    if (balance >= amount)\n      account.update(_ - amount)\n    else\n      STM.retry // Retry when account changes\n  }\n\n// Retries efficiently (not a busy loop)\nval program =\n  for {\n    account <- TRef.make(0).commit\n    fiber   <- autoDebit(account, 100).commit.fork\n    _       <- account.update(_ + 100).commit\n    _       <- fiber.await\n  } yield ()`}
-  catsEffectCode={`import cats.effect._\nimport cats.effect.std._\nimport coop._\n\n// Wait until sufficient funds\ndef autoDebit(\n  account: TRef[IO, Int],\n  amount: Int\n): STM[IO, Either[Throwable, Unit]] =\n  account.get.flatMap { balance =>\n    if (balance >= amount)\n      account.update(_ - amount)\n    else\n      STM.retry // Retry when account changes\n  }\n\n// Retries efficiently (not a busy loop)\nval program: IO[Unit] =\n  for {\n    account <- TRef[IO].of(0)\n    fiber   <- autoDebit(account, 100).commit.start\n    _       <- account.update(_ + 100)\n    _       <- fiber.join\n  } yield ()`}
+  zioCode={`import zio._
+import zio.stm._
+
+// Wait until sufficient funds
+def autoDebit(
+  account: TRef[Int],
+  amount: Int
+): STM[Nothing, Unit] =
+  account.get.flatMap { balance =>
+    if (balance >= amount)
+      account.update(_ - amount)
+    else
+      STM.retry // Retry when account changes
+  }
+
+// Retries efficiently (not a busy loop)
+val program =
+  for {
+    account <- TRef.make(0).commit
+    fiber   <- autoDebit(account, 100).commit.fork
+    _       <- account.update(_ + 100).commit
+    _       <- fiber.await
+  } yield ()`}
+  catsEffectCode={`import cats.effect._
+import cats.effect.std._
+import coop._
+
+// Wait until sufficient funds
+def autoDebit(
+  account: TRef[IO, Int],
+  amount: Int
+): STM[IO, Either[Throwable, Unit]] =
+  account.get.flatMap { balance =>
+    if (balance >= amount)
+      account.update(_ - amount)
+    else
+      STM.retry // Retry when account changes
+  }
+
+// Retries efficiently (not a busy loop)
+val program: IO[Unit] =
+  for {
+    account <- TRef[IO].of(0)
+    fiber   <- autoDebit(account, 100).commit.start
+    _       <- account.update(_ + 100)
+    _       <- fiber.join
+  } yield ()`}
   zioComment="Retries only when TRef changes"
   catsEffectComment="Same retry semantics"
 />
@@ -58,8 +174,47 @@ ZIO includes STM built-in. Cats Effect requires the `coop-cats` library for STM 
 ZIO STM includes transactional data structures: `TMap`, `TQueue`, `TSet`, `TPriorityQueue`, `TArray`:
 
 <ScalaComparisonBlock
-  zioCode={`import zio._\nimport zio.stm._\n\n// TMap: Transactional hash map\nval stmMap =\n  for {\n    map <- TMap.empty[String, Int].commit\n    _   <- map.put(\"key1\", 42).commit\n    _   <- map.put(\"key2\", 100).commit\n    v1  <- map.get(\"key1\").commit\n  } yield v1\n\n// TQueue: Transactional queue\nval stmQueue =\n  for {\n    queue <- TQueue.unbounded[Int].commit\n    _     <- queue.offer(1).commit\n    _     <- queue.offer(2).commit\n    v     <- queue.take.commit\n  } yield v`}
-  catsEffectCode={`import cats.effect._\nimport cats.effect.std._\nimport coop._\n\n// TMap: Transactional hash map\nval stmMap: IO[Option[Int]] =\n  for {\n    map <- TMap.empty[String, Int].commit\n    _   <- map.put(\"key1\", 42).commit\n    _   <- map.put(\"key2\", 100).commit\n    v1  <- map.get(\"key1\").commit\n  } yield v1\n\n// TQueue: Transactional queue\nval stmQueue: IO[Int] =\n  for {\n    queue <- TQueue.unbounded[IO, Int].commit\n    _     <- queue.offer(1).commit\n    _     <- queue.offer(2).commit\n    v     <- queue.take.commit\n  } yield v`}
+  zioCode={`import zio._
+import zio.stm._
+
+// TMap: Transactional hash map
+val stmMap =
+  for {
+    map <- TMap.empty[String, Int].commit
+    _   <- map.put("key1", 42).commit
+    _   <- map.put("key2", 100).commit
+    v1  <- map.get("key1").commit
+  } yield v1
+
+// TQueue: Transactional queue
+val stmQueue =
+  for {
+    queue <- TQueue.unbounded[Int].commit
+    _     <- queue.offer(1).commit
+    _     <- queue.offer(2).commit
+    v     <- queue.take.commit
+  } yield v`}
+  catsEffectCode={`import cats.effect._
+import cats.effect.std._
+import coop._
+
+// TMap: Transactional hash map
+val stmMap: IO[Option[Int]] =
+  for {
+    map <- TMap.empty[String, Int].commit
+    _   <- map.put("key1", 42).commit
+    _   <- map.put("key2", 100).commit
+    v1  <- map.get("key1").commit
+  } yield v1
+
+// TQueue: Transactional queue
+val stmQueue: IO[Int] =
+  for {
+    queue <- TQueue.unbounded[IO, Int].commit
+    _     <- queue.offer(1).commit
+    _     <- queue.offer(2).commit
+    v     <- queue.take.commit
+  } yield v`}
   zioComment="Built-in STM collections"
   catsEffectComment="STM collections from coop-cats"
 />
@@ -72,8 +227,30 @@ ZIO STM includes transactional data structures: `TMap`, `TQueue`, `TSet`, `TPrio
 - Side effects would execute multiple times
 
 <ScalaComparisonBlock
-  zioCode={`import zio._\nimport zio.stm._\n\n// OK: Pure computation\nval good = STM.succeed(42).map(_ * 2)\n\n// BAD: Side effect in STM\nval bad =\n  STM.suspend {\n    println(\"This may print multiple times!\")\n    STM.succeed(42)\n  }`}
-  catsEffectCode={`import cats.effect._\nimport coop._\n\n// OK: Pure computation\nval good: STM[IO, Int] = STM.pure(42).map(_ * 2)\n\n// BAD: Side effect in STM\nval bad: STM[IO, Int] =\n  STM.suspend {\n    println(\"This may print multiple times!\")\n    STM.pure(42)\n  }`}
+  zioCode={`import zio._
+import zio.stm._
+
+// OK: Pure computation
+val good = STM.succeed(42).map(_ * 2)
+
+// BAD: Side effect in STM
+val bad =
+  STM.suspend {
+    println("This may print multiple times!")
+    STM.succeed(42)
+  }`}
+  catsEffectCode={`import cats.effect._
+import coop._
+
+// OK: Pure computation
+val good: STM[IO, Int] = STM.pure(42).map(_ * 2)
+
+// BAD: Side effect in STM
+val bad: STM[IO, Int] =
+  STM.suspend {
+    println("This may print multiple times!")
+    STM.pure(42)
+  }`}
   zioComment="STM retries violate side-effect expectations"
   catsEffectComment="Same limitation"
 />

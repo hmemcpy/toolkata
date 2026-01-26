@@ -148,7 +148,7 @@ val program =
   for {
     promise <- Promise.make[Nothing, Unit]
     _       <- (Console.print("Hello, ") *> promise.succeed(())).fork
-    _       <- (promise.await *> Console.print("World!\\n")).fork
+    _       <- (promise.await *> Console.print("World!\n")).fork
   } yield ()`}
   catsEffectCode={`import cats.effect._
 import cats.effect.std._
@@ -158,7 +158,7 @@ val program: IO[Unit] =
   for {
     deferred <- Deferred[IO, Unit]
     _        <- (IO.print("Hello, ") *> deferred.complete(())).start
-    _        <- (deferred.get *> IO.print("World!\\n")).start
+    _        <- (deferred.get *> IO.print("World!\n")).start
   } yield ()`}
   zioComment="Promise: succeed/await"
   catsEffectComment="Deferred: complete/get"

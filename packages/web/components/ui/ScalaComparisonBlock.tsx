@@ -48,6 +48,46 @@ interface ScalaComparisonBlockProps {
 }
 
 /**
+ * Trim leading/trailing blank lines and normalize indentation.
+ * Dedents code by finding the minimum indentation across non-empty lines
+ * and removes that amount from each line.
+ */
+function normalizeCode(code: string): string {
+  const lines = code.split("\n")
+
+  // Remove leading blank lines
+  let startIndex = 0
+  while (startIndex < lines.length && lines[startIndex]?.trim() === "") {
+    startIndex++
+  }
+
+  // Remove trailing blank lines
+  let endIndex = lines.length - 1
+  while (endIndex >= startIndex && lines[endIndex]?.trim() === "") {
+    endIndex--
+  }
+
+  const contentLines = lines.slice(startIndex, endIndex + 1)
+
+  // Find minimum indentation (ignoring empty lines)
+  let minIndent = Number.POSITIVE_INFINITY
+  for (const line of contentLines) {
+    if (line.trim() !== "") {
+      const indent = line.match(/^ */)?.[0]?.length ?? 0
+      minIndent = Math.min(minIndent, indent)
+    }
+  }
+
+  // Remove common indentation
+  const dedentedLines = contentLines.map((line) => {
+    if (line.trim() === "") return ""
+    return line.slice(minIndent)
+  })
+
+  return dedentedLines.join("\n")
+}
+
+/**
  * Side-by-side comparison block for Scala code.
  *
  * Shows Cats Effect code (purple) on the left and ZIO code (blue) on the right.
@@ -63,11 +103,11 @@ export async function ScalaComparisonBlock({
 }: ScalaComparisonBlockProps) {
   // Server-side syntax highlighting - no loading state needed
   const [ceHtml, zioHtml] = await Promise.all([
-    codeToHtml(catsEffectCode, {
+    codeToHtml(normalizeCode(catsEffectCode), {
       lang: language,
       theme: "github-dark",
     }),
-    codeToHtml(zioCode, {
+    codeToHtml(normalizeCode(zioCode), {
       lang: language,
       theme: "github-dark",
     }),
