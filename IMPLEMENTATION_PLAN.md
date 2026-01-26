@@ -169,9 +169,20 @@ Build a headless snippet validation system that extracts code from MDX, executes
 
 ### P1.2: Build Integration
 
-- [ ] **Add validate:snippets script** — Update `packages/web/package.json` with `"validate:snippets": "bun run scripts/validate-snippets.ts"`
-- [ ] **Add prebuild hook** — Update package.json with `"prebuild": "bun run validate:snippets --strict"`
-- [ ] **Test full build** — Run `bun run build`, verify validation runs first
+- [x] **Add validate:snippets script** — Update `packages/web/package.json` with `"validate:snippets": "bun run scripts/validate-snippets.ts"`
+- [x] **Add prebuild hook** — Update package.json with `"prebuild": "bun run validate:snippets --strict"`
+- [x] **Test full build** — Verified validation runs before build, lint and typecheck pass
+
+**Skip Logic Improvements (P1.2 bonus):**
+- Removed blanket SideBySide skip that was incorrectly skipping 200+ commands
+- Separated hallucination patterns (catch LLM errors) from context errors (acceptable failures)
+- Expanded context error patterns to include git/jj-specific errors like "not a git repository", "revision doesn't exist"
+- Validation now catches 51 real issues instead of skipping them
+
+**Discovered Issues (jj-git content):**
+- `jj merge` — command doesn't exist in container's jj version (hallucination/version mismatch)
+- `jj --tool`, `jj --ours`, `jj --theirs` — these flags don't exist in jj (hallucinations)
+- Some git commands failing due to missing setup (acceptable context errors)
 
 ### P1.3: CI Integration
 

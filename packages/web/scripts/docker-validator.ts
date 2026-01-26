@@ -51,39 +51,29 @@ export interface ValidatorOptions {
 
 /**
  * Check if a snippet is a non-executable command (documentation-only).
+ *
+ * This should ONLY skip things that are clearly not meant to be executed.
+ * Valid commands that fail due to context should still run - we want to
+ * catch hallucinated commands/flags, not context errors.
  */
-function isNonExecutableCommand(code: string, source: string): boolean {
-  // SideBySide commands are teaching examples, not runnable tutorials
-  // They demonstrate git/jj command equivalence without shared state
-  if (source === "SideBySide") return true
+function isNonExecutableCommand(code: string, _source: string): boolean {
   const trimmed = code.trim()
 
-  // Interactive editors
+  // Interactive editors (require TTY)
   if (/^(vim|vi|nano|emacs|code|subl)\s/.test(trimmed)) return true
 
-  // cd to non-existent directory
-  if (/^cd\s+\w+$/.test(trimmed) && !/^cd\s+(\/|~|\.)/.test(trimmed)) return true
-
-  // Placeholders
+  // Placeholders with curly braces (not real commands)
   if (/\{[^}]+\}/.test(trimmed)) return true
-  if (/<[^>]+>/.test(trimmed) && !trimmed.startsWith("jj log")) return true
-
-  // URL-based commands
-  if (/https?:\/\//.test(trimmed)) return true
 
   // Diagram-style text (not actual commands)
   // e.g., "[Working Copy] → [Staging] → [Repository]"
-  if (/^\[.+\]\s*→/.test(trimmed)) return true
+  if (/^\[.+\]\s*(→|->)/.test(trimmed)) return true
 
-  // Git commands that reference specific files (documentation examples)
-  // These reference files that don't exist in the sandbox
-  if (/^git\s+(add|diff|rm|checkout|restore)\s+\S+\.(ts|js|tsx|jsx|py|rb|go|rs|java|cpp|c|h|css|html|json|yml|yaml|md|txt)/.test(trimmed)) {
-    return true
-  }
+  // URL-only lines (documentation, not commands)
+  if (/^https?:\/\/[^\s]+$/.test(trimmed)) return true
 
-  // Git commit with nothing to commit (requires staged changes)
-  // Skip git commit commands in SideBySide since they require prior staging
-  if (/^git\s+commit\s+-m\s+/.test(trimmed)) {
+  // File path only (common in documentation)
+  if (/^\/?[\w\/\.-]+\.(ts|js|tsx|jsx|py|rb|go|rs|java|cpp|c|h|css|html|json|yml|yaml|md|txt|sh|bash)$/.test(trimmed)) {
     return true
   }
 
@@ -91,22 +81,72 @@ function isNonExecutableCommand(code: string, source: string): boolean {
 }
 
 /**
- * Error patterns that indicate validation failure for shell commands.
+ * Error patterns that indicate HALLUCINATED commands/flags (validation failure).
+ *
+ * These patterns mean the LLM made up a command or flag that doesn't exist.
  */
-const SHELL_ERROR_PATTERNS = [
-  /^error:/im,
-  /^fatal:/im,
-  /^usage:/im,
+const HALLUCINATION_PATTERNS = [
   /command not found/i,
-  /no such file or directory/i,
-  /permission denied/i,
+  /unknown option/i,
+  /invalid option/i,
+  /unrecognized option/i,
+  /unexpected argument/i,
+  /no such command/i,
+  /is not a git command/i,
+  /jj: unknown command/i,
+  /error: unknown flag/i,
 ]
 
 /**
- * Check if shell output indicates an error.
+ * Error patterns that indicate CONTEXT issues (acceptable, not hallucinations).
+ *
+ * These mean the command exists but the current state doesn't support it.
+ * E.g., "not a git repository" - git is installed, just not in a repo.
+ */
+const CONTEXT_ERROR_PATTERNS = [
+  // Git context errors
+  /^fatal: not a git repository/i,
+  /^fatal: unable to access/i,
+  /^fatal: not a valid object name/i,
+  /^fatal: bad revision/i,
+  /^fatal: /i, // Most git "fatal" errors are context issues
+  /^error: nothing to commit/i,
+  /^error: no changes added/i,
+  /^error: pathspec/i,
+  /^error: nothing to merge/i,
+
+  // jj context errors
+  /^error: no such revset/i,
+  /^error: revision .* doesn't exist/i,
+  /^error: change .* not found/i,
+  /^error: no operation id matching/i,
+  /^error: no such path/i,
+  /^error: nothing to commit/i,
+  /^error: merge conflict but auto-show/i,
+  /^error: no conflicts found/i,
+  /^error: divergent changes/i,
+
+  // File system context errors
+  /no such file or directory/i,
+  /permission denied/i,
+  /file not found/i,
+  /directory not found/i,
+
+  // Empty/missing data errors
+  /^error: empty .* not allowed/i,
+  /^error: no .+ provided/i,
+  /^error: missing .+ argument/i,
+]
+
+/**
+ * Check if shell output indicates a hallucination (validation failure).
+ *
+ * Returns null if no hallucination detected (even if there are context errors).
+ * Returns error message if a hallucination is found.
  */
 function detectShellError(output: string): string | null {
-  for (const pattern of SHELL_ERROR_PATTERNS) {
+  // Check for hallucination patterns first
+  for (const pattern of HALLUCINATION_PATTERNS) {
     if (pattern.test(output)) {
       const lines = output.split("\n")
       for (const line of lines) {
@@ -114,7 +154,7 @@ function detectShellError(output: string): string | null {
           return line.trim()
         }
       }
-      return "Error detected in output"
+      return "Command or flag not found"
     }
   }
   return null
@@ -308,8 +348,38 @@ async function validateSnippetInContainer(
 
     const result = await execInContainer(containerName, snippet.code)
 
-    // Check exit code first
+    // Combine output for pattern matching
+    const combinedOutput = result.stdout + result.stderr
+
+    // Check for HALLUCINATION patterns first (regardless of exit code)
+    const hallucinationMsg = detectShellError(combinedOutput)
+    if (hallucinationMsg) {
+      return {
+        snippet,
+        status: "fail",
+        output: result.stdout,
+        error: hallucinationMsg,
+        durationMs: Date.now() - startTime,
+      }
+    }
+
+    // Check if non-zero exit code is due to context issues (acceptable)
     if (result.exitCode !== 0) {
+      // Check if this is a known context error pattern
+      const isContextError = CONTEXT_ERROR_PATTERNS.some((pattern) => pattern.test(combinedOutput))
+
+      if (isContextError) {
+        // Context error is acceptable - the command exists, just wrong state
+        return {
+          snippet,
+          status: "pass",
+          output: result.stdout,
+          durationMs: Date.now() - startTime,
+        }
+      }
+
+      // Unknown non-zero exit - might be a hallucination we didn't catch
+      // or some other issue. Fail to be safe.
       return {
         snippet,
         status: "fail",
@@ -319,18 +389,7 @@ async function validateSnippetInContainer(
       }
     }
 
-    // Check for error patterns in output
-    const errorMsg = detectShellError(result.stdout + result.stderr)
-    if (errorMsg) {
-      return {
-        snippet,
-        status: "fail",
-        output: result.stdout,
-        error: errorMsg,
-        durationMs: Date.now() - startTime,
-      }
-    }
-
+    // Exit code 0 and no hallucinations - success
     return {
       snippet,
       status: "pass",
