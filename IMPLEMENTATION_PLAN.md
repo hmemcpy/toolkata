@@ -110,7 +110,7 @@ All Zionomicon chapters are available at `/tmp/zionomicon/EPUB/text/`. Key chapt
 - [x] **Update pairings.ts** — Change `steps: 10` to `steps: 15` and `estimatedTime` to "~70 min"
 
 **P1 - Content - New Steps** (required for feature completion):
-- [ ] **Create Step 11: STM** — ZIO STM vs cats-stm (TRef, TMap, TQueue, transactions)
+- [x] **Create Step 11: STM** — ZIO STM vs cats-stm (TRef, TMap, TQueue, transactions)
 - [ ] **Create Step 12: Concurrent Structures** — Ref, Queue, Hub, Promise, Semaphore vs cats-effect-std
 - [ ] **Create Step 13: Configuration** — ZIO Config vs Ciris
 - [ ] **Create Step 14: HTTP** — ZIO HTTP vs http4s
@@ -740,18 +740,20 @@ No strict dependencies between steps - each should be standalone. However:
 
 ## Task Count
 
-**Total pending tasks**: 20 main tasks (P0-P4)
-- P0 (Critical): 4 tasks — Infrastructure updates (4 hardcoded locations)
-- P1 (New Steps): 5 tasks — Create steps 11-15
+**Total pending tasks**: 19 main tasks (P0-P4)
+- P0 (Critical): 4 tasks — Infrastructure updates (COMPLETED)
+- P1 (New Steps): 4 tasks — Create steps 12-15
 - P2 (Enhance): 9 tasks — Update steps 1-9
 - P3 (Landing): 2 tasks — Index page, glossary
 - P4 (Validation): 1 task — Build/typecheck/lint
 
-**Completed tasks**: 1/20 main tasks (5%)
+**Completed tasks**: 5/20 main tasks (25%)
+- [x] P0: All infrastructure updates (generateStaticParams, overview page steps/times, pairings.ts)
+- [x] Step 11: STM (11-step.mdx created, validated)
 - [x] Step 10: Interop (version `23.1.0.3` is correct for ZIO 2.x)
 
-**Progress**: 1/20 main tasks complete (5%)
-**Remaining work**: All infrastructure updates, new steps 11-15, and enhancements to steps 1-9
+**Progress**: 5/20 main tasks complete (25%)
+**Remaining work**: Steps 12-15 (new content), enhancements to steps 1-9, landing page updates
 
 ---
 
