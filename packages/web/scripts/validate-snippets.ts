@@ -18,6 +18,7 @@
 
 import { existsSync } from "node:fs"
 import { join, resolve } from "node:path"
+import type { EventEmitter } from "node:events"
 import { glob } from "glob"
 import { extractSnippetsFromToolPair, groupSnippetsByStep } from "./snippet-extractor.js"
 import { resolveSnippetConfig, clearConfigCache } from "./config-resolver.js"
@@ -338,14 +339,16 @@ async function checkDockerPrerequisites(): Promise<boolean> {
 
   return new Promise((resolve) => {
     const proc = spawn("docker", ["image", "inspect", "toolkata-env:bash"], {
-      stdio: ["ignore", "ignore", "ignore"],
+      stdio: ["ignore", "pipe", "pipe"],
     })
 
-    proc.on("close", (code) => {
+    // Cast to EventEmitter to access event methods
+    const emitter = proc as unknown as EventEmitter & { kill(signal?: NodeJS.Signals): void }
+    emitter.on("close", (code: number | null) => {
       resolve(code === 0)
     })
 
-    proc.on("error", () => {
+    emitter.on("error", () => {
       resolve(false)
     })
   })

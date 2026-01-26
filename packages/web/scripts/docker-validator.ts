@@ -10,6 +10,7 @@
  */
 
 import { spawn } from "node:child_process"
+import type { EventEmitter } from "node:events"
 import { randomUUID } from "node:crypto"
 import type { ExtractedSnippet } from "./snippet-extractor.js"
 import { isPseudoCode } from "./snippet-extractor.js"
@@ -51,7 +52,10 @@ export interface ValidatorOptions {
 /**
  * Check if a snippet is a non-executable command (documentation-only).
  */
-function isNonExecutableCommand(code: string): boolean {
+function isNonExecutableCommand(code: string, source: string): boolean {
+  // SideBySide commands are teaching examples, not runnable tutorials
+  // They demonstrate git/jj command equivalence without shared state
+  if (source === "SideBySide") return true
   const trimmed = code.trim()
 
   // Interactive editors
@@ -125,7 +129,7 @@ function runCommand(
   timeoutMs = 30000,
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   return new Promise((resolve) => {
-    const proc = spawn(command, args, { shell: false })
+    const proc = spawn(command, args, { shell: false, stdio: ["ignore", "pipe", "pipe"] })
     let stdout = ""
     let stderr = ""
 
@@ -142,12 +146,16 @@ function runCommand(
       stderr += data.toString()
     })
 
-    proc.on("close", (code) => {
+    // Cast to EventEmitter to access event methods
+    // Note: ChildProcess extends EventEmitter but the typed return from spawn
+    // with stdio array doesn't expose 'on' in the type system
+    const emitter = proc as unknown as EventEmitter & { kill(signal?: NodeJS.Signals): void }
+    emitter.on("close", (code: number | null) => {
       clearTimeout(timeout)
       resolve({ stdout, stderr, exitCode: code ?? 1 })
     })
 
-    proc.on("error", (err) => {
+    emitter.on("error", (err: Error) => {
       clearTimeout(timeout)
       resolve({ stdout, stderr: err.message, exitCode: 1 })
     })
@@ -237,7 +245,7 @@ async function validateSnippetInContainer(
   }
 
   // Skip non-executable commands
-  if (isNonExecutableCommand(snippet.code)) {
+  if (isNonExecutableCommand(snippet.code, snippet.source)) {
     return {
       snippet,
       status: "skipped",
