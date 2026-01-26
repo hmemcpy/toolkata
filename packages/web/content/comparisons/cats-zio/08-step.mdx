@@ -2,8 +2,8 @@
 title: "Streaming"
 step: 8
 description: "ZStream vs fs2 for streaming data"
-zioCommands: []
-ceCommands: []
+zioCommands: ["mapZIO", "filterZIO", "groupedWithin", "catchSome", "retry", "catchAll"]
+ceCommands: ["evalMap", "evalFilter", "groupWithin", "handleErrorWith", "attempt"]
 ---
 
 # Streaming
@@ -49,11 +49,45 @@ ZIO provides ZStream built-in. Cats Effect uses fs2 as the streaming library.
 ## Chunked Processing
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect.IO\nimport fs2.{Stream, Chunk}\n\n// Create from chunk\nval chunked: Stream[IO, Int] =\n  Stream.chunk(Chunk(1, 2, 3, 4, 5))\n\n// Group into chunks\nval grouped: Stream[IO, Chunk[Int]] =\n  Stream.range(1, 100).chunkN(10)`}
-  zioCode={`import zio._\nimport zio.stream._\nimport zio.Chunk\n\n// Create from chunk\nval chunked: ZStream[Any, Nothing, Int] =\n  ZStream.fromChunk(Chunk(1, 2, 3, 4, 5))\n\n// Group into chunks\nval grouped: ZStream[Any, Nothing, Chunk[Int]] =\n  ZStream.range(1, 100).grouped(10)`}
+  catsEffectCode={`import cats.effect.IO\nimport fs2.{Stream, Chunk}\n\n// Create from chunk\nval chunked: Stream[IO, Int] =\n  Stream.chunk(Chunk(1, 2, 3, 4, 5))\n\n// Group into chunks\nval grouped: Stream[IO, Chunk[Int]] =\n  Stream.range(1, 100).chunkN(10)\n\n// Group by time or size\nval groupWithin: Stream[IO, Chunk[Int]] =\n  Stream.range(1, 100).groupWithin(10, 5.seconds)`}
+  zioCode={`import zio._\nimport zio.stream._\nimport zio.Chunk\nimport scala.concurrent.duration._\n\n// Create from chunk\nval chunked: ZStream[Any, Nothing, Int] =\n  ZStream.fromChunk(Chunk(1, 2, 3, 4, 5))\n\n// Group into chunks\nval grouped: ZStream[Any, Nothing, Chunk[Int]] =\n  ZStream.range(1, 100).grouped(10)\n\n// Group by time or size\nval groupWithin: ZStream[Any, Nothing, Chunk[Int]] =\n  ZStream.range(1, 100).groupedWithin(10, 5.seconds)`}
   catsEffectComment="Chunk operations"
   zioComment="Chunk operations"
 />
+
+<Callout variant="tip">
+`groupedWithin` is useful for batching operations: emit chunks when they reach size N or after time T, whichever comes first. This prevents delays when processing slow streams.
+</Callout>
+
+## Error Recovery
+
+Streams can fail during processing. Both libraries provide operators to handle errors.
+
+<ScalaComparisonBlock
+  catsEffectCode={`import cats.effect.IO\nimport fs2.Stream\n\n// Catch specific errors\nval caught: Stream[IO, Int] =\n  Stream.eval(IO.raiseError(new Exception("Failed")))\n    .handleErrorWith {\n      case _: Exception => Stream(0)\n    }\n\n// Retry on failure\nval retried: Stream[IO, Int] =\n  Stream.eval(IO(1))\n    .retry(\n      delay = 100.millis,\n      maxAttempts = 3\n    )\n\n// Catch all errors\nval safe: Stream[IO, Either[Throwable, Int]] =\n  Stream.eval(IO(1)).attempt`}
+  zioCode={`import zio._\nimport zio.stream._\n\n// Catch specific errors\nval caught: ZStream[Any, Nothing, Int] =\n  ZStream.fail(new Exception("Failed"))\n    .catchSome {\n      case _: Exception => ZStream.succeed(0)\n    }\n\n// Retry on failure\nval retried: ZStream[Any, Nothing, Int] =\n  ZStream.fromZIO(ZIO.succeed(1))\n    .retry(Schedule.recurs(3))\n\n// Catch all errors\nval safe: ZStream[Any, Nothing, Either[Throwable, Int]] =\n  ZStream.fromZIO(ZIO.succeed(1))\n    .either`}
+  catsEffectComment="handleErrorWith / retry / attempt"
+  zioComment="catchSome / retry / either"
+/>
+
+<Callout variant="warning">
+Error recovery in streams applies per-element or per-segment. A failing element doesn't terminate the entire stream if caught.
+</Callout>
+
+## Backpressure Handling
+
+Both ZStream and fs2 handle backpressure automatically.
+
+<ScalaComparisonBlock
+  catsEffectCode={`import cats.effect.IO\nimport fs2.Stream\n\n// Fast producer, slow consumer\nval producer: Stream[IO, Int] =\n  Stream.range(1, 1000)\n\nval consumer: Stream[IO, Unit] =\n  producer\n    .evalMap { i =>\n      // Simulate slow processing\n      IO.sleep(100.millis) *> IO.println(i)\n    }`}
+  zioCode={`import zio._\nimport zio.stream._\nimport scala.concurrent.duration._\n\n// Fast producer, slow consumer\nval producer: ZStream[Any, Nothing, Int] =\n  ZStream.range(1, 1000)\n\nval consumer: ZStream[Any, IOException, Unit] =\n  producer\n    .mapZIO { i =>\n      // Simulate slow processing\n      ZIO.sleep(100.millis) *> ZIO.succeed(println(i))\n    }`}
+  catsEffectComment="fs2 handles backpressure automatically"
+  zioComment="ZStream handles backpressure automatically"
+/>
+
+<Callout variant="tip">
+Pull-based streaming means the consumer controls the flow. Fast producers don't overwhelm slow consumers—elements are only pulled when the consumer is ready.
+</Callout>
 
 ## Concurrent Streams
 

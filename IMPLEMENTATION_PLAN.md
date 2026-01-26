@@ -121,10 +121,10 @@ All Zionomicon chapters are available at `/tmp/zionomicon/EPUB/text/`. Key chapt
 - [x] **Update Step 2: Creating Effects** — Add `ZIO.unit`, `ZIO.never`, `ZIO.fromTry`, `ZIO.async`
 - [x] **Update Step 3: Error Handling** — Add `foldZIO`, `foldCauseZIO`, error recovery patterns
 - [x] **Update Step 4: Map/FlatMap Purity** — Add `as`, `tap`, `filterOrFail` utility operators
-- [ ] **Update Step 5: Dependency Injection** — Add `ZLayer.derive` modern pattern
+- [x] **Update Step 5: Dependency Injection** — Add `ZLayer.derive` modern pattern
 - [x] **Update Step 6: Resource Management** — Add `Scope` interface explanation
 - [x] **Update Step 7: Fiber Supervision** — Add `forkDaemon`/`forkScoped`, `raceEither`
-- [ ] **Update Step 8: Streaming** — Add `mapZIO`, `filterZIO`, error recovery
+- [x] **Update Step 8: Streaming** — Add `mapZIO`, `filterZIO`, error recovery
 - [ ] **Update Step 9: Application Structure** — Add Bootstrap, `ZIO.config`, service access
 - [x] **Verify Step 10: Interop** — Version `23.1.0.3` is correct (newer than spec's `3.1.1.0`)
 
@@ -580,17 +580,23 @@ def raceEither[R1 <: R, E1 >: E, B](
 
 ---
 
-- [ ] **Update Step 8: Streaming** — Add effectful operators, error recovery
+- [x] **Update Step 8: Streaming** — Add effectful operators, error recovery
 
 **Why**: ZStream has powerful operators (not in Zionomicon - streaming-specific).
 
 **File**: `packages/web/content/comparisons/cats-zio/08-step.mdx`
 
 **Updates**:
-- Add `mapZIO`, `filterZIO` (effectful operators)
+- Add `mapZIO`, `filterZIO` (effectful operators) - Already existed
 - Add `groupedWithin` (time/size-based grouping)
 - Add error recovery: `catchSome`, `retry`, `catchAll`
 - Explain backpressure handling (automatic in ZStream)
+
+**Completed** 2026-01-26:
+- Added `groupedWithin` section with ScalaComparisonBlock comparing ZIO and fs2
+- Added `catchSome`, `retry`, `either` (catchAll) error recovery operators with ScalaComparisonBlock
+- Added backpressure handling section explaining pull-based streaming
+- Updated frontmatter with new commands: `groupedWithin`, `catchSome`, `retry`, `catchAll`
 
 ---
 
@@ -750,11 +756,11 @@ No strict dependencies between steps - each should be standalone. However:
 **Total pending tasks**: 20 main tasks (P0-P4)
 - P0 (Critical): 4 tasks — Infrastructure updates (COMPLETED)
 - P1 (New Steps): 0 tasks — All new steps created (11-15)
-- P2 (Enhance): 3 tasks — Update steps 8-9 (Step 5 already done, Step 6 done, Step 7 done)
+- P2 (Enhance): 2 tasks — Update steps 9 (Step 5 done, Step 6 done, Step 7 done, Step 8 done)
 - P3 (Landing): 2 tasks — Index page, glossary
 - P4 (Validation): 1 task — Build/typecheck/lint
 
-**Completed tasks**: 14/20 main tasks (70%)
+**Completed tasks**: 15/20 main tasks (75%)
 - [x] P0: All infrastructure updates (generateStaticParams, overview page steps/times, pairings.ts)
 - [x] Step 11: STM (11-step.mdx created, validated)
 - [x] Step 12: Concurrent Structures (12-step.mdx created, validated)
@@ -769,9 +775,10 @@ No strict dependencies between steps - each should be standalone. However:
 - [x] Step 5: Dependency Injection (added ZLayer.derive, retry, orElse patterns)
 - [x] Step 6: Resource Management (added `Scope` interface explanation)
 - [x] Step 7: Fiber Supervision (added forkDaemon, forkScoped, raceEither sections)
+- [x] Step 8: Streaming (added groupedWithin, error recovery, backpressure sections)
 
-**Progress**: 14/20 main tasks complete (70%)
-**Remaining work**: Enhancements to steps 8-9, landing page updates
+**Progress**: 15/20 main tasks complete (75%)
+**Remaining work**: Step 9 enhancement, landing page updates, validation
 
 **Learned**:
 - MDX string interpolation requires escaping `${}` as `\${}` to avoid JSX interpretation
