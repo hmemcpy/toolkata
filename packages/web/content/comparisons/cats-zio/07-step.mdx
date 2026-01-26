@@ -2,8 +2,8 @@
 title: "Fiber Supervision"
 step: 7
 description: "Concurrent execution with fibers"
-zioCommands: []
-ceCommands: []
+zioCommands: ["fork", "forkDaemon", "forkScoped", "raceEither", "race", "join", "await", "interrupt"]
+ceCommands: ["start", "background", "race", "racePair", "join", "cancel"]
 ---
 
 # Fiber Supervision
@@ -18,6 +18,21 @@ Both libraries use lightweight fibers for concurrency. ZIO has built-in supervis
   catsEffectComment="start - spawn a fiber"
   zioComment="fork / forkDaemon - start concurrent execution"
 />
+
+### Fork Variants
+
+ZIO provides three fork strategies for different concurrency needs:
+
+<ScalaComparisonBlock
+  catsEffectCode={`import cats.effect.IO\nimport cats.effect.Resource\n\n// In current scope\nval inScope = IO.println("Working").start\n\n// Background requires explicit lifecycle\ndef backgroundProcess =\n  Resource.make(IO.println("Starting")) { _ =>\n    IO.println("Stopping")\n  }`}
+  zioCode={`import zio._\n\n// In current scope (interrupted with parent)\nval inScope = ZIO.println("Working").fork\n\n// Daemon (outlives parent - use sparingly)\nval daemon = ZIO.println("Background").forkDaemon\n\n// Scoped (explicit lifecycle management)\nval scoped = ZIO.scoped {\n  for {\n    fiber <- ZIO.println("Working").forkScoped\n    _     <- ZIO.sleep(1.second)\n  } yield ()\n}`}
+  catsEffectComment="start + Resource for supervision"
+  zioComment="fork / forkDaemon / forkScoped - scope control"
+/>
+
+<Callout variant="tip">
+**Fork strategy guide:** Use `fork` by default (auto-supervision is safer). Use `forkDaemon` only for background processes that must outlive their parent. Use `forkScoped` when you need explicit scope management or manual resource cleanup.
+</Callout>
 
 ## Joining Fibers
 
@@ -36,6 +51,21 @@ Both libraries use lightweight fibers for concurrency. ZIO has built-in supervis
   catsEffectComment="race / racePair"
   zioComment="race / raceWith"
 />
+
+### Race with Type Information
+
+When you need to know which effect won, use `raceEither` instead of `race`:
+
+<ScalaComparisonBlock
+  catsEffectCode={`import cats.effect.IO\n\n// race gives you the value, but which side won?\nval raced: IO[String] =\n  IO.pure("A").race(IO.pure("B"))\n\n// raceEither preserves type information\nval whichWon: IO[Either[String, String]] =\n  IO.pure("left").raceEither(IO.pure("right"))`}
+  zioCode={`import zio._\n\n// race loses type info (both sides must conform)\nval raced: UIO[String] =\n  ZIO.succeed("A").race(ZIO.succeed("B"))\n\n// raceEither keeps track of which side won\nval whichWon: UIO[Either[String, Int]] =\n  ZIO.succeed("left").raceEither(ZIO.succeed(42))`}
+  catsEffectComment="race / raceEither - winner with type info"
+  zioComment="race / raceEither - winner with type info"
+/>
+
+<Callout variant="tip">
+**raceEither semantics**: First successful result wins and the loser is interrupted. If the first to complete fails, it waits for the second effect. If both fail, the error contains both causes.
+</Callout>
 
 ## Timeout
 

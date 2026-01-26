@@ -123,7 +123,7 @@ All Zionomicon chapters are available at `/tmp/zionomicon/EPUB/text/`. Key chapt
 - [x] **Update Step 4: Map/FlatMap Purity** — Add `as`, `tap`, `filterOrFail` utility operators
 - [ ] **Update Step 5: Dependency Injection** — Add `ZLayer.derive` modern pattern
 - [x] **Update Step 6: Resource Management** — Add `Scope` interface explanation
-- [ ] **Update Step 7: Fiber Supervision** — Add `forkDaemon`/`forkScoped`, `raceEither`
+- [x] **Update Step 7: Fiber Supervision** — Add `forkDaemon`/`forkScoped`, `raceEither`
 - [ ] **Update Step 8: Streaming** — Add `mapZIO`, `filterZIO`, error recovery
 - [ ] **Update Step 9: Application Structure** — Add Bootstrap, `ZIO.config`, service access
 - [x] **Verify Step 10: Interop** — Version `23.1.0.3` is correct (newer than spec's `3.1.1.0`)
@@ -750,11 +750,11 @@ No strict dependencies between steps - each should be standalone. However:
 **Total pending tasks**: 20 main tasks (P0-P4)
 - P0 (Critical): 4 tasks — Infrastructure updates (COMPLETED)
 - P1 (New Steps): 0 tasks — All new steps created (11-15)
-- P2 (Enhance): 4 tasks — Update steps 6-9
+- P2 (Enhance): 3 tasks — Update steps 8-9 (Step 5 already done, Step 6 done, Step 7 done)
 - P3 (Landing): 2 tasks — Index page, glossary
 - P4 (Validation): 1 task — Build/typecheck/lint
 
-**Completed tasks**: 13/20 main tasks (65%)
+**Completed tasks**: 14/20 main tasks (70%)
 - [x] P0: All infrastructure updates (generateStaticParams, overview page steps/times, pairings.ts)
 - [x] Step 11: STM (11-step.mdx created, validated)
 - [x] Step 12: Concurrent Structures (12-step.mdx created, validated)
@@ -767,9 +767,11 @@ No strict dependencies between steps - each should be standalone. However:
 - [x] Step 3: Error Handling (added foldZIO, foldCauseZIO, orElse variants)
 - [x] Step 4: Map/FlatMap Purity (added `as`, `tap`, `filterOrFail` utility operators)
 - [x] Step 5: Dependency Injection (added ZLayer.derive, retry, orElse patterns)
+- [x] Step 6: Resource Management (added `Scope` interface explanation)
+- [x] Step 7: Fiber Supervision (added forkDaemon, forkScoped, raceEither sections)
 
-**Progress**: 13/20 main tasks complete (65%)
-**Remaining work**: Enhancements to steps 6-9, landing page updates
+**Progress**: 14/20 main tasks complete (70%)
+**Remaining work**: Enhancements to steps 8-9, landing page updates
 
 **Learned**:
 - MDX string interpolation requires escaping `${}` as `\${}` to avoid JSX interpretation
