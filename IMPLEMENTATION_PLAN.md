@@ -502,7 +502,7 @@ tx.transact(transactor)
 
 ---
 
-- [ ] **Update Step 5: Dependency Injection** — Add `ZLayer.derive` modern pattern
+- [x] **Update Step 5: Dependency Injection** — Add `ZLayer.derive` modern pattern
 
 **Why**: Zionomicon ch019-021 recommends `ZLayer.derive` as the modern approach.
 
@@ -530,6 +530,11 @@ val layer = RemoteDatabase.layer.retry(
 // Fallback pattern
 val layer = defaultLayer.orElse(fallbackLayer)
 ```
+
+**Completed** 2026-01-26:
+- Added `ZLayer.derive` section with ScalaComparisonBlock comparing ZIO automatic derivation vs Cats Effect manual wiring
+- Added error handling section with `retry` and `orElse` patterns
+- Updated frontmatter with new commands
 
 ---
 
@@ -761,11 +766,11 @@ No strict dependencies between steps - each should be standalone. However:
 **Total pending tasks**: 20 main tasks (P0-P4)
 - P0 (Critical): 4 tasks — Infrastructure updates (COMPLETED)
 - P1 (New Steps): 0 tasks — All new steps created (11-15)
-- P2 (Enhance): 5 tasks — Update steps 5-9
+- P2 (Enhance): 4 tasks — Update steps 6-9
 - P3 (Landing): 2 tasks — Index page, glossary
 - P4 (Validation): 1 task — Build/typecheck/lint
 
-**Completed tasks**: 12/20 main tasks (60%)
+**Completed tasks**: 13/20 main tasks (65%)
 - [x] P0: All infrastructure updates (generateStaticParams, overview page steps/times, pairings.ts)
 - [x] Step 11: STM (11-step.mdx created, validated)
 - [x] Step 12: Concurrent Structures (12-step.mdx created, validated)
@@ -777,9 +782,10 @@ No strict dependencies between steps - each should be standalone. However:
 - [x] Step 2: Creating Effects (added ZIO.unit, ZIO.never, ZIO.fromTry)
 - [x] Step 3: Error Handling (added foldZIO, foldCauseZIO, orElse variants)
 - [x] Step 4: Map/FlatMap Purity (added `as`, `tap`, `filterOrFail` utility operators)
+- [x] Step 5: Dependency Injection (added ZLayer.derive, retry, orElse patterns)
 
-**Progress**: 12/20 main tasks complete (60%)
-**Remaining work**: Enhancements to steps 5-9, landing page updates
+**Progress**: 13/20 main tasks complete (65%)
+**Remaining work**: Enhancements to steps 6-9, landing page updates
 
 **Learned**:
 - MDX string interpolation requires escaping `${}` as `\${}` to avoid JSX interpretation

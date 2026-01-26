@@ -2,8 +2,8 @@
 title: "Dependency Injection"
 step: 5
 description: "ZLayer vs Tagless Final patterns"
-zioCommands: []
-ceCommands: []
+zioCommands: ["ZLayer.derive", "ZLayer.succeed", "ZLayer.fromZIO", "ZLayer.retry", "ZLayer.orElse"]
+ceCommands: ["Kleisli", "ReaderT"]
 ---
 
 # Dependency Injection
@@ -59,6 +59,36 @@ Cats Effect relies on the compiler checking function parameters.
   catsEffectComment="Pass dependencies at call site"
   zioComment="provideLayer eliminates R requirement"
 />
+
+## Automatic Layer Derivation
+
+ZIO provides `ZLayer.derive` to automatically generate layers from case class constructors.
+
+<ScalaComparisonBlock
+  zioCode={`import zio._\n\ntrait ServiceA\n\ncase class FooService(ref: Ref[Int], a: ServiceA, b: String)\n\nobject FooService {\n  // Automatic derivation - detects all dependencies\n  val layer: ZLayer[Ref[Int] & ServiceA & String, Nothing, FooService] =\n    ZLayer.derive[FooService]\n}`}
+  catsEffectCode={`import cats.effect._\n\ntrait ServiceA\n\ncase class FooService(ref: Ref[IO, Int], a: ServiceA, b: String)\n\n// Cats Effect: No built-in derivation\n// Must manually wire dependencies\ndef makeFooService(\n  ref: Ref[IO, Int],\n  a: ServiceA,\n  b: String\n): Resource[IO, FooService] =\n  Resource.pure(FooService(ref, a, b))`}
+  zioComment="Automatic layer derivation"
+  catsEffectComment="Manual dependency wiring required"
+/>
+
+<Callout variant="tip">
+`ZLayer.derive` automatically detects constructor parameters and their types. It works with ZIO data structures like `Ref`, `Queue`, `FiberRef`, and more.
+</Callout>
+
+## Error Handling in Layers
+
+Layers can fail during construction. ZIO provides operators to handle these failures.
+
+<ScalaComparisonBlock
+  zioCode={`import zio._\nimport zio.Schedule._\n\n// Retry pattern\nval layer = RemoteDatabase.layer.retry(\n  Schedule.fibonacci(1.second) && Schedule.recurs(5)\n)\n\n// Fallback pattern\nval resilientLayer =\n  remoteLayer.orElse(localLayer)`}
+  catsEffectCode={`import cats.effect._\nimport scala.concurrent.duration._\nimport cats.effect.implicits._\n\n// Retry with Resource\nval resource = \n  RemoteDatabase.resource\n    .retry(Schedule.spaced(1.second))\n\n// Fallback pattern\nval resilientResource =\n  remoteResource.orElse(localResource)`}
+  zioComment="ZLayer.retry and orElse"
+  catsEffectComment="Resource retry and fallback"
+/>
+
+<Callout variant="tip">
+Use `retry` for transient failures (network timeouts) and `orElse` for fallback implementations (local vs remote).
+</Callout>
 
 ## Next Steps
 
