@@ -2,6 +2,8 @@
 /**
  * Snippet Validation CLI - Validates code snippets from MDX content.
  *
+ * Uses isolated Docker containers for each snippet validation.
+ *
  * Usage:
  *   bun run scripts/validate-snippets.ts [options]
  *
@@ -9,18 +11,14 @@
  *   --strict          Fail on any error (for CI)
  *   --tool-pair X     Only validate specific tool pair (e.g., jj-git, zio-cats)
  *   --step N          Only validate specific step number
+ *   --parallel        Run snippets in parallel (faster, but harder to debug)
  *   --verbose         Show all output, not just errors
  *   --help            Show this help message
- *
- * Environment Variables:
- *   SANDBOX_API_URL   Sandbox API URL (default: http://localhost:3001)
- *   SANDBOX_API_KEY   Sandbox API key (default: dev-api-key)
  */
 
 import { existsSync } from "node:fs"
 import { join, resolve } from "node:path"
 import { glob } from "glob"
-import { ensureSandboxRunning, type SandboxManager } from "./sandbox-manager.js"
 import { extractSnippetsFromToolPair, groupSnippetsByStep } from "./snippet-extractor.js"
 import { resolveSnippetConfig, clearConfigCache } from "./config-resolver.js"
 import {
@@ -28,7 +26,7 @@ import {
   computeSummary,
   type StepValidationResult,
   type ValidationSummary,
-} from "./headless-validator.js"
+} from "./docker-validator.js"
 
 /**
  * CLI options parsed from command line arguments.
@@ -37,6 +35,7 @@ interface CliOptions {
   readonly strict: boolean
   readonly toolPair?: string
   readonly step?: number
+  readonly parallel: boolean
   readonly verbose: boolean
   readonly help: boolean
 }
@@ -48,6 +47,7 @@ function parseArgs(args: string[]): CliOptions {
   let strict = false
   let toolPair: string | undefined
   let step: number | undefined
+  let parallel = false
   let verbose = false
   let help = false
 
@@ -75,6 +75,9 @@ function parseArgs(args: string[]): CliOptions {
         }
         break
       }
+      case "--parallel":
+        parallel = true
+        break
       case "--verbose":
         verbose = true
         break
@@ -93,7 +96,7 @@ function parseArgs(args: string[]): CliOptions {
   }
 
   // Build return object conditionally to satisfy exactOptionalPropertyTypes
-  const base = { strict, verbose, help }
+  const base = { strict, parallel, verbose, help }
   if (toolPair !== undefined && step !== undefined) {
     return { ...base, toolPair, step }
   }
@@ -113,6 +116,8 @@ function printHelp(): void {
   console.log(`
 Snippet Validation CLI - Validates code snippets from MDX content
 
+Uses isolated Docker containers for each snippet validation.
+
 Usage:
   bun run scripts/validate-snippets.ts [options]
 
@@ -120,16 +125,19 @@ Options:
   --strict          Fail on any error (for CI)
   --tool-pair X     Only validate specific tool pair (e.g., jj-git, zio-cats)
   --step N          Only validate specific step number
+  --parallel        Run snippets in parallel (faster, but harder to debug)
   --verbose         Show all output, not just errors
   --help, -h        Show this help message
 
-Environment Variables:
-  SANDBOX_API_URL   Sandbox API URL (default: http://localhost:3001)
-  SANDBOX_API_KEY   Sandbox API key (default: dev-api-key)
+Prerequisites:
+  - Docker must be running
+  - Docker image 'toolkata-env:bash' must be built
+    (run: bun run --cwd packages/sandbox-api docker:build)
 
 Examples:
   bun run scripts/validate-snippets.ts                    # Validate all
   bun run scripts/validate-snippets.ts --tool-pair jj-git # Validate jj-git only
+  bun run scripts/validate-snippets.ts --parallel         # Run in parallel (faster)
   bun run scripts/validate-snippets.ts --strict           # Fail build on errors
   bun run scripts/validate-snippets.ts --verbose          # Show detailed output
 `)
@@ -248,7 +256,6 @@ async function validateToolPairFull(
   toolPair: string,
   contentDir: string,
   options: CliOptions,
-  sandboxUrl: string,
 ): Promise<{ stepResults: StepValidationResult[]; summary: ValidationSummary }> {
   console.log(`\nValidating ${toolPair}...`)
 
@@ -295,29 +302,24 @@ async function validateToolPairFull(
 
   const stepResults: StepValidationResult[] = []
 
-  // Build config map for all steps
-  const configs = new Map<number, Awaited<ReturnType<typeof resolveSnippetConfig>>>()
-  for (const step of stepsToValidate) {
-    const stepSnippets = groupedSnippets.get(step) ?? []
-    const firstSnippet = stepSnippets[0]
-    if (firstSnippet) {
-      // Resolve the full path to the MDX file
-      const mdxPath = resolve(contentDir, "..", firstSnippet.file.replace("content/", ""))
-      // Normalize "shell" to "bash" for config resolution
-      const language: "bash" | "scala" | "typescript" =
-        firstSnippet.language === "shell" ? "bash" : firstSnippet.language
-      const config = await resolveSnippetConfig(contentDir, toolPair, mdxPath, language)
-      configs.set(step, config)
-    }
-  }
-
   // Validate each step
   for (const step of stepsToValidate) {
     const stepSnippets = groupedSnippets.get(step) ?? []
+    const firstSnippet = stepSnippets[0]
 
-    const result = await validateStep(toolPair, step, stepSnippets, configs, {
-      sandboxUrl,
+    if (!firstSnippet) continue
+
+    // Resolve the full path to the MDX file
+    const mdxPath = resolve(contentDir, "..", firstSnippet.file.replace("content/", ""))
+    // Normalize "shell" to "bash" for config resolution
+    const language: "bash" | "scala" | "typescript" =
+      firstSnippet.language === "shell" ? "bash" : firstSnippet.language
+    const config = await resolveSnippetConfig(contentDir, toolPair, mdxPath, language)
+
+    const result = await validateStep(toolPair, step, stepSnippets, config, {
       verbose: options.verbose,
+      parallel: options.parallel,
+      maxParallel: 4,
     })
 
     stepResults.push(result)
@@ -328,7 +330,28 @@ async function validateToolPairFull(
   return { stepResults, summary }
 }
 
-// Script-level timeout (5 minutes for full validation, can be reduced for single steps)
+/**
+ * Check if Docker is available and the image exists.
+ */
+async function checkDockerPrerequisites(): Promise<boolean> {
+  const { spawn } = await import("node:child_process")
+
+  return new Promise((resolve) => {
+    const proc = spawn("docker", ["image", "inspect", "toolkata-env:bash"], {
+      stdio: ["ignore", "ignore", "ignore"],
+    })
+
+    proc.on("close", (code) => {
+      resolve(code === 0)
+    })
+
+    proc.on("error", () => {
+      resolve(false)
+    })
+  })
+}
+
+// Script-level timeout (5 minutes for full validation)
 const SCRIPT_TIMEOUT_MS = 5 * 60 * 1000
 
 /**
@@ -353,12 +376,22 @@ async function main(): Promise<void> {
 
   console.log("=== Snippet Validation ===")
 
+  // Check Docker prerequisites
+  const dockerReady = await checkDockerPrerequisites()
+  if (!dockerReady) {
+    console.error("Error: Docker image 'toolkata-env:bash' not found.")
+    console.error("Build it with: bun run --cwd packages/sandbox-api docker:build")
+    clearTimeout(timeoutId)
+    process.exit(1)
+  }
+
   // Determine content directory (relative to this script)
   const scriptDir = new URL(".", import.meta.url).pathname
   const contentDir = resolve(scriptDir, "..", "content")
 
   if (!existsSync(contentDir)) {
     console.error(`Error: Content directory not found: ${contentDir}`)
+    clearTimeout(timeoutId)
     process.exit(1)
   }
 
@@ -370,6 +403,7 @@ async function main(): Promise<void> {
     if (!existsSync(configPath)) {
       console.error(`Error: Tool pair not found: ${options.toolPair}`)
       console.error(`Expected config at: ${configPath}`)
+      clearTimeout(timeoutId)
       process.exit(1)
     }
     toolPairs = [options.toolPair]
@@ -380,47 +414,29 @@ async function main(): Promise<void> {
 
   if (toolPairs.length === 0) {
     console.log("No tool pairs found to validate.")
+    clearTimeout(timeoutId)
     process.exit(0)
   }
 
   console.log(`Tool pairs: ${toolPairs.join(", ")}`)
-
-  // Ensure sandbox is running
-  let sandboxManager: SandboxManager | null = null
-
-  // Set up signal handlers for graceful cleanup
-  const cleanup = async () => {
-    console.log("\nCleaning up...")
-    clearTimeout(timeoutId)
-    if (sandboxManager) {
-      await sandboxManager.cleanup()
-    }
-  }
-
-  process.on("SIGINT", async () => {
-    console.log("\nReceived SIGINT, cleaning up...")
-    await cleanup()
-    process.exit(130)
-  })
-
-  process.on("SIGTERM", async () => {
-    console.log("\nReceived SIGTERM, cleaning up...")
-    await cleanup()
-    process.exit(143)
-  })
-
-  try {
-    sandboxManager = await ensureSandboxRunning()
-  } catch (err: unknown) {
-    console.error(
-      `Error: Failed to start sandbox-api: ${err instanceof Error ? err.message : String(err)}`,
-    )
-    console.error("Make sure Docker is running and the sandbox-api can be started.")
-    clearTimeout(timeoutId)
-    process.exit(1)
+  if (options.parallel) {
+    console.log("Mode: parallel (4 concurrent containers)")
   }
 
   const allSummaries = new Map<string, ValidationSummary>()
+
+  // Set up signal handlers for graceful cleanup
+  process.on("SIGINT", () => {
+    console.log("\nReceived SIGINT, exiting...")
+    clearTimeout(timeoutId)
+    process.exit(130)
+  })
+
+  process.on("SIGTERM", () => {
+    console.log("\nReceived SIGTERM, exiting...")
+    clearTimeout(timeoutId)
+    process.exit(143)
+  })
 
   try {
     // Clear config cache to ensure fresh configs
@@ -428,12 +444,7 @@ async function main(): Promise<void> {
 
     // Validate each tool pair
     for (const toolPair of toolPairs) {
-      const { summary } = await validateToolPairFull(
-        toolPair,
-        contentDir,
-        options,
-        sandboxManager.url,
-      )
+      const { summary } = await validateToolPairFull(toolPair, contentDir, options)
       allSummaries.set(toolPair, summary)
     }
 
@@ -453,11 +464,7 @@ async function main(): Promise<void> {
       process.exit(1)
     }
   } finally {
-    // Clean up sandbox and timeout
     clearTimeout(timeoutId)
-    if (sandboxManager) {
-      await sandboxManager.cleanup()
-    }
   }
 }
 
