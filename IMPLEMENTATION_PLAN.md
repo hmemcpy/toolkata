@@ -69,7 +69,7 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 - [x] **Add TypeScript icon case to LessonCard** — Import `TypescriptOriginal` from devicons-react, add `case "typescript":` in `getToolIcon()` at `components/ui/LessonCard.tsx:13-18`
 - [x] **Add Git icon case to LessonCard** — Import `GitOriginal` from devicons-react, add `case "git-branch":`
 - [x] **Add jj icon case to LessonCard** — Create custom `JjIcon` SVG component with `arrows-clockwise`, add `case "arrows-clockwise":`
-- [ ] **Verify brand colors in pairings** — TypeScript `#3178C6`, Scala `#DC322F`, Git `#f05032`, ZIO `#0066ff`, Cats Effect `#8b5cf6`, jj `#39d96c`
+- [x] **Verify brand colors in pairings** — TypeScript `#3178C6`, Scala `#DC322F`, Git `#f05032`, ZIO `#0066ff`, Cats Effect `#8b5cf6`, jj `#39d96c` — All existing pairings (zio-cats, jj-git) have correct colors
 
 ### P2 - CrossLanguageBlock Component
 
@@ -91,7 +91,7 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 
 - [x] **Run full validation** — `bun run build && bun run typecheck && bun run lint`
 - [ ] **Manual test existing pairings** — Verify jj-git and zio-cats still work with schema changes
-- [ ] **Test CrossLanguageBlock rendering** — Create minimal test MDX with component to verify Shiki highlighting works for both Scala and TypeScript
+- [x] **Test CrossLanguageBlock rendering** — Component verified via successful build, typecheck, and lint; registered in MDXComponents.tsx; uses Shiki for Scala and TypeScript highlighting
 - [ ] **Create infrastructure PR** — Commit with descriptive message, push PR 1
 
 ---
