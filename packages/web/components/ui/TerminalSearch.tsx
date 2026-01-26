@@ -47,21 +47,32 @@ export function TerminalSearch() {
           // Round-robin through pairings, max 2 per pairing
           const diverse: SearchableStep[] = []
           const pairingKeys = Array.from(byPairing.keys())
-          let index = 0
+          const maxPerPairing = 2
+          const maxResults = 6
 
-          while (diverse.length < 6 && index < pairingKeys.length * 2) {
+          // Track how many steps we've taken from each pairing
+          const takenFromPairing = new Map<string, number>()
+          for (const key of pairingKeys) {
+            takenFromPairing.set(key, 0)
+          }
+
+          for (let round = 0; round < maxPerPairing; round++) {
             for (const pairingKey of pairingKeys) {
+              if (diverse.length >= maxResults) break
+
               const steps = byPairing.get(pairingKey)
               if (!steps) continue
 
-              const stepIndex = Math.floor(index / pairingKeys.length)
-              if (stepIndex < steps.length && stepIndex < 2) {
-                const step = steps[stepIndex]
-                if (step) diverse.push(step)
+              const taken = takenFromPairing.get(pairingKey) ?? 0
+              if (taken < steps.length) {
+                const step = steps[taken]
+                if (step) {
+                  diverse.push(step)
+                  takenFromPairing.set(pairingKey, taken + 1)
+                }
               }
-              if (diverse.length >= 6) break
             }
-            index++
+            if (diverse.length >= maxResults) break
           }
 
           return diverse
