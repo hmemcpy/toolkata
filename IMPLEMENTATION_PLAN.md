@@ -108,13 +108,17 @@ Build a headless snippet validation system that extracts code from MDX, executes
 
 ### P0.3: Snippet Extraction (jj-git)
 
-- [ ] **Create snippet-extractor.ts** — New file `packages/web/scripts/snippet-extractor.ts`
-- [ ] **Implement MDX file discovery** — Glob `content/comparisons/jj-git/**/*.mdx`, skip index.mdx
-- [ ] **Extract SideBySide commands** — Regex for `<SideBySide` component, parse `fromCommands` and `toCommands` arrays
-- [ ] **Extract TryIt commands** — Regex for `<TryIt` component, parse `command` prop
-- [ ] **Extract markdown code blocks** — Regex for ` ```bash` blocks
-- [ ] **Implement normalizeCode** — Strip `|` prefix (reuse logic from ScalaComparisonBlock if needed)
-- [ ] **Output ExtractedSnippet interface** — `{ file, toolPair, step, lineStart, language, source, code, prop?, validate? }`
+- [x] **Create snippet-extractor.ts** — New file `packages/web/scripts/snippet-extractor.ts`
+- [x] **Implement MDX file discovery** — `discoverMdxFiles()` using glob, filters out index.mdx
+- [x] **Extract SideBySide commands** — `extractSideBySideSnippets()` with `fromCommands` and `toCommands` arrays
+- [x] **Extract TryIt commands** — `extractTryItSnippets()` parses `command` prop
+- [x] **Extract markdown code blocks** — `extractCodeBlocks()` for ```bash and ```shell blocks
+- [x] **Implement normalizeCode** — Strips `|` prefix (stripMargin format) from code
+- [x] **Output ExtractedSnippet interface** — Complete interface with file, toolPair, step, lineStart, language, source, code, prop?, validate?
+- [x] **Additional: Extract ScalaComparisonBlock** — `extractScalaComparisonBlocks()` for zioCode/catsEffectCode (P2 prep)
+- [x] **Additional: Extract CrossLanguageBlock** — `extractCrossLanguageBlocks()` for zioCode/effectCode (P2 prep)
+- [x] **Additional: groupSnippetsByStep utility** — Groups snippets by step number for session reuse
+- [x] **Additional: isPseudoCode utility** — Detects pseudo-code patterns (???, ..., comments-only)
 
 ### P0.4: Config Resolution
 
@@ -314,15 +318,16 @@ _(Updated during implementation)_
 - **Existing:** Client-side `initComplete` handler is already implemented and working
 - **Existing:** Multi-environment Docker infrastructure (bash, node, python) is complete
 - **Pattern:** Silent init needs to temporarily suppress PTY → WebSocket forwarding during command execution
-- **Note:** `packages/web/scripts/` directory does not exist yet — need to create it first
+- **Note:** `packages/web/scripts/` directory now exists with `sandbox-manager.ts` and `snippet-extractor.ts`
 - **Solved:** Used per-session `suppressionState` Map to track output suppression. PTY callback checks this map before sending data.
 - **Pre-existing bug:** `packages/sandbox-api` has TypeScript errors when run with `bun run typecheck` (uses stricter settings than root tsconfig). These are unrelated to snippet validation work.
+- **Snippet extraction tested:** 324 snippets extracted from jj-git (12 steps), includes SideBySide, TryIt, and codeblock sources
 
 ---
 
 ## Progress
 
-**P0**: 11/39 tasks complete (28%)
+**P0**: 18/42 tasks complete (43%) — P0.3 Snippet Extraction complete
 **P1**: 0/13 tasks complete (0%)
 **P2**: 0/25 tasks complete (0%)
-**Total**: 11/77 tasks complete (14%)
+**Total**: 18/80 tasks complete (23%)
