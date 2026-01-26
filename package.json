@@ -32,6 +32,7 @@
     "typescript": "^5.7.3"
   },
   "dependencies": {
+    "@vercel/analytics": "^1.6.1",
     "next-mdx-remote": "^5.0.0",
     "shiki": "^3.21.0"
   }
