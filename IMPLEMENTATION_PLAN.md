@@ -111,7 +111,7 @@ All Zionomicon chapters are available at `/tmp/zionomicon/EPUB/text/`. Key chapt
 
 **P1 - Content - New Steps** (required for feature completion):
 - [x] **Create Step 11: STM** — ZIO STM vs cats-stm (TRef, TMap, TQueue, transactions)
-- [ ] **Create Step 12: Concurrent Structures** — Ref, Queue, Hub, Promise, Semaphore vs cats-effect-std
+- [x] **Create Step 12: Concurrent Structures** — Ref, Queue, Hub, Promise, Semaphore vs cats-effect-std
 - [ ] **Create Step 13: Configuration** — ZIO Config vs Ciris
 - [ ] **Create Step 14: HTTP** — ZIO HTTP vs http4s
 - [ ] **Create Step 15: Database** — ZIO JDBC/Quill vs Doobie/Skunk
@@ -270,7 +270,7 @@ def transfer(from: TRef[Int], to: TRef[Int], amount: Int): STM[Nothing, Unit] =
 
 ---
 
-- [ ] **Create Step 12: Concurrent Structures** — Ref, Queue, Hub, Promise, Semaphore
+- [x] **Create Step 12: Concurrent Structures** — Ref, Queue, Hub, Promise, Semaphore
 
 **File**: `packages/web/content/comparisons/cats-zio/12-step.mdx` (CREATE)
 
