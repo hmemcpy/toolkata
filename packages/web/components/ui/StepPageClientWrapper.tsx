@@ -64,6 +64,11 @@ export interface StepPageClientWrapperProps {
   readonly nextHref: string | null
 
   /**
+   * Link to edit this page on GitHub.
+   */
+  readonly editHref?: string
+
+  /**
    * Child components (the actual step content).
    */
   readonly children: React.ReactNode
@@ -98,6 +103,7 @@ export function StepPageClientWrapper({
   title,
   previousHref,
   nextHref,
+  editHref,
   children,
   stepCommands,
   sandboxConfig,
@@ -156,6 +162,7 @@ export function StepPageClientWrapper({
         title={title}
         previousHref={previousHref}
         nextHref={nextHref}
+        {...(editHref !== undefined ? { editHref } : {})}
       />
 
       {/* MDX Content */}
