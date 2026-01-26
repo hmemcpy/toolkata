@@ -1,6 +1,22 @@
+import ScalaOriginal from "devicons-react/icons/ScalaOriginal"
 import Link from "next/link"
 import type { JSX } from "react"
 import type { ToolPairing } from "../../content/pairings"
+
+/**
+ * Get the icon component for a tool pairing based on the icon name.
+ * Returns null if no icon is defined.
+ */
+function getToolIcon(iconName: string | undefined, size = 24): JSX.Element | null {
+  if (!iconName) return null
+
+  switch (iconName) {
+    case "scala":
+      return <ScalaOriginal size={size} />
+    default:
+      return null
+  }
+}
 
 export interface LessonCardProps {
   readonly pairing: ToolPairing
@@ -45,9 +61,12 @@ export function LessonCard({
           <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-warning)] opacity-60" />
           <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-accent)] opacity-60" />
         </div>
-        <span className="text-[10px] text-[var(--color-text-dim)] font-mono ml-auto">
-          {pairing.slug}.sh
-        </span>
+        <div className="flex items-center gap-2 ml-auto">
+          {getToolIcon(pairing.to.icon, 16)}
+          <span className="text-[10px] text-[var(--color-text-dim)] font-mono">
+            {pairing.slug}.sh
+          </span>
+        </div>
       </div>
 
       {/* Card content */}
