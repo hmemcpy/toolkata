@@ -40,6 +40,8 @@ export interface ExtractedSnippet {
   readonly prop?: string
   /** Whether validation should be skipped (from validate={false} prop) */
   readonly validate?: boolean
+  /** Setup commands to override default (from setup={...} prop) */
+  readonly setup?: readonly string[]
 }
 
 /**
@@ -94,7 +96,7 @@ function findLineNumber(content: string, searchIndex: number): number {
 /**
  * Extract TryIt components from MDX content.
  *
- * Matches: <TryIt command="..." validate={false} />
+ * Matches: <TryIt command="..." validate={false} setup={...} />
  */
 function extractTryItSnippets(
   content: string,
@@ -125,11 +127,29 @@ function extractTryItSnippets(
       }
 
       // Check for validate={false}
-      if (/{\s*false\s*}/.test(fullMatch) && /validate\s*=/.test(fullMatch)) {
-        snippets.push({ ...snippet, validate: false })
-      } else {
-        snippets.push(snippet)
+      const hasValidateFalse = /validate\s*=\s*{\s*false\s*}/.test(fullMatch)
+
+      // Check for setup={...} prop
+      const setupMatch = fullMatch.match(/setup\s*=\s*{\s*\[(.*?)\]\s*}/s)
+      let extractedSnippet = { ...snippet }
+      if (hasValidateFalse) {
+        extractedSnippet = { ...extractedSnippet, validate: false as const }
       }
+      if (setupMatch) {
+        // Parse the setup array - commands are in "cmd", 'cmd', or `cmd` format
+        // setupMatch[1] can be empty string for setup={[]}
+        const setupArrayStr = setupMatch[1] ?? ""
+        const commands: string[] = []
+        const cmdRegex = /["'`]([^"'`]+)["'`]/g
+        for (const cmdMatch of setupArrayStr.matchAll(cmdRegex)) {
+          if (cmdMatch[1]) {
+            commands.push(cmdMatch[1])
+          }
+        }
+        extractedSnippet = { ...extractedSnippet, setup: commands }
+      }
+
+      snippets.push(extractedSnippet)
     }
   }
 

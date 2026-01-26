@@ -135,8 +135,6 @@ const CONTEXT_ERROR_PATTERNS = [
   /^error: divergent changes/i,
   /^error: no such bookmark/i, // jj: bookmark doesn't exist
   /^error: bookmark .* not found/i, // jj: bookmark doesn't exist (alt)
-  /error: the target repo already exists/i, // jj git init: repo already exists
-  /error: destination repo already exists/i, // git clone: repo already exists
 
   // File system context errors
   /no such file or directory/i,
@@ -452,13 +450,46 @@ async function validateInParallel<T, R>(
 }
 
 /**
+ * Merge snippet-level config with base step config.
+ * Snippet props (validate, setup) override base config.
+ */
+function mergeSnippetConfig(
+  snippet: ExtractedSnippet,
+  baseConfig: ResolvedValidationConfig,
+): ResolvedValidationConfig {
+  // Check if snippet has validate={false}
+  if (snippet.validate === false) {
+    return { ...baseConfig, skip: true }
+  }
+
+  // Check if snippet has setup override
+  if (snippet.setup && snippet.setup.length >= 0) {
+    return { ...baseConfig, setup: snippet.setup }
+  }
+
+  return baseConfig
+}
+
+/**
+ * Validate a single snippet with merged config.
+ */
+async function validateSnippetWithConfig(
+  snippet: ExtractedSnippet,
+  baseConfig: ResolvedValidationConfig,
+  verbose: boolean,
+): Promise<SnippetValidationResult> {
+  const config = mergeSnippetConfig(snippet, baseConfig)
+  return validateSnippetInContainer(snippet, config, verbose)
+}
+
+/**
  * Validate all snippets for a single step.
  */
 export async function validateStep(
   toolPair: string,
   step: number,
   snippets: readonly ExtractedSnippet[],
-  config: ResolvedValidationConfig,
+  baseConfig: ResolvedValidationConfig,
   options: ValidatorOptions = {},
 ): Promise<StepValidationResult> {
   const startTime = Date.now()
@@ -481,14 +512,14 @@ export async function validateStep(
     // Run in parallel with concurrency limit
     results = await validateInParallel(
       snippets,
-      (snippet) => validateSnippetInContainer(snippet, config, verbose),
+      (snippet) => validateSnippetWithConfig(snippet, baseConfig, verbose),
       maxParallel,
     )
   } else {
     // Run sequentially
     results = []
     for (const snippet of snippets) {
-      const result = await validateSnippetInContainer(snippet, config, verbose)
+      const result = await validateSnippetWithConfig(snippet, baseConfig, verbose)
       results.push(result)
 
       if (verbose) {
