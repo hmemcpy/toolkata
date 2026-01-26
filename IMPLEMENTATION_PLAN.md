@@ -130,9 +130,9 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 
 ### P10 - Ecosystem (Steps 13-15)
 
-- [ ] **Create 13-step.mdx: Schema (Validation)** — `Schema<A,I,R>`, decoding, encoding, composition, vs zio-schema
-- [ ] **Create 14-step.mdx: Platform & HTTP** — @effect/platform overview, HttpClient service, cross-platform abstractions
-- [ ] **Create 15-step.mdx: Database Access** — @effect/sql, @effect/sql-pg, SqlClient service, transactions
+- [x] **Create 13-step.mdx: Schema (Validation)** — `Schema<A,I,R>`, decoding, encoding, composition, vs zio-schema
+- [x] **Create 14-step.mdx: Platform & HTTP** — @effect/platform overview, HttpClient service, cross-platform abstractions
+- [x] **Create 15-step.mdx: Database Access** — @effect/sql, @effect/sql-pg, SqlClient service, transactions
 
 ### P11 - Glossary & Routing Integration
 
