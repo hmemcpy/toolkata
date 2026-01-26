@@ -49,16 +49,7 @@ val program: IO[Int] = IO.pure(42)
 // For "can't fail" semantics, use types
 // but IO still allows Throwable internally
 val safe: IO[Int] = IO.pure(42)`}
-  zioCode={`import zio._
-
-// UIO[A] = ZIO[Any, Nothing, A] (can't fail)
-val uio: UIO[Int] = ZIO.succeed(42)
-
-// Task[A] = ZIO[Any, Throwable, A]
-val task: Task[Int] = ZIO.attempt(42)
-
-// IO[E, A] = ZIO[Any, E, A] (custom error)
-val io: IO[String, Int] = ZIO.fail("oops")`}
+  zioCode={`import zio._\n\n// UIO[A] = ZIO[Any, Nothing, A] (can't fail)\nval uio: UIO[Int] = ZIO.succeed(42)\n\n// Task[A] = ZIO[Any, Throwable, A]\nval task: Task[String] = ZIO.attempt {\n  scala.io.Source.fromFile("f").mkString\n}\n\n// IO[E, A] = ZIO[Any, E, A] (custom error)\nval io: IO[String, Int] = ZIO.fail("oops")`}
   catsEffectComment="IO[A] - single effect type"
   zioComment="UIO, Task, IO - type aliases for common patterns"
 />

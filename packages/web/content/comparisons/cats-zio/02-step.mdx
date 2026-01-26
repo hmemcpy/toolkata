@@ -45,7 +45,7 @@ Cats Effect requires errors to be `Throwable`. ZIO allows any error type via the
 
 <ScalaComparisonBlock
   catsEffectCode={`import cats.effect.IO\n\n// From Option (None becomes error)\nval fromOpt: IO[Int] =\n  IO.fromOption(Some(42))(\n    new NoSuchElementException("empty")\n  )\n\n// From Either\nval fromEither: IO[Int] =\n  IO.fromEither(Right(42))`}
-  zioCode={`import zio._\n\n// From Option (None becomes None error)\nval fromOpt: IO[Option[Nothing], Int] =\n  ZIO.fromOption(Some(42))\n\n// From Either\nval fromEither: IO[String, Int] =\n  ZIO.fromEither(Right(42))`}
+  zioCode={`import zio._\n\n// From Option (None becomes None.type error)\nval fromOpt: IO[None.type, Int] =\n  ZIO.fromOption(Some(42))\n\n// From Either\nval fromEither: IO[String, Int] =\n  ZIO.fromEither(Right(42))`}
   catsEffectComment="IO.fromOption / IO.fromEither"
   zioComment="ZIO.fromOption / ZIO.fromEither"
 />
