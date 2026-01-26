@@ -23,12 +23,13 @@
 
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useKeyboardNavigation, useKeyboardShortcutsModal } from "../../hooks/useKeyboardNavigation"
 import { KeyboardShortcutsModal } from "./KeyboardShortcutsModal"
 import { NavigationWrapper } from "./NavigationWrapper"
 import { StepProgressWrapper } from "./StepProgressWrapper"
+import { ReportBugModal } from "./ReportBugModal"
 import { useTerminalContext } from "../../contexts/TerminalContext"
 import type { SandboxConfig } from "./InteractiveTerminal"
 
@@ -112,6 +113,9 @@ export function StepPageClientWrapper({
   const { isOpen, onClose, showModal } = useKeyboardShortcutsModal()
   const { toggleSidebar, setContextCommands, setSandboxConfig } = useTerminalContext()
 
+  // Bug report modal state
+  const [isBugModalOpen, setIsBugModalOpen] = useState(false)
+
   // Register step commands in context on mount and when step changes
   useEffect(() => {
     setContextCommands(stepCommands)
@@ -163,6 +167,7 @@ export function StepPageClientWrapper({
         previousHref={previousHref}
         nextHref={nextHref}
         {...(editHref !== undefined ? { editHref } : {})}
+        onReportBug={() => setIsBugModalOpen(true)}
       />
 
       {/* MDX Content */}
@@ -175,6 +180,16 @@ export function StepPageClientWrapper({
 
       {/* Keyboard Shortcuts Modal */}
       <KeyboardShortcutsModal isOpen={isOpen} onClose={onClose} />
+
+      {/* Bug report modal */}
+      <ReportBugModal
+        isOpen={isBugModalOpen}
+        onClose={() => setIsBugModalOpen(false)}
+        context={{
+          page: `${toolPair} - Step ${currentStep}`,
+          step: title,
+        }}
+      />
     </>
   )
 }

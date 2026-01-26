@@ -83,6 +83,11 @@ export interface TerminalContextValue {
   readonly state: TerminalState
 
   /**
+   * Current error message, or null if no error.
+   */
+  readonly errorMessage: string | null
+
+  /**
    * Whether the sidebar (or bottom sheet on mobile) is open.
    */
   readonly isOpen: boolean
@@ -198,6 +203,15 @@ export interface TerminalContextValue {
   readonly onTerminalStateChange: (state: TerminalState) => void
 
   /**
+   * Callback when terminal error message changes.
+   *
+   * Called by InteractiveTerminal to notify the context of error messages.
+   *
+   * @internal
+   */
+  readonly onTerminalErrorChange: (error: string | null) => void
+
+  /**
    * Callback when session time remaining changes.
    *
    * Called by InteractiveTerminal to notify the context of timer changes.
@@ -287,6 +301,9 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
 
   // Terminal connection state (managed by InteractiveTerminal via callbacks)
   const [state, setState] = useState<TerminalState>("IDLE")
+
+  // Error message (managed by InteractiveTerminal via callbacks)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   // Session time remaining (managed by InteractiveTerminal via callbacks)
   const [sessionTimeRemaining, setSessionTimeRemaining] = useState<number | null>(null)
@@ -526,6 +543,17 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
   }, [])
 
   /**
+   * Callback when terminal error message changes.
+   *
+   * Called by InteractiveTerminal to notify the context of error messages.
+   *
+   * @internal
+   */
+  const onTerminalErrorChange = useCallback((error: string | null) => {
+    setErrorMessage(error)
+  }, [])
+
+  /**
    * Callback when session time remaining changes.
    *
    * Called by InteractiveTerminal to notify the context of timer changes.
@@ -556,6 +584,7 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
   const value = useMemo<TerminalContextValue>(
     () => ({
       state,
+      errorMessage,
       isOpen,
       triggerRef,
       sidebarWidth,
@@ -575,11 +604,13 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       executeCommand,
       registerTerminal,
       onTerminalStateChange,
+      onTerminalErrorChange,
       onTerminalTimeChange,
       flushCommandQueue,
     }),
     [
       state,
+      errorMessage,
       isOpen,
       sidebarWidth,
       setSidebarWidth,
@@ -599,6 +630,7 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       flushCommandQueue,
       registerTerminal,
       onTerminalStateChange,
+      onTerminalErrorChange,
       onTerminalTimeChange,
     ],
   )

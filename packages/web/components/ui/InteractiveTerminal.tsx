@@ -176,6 +176,15 @@ export interface InteractiveTerminalProps {
   readonly onStateChange?: (state: TerminalState) => void
 
   /**
+   * Optional callback when terminal error message changes.
+   *
+   * Called when the terminal error message is set or cleared.
+   *
+   * Used by TerminalProvider to display error reports in the sidebar.
+   */
+  readonly onErrorChange?: (error: string | null) => void
+
+  /**
    * Optional callback when session time remaining changes.
    *
    * Called approximately every second when session is active.
@@ -200,6 +209,13 @@ export interface InteractiveTerminalProps {
    * indicating initialization commands have finished running.
    */
   readonly onInitComplete?: () => void
+
+  /**
+   * Optional callback to report a bug.
+   *
+   * Called when user clicks "Report an issue" button in error state.
+   */
+  readonly onReportBug?: () => void
 }
 
 /**
@@ -232,9 +248,11 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
       sandboxConfig,
       onCommandInsert,
       onStateChange,
+      onErrorChange,
       onSessionTimeChange,
       onPtyReady,
       onInitComplete,
+      onReportBug,
     }: InteractiveTerminalProps,
     ref,
   ) {
@@ -259,6 +277,11 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
     useEffect(() => {
       onStateChange?.(state)
     }, [state, onStateChange])
+
+    // Call onErrorChange callback when error changes
+    useEffect(() => {
+      onErrorChange?.(error)
+    }, [error, onErrorChange])
 
     // Call onSessionTimeChange callback when time remaining changes
     useEffect(() => {
@@ -820,13 +843,24 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
         ) : state === "ERROR" || state === "EXPIRED" ? (
           <div className="flex flex-1 flex-col items-center justify-center p-8">
             <p className="mb-4 text-sm text-[var(--color-error)]">{error ?? "An error occurred"}</p>
-            <button
-              type="button"
-              onClick={reset}
-              className="rounded bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-bg)] transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-            >
-              Retry
-            </button>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={reset}
+                className="rounded bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-bg)] transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+              >
+                Retry
+              </button>
+              {onReportBug && state === "ERROR" ? (
+                <button
+                  type="button"
+                  onClick={onReportBug}
+                  className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-sm font-medium text-[var(--color-text)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                >
+                  Report an issue
+                </button>
+              ) : null}
+            </div>
           </div>
         ) : (
           <div className="min-h-0 flex-1 p-3">

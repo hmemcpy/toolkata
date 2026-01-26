@@ -32,6 +32,7 @@ import { useTerminalContext } from "../../contexts/TerminalContext"
 import type { InteractiveTerminalRef } from "./InteractiveTerminal"
 import { SplitPane } from "./SplitPane"
 import { InfoPanel } from "./InfoPanel"
+import { ReportBugModal } from "./ReportBugModal"
 
 const MIN_SIDEBAR_WIDTH = 300
 const MAX_SIDEBAR_WIDTH = 800
@@ -148,6 +149,7 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
     isOpen,
     closeSidebar,
     state,
+    errorMessage,
     sessionTimeRemaining,
     sandboxConfig,
     sidebarWidth,
@@ -158,6 +160,7 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
     setInfoPanelHeight,
     registerTerminal,
     onTerminalStateChange,
+    onTerminalErrorChange,
     onTerminalTimeChange,
     flushCommandQueue,
   } = useTerminalContext()
@@ -167,6 +170,9 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
 
   // Resizing state
   const [isResizing, setIsResizing] = useState(false)
+
+  // Bug report modal state
+  const [isBugModalOpen, setIsBugModalOpen] = useState(false)
 
   // Track previous isOpen value to detect user-initiated opens vs restores
   const prevIsOpenRef = useRef(isOpen)
@@ -328,8 +334,10 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
                   stepId="sidebar"
                   {...(sandboxConfig !== undefined ? { sandboxConfig } : {})}
                   onStateChange={onTerminalStateChange}
+                  onErrorChange={onTerminalErrorChange}
                   onSessionTimeChange={onTerminalTimeChange}
                   onPtyReady={handlePtyReady}
+                  onReportBug={() => setIsBugModalOpen(true)}
                 />
               }
               bottomContent={<InfoPanel />}
@@ -357,9 +365,38 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
                 </span>
               ) : null}
             </div>
+          ) : state === "ERROR" ? (
+            <div className="flex items-center justify-between border-t border-[var(--color-border)] px-4 py-3">
+              <button
+                type="button"
+                onClick={() => terminalRef.current?.reset()}
+                className="text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                aria-label="Retry connection"
+              >
+                Retry
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsBugModalOpen(true)}
+                className="text-xs text-[var(--color-accent)] transition-colors hover:text-[var(--color-accent-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+                aria-label="Report connection issue"
+              >
+                Report an issue
+              </button>
+            </div>
           ) : null}
         </div>
       </div>
+
+      {/* Bug report modal */}
+      <ReportBugModal
+        isOpen={isBugModalOpen}
+        onClose={() => setIsBugModalOpen(false)}
+        context={{
+          page: "Terminal Sandbox",
+          ...(errorMessage != null ? { error: errorMessage } : {}),
+        }}
+      />
     </>
   )
 }

@@ -12,6 +12,7 @@ export interface StepProgressWrapperProps {
   readonly previousHref?: string | null
   readonly nextHref?: string | null
   readonly editHref?: string
+  readonly onReportBug?: () => void
   readonly className?: string
 }
 
@@ -32,6 +33,7 @@ export function StepProgressWrapper({
   previousHref,
   nextHref,
   editHref,
+  onReportBug,
   className = "",
 }: StepProgressWrapperProps) {
   const { isStepComplete, setCurrentStep } = useStepProgress(toolPair, totalSteps)
@@ -55,6 +57,7 @@ export function StepProgressWrapper({
       previousHref={previousHref}
       nextHref={nextHref}
       {...(editHref !== undefined ? { editHref } : {})}
+      {...(onReportBug !== undefined ? { onReportBug } : {})}
       isCompleted={isCompleted}
       className={className}
     />
