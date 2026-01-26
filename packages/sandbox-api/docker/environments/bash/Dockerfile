@@ -20,6 +20,9 @@ RUN JJ_VERSION="0.25.0" && \
 # Final stage: extend base image
 FROM toolkata-sandbox-base:latest
 
+# Switch to root for package installation (base image runs as sandbox user)
+USER root
+
 # Install git (jj is copied from builder stage)
 RUN apk add --no-cache git
 
@@ -71,5 +74,8 @@ RUN cp /home/toolkata/.gitconfig /home/sandbox/.gitconfig && \
 # Copy entrypoint script
 COPY --chown=sandbox:sandbox entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Switch back to sandbox user for runtime
+USER sandbox
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

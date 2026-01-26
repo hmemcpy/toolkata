@@ -150,8 +150,8 @@ Build a headless snippet validation system that extracts code from MDX, executes
 
 - [x] **Update jj-git config.yml** — Add `validation:` section with shell setup commands (git init, config user.email/name). Uses `jj git init --colocate .` and sets git user.email/name globally.
 - [x] **Add validation schema to stepFrontmatterSchema** — Update `packages/web/lib/content/schemas.ts` with optional `validation` field. Added `validationConfigSchema` with `imports`, `setup`, and `wrapper` fields. Exported `ValidationConfig` type.
-- [ ] **Test end-to-end jj-git validation** — Run `bun run scripts/validate-snippets.ts --tool-pair jj-git`
-- [ ] **Fix any failing snippets** — Update MDX content or config as needed to pass validation
+- [x] **Test end-to-end jj-git validation** — Validated E2E flow works: sandbox-api starts, sessions create, WebSocket connects, commands execute. Found issues with installation code blocks being extracted and timing out.
+- [ ] **Fix any failing snippets** — Update MDX content or config as needed to pass validation (installation commands need `validate={false}` or detection skip)
 
 ---
 
@@ -327,12 +327,16 @@ _(Updated during implementation)_
 - **Headless validator:** Uses Bun's native WebSocket (browser-compatible API) instead of `ws` package to avoid adding dependencies to packages/web. Prompt detection uses 500ms settle time after last output.
 - **CLI arg parsing:** Biome lint requires `for...of` loops. Used iterator pattern (`args[Symbol.iterator]()`) to handle args with values like `--tool-pair X` while complying with lint rules.
 - **Pre-existing bug:** Playwright tests fail with "Playwright Test did not expect test.describe() to be called here" when run via `bun test`. This is a Playwright/Bun compatibility issue unrelated to snippet validation work. Tests should be run via `bun run --cwd packages/web test` instead.
+- **Docker image bug fixed:** Environment Dockerfiles (bash, node, python) needed `USER root` before `apk add` and `USER sandbox` at end. Base image sets `USER sandbox`, so child images inherit and fail on package installation.
+- **Environment service bug fixed:** `validateAllImages()` was calling `listEnvsFromRegistry()` which returns `EnvironmentInfo[]` (without `dockerImage`). Added `listEnvironmentConfigs()` to return full `EnvironmentConfig[]` with `dockerImage` field.
+- **Snippet validation E2E tested:** Created session, connected WebSocket, ran init commands, executed snippets. Identified issue: installation commands (`brew install jj`, `cargo install jj-cli`) are extracted from code blocks in `<Tab>` components and fail because they can't run in sandbox.
+- **Next step:** Either add `validate={false}` to installation code blocks, add auto-detection for installation patterns, or use validation frontmatter to skip specific steps/snippets.
 
 ---
 
 ## Progress
 
-**P0**: 36/42 tasks complete (86%) — P0.7 validation schema added
+**P0**: 37/42 tasks complete (88%) — E2E validation tested, found snippet issues
 **P1**: 0/13 tasks complete (0%)
 **P2**: 0/25 tasks complete (0%)
-**Total**: 36/80 tasks complete (45%)
+**Total**: 37/80 tasks complete (46%)

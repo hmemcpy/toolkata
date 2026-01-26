@@ -6,6 +6,7 @@ import { EnvironmentError } from "./types.js"
 import {
   getEnvironment as getEnvFromRegistry,
   listEnvironments as listEnvsFromRegistry,
+  listEnvironmentConfigs,
   listEnvironmentNames,
 } from "./registry.js"
 import { getDefaultEnvironment } from "./registry.js"
@@ -115,7 +116,7 @@ const make = Effect.sync(() => {
 
   // Validate all environment images exist at startup
   const validateAllImages = Effect.gen(function* () {
-    const environments = listEnvsFromRegistry()
+    const environments = listEnvironmentConfigs()
     const missingImages: Array<{ envName: string; imageName: string }> = []
 
     // Check each environment's image

@@ -40,9 +40,9 @@ export const listEnvironmentNames = (): string[] => {
 }
 
 /**
- * List all registered environments with full info
+ * List all registered environments with full info (public-safe)
  *
- * @returns Array of EnvironmentInfo objects
+ * @returns Array of EnvironmentInfo objects (excludes internal config like dockerImage)
  */
 export const listEnvironments = (): EnvironmentInfo[] => {
   return REGISTERED_ENVIRONMENTS.map((env) => ({
@@ -51,6 +51,15 @@ export const listEnvironments = (): EnvironmentInfo[] => {
     category: env.category,
     defaultTimeout: env.defaultTimeout,
   }))
+}
+
+/**
+ * List all registered environment configurations (internal use)
+ *
+ * @returns Array of full EnvironmentConfig objects including dockerImage
+ */
+export const listEnvironmentConfigs = (): readonly EnvironmentConfig[] => {
+  return REGISTERED_ENVIRONMENTS
 }
 
 /**

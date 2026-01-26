@@ -6,6 +6,9 @@
 
 FROM toolkata-env:bash
 
+# Switch to root for package installation (parent image runs as sandbox user)
+USER root
+
 # Install Python 3 from wolfi-base packages
 # Using minimal packages for security and size
 RUN apk add --no-cache \
@@ -48,5 +51,8 @@ RUN cp /home/toolkata/.bashrc /home/sandbox/.bashrc
 # Copy entrypoint script
 COPY --chown=sandbox:sandbox entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Switch back to sandbox user for runtime
+USER sandbox
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
