@@ -106,10 +106,10 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 
 ### P6 - Fundamentals (Steps 1-4)
 
-- [ ] **Create 01-step.mdx: Effect<A,E,R> vs ZIO[-R,+E,+A]** — Critical parameter order difference (`A,E,R` vs `R,E,A`), type meanings, mental model, no type aliases in Effect
-- [ ] **Create 02-step.mdx: Creating Effects** — `Effect.succeed`, `Effect.fail`, `Effect.sync`, `Effect.try`, `Effect.tryPromise`, `Effect.async`, `Effect.suspend`
-- [ ] **Create 03-step.mdx: Error Handling** — Typed errors vs defects, `catchAll`, `catchSome`, `mapError`, `orElse`, `Effect.either`, `Effect.die`
-- [ ] **Create 04-step.mdx: Composition with Generators** — `Effect.gen` vs for-comprehension, `yield*` syntax, pipe alternative
+- [x] **Create 01-step.mdx: Effect<A,E,R> vs ZIO[-R,+E,+A]** — Critical parameter order difference (`A,E,R` vs `R,E,A`), type meanings, mental model, no type aliases in Effect
+- [x] **Create 02-step.mdx: Creating Effects** — `Effect.succeed`, `Effect.fail`, `Effect.sync`, `Effect.try`, `Effect.tryPromise`, `Effect.async`, `Effect.suspend`
+- [x] **Create 03-step.mdx: Error Handling** — Typed errors vs defects, `catchAll`, `catchSome`, `mapError`, `orElse`, `Effect.either`, `Effect.die`
+- [x] **Create 04-step.mdx: Composition with Generators** — `Effect.gen` vs for-comprehension, `yield*` syntax, pipe alternative
 
 ### P7 - Application Architecture (Steps 5-7)
 
