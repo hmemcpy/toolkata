@@ -140,11 +140,11 @@ Build a headless snippet validation system that extracts code from MDX, executes
 
 ### P0.6: CLI Entry Point
 
-- [ ] **Create validate-snippets.ts** — New file `packages/web/scripts/validate-snippets.ts`
-- [ ] **Implement CLI argument parsing** — `--strict`, `--tool-pair`, `--step`, `--verbose`, `--help`
-- [ ] **Orchestrate validation flow** — Sandbox manager → Extract → Resolve config → Validate → Report
-- [ ] **Implement console reporter** — Per-step pass/fail with snippet counts, summary, failure details with file:line
-- [ ] **Exit with code 1 on failures** — For CI integration (`--strict` mode)
+- [x] **Create validate-snippets.ts** — New file `packages/web/scripts/validate-snippets.ts`
+- [x] **Implement CLI argument parsing** — `--strict`, `--tool-pair`, `--step`, `--verbose`, `--help` (uses iterator pattern for biome lint compliance)
+- [x] **Orchestrate validation flow** — Sandbox manager → Extract → Resolve config → Validate → Report
+- [x] **Implement console reporter** — Per-step pass/fail with snippet counts, summary, failure details with file:line (with ANSI colors)
+- [x] **Exit with code 1 on failures** — For CI integration (`--strict` mode)
 
 ### P0.7: Validation Config for jj-git
 
@@ -325,12 +325,13 @@ _(Updated during implementation)_
 - **TypeScript strictness:** `exactOptionalPropertyTypes: true` requires conditional object building instead of assigning `undefined` to optional properties. Helper functions needed to construct objects with only defined properties.
 - **Config resolution:** `config-resolver.ts` created with full support for 3-level config hierarchy (pairing config.yml → step frontmatter → component props). Falls back to `defaults.sandbox.init` if no `validation:` section exists.
 - **Headless validator:** Uses Bun's native WebSocket (browser-compatible API) instead of `ws` package to avoid adding dependencies to packages/web. Prompt detection uses 500ms settle time after last output.
+- **CLI arg parsing:** Biome lint requires `for...of` loops. Used iterator pattern (`args[Symbol.iterator]()`) to handle args with values like `--tool-pair X` while complying with lint rules.
 
 ---
 
 ## Progress
 
-**P0**: 30/42 tasks complete (71%) — P0.5 Headless Validator complete
+**P0**: 35/42 tasks complete (83%) — P0.6 CLI Entry Point complete
 **P1**: 0/13 tasks complete (0%)
 **P2**: 0/25 tasks complete (0%)
-**Total**: 30/80 tasks complete (38%)
+**Total**: 35/80 tasks complete (44%)
