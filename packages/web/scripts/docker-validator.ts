@@ -135,6 +135,8 @@ const CONTEXT_ERROR_PATTERNS = [
   /^error: divergent changes/i,
   /^error: no such bookmark/i, // jj: bookmark doesn't exist
   /^error: bookmark .* not found/i, // jj: bookmark doesn't exist (alt)
+  /error: the target repo already exists/i, // jj git init: repo already exists
+  /error: destination repo already exists/i, // git clone: repo already exists
 
   // File system context errors
   /no such file or directory/i,
