@@ -113,9 +113,9 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 
 ### P7 - Application Architecture (Steps 5-7)
 
-- [ ] **Create 05-step.mdx: Services and Context.Tag** — Dependency injection, `Context.Tag` class pattern vs `ZIO.service[T]`, `yield* Tag` access
-- [ ] **Create 06-step.mdx: Layers** — `Layer.succeed`, `Layer.effect`, `Layer.scoped`, `Layer.provide`, `Layer.merge` composition vs ZLayer equivalents
-- [ ] **Create 07-step.mdx: Resource Management** — `Effect.acquireRelease`, `Effect.scoped`, Scope service, finalizers
+- [x] **Create 05-step.mdx: Services and Context.Tag** — Dependency injection, `Context.Tag` class pattern vs `ZIO.service[T]`, `yield* Tag` access
+- [x] **Create 06-step.mdx: Layers** — `Layer.succeed`, `Layer.effect`, `Layer.scoped`, `Layer.provide`, `Layer.merge` composition vs ZLayer equivalents
+- [x] **Create 07-step.mdx: Resource Management** — `Effect.acquireRelease`, `Effect.scoped`, Scope service, finalizers
 
 ### P8 - Concurrency (Steps 8-10)
 
