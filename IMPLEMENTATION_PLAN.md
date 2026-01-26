@@ -82,7 +82,7 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 
 ### P3 - Search Improvements (Can defer to later PR)
 
-- [ ] **Add zio-cats steps to TerminalSearch** — Add 15 entries to `SEARCHABLE_STEPS` array (zio-cats currently missing)
+- [x] **Add zio-cats steps to TerminalSearch** — Add 15 entries to `SEARCHABLE_STEPS` array (zio-cats currently missing)
 - [ ] **Create search data loader** — Function in `lib/` to build searchable steps from pairings + step metadata arrays
 - [ ] **Update TerminalSearch component** — Replace hardcoded `SEARCHABLE_STEPS` with dynamic data (address TODO on line 20-21)
 - [ ] **Add tags to search matching** — Include pairing tags in filter logic alongside title/description
@@ -145,7 +145,7 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 - [x] **Add effectZioTimes Map** — Estimated times for each step
 - [x] **Update overview page step selection** — Added `toolPair === "effect-zio"` case
 - [x] **Import effect-zio glossary in glossary page** — Import and case for `toolPair === "effect-zio"`
-- [ ] **Add effect-zio to TerminalSearch** — Add 15 entries to `SEARCHABLE_STEPS` array for effect-zio steps (deferred - see P3)
+- [x] **Add effect-zio to TerminalSearch** — Add 15 entries to `SEARCHABLE_STEPS` array for effect-zio steps
 
 ### P12 - Content Validation
 
@@ -163,9 +163,9 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 - PR 1 (Infrastructure): 20 tasks
 - PR 2 (Content): 35 tasks
 
-**Progress**: 51/55 tasks complete (93%)
+**Progress**: 53/55 tasks complete (96%)
 
-**Remaining**: 4 tasks (Create infrastructure PR, add effect-zio to TerminalSearch, create content PR, P3 search improvements)
+**Remaining**: 2 tasks (Create infrastructure PR, create content PR) + 3 search improvements (data loader, dynamic search, tags matching)
 
 ---
 
