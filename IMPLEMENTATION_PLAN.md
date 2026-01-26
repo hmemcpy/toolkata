@@ -125,7 +125,7 @@ All Zionomicon chapters are available at `/tmp/zionomicon/EPUB/text/`. Key chapt
 - [x] **Update Step 6: Resource Management** — Add `Scope` interface explanation
 - [x] **Update Step 7: Fiber Supervision** — Add `forkDaemon`/`forkScoped`, `raceEither`
 - [x] **Update Step 8: Streaming** — Add `mapZIO`, `filterZIO`, error recovery
-- [ ] **Update Step 9: Application Structure** — Add Bootstrap, `ZIO.config`, service access
+- [x] **Update Step 9: Application Structure** — Add Bootstrap, `ZIO.config`, service access
 - [x] **Verify Step 10: Interop** — Version `23.1.0.3` is correct (newer than spec's `3.1.1.0`)
 
 **P3 - Landing Page & Glossary** (completion tasks):
@@ -556,30 +556,6 @@ val layer = defaultLayer.orElse(fallbackLayer)
 
 ---
 
-- [ ] **Update Step 7: Fiber Supervision** — Add fork variants, raceEither
-
-**Why**: ZIO has multiple fork strategies from Zionomicon ch007-010 for different concurrency needs.
-
-**File**: `packages/web/content/comparisons/cats-zio/07-step.mdx`
-
-**Updates from Zionomicon ch007-010**:
-
-**Fork variants comparison**:
-```scala
-effect.fork         // In current scope (interrupted when parent scope closes)
-effect.forkDaemon   // Global scope (outlives parent, use for background tasks)
-effect.forkScoped   // Explicit scope management
-```
-
-**raceEither** (winner-takes-all with type info):
-```scala
-def raceEither[R1 <: R, E1 >: E, B](
-  that: ZIO[R1, E1, B]
-): ZIO[R1, E1, Either[A, B]]
-```
-
----
-
 - [x] **Update Step 8: Streaming** — Add effectful operators, error recovery
 
 **Why**: ZStream has powerful operators (not in Zionomicon - streaming-specific).
@@ -600,11 +576,18 @@ def raceEither[R1 <: R, E1 >: E, B](
 
 ---
 
-- [ ] **Update Step 9: Application Structure** — Add Bootstrap, config, service access
+- [x] **Update Step 9: Application Structure** — Add Bootstrap, config, service access
 
 **Why**: Real-world apps from Zionomicon ch022 need runtime configuration and service composition.
 
 **File**: `packages/web/content/comparisons/cats-zio/09-step.mdx`
+
+**Completed** 2026-01-26:
+- Added Bootstrap Configuration section with ScalaComparisonBlock comparing ZIO Runtime.setConfigProvider vs Ciris
+- Added Structured Logging section with ZIO.log* vs IO.println
+- Added Service Access Patterns section with ZIO.serviceWithZIO
+- Added Bootstrap Layer Composition section showing global layer composition
+- Updated frontmatter with new commands: ZIOAppDefault, Runtime.setConfigProvider, ZIO.config, ZIO.serviceWithZIO, ZIO.logInfo
 
 **Updates from Zionomicon ch022**:
 
@@ -756,11 +739,11 @@ No strict dependencies between steps - each should be standalone. However:
 **Total pending tasks**: 20 main tasks (P0-P4)
 - P0 (Critical): 4 tasks — Infrastructure updates (COMPLETED)
 - P1 (New Steps): 0 tasks — All new steps created (11-15)
-- P2 (Enhance): 2 tasks — Update steps 9 (Step 5 done, Step 6 done, Step 7 done, Step 8 done)
+- P2 (Enhance): 1 task — Update steps 9 (Step 5 done, Step 6 done, Step 7 done, Step 8 done, Step 9 done)
 - P3 (Landing): 2 tasks — Index page, glossary
 - P4 (Validation): 1 task — Build/typecheck/lint
 
-**Completed tasks**: 15/20 main tasks (75%)
+**Completed tasks**: 16/20 main tasks (80%)
 - [x] P0: All infrastructure updates (generateStaticParams, overview page steps/times, pairings.ts)
 - [x] Step 11: STM (11-step.mdx created, validated)
 - [x] Step 12: Concurrent Structures (12-step.mdx created, validated)
@@ -776,13 +759,15 @@ No strict dependencies between steps - each should be standalone. However:
 - [x] Step 6: Resource Management (added `Scope` interface explanation)
 - [x] Step 7: Fiber Supervision (added forkDaemon, forkScoped, raceEither sections)
 - [x] Step 8: Streaming (added groupedWithin, error recovery, backpressure sections)
+- [x] Step 9: Application Structure (added Bootstrap, ZIO.config, service access patterns)
 
-**Progress**: 15/20 main tasks complete (75%)
-**Remaining work**: Step 9 enhancement, landing page updates, validation
+**Progress**: 16/20 main tasks complete (80%)
+**Remaining work**: Landing page updates (index.mdx, glossary), validation
 
 **Learned**:
 - MDX string interpolation requires escaping `${}` as `\${}` to avoid JSX interpretation
 - Scala backticks inside code blocks (like `Content-Type`) cause MDX parsing errors - avoid using backticked identifiers in ScalaComparisonBlock code
+- Scala string interpolation with `${...}` syntax causes MDX parsing errors — use simple `$variable` instead, or extract to separate variables (e.g., `val host = config.host` then `s"$host:$port"`)
 
 ---
 
