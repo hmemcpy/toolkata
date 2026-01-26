@@ -345,6 +345,25 @@ export const createWebSocketServer = (
             if (resizeResult._tag === "Left") {
               console.error("[WebSocket] Resize error:", resizeResult.left.message)
             }
+          } else if (message.type === "init") {
+            // Execute init commands (with optional silent mode)
+            console.log(
+              `[WebSocket] Executing ${message.commands.length} init commands for ${sessionId} (silent: ${message.silent ?? false})`,
+            )
+            const initResult = await Effect.runPromise(
+              Effect.either(
+                webSocketService.executeInitCommands(
+                  connection,
+                  message.commands,
+                  message.timeout,
+                  message.silent,
+                ),
+              ),
+            )
+            if (initResult._tag === "Left") {
+              console.error("[WebSocket] Init commands error:", initResult.left.message)
+              // Don't close connection - initComplete failure message was already sent
+            }
           }
         })
 

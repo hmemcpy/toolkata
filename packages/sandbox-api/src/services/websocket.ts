@@ -91,6 +91,7 @@ export interface WebSocketServiceShape {
     connection: ConnectionState,
     commands: readonly string[],
     timeout?: number,
+    silent?: boolean,
   ) => Effect.Effect<void, WebSocketError>
   readonly close: (connection: ConnectionState) => Effect.Effect<void, never>
 }
@@ -128,14 +129,18 @@ const _parseMessage = (data: string): WebSocketMessage => {
         const commands = Array.isArray(parsed["commands"])
           ? (parsed["commands"] as readonly string[])
           : []
-        const timeout = typeof parsed["timeout"] === "number" ? parsed["timeout"] : undefined
-        const silent = typeof parsed["silent"] === "boolean" ? parsed["silent"] : undefined
-        return {
+        const result: InitCommands = {
           type: "init",
           commands,
-          timeout,
-          silent,
-        } satisfies InitCommands
+        }
+        // Only add optional properties if they have valid values (exactOptionalPropertyTypes)
+        if (typeof parsed["timeout"] === "number") {
+          ;(result as { timeout?: number }).timeout = parsed["timeout"]
+        }
+        if (typeof parsed["silent"] === "boolean") {
+          ;(result as { silent?: boolean }).silent = parsed["silent"]
+        }
+        return result
       }
     }
 
@@ -146,6 +151,9 @@ const _parseMessage = (data: string): WebSocketMessage => {
     return { type: "input", data }
   }
 }
+
+// Track output suppression state per session (for silent init commands)
+const suppressionState = new Map<string, boolean>()
 
 // Service implementation
 const make = Effect.gen(function* () {
@@ -197,6 +205,9 @@ const make = Effect.gen(function* () {
             "/dev/null",
           ]
 
+      // Initialize suppression state for this session
+      suppressionState.set(sessionId, false)
+
       const bunProcess = Bun.spawn(scriptArgs, {
         env: {
           ...process.env,
@@ -208,6 +219,10 @@ const make = Effect.gen(function* () {
           cols: initialCols,
           rows: initialRows,
           data(_terminal, data) {
+            // Check suppression state before sending output
+            if (suppressionState.get(sessionId)) {
+              return // Skip output when suppressed (silent init commands)
+            }
             if (socket.readyState === WebSocket.OPEN) {
               const text = new TextDecoder().decode(data)
               socket.send(text)
@@ -291,49 +306,104 @@ const make = Effect.gen(function* () {
       connection.bunProcess.terminal.resize(cols, rows)
     })
 
-  // Execute init commands silently (run commands without sending output to client)
+  // Execute init commands (optionally silent - without sending output to client)
   const executeInitCommands = (
     connection: ConnectionState,
     commands: readonly string[],
     timeout = 30000, // Default 30 seconds
+    silent = false,
   ) =>
     Effect.gen(function* () {
+      // Send initComplete even for empty commands
       if (commands.length === 0) {
+        yield* sendMessage(
+          connection,
+          JSON.stringify({ type: "initComplete", success: true }),
+        )
         return
       }
 
       console.log(
-        `[WebSocketService] Executing ${commands.length} init commands for ${connection.sessionId}`,
+        `[WebSocketService] Executing ${commands.length} init commands for ${connection.sessionId} (silent: ${silent})`,
       )
 
-      // Execute each command silently
-      for (const command of commands) {
-        const commandWithNewline = command.endsWith("\n") ? command : `${command}\n`
-
-        // Write command to terminal
-        connection.bunProcess.terminal.write(commandWithNewline)
-
-        // Wait for command to complete (simple delay - in production would monitor PTY output)
-        // For now, we use a timeout to prevent hanging
-        yield* Effect.sleep("200 millis")
+      // Enable output suppression if silent mode requested
+      if (silent) {
+        suppressionState.set(connection.sessionId, true)
       }
 
-      console.log(`[WebSocketService] Init commands completed for ${connection.sessionId}`)
+      try {
+        // Execute each command
+        for (const command of commands) {
+          const commandWithNewline = command.endsWith("\n") ? command : `${command}\n`
+
+          // Write command to terminal
+          connection.bunProcess.terminal.write(commandWithNewline)
+
+          // Wait for command to complete (simple delay - in production would monitor PTY output)
+          // For now, we use a timeout to prevent hanging
+          yield* Effect.sleep("200 millis")
+        }
+
+        console.log(`[WebSocketService] Init commands completed for ${connection.sessionId}`)
+
+        // Disable output suppression before sending completion message
+        if (silent) {
+          suppressionState.set(connection.sessionId, false)
+        }
+
+        // Send initComplete success message
+        yield* sendMessage(
+          connection,
+          JSON.stringify({ type: "initComplete", success: true }),
+        )
+      } catch (error) {
+        // Disable output suppression on error too
+        if (silent) {
+          suppressionState.set(connection.sessionId, false)
+        }
+
+        // Send initComplete failure message with error details
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        yield* sendMessage(
+          connection,
+          JSON.stringify({ type: "initComplete", success: false, error: errorMessage }),
+        )
+        throw error
+      }
     }).pipe(
       Effect.timeout(`${timeout} millis`),
-      Effect.catchAll(() =>
-        Effect.fail(
+      Effect.catchAll((error) => {
+        // Ensure suppression is disabled on any failure
+        suppressionState.set(connection.sessionId, false)
+
+        // Send initComplete failure if not already sent
+        if (connection.socket.readyState === WebSocket.OPEN) {
+          connection.socket.send(
+            JSON.stringify({
+              type: "initComplete",
+              success: false,
+              error: `Init commands timed out after ${timeout}ms`,
+            }),
+          )
+        }
+
+        return Effect.fail(
           new WebSocketError({
             cause: "WriteFailed",
-            message: `Init commands timed out after ${timeout}ms`,
+            message:
+              error instanceof Error ? error.message : `Init commands timed out after ${timeout}ms`,
           }),
-        ),
-      ),
+        )
+      }),
     )
 
   // Close connection gracefully
   const close = (connection: ConnectionState) =>
     Effect.sync(() => {
+      // Clean up suppression state
+      suppressionState.delete(connection.sessionId)
+
       // Close the PTY terminal
       try {
         connection.bunProcess.terminal.close()

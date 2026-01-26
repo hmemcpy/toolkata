@@ -92,8 +92,9 @@ Build a headless snippet validation system that extracts code from MDX, executes
 ### P0.1: Silent Init Commands in Sandbox API
 
 - [x] **Add `silent` flag to InitCommands interface** — Update `packages/sandbox-api/src/services/websocket.ts` line 33-38 to add `readonly silent?: boolean` field to `InitCommands` interface
-- [ ] **Implement output suppression in executeInitCommands** — Modify lines 291-329: when `silent: true`, temporarily set a flag to skip socket.send() in PTY data callback (lines 207-211), restore after commands complete
-- [ ] **Add `initComplete` response message** — After executeInitCommands completes, send `{ type: "initComplete", success: boolean, error?: string }` via `sendMessage()`
+- [x] **Implement output suppression in executeInitCommands** — Added `suppressionState` Map to track per-session output suppression. When `silent: true`, the PTY data callback skips sending to socket. Cleanup on connection close.
+- [x] **Add `initComplete` response message** — After executeInitCommands completes, sends `{ type: "initComplete", success: boolean, error?: string }`. Also sends initComplete for empty commands.
+- [x] **Add init message handler in routes** — Added handler for `message.type === "init"` in `packages/sandbox-api/src/routes/websocket.ts` that calls `executeInitCommands` with `silent` flag
 - [ ] **Test silent init manually** — Create test script connecting via WebSocket, send `{ type: "init", commands: [...], silent: true }`, verify no output leakage and initComplete received
 
 ### P0.2: Sandbox Manager (Auto-start)
@@ -314,12 +315,14 @@ _(Updated during implementation)_
 - **Existing:** Multi-environment Docker infrastructure (bash, node, python) is complete
 - **Pattern:** Silent init needs to temporarily suppress PTY → WebSocket forwarding during command execution
 - **Note:** `packages/web/scripts/` directory does not exist yet — need to create it first
+- **Solved:** Used per-session `suppressionState` Map to track output suppression. PTY callback checks this map before sending data.
+- **Pre-existing bug:** `packages/sandbox-api` has TypeScript errors when run with `bun run typecheck` (uses stricter settings than root tsconfig). These are unrelated to snippet validation work.
 
 ---
 
 ## Progress
 
-**P0**: 1/38 tasks complete (3%)
+**P0**: 4/39 tasks complete (10%)
 **P1**: 0/13 tasks complete (0%)
 **P2**: 0/25 tasks complete (0%)
-**Total**: 1/76 tasks complete (1%)
+**Total**: 4/77 tasks complete (5%)
