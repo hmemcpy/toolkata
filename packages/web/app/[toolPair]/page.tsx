@@ -164,6 +164,11 @@ export default async function ComparisonOverviewPage(props: {
       slug: "09-step",
     },
     { step: 10, title: "Interop", description: "ZIO-CE interop, migration", slug: "10-step" },
+    { step: 11, title: "STM", description: "Software Transactional Memory", slug: "11-step" },
+    { step: 12, title: "Concurrent Structures", description: "Ref, Queue, Hub, Semaphore", slug: "12-step" },
+    { step: 13, title: "Configuration", description: "ZIO Config vs Ciris", slug: "13-step" },
+    { step: 14, title: "HTTP", description: "ZIO HTTP vs http4s", slug: "14-step" },
+    { step: 15, title: "Database", description: "ZIO JDBC vs Doobie/Skunk", slug: "15-step" },
   ]
 
   // Select steps based on tool pair
@@ -197,6 +202,11 @@ export default async function ComparisonOverviewPage(props: {
     [8, "~6 min"],
     [9, "~4 min"],
     [10, "~4 min"],
+    [11, "~5 min"],
+    [12, "~6 min"],
+    [13, "~5 min"],
+    [14, "~6 min"],
+    [15, "~6 min"],
   ])
 
   // Select estimated times based on tool pair

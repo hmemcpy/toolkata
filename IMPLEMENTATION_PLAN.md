@@ -166,7 +166,7 @@ export function generateStaticParams() {
 
 ---
 
-- [ ] **Update catsZioSteps array in overview page.tsx** — Add step metadata for steps 11-15
+- [x] **Update catsZioSteps array in overview page.tsx** — Add step metadata for steps 11-15
 
 **Why**: The overview page displays step titles and descriptions. Without these entries, steps 11-15 won't appear on the overview page.
 
@@ -184,7 +184,7 @@ export function generateStaticParams() {
 
 ---
 
-- [ ] **Update catsZioTimes Map in overview page.tsx** — Add time estimates for steps 11-15
+- [x] **Update catsZioTimes Map in overview page.tsx** — Add time estimates for steps 11-15
 
 **Why**: The overview page displays estimated time for each step. Without these entries, steps 11-15 will show no time estimate.
 
