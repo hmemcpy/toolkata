@@ -104,10 +104,10 @@ All Zionomicon chapters are available at `/tmp/zionomicon/EPUB/text/`. Key chapt
 ### Priority Order
 
 **P0 - Critical Infrastructure** (blocks all step 11-15 access):
-- [ ] **Update generateStaticParams in step page.tsx** — Change cats-zio steps from 10 to 15
-- [ ] **Update catsZioSteps array in overview page.tsx** — Add step metadata for steps 11-15
-- [ ] **Update catsZioTimes Map in overview page.tsx** — Add time estimates for steps 11-15
-- [ ] **Update pairings.ts** — Change `steps: 10` to `steps: 15` and `estimatedTime` to "~70 min"
+- [x] **Update generateStaticParams in step page.tsx** — Change cats-zio steps from 10 to 15
+- [x] **Update catsZioSteps array in overview page.tsx** — Add step metadata for steps 11-15
+- [x] **Update catsZioTimes Map in overview page.tsx** — Add time estimates for steps 11-15
+- [x] **Update pairings.ts** — Change `steps: 10` to `steps: 15` and `estimatedTime` to "~70 min"
 
 **P1 - Content - New Steps** (required for feature completion):
 - [ ] **Create Step 11: STM** — ZIO STM vs cats-stm (TRef, TMap, TQueue, transactions)
@@ -202,7 +202,7 @@ export function generateStaticParams() {
 
 ---
 
-- [ ] **Update pairings.ts** — Change steps from 10 to 15, update estimated time
+- [x] **Update pairings.ts** — Change steps from 10 to 15, update estimated time
 
 **Why**: The tool pairing registry controls step counts and time estimates displayed throughout the site.
 
