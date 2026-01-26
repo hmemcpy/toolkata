@@ -99,12 +99,12 @@ Build a headless snippet validation system that extracts code from MDX, executes
 
 ### P0.2: Sandbox Manager (Auto-start)
 
-- [ ] **Create scripts directory** — Create `packages/web/scripts/` directory
-- [ ] **Create sandbox-manager.ts** — New file `packages/web/scripts/sandbox-manager.ts` with `ensureSandboxRunning()` function
-- [ ] **Implement health check** — `GET /api/v1/status` with fetch, return boolean
-- [ ] **Implement spawn logic** — `Bun.spawn()` for `bun run --cwd ../sandbox-api dev`, poll health until ready (30s timeout)
-- [ ] **Implement cleanup function** — Kill child process, await `.exited` promise
-- [ ] **Support environment variable** — `SANDBOX_API_URL` override for CI/custom setups
+- [x] **Create scripts directory** — `packages/web/scripts/` directory already exists
+- [x] **Create sandbox-manager.ts** — New file `packages/web/scripts/sandbox-manager.ts` with `ensureSandboxRunning()` function
+- [x] **Implement health check** — Uses `/health` endpoint (not `/api/v1/status`) with 2s timeout
+- [x] **Implement spawn logic** — `Bun.spawn()` for `bun run dev` in sandbox-api directory, poll health until ready (30s timeout, 500ms interval)
+- [x] **Implement cleanup function** — Kill child process, await `.exited` promise
+- [x] **Support environment variable** — `SANDBOX_API_URL` override for CI/custom setups
 
 ### P0.3: Snippet Extraction (jj-git)
 
@@ -322,7 +322,7 @@ _(Updated during implementation)_
 
 ## Progress
 
-**P0**: 5/39 tasks complete (13%)
+**P0**: 11/39 tasks complete (28%)
 **P1**: 0/13 tasks complete (0%)
 **P2**: 0/25 tasks complete (0%)
-**Total**: 5/77 tasks complete (6%)
+**Total**: 11/77 tasks complete (14%)
