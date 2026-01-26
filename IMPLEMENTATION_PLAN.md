@@ -444,7 +444,7 @@ tx.transact(transactor)
 
 ---
 
-- [ ] **Update Step 2: Creating Effects** — Add utility constructors
+- [x] **Update Step 2: Creating Effects** — Add utility constructors
 
 **Why**: Current content shows basic constructors but misses useful utility methods from Zionomicon ch003, ch006.
 
@@ -454,7 +454,12 @@ tx.transact(transactor)
 - Add `ZIO.unit: UIO[Unit]` - Unit value
 - Add `ZIO.never: ZIO[Any, Nothing, Nothing]` - Never completes
 - Add `ZIO.fromTry[A](a: => Try[A]): Task[A]` - From Scala Try
-- Add `ZIO.async[R, E, A]` - Callback-based effects
+- Add `ZIO.async[R, E, A]` - Callback-based effects (already exists)
+
+**Completed** 2026-01-26:
+- Added `ZIO.unit`, `ZIO.never`, `ZIO.fromTry` sections
+- Updated frontmatter zioCommands/ceCommands lists
+- All constructors now compared between ZIO and Cats Effect
 
 ---
 
@@ -741,14 +746,14 @@ No strict dependencies between steps - each should be standalone. However:
 
 ## Task Count
 
-**Total pending tasks**: 27 main tasks (P0-P4)
+**Total pending tasks**: 24 main tasks (P0-P4)
 - P0 (Critical): 4 tasks — Infrastructure updates (COMPLETED)
 - P1 (New Steps): 0 tasks — All new steps created (11-15)
-- P2 (Enhance): 8 tasks — Update steps 2-9
+- P2 (Enhance): 7 tasks — Update steps 3-9
 - P3 (Landing): 2 tasks — Index page, glossary
 - P4 (Validation): 1 task — Build/typecheck/lint
 
-**Completed tasks**: 9/20 main tasks (45%)
+**Completed tasks**: 10/20 main tasks (50%)
 - [x] P0: All infrastructure updates (generateStaticParams, overview page steps/times, pairings.ts)
 - [x] Step 11: STM (11-step.mdx created, validated)
 - [x] Step 12: Concurrent Structures (12-step.mdx created, validated)
@@ -757,9 +762,10 @@ No strict dependencies between steps - each should be standalone. However:
 - [x] Step 15: Database (15-step.mdx created, validated)
 - [x] Step 10: Interop (version `23.1.0.3` is correct for ZIO 2.x)
 - [x] Step 1: R/E/A Signature (added variance notation, RIO, URIO type aliases)
+- [x] Step 2: Creating Effects (added ZIO.unit, ZIO.never, ZIO.fromTry)
 
-**Progress**: 9/20 main tasks complete (45%)
-**Remaining work**: Enhancements to steps 2-9, landing page updates
+**Progress**: 10/20 main tasks complete (50%)
+**Remaining work**: Enhancements to steps 3-9, landing page updates
 
 **Learned**:
 - MDX string interpolation requires escaping `${}` as `\${}` to avoid JSX interpretation

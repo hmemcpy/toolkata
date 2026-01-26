@@ -2,8 +2,8 @@
 title: "Creating Effects"
 step: 2
 description: "Creating effects from pure values and side effects"
-zioCommands: []
-ceCommands: []
+zioCommands: ["ZIO.succeed", "ZIO.attempt", "ZIO.fail", "ZIO.unit", "ZIO.never", "ZIO.fromTry", "ZIO.async", "ZIO.fromOption", "ZIO.fromEither"]
+ceCommands: ["IO.pure", "IO.delay", "IO.raiseError", "IO.unit", "IO.canceled", "IO.fromEither", "IO.fromOption", "IO.async_", "IO.fromFuture"]
 ---
 
 # Creating Effects
@@ -39,6 +39,41 @@ Both libraries provide similar constructors for creating effects from pure value
 
 <Callout variant="warning">
 Cats Effect requires errors to be `Throwable`. ZIO allows any error type via the `E` parameter.
+</Callout>
+
+## Unit Value
+
+<ScalaComparisonBlock
+  catsEffectCode={`import cats.effect.IO\n\n// Unit value for chaining effects\nval unit: IO[Unit] = IO.unit\n\n// Often implicit in comprehensions\nval program =\n  for {\n    _ <- IO.println("First")\n    _ <- IO.println("Second")\n  } yield ()`}
+  zioCode={`import zio._\n\n// Unit value for chaining effects\nval unit: UIO[Unit] = ZIO.unit\n\n// Often implicit in comprehensions\nval program =\n  for {\n    _ <- ZIO.attempt(println("First"))\n    _ <- ZIO.attempt(println("Second"))\n  } yield ()`}
+  catsEffectComment="IO.unit - succeeds with Unit"
+  zioComment="ZIO.unit - succeeds with Unit"
+/>
+
+## Never-Completing Effect
+
+<ScalaComparisonBlock
+  catsEffectCode={`import cats.effect.IO\n\n// Effect that never completes\nval never: IO[Nothing] = IO.never\n\n// Useful for servers that run indefinitely\nval runForever =\n  IO.never`}
+  zioCode={`import zio._\n\n// Effect that never completes\nval never: ZIO[Any, Nothing, Nothing] = ZIO.never\n\n// Useful for servers that run indefinitely\nval runForever = ZIO.never`}
+  catsEffectComment="IO.never - never completes"
+  zioComment="ZIO.never - never completes"
+/>
+
+<Callout variant="tip">
+<code>ZIO.never</code> / <code>IO.never</code> are useful for keeping servers running indefinitely: <code>server.useForever</code> or <code>ZIO.scoped(server *> ZIO.never)</code>.
+</Callout>
+
+## From Scala Try
+
+<ScalaComparisonBlock
+  catsEffectCode={`import cats.effect.IO\nimport scala.util.{Try, Success, Failure}\n\n// From Try (Success/Failure)\nval fromTry: IO[Int] =\n  IO.fromTry(Try(42))\n\n// Try encapsulates Throwable\nval fromTryFailure: IO[Int] =\n  IO.fromTry(Failure(new Exception("oops")))`}
+  zioCode={`import zio._\nimport scala.util.{Try, Success, Failure}\n\n// From Try (Success/Failure)\nval fromTry: Task[Int] =\n  ZIO.fromTry(Try(42))\n\n// Try encapsulates Throwable\nval fromTryFailure: Task[Int] =\n  ZIO.fromTry(Failure(new Exception("oops")))`}
+  catsEffectComment="IO.fromTry - from Scala Try"
+  zioComment="ZIO.fromTry - from Scala Try"
+/>
+
+<Callout variant="tip">
+<code>ZIO.fromTry</code> converts Scala <code>Try[A]</code> to <code>Task[A]</code>. Since <code>Try</code> can only fail with <code>Throwable</code>, the error type is fixed to <code>Throwable</code>.
 </Callout>
 
 ## From Option/Either
