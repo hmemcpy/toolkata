@@ -129,14 +129,14 @@ Build a headless snippet validation system that extracts code from MDX, executes
 
 ### P0.5: Headless Validator (jj-git)
 
-- [ ] **Create headless-validator.ts** — New file `packages/web/scripts/headless-validator.ts`
-- [ ] **Implement session creation** — HTTP POST to create session for tool pair, extract sessionId
-- [ ] **Implement WebSocket connection** — Connect to session WebSocket URL, set up message handlers
-- [ ] **Implement command execution** — Send command, collect output until shell prompt returns
-- [ ] **Implement prompt detection** — Wait for `$ ` to appear after command output
-- [ ] **Implement error detection for shell** — Check for `error:`, `fatal:`, `usage:` patterns in output
-- [ ] **Implement session reuse per step** — Group snippets by step, single session per step
-- [ ] **Implement cleanup** — HTTP DELETE to destroy session after step completes
+- [x] **Create headless-validator.ts** — New file `packages/web/scripts/headless-validator.ts`
+- [x] **Implement session creation** — HTTP POST to create session for tool pair, extract sessionId
+- [x] **Implement WebSocket connection** — Connect to session WebSocket URL, set up message handlers (uses Bun's native WebSocket)
+- [x] **Implement command execution** — Send command, collect output until shell prompt returns
+- [x] **Implement prompt detection** — Wait for `$ ` to appear after command output (with 500ms settle time after last output)
+- [x] **Implement error detection for shell** — Check for `error:`, `fatal:`, `usage:` patterns in output
+- [x] **Implement session reuse per step** — Group snippets by step, single session per step via `validateStep()` function
+- [x] **Implement cleanup** — HTTP DELETE to destroy session after step completes
 
 ### P0.6: CLI Entry Point
 
@@ -324,12 +324,13 @@ _(Updated during implementation)_
 - **Snippet extraction tested:** 324 snippets extracted from jj-git (12 steps), includes SideBySide, TryIt, and codeblock sources
 - **TypeScript strictness:** `exactOptionalPropertyTypes: true` requires conditional object building instead of assigning `undefined` to optional properties. Helper functions needed to construct objects with only defined properties.
 - **Config resolution:** `config-resolver.ts` created with full support for 3-level config hierarchy (pairing config.yml → step frontmatter → component props). Falls back to `defaults.sandbox.init` if no `validation:` section exists.
+- **Headless validator:** Uses Bun's native WebSocket (browser-compatible API) instead of `ws` package to avoid adding dependencies to packages/web. Prompt detection uses 500ms settle time after last output.
 
 ---
 
 ## Progress
 
-**P0**: 22/42 tasks complete (52%) — P0.4 Config Resolution complete
+**P0**: 30/42 tasks complete (71%) — P0.5 Headless Validator complete
 **P1**: 0/13 tasks complete (0%)
 **P2**: 0/25 tasks complete (0%)
-**Total**: 22/80 tasks complete (28%)
+**Total**: 30/80 tasks complete (38%)
