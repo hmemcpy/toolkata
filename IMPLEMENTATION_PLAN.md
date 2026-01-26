@@ -8,155 +8,258 @@ Build a headless snippet validation system that extracts code from MDX, executes
 
 ---
 
-## Phase 1: Silent Init Commands in Sandbox API
+## Gap Analysis (Verified 2026-01-26)
 
-- [ ] **Add silent flag to WebSocket init message** — Update `packages/sandbox-api/src/services/websocket.ts` to support `{ type: "init", commands: [...], silent: true }` that suppresses output
-- [ ] **Implement output buffering for silent mode** — Buffer init command output, only send on error or if `silent: false`
-- [ ] **Add initComplete response with success/error** — Return `{ type: "initComplete", success: boolean, error?: string, output?: string }`
-- [ ] **Test silent init manually** — Create test script that connects via WebSocket, sends silent init, verifies no output leakage
+### What Already Exists
 
-## Phase 2: Sandbox Manager (Auto-start)
+**Multi-Environment Docker Infrastructure (complete):**
+- `packages/sandbox-api/src/environments/` — Complete environment registry with Effect-TS service
+- `packages/sandbox-api/src/environments/builtin.ts` — 3 environments registered (bash, node, python)
+- `packages/sandbox-api/docker/environments/` — Dockerfiles for bash, node, python (verified: 3 envs with entrypoints)
+- `packages/sandbox-api/scripts/docker-build-all.sh` — Multi-environment build with automated tests
 
+**WebSocket Init Commands (partial):**
+- `websocket.ts` lines 291-329: `executeInitCommands()` method exists with timeout support
+- Interface `InitCommands` at lines 33-38 has `type`, `commands`, `timeout` but **NO `silent` field**
+- Runs commands via PTY `terminal.write()`
+- Has 200ms delays per command, configurable timeout (default 30s)
+- **GAP 1:** Output IS sent to client (not silent) — PTY data callback at lines 207-211 always sends to socket
+- **GAP 2:** `initComplete` message never sent — client expects it but server doesn't send it
+
+**Client `initComplete` Handler (complete):**
+- `InteractiveTerminal.tsx`: `WsInitCompleteMessage` interface defined
+- Handler calls `onInitComplete?.()` callback when message received
+- **Working:** Client side is ready, just needs server to send the message
+
+**Content Infrastructure (complete — needs `validation` field added):**
+- `packages/web/lib/content/schemas.ts` — Zod frontmatter validation with `sandboxConfigSchema`
+- Schema supports `sandbox: { enabled, environment, timeout, init }` but NOT `validation:` section
+- Config files exist at `packages/web/content/comparisons/{pairing}/config.yml`
+- All 3 config.yml files exist (jj-git has `defaults.sandbox` section; need `validation:` sections)
+
+**TryIt Component (complete — needs `setup` prop added):**
+- `packages/web/components/ui/TryIt.tsx` — Working component with `command`, `description`, `expectedOutput`, `editable` props
+- **Missing:** `setup` prop for per-snippet validation override
+
+**Existing CI (partial):**
+- `.github/workflows/ci.yml` exists — general CI workflow
+- **Missing:** Dedicated snippet validation workflow
+
+### What Does NOT Exist
+
+**Validation Scripts (0/6 created):**
+- `packages/web/scripts/validate-snippets.ts` — CLI entry point
+- `packages/web/scripts/snippet-extractor.ts` — MDX parsing
+- `packages/web/scripts/headless-validator.ts` — Sandbox execution
+- `packages/web/scripts/config-resolver.ts` — Config merging
+- `packages/web/scripts/sandbox-manager.ts` — Auto-start sandbox-api
+- `packages/web/scripts/validation-cache.ts` — Step-level caching
+
+**Note:** `packages/web/scripts/` directory does not exist yet.
+
+**New Docker Environments (0/2):**
+- `packages/sandbox-api/docker/environments/scala/Dockerfile`
+- `packages/sandbox-api/docker/environments/typescript/Dockerfile`
+
+**Component Props (0/4 complete):**
+- `ScalaComparisonBlock.tsx` — needs `validate`, `extraImports` props
+- `CrossLanguageBlock.tsx` — needs `validate`, `extraImports` props
+- `SideBySide.tsx` — needs `validate` prop
+- `TryIt.tsx` — needs `setup` prop
+
+**Config Updates (0/3):**
+- `jj-git/config.yml` — needs `validation:` section with shell prelude (currently only has `defaults.sandbox`)
+- `zio-cats/config.yml` — needs `validation:` section with Scala imports/wrapper
+- `effect-zio/config.yml` — needs `validation:` + `secondary:` sections
+
+**Other:**
+- `.github/workflows/validate-snippets.yml` — CI workflow (separate from existing ci.yml)
+- `.validation-cache/` directory and gitignore entry
+- `packages/web/lib/content/schemas.ts` — add `validation` field to frontmatter schema
+
+---
+
+## Priority Levels
+
+- **P0**: Core functionality — jj-git E2E validation working
+- **P1**: Production readiness — caching, build integration, CI
+- **P2**: Extended coverage — Scala/TypeScript environments, component props
+
+---
+
+## P0: Core Snippet Validation (jj-git E2E)
+
+### P0.1: Silent Init Commands in Sandbox API
+
+- [x] **Add `silent` flag to InitCommands interface** — Update `packages/sandbox-api/src/services/websocket.ts` line 33-38 to add `readonly silent?: boolean` field to `InitCommands` interface
+- [ ] **Implement output suppression in executeInitCommands** — Modify lines 291-329: when `silent: true`, temporarily set a flag to skip socket.send() in PTY data callback (lines 207-211), restore after commands complete
+- [ ] **Add `initComplete` response message** — After executeInitCommands completes, send `{ type: "initComplete", success: boolean, error?: string }` via `sendMessage()`
+- [ ] **Test silent init manually** — Create test script connecting via WebSocket, send `{ type: "init", commands: [...], silent: true }`, verify no output leakage and initComplete received
+
+### P0.2: Sandbox Manager (Auto-start)
+
+- [ ] **Create scripts directory** — Create `packages/web/scripts/` directory
 - [ ] **Create sandbox-manager.ts** — New file `packages/web/scripts/sandbox-manager.ts` with `ensureSandboxRunning()` function
-- [ ] **Implement health check** — `GET /api/v1/status` with timeout, return boolean
-- [ ] **Implement spawn logic** — `Bun.spawn()` for sandbox-api dev server, wait for healthy (30s timeout)
-- [ ] **Implement cleanup function** — Kill child process, await exit
-- [ ] **Add environment variable support** — `SANDBOX_API_URL` override for CI/custom setups
+- [ ] **Implement health check** — `GET /api/v1/status` with fetch, return boolean
+- [ ] **Implement spawn logic** — `Bun.spawn()` for `bun run --cwd ../sandbox-api dev`, poll health until ready (30s timeout)
+- [ ] **Implement cleanup function** — Kill child process, await `.exited` promise
+- [ ] **Support environment variable** — `SANDBOX_API_URL` override for CI/custom setups
 
-## Phase 3: Snippet Extraction (jj-git only)
+### P0.3: Snippet Extraction (jj-git)
 
 - [ ] **Create snippet-extractor.ts** — New file `packages/web/scripts/snippet-extractor.ts`
-- [ ] **Implement MDX file discovery** — Glob `content/comparisons/jj-git/**/*.mdx`
+- [ ] **Implement MDX file discovery** — Glob `content/comparisons/jj-git/**/*.mdx`, skip index.mdx
 - [ ] **Extract SideBySide commands** — Regex for `<SideBySide` component, parse `fromCommands` and `toCommands` arrays
 - [ ] **Extract TryIt commands** — Regex for `<TryIt` component, parse `command` prop
 - [ ] **Extract markdown code blocks** — Regex for ` ```bash` blocks
-- [ ] **Implement normalizeCode** — Strip `|` prefix (reuse logic from ScalaComparisonBlock)
-- [ ] **Output ExtractedSnippet interface** — `{ file, toolPair, step, lineStart, language, source, code, prop? }`
+- [ ] **Implement normalizeCode** — Strip `|` prefix (reuse logic from ScalaComparisonBlock if needed)
+- [ ] **Output ExtractedSnippet interface** — `{ file, toolPair, step, lineStart, language, source, code, prop?, validate? }`
 
-## Phase 4: Config Resolution
+### P0.4: Config Resolution
 
 - [ ] **Create config-resolver.ts** — New file `packages/web/scripts/config-resolver.ts`
-- [ ] **Load pairing config.yml** — Parse `content/comparisons/{pairing}/config.yml` validation section
-- [ ] **Parse step frontmatter** — Extract `validation:` section from MDX frontmatter
-- [ ] **Merge config hierarchy** — Pairing → Step → Component (imports concatenate, setup overrides)
-- [ ] **Add validation schema to frontmatter** — Update `packages/web/lib/content/schemas.ts` with optional `validation` field
+- [ ] **Load pairing config.yml** — Parse `content/comparisons/{pairing}/config.yml` for `validation:` section
+- [ ] **Parse step frontmatter** — Extract `validation:` section from MDX frontmatter using gray-matter
+- [ ] **Merge config hierarchy** — Pairing prelude → Step → Component: imports concatenate, setup overrides
 
-## Phase 5: Headless Validator (jj-git)
+### P0.5: Headless Validator (jj-git)
 
 - [ ] **Create headless-validator.ts** — New file `packages/web/scripts/headless-validator.ts`
-- [ ] **Implement session creation** — Use SandboxClient to create session for tool pair
-- [ ] **Implement command execution** — Send command via WebSocket, collect output until prompt returns
+- [ ] **Implement session creation** — HTTP POST to create session for tool pair, extract sessionId
+- [ ] **Implement WebSocket connection** — Connect to session WebSocket URL, set up message handlers
+- [ ] **Implement command execution** — Send command, collect output until shell prompt returns
+- [ ] **Implement prompt detection** — Wait for `$ ` to appear after command output
 - [ ] **Implement error detection for shell** — Check for `error:`, `fatal:`, `usage:` patterns in output
 - [ ] **Implement session reuse per step** — Group snippets by step, single session per step
-- [ ] **Implement cleanup** — Destroy session after step completes
+- [ ] **Implement cleanup** — HTTP DELETE to destroy session after step completes
 
-## Phase 6: CLI Entry Point
+### P0.6: CLI Entry Point
 
 - [ ] **Create validate-snippets.ts** — New file `packages/web/scripts/validate-snippets.ts`
-- [ ] **Implement CLI argument parsing** — `--strict`, `--tool-pair`, `--step`, `--verbose`
+- [ ] **Implement CLI argument parsing** — `--strict`, `--tool-pair`, `--step`, `--verbose`, `--help`
 - [ ] **Orchestrate validation flow** — Sandbox manager → Extract → Resolve config → Validate → Report
-- [ ] **Implement console reporter** — Per-step pass/fail, summary, failure details with file:line
-- [ ] **Exit with code 1 on failures** — For CI integration
+- [ ] **Implement console reporter** — Per-step pass/fail with snippet counts, summary, failure details with file:line
+- [ ] **Exit with code 1 on failures** — For CI integration (`--strict` mode)
 
-## Phase 7: Step-Level Caching
+### P0.7: Validation Config for jj-git
+
+- [ ] **Update jj-git config.yml** — Add `validation:` section with shell setup commands (git init, config user.email/name)
+- [ ] **Add validation schema to stepFrontmatterSchema** — Update `packages/web/lib/content/schemas.ts` with optional `validation` field
+- [ ] **Test end-to-end jj-git validation** — Run `bun run scripts/validate-snippets.ts --tool-pair jj-git`
+- [ ] **Fix any failing snippets** — Update MDX content or config as needed to pass validation
+
+---
+
+## P1: Production Readiness
+
+### P1.1: Step-Level Caching
 
 - [ ] **Create validation-cache.ts** — New file `packages/web/scripts/validation-cache.ts`
-- [ ] **Implement step hash computation** — SHA256 of (config.yml + step MDX content)
-- [ ] **Implement cache storage** — JSON file in `.validation-cache/` directory
-- [ ] **Implement cache lookup** — Skip validation if hash matches
-- [ ] **Add --no-cache flag** — Force re-validation
+- [ ] **Implement step hash computation** — SHA256 of (config.yml content + step MDX content)
+- [ ] **Implement cache storage** — JSON file per step in `.validation-cache/` directory
+- [ ] **Implement cache lookup** — Compare hash, skip validation if match, return cached result
+- [ ] **Add `--no-cache` flag** — Force re-validation ignoring cache
 
-## Phase 8: Validation Config for jj-git
+### P1.2: Build Integration
 
-- [ ] **Update jj-git config.yml** — Add `validation:` section with prelude setup commands
-- [ ] **Test end-to-end jj-git validation** — Run `bun run scripts/validate-snippets.ts --tool-pair jj-git`
-- [ ] **Fix any failing snippets** — Update MDX or config as needed
+- [ ] **Add validate:snippets script** — Update `packages/web/package.json` with `"validate:snippets": "bun run scripts/validate-snippets.ts"`
+- [ ] **Add prebuild hook** — Update package.json with `"prebuild": "bun run validate:snippets --strict"`
+- [ ] **Add .validation-cache to .gitignore** — Prevent cache from being committed
+- [ ] **Test full build** — Run `bun run build`, verify validation runs first
 
-## Phase 9: Build Integration
+### P1.3: CI Integration
 
-- [ ] **Add validate:snippets script** — Update `packages/web/package.json`
-- [ ] **Add prebuild hook** — Run validation before `next build` (with `--strict`)
-- [ ] **Create Playwright test for validation** — Test that validation script runs and reports correctly
+- [ ] **Create GitHub Actions workflow** — `.github/workflows/validate-snippets.yml` triggered on content changes
+- [ ] **Configure sandbox-api in CI** — Build Docker image, start container in workflow
+- [ ] **Add caching for validation results** — GitHub Actions cache for `.validation-cache/` directory
+- [ ] **Test PR validation** — Create test PR with content change, verify workflow runs
 
-## Phase 10: Scala Environment (zio-cats)
+---
 
-- [ ] **Create Dockerfile.scala** — Eclipse Temurin JDK 21 + scala-cli + pre-cached deps
+## P2: Extended Coverage
+
+### P2.1: Scala Environment (zio-cats)
+
+- [ ] **Create Dockerfile for Scala** — `packages/sandbox-api/docker/environments/scala/Dockerfile` with Eclipse Temurin JDK 21 + scala-cli
+- [ ] **Pre-cache dependencies** — Add ZIO and Cats Effect dependencies to Docker image
+- [ ] **Create entrypoint.sh for Scala** — Standard entrypoint matching other environments
 - [ ] **Register scala environment** — Update `packages/sandbox-api/src/environments/builtin.ts`
-- [ ] **Update docker-build-all.sh** — Build scala image
+- [ ] **Update docker-build-all.sh** — Add scala environment to build script
 - [ ] **Extend snippet-extractor for ScalaComparisonBlock** — Extract `zioCode`, `catsEffectCode` props
 - [ ] **Implement Scala validation logic** — Write snippet to file, run `scala-cli compile`, check exit code
-- [ ] **Add zio-cats config.yml validation section** — Imports prelude for ZIO and Cats Effect
+- [ ] **Add zio-cats config.yml validation section** — Imports prelude for ZIO and Cats Effect, wrapper template
 - [ ] **Test zio-cats validation** — Run full validation, fix any issues
 
-## Phase 11: TypeScript Environment (effect-zio)
+### P2.2: TypeScript Environment (effect-zio)
 
-- [ ] **Create Dockerfile.typescript** — Node 22 + tsx + typescript + effect
-- [ ] **Register typescript environment** — Update builtin.ts
+- [ ] **Create Dockerfile for TypeScript** — `packages/sandbox-api/docker/environments/typescript/Dockerfile` with Node 22 + tsx + typescript
+- [ ] **Pre-install effect package** — Add effect to node_modules in Docker image
+- [ ] **Create entrypoint.sh for TypeScript** — Standard entrypoint matching other environments
+- [ ] **Register typescript environment** — Update `packages/sandbox-api/src/environments/builtin.ts`
+- [ ] **Update docker-build-all.sh** — Add typescript environment to build script
 - [ ] **Extend snippet-extractor for CrossLanguageBlock** — Extract `zioCode`, `effectCode` props
 - [ ] **Implement TypeScript validation logic** — Write snippet to file, run `tsc --noEmit`, check exit code
-- [ ] **Add effect-zio config.yml validation section** — Imports prelude for Effect
+- [ ] **Add effect-zio config.yml validation section** — Imports prelude for Effect, secondary section for Scala
 - [ ] **Test effect-zio validation** — Run full validation, fix any issues
 
-## Phase 12: Component Props Support
+### P2.3: Component Props Support
 
-- [ ] **Add validate prop to ScalaComparisonBlock** — Skip validation when `validate={false}`
-- [ ] **Add validate prop to CrossLanguageBlock** — Skip validation when `validate={false}`
-- [ ] **Add validate prop to SideBySide** — Skip validation when `validate={false}`
-- [ ] **Add setup prop to TryIt** — Override prelude setup for specific command
-- [ ] **Add extraImports prop to comparison blocks** — Extend prelude imports
-
-## Phase 13: CI Integration
-
-- [ ] **Create GitHub Actions workflow** — `.github/workflows/validate-snippets.yml`
-- [ ] **Configure sandbox-api startup in CI** — Docker or local spawn
-- [ ] **Add caching for validation results** — Cache `.validation-cache/` directory
-- [ ] **Test PR validation** — Verify workflow runs on content changes
+- [ ] **Add validate prop to ScalaComparisonBlock** — Boolean prop, skip validation when `validate={false}`
+- [ ] **Add validate prop to CrossLanguageBlock** — Boolean prop, skip validation when `validate={false}`
+- [ ] **Add validate prop to SideBySide** — Boolean prop, skip validation when `validate={false}`
+- [ ] **Add setup prop to TryIt** — String array prop to override prelude setup for specific command
+- [ ] **Add extraImports prop to ScalaComparisonBlock** — String array prop to extend prelude imports
+- [ ] **Add extraImports prop to CrossLanguageBlock** — String array prop to extend prelude imports
+- [ ] **Update snippet-extractor** — Parse validate and setup/extraImports props from component JSX
 
 ---
 
-## Task Count
+## Task Count Summary
 
-**Total**: 54 tasks
-- Phase 1 (Silent Init): 4 tasks
-- Phase 2 (Sandbox Manager): 5 tasks
-- Phase 3 (Extraction): 7 tasks
-- Phase 4 (Config): 4 tasks
-- Phase 5 (Validator): 6 tasks
-- Phase 6 (CLI): 5 tasks
-- Phase 7 (Caching): 5 tasks
-- Phase 8 (jj-git Config): 3 tasks
-- Phase 9 (Build): 3 tasks
-- Phase 10 (Scala): 7 tasks
-- Phase 11 (TypeScript): 6 tasks
-- Phase 12 (Props): 5 tasks
-- Phase 13 (CI): 4 tasks
-
-**Progress**: 0/54 tasks complete (0%)
+| Priority | Phase | Tasks |
+|----------|-------|-------|
+| P0 | Silent Init Commands | 4 |
+| P0 | Sandbox Manager | 6 |
+| P0 | Snippet Extraction | 7 |
+| P0 | Config Resolution | 4 |
+| P0 | Headless Validator | 8 |
+| P0 | CLI Entry Point | 5 |
+| P0 | jj-git Config | 4 |
+| **P0 Total** | | **38** |
+| P1 | Caching | 5 |
+| P1 | Build Integration | 4 |
+| P1 | CI Integration | 4 |
+| **P1 Total** | | **13** |
+| P2 | Scala Environment | 9 |
+| P2 | TypeScript Environment | 9 |
+| P2 | Component Props | 7 |
+| **P2 Total** | | **25** |
+| **Grand Total** | | **76** |
 
 ---
 
-## Dependencies
+## Dependencies Graph
 
 ```
-Phase 1 (Silent Init) ──────────────────────────┐
-                                                 │
-Phase 2 (Sandbox Manager) ──────────────────────┤
-                                                 │
-Phase 3 (Extraction) ───────────────────────────┼──► Phase 5 (Validator) ──► Phase 6 (CLI)
-                                                 │           │
-Phase 4 (Config) ───────────────────────────────┘           │
-                                                             │
-                                    Phase 7 (Caching) ◄──────┘
-                                             │
-                                             ▼
-                        Phase 8 (jj-git) ──► Phase 9 (Build) ──► Phase 13 (CI)
-                                             │
-                        Phase 10 (Scala) ◄───┴───► Phase 11 (TypeScript)
-                                             │
-                        Phase 12 (Props) ◄───┘
+P0.1 (Silent Init) ─────────────────────┐
+                                        │
+P0.2 (Sandbox Manager) ─────────────────┼──► P0.5 (Validator) ──► P0.6 (CLI)
+                                        │          │
+P0.3 (Extraction) ──────────────────────┤          │
+                                        │          │
+P0.4 (Config) ──────────────────────────┘          │
+                                                   │
+                        P0.7 (jj-git Config) ◄─────┘
+                                  │
+                                  ▼
+                        P1.1 (Caching) ──► P1.2 (Build) ──► P1.3 (CI)
+                                                   │
+                        P2.1 (Scala) ◄─────────────┼───────► P2.2 (TypeScript)
+                                                   │
+                        P2.3 (Component Props) ◄───┘
 ```
 
-**Critical Path**: Phase 1 → Phase 2 → Phase 3 → Phase 5 → Phase 6 → Phase 8 (jj-git working E2E)
+**Critical Path**: P0.1 + P0.2 + P0.3 + P0.4 → P0.5 → P0.6 → P0.7 (jj-git working E2E)
 
 ---
 
@@ -167,9 +270,10 @@ Phase 4 (Config) ─────────────────────
 cd packages/sandbox-api && bun run dev  # Start sandbox API
 cd packages/web && bun run dev          # Start web dev server
 
-# Validation
+# Validation (after implementation)
 bun run --cwd packages/web scripts/validate-snippets.ts --tool-pair jj-git
 bun run --cwd packages/web scripts/validate-snippets.ts --strict
+bun run --cwd packages/web scripts/validate-snippets.ts --verbose
 
 # Full build with validation
 bun run --cwd packages/web build
@@ -193,6 +297,8 @@ bun run test
 | SideBySide | `packages/web/components/ui/SideBySide.tsx` |
 | Content schemas | `packages/web/lib/content/schemas.ts` |
 | jj-git config | `packages/web/content/comparisons/jj-git/config.yml` |
+| zio-cats config | `packages/web/content/comparisons/zio-cats/config.yml` |
+| effect-zio config | `packages/web/content/comparisons/effect-zio/config.yml` |
 | Environments | `packages/sandbox-api/src/environments/builtin.ts` |
 | Spec document | `SNIPPET-VALIDATION.md` |
 
@@ -202,63 +308,18 @@ bun run test
 
 _(Updated during implementation)_
 
+- **Gap discovered:** `executeInitCommands` is NOT silent - PTY data callback always sends to socket (websocket.ts:207-211)
+- **Gap discovered:** Server never sends `initComplete` message despite client expecting it (InteractiveTerminal.tsx:62)
+- **Existing:** Client-side `initComplete` handler is already implemented and working
+- **Existing:** Multi-environment Docker infrastructure (bash, node, python) is complete
+- **Pattern:** Silent init needs to temporarily suppress PTY → WebSocket forwarding during command execution
+- **Note:** `packages/web/scripts/` directory does not exist yet — need to create it first
+
 ---
 
-## Gap Analysis (2026-01-26)
+## Progress
 
-### What Already Exists
-
-**Multi-Environment Docker Infrastructure (can be leveraged):**
-- `packages/sandbox-api/src/environments/` - Complete environment registry with Effect-TS service
-- `packages/sandbox-api/src/environments/builtin.ts` - 3 environments registered (bash, node, python)
-- `packages/sandbox-api/docker/environments/` - Dockerfiles for bash, node, python
-- `packages/sandbox-api/scripts/docker-build-all.sh` - Multi-environment build with 11 tests
-
-**WebSocket Init Commands (partial - needs enhancement):**
-- `websocket.ts` lines 89-94, 292-329: `executeInitCommands()` method exists
-- Runs commands silently (doesn't echo to user), has 200ms delays, 30s timeout
-- **Missing:** `silent: true` flag option, `initComplete` response type
-
-**Content Infrastructure:**
-- `packages/web/lib/content/schemas.ts` - Zod frontmatter validation (needs `validation` field added)
-- `packages/web/lib/content/types.ts` - `SandboxConfig` type, `resolveSandboxConfig()` function
-- All 3 `config.yml` files exist (need `validation:` sections added)
-
-### What Does NOT Exist (54 tasks remain)
-
-**Validation Scripts (0/6 created):**
-- [ ] `packages/web/scripts/validate-snippets.ts`
-- [ ] `packages/web/scripts/snippet-extractor.ts`
-- [ ] `packages/web/scripts/headless-validator.ts`
-- [ ] `packages/web/scripts/config-resolver.ts`
-- [ ] `packages/web/scripts/sandbox-manager.ts`
-- [ ] `packages/web/scripts/validation-cache.ts`
-
-**New Docker Environments (0/2):**
-- [ ] `packages/sandbox-api/docker/environments/scala/Dockerfile`
-- [ ] `packages/sandbox-api/docker/environments/typescript/Dockerfile`
-
-**Component Props (0/4):**
-- [ ] `ScalaComparisonBlock.tsx` - needs `validate`, `extraImports` props
-- [ ] `CrossLanguageBlock.tsx` - needs `validate`, `extraImports` props
-- [ ] `SideBySide.tsx` - needs `validate` prop
-- [ ] `TryIt.tsx` - needs `setup` prop
-
-**Config Updates (0/3):**
-- [ ] `jj-git/config.yml` - needs `validation:` section
-- [ ] `zio-cats/config.yml` - needs `validation:` section with Scala imports/wrapper
-- [ ] `effect-zio/config.yml` - needs `validation:` + `secondary:` sections
-
-**Other:**
-- [ ] `.github/workflows/validate-snippets.yml`
-- [ ] `.validation-cache/` directory structure
-- [ ] `packages/web/lib/content/schemas.ts` - add `validation` field to frontmatter
-
-### Critical Path Confirmed
-
-Phase 1 → Phase 2 → Phase 3 → Phase 5 → Phase 6 → Phase 8 gets jj-git working E2E.
-
-Priority order:
-1. **P0** - Phases 1-6, 8 (jj-git E2E) — unblocks all content validation
-2. **P1** - Phases 7, 9 (caching, build integration) — enables CI workflow
-3. **P2** - Phases 10-13 (Scala/TS environments, component props, CI) — completes system
+**P0**: 1/38 tasks complete (3%)
+**P1**: 0/13 tasks complete (0%)
+**P2**: 0/25 tasks complete (0%)
+**Total**: 1/76 tasks complete (1%)

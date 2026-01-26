@@ -35,6 +35,7 @@ export interface InitCommands {
   readonly type: "init"
   readonly commands: readonly string[]
   readonly timeout?: number
+  readonly silent?: boolean
 }
 
 // Messages from WebSocket client
@@ -128,10 +129,12 @@ const _parseMessage = (data: string): WebSocketMessage => {
           ? (parsed["commands"] as readonly string[])
           : []
         const timeout = typeof parsed["timeout"] === "number" ? parsed["timeout"] : undefined
+        const silent = typeof parsed["silent"] === "boolean" ? parsed["silent"] : undefined
         return {
           type: "init",
           commands,
           timeout,
+          silent,
         } satisfies InitCommands
       }
     }
