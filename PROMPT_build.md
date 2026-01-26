@@ -23,7 +23,7 @@ grep -c "^\- \[ \]" IMPLEMENTATION_PLAN.md || echo 0
 1. **Study the plan** — Choose the most important task from @IMPLEMENTATION_PLAN.md
 2. **Search first** — Don't assume not implemented. Verify behavior doesn't already exist
 3. **Implement** — ONE task only. Implement completely — no placeholders or stubs
-4. **Validate** — Run `bun run build && bun run typecheck`, must pass before continuing
+4. **Validate** — Run `bun run build && bun run typecheck && bun run lint`, must pass before continuing
 
 If stuck, use extended thinking to debug. Add extra logging if needed.
 

@@ -9,14 +9,13 @@ Read all files in `specs/` directory using parallel subagents.
 
 ### 0b. Study existing implementation
 Use parallel subagents to analyze relevant source directories:
-- `packages/web/components/ui/` - CodeBlock, ScalaComparisonBlock, ScastieEmbed
-- `packages/web/app/[toolPair]/` - Dynamic routing and page structure
-- `packages/web/content/comparisons/cats-zio/` - MDX content files (10 existing steps)
-- `packages/web/content/glossary/` - Glossary data
-- `packages/web/lib/content-core/` - Config loading (tool-config.ts)
-- `packages/web/next.config.ts` - MDX and plugin configuration
-- `/tmp/zionomicon/EPUB/text/` - Zionomicon chapters (extract ePub if needed)
-- `specs/zionomicon-tutorial-update.md` - Primary specification for this work
+- `packages/web/components/ui/` — LessonCard, TerminalSearch, Header, ScalaComparisonBlock
+- `packages/web/components/mdx/` — MDX component mapping
+- `packages/web/content/pairings.ts` — Pairing schema and registry
+- `packages/web/content/comparisons/zio-cats/` — Reference for tutorial structure
+- `packages/web/content/glossary/` — Glossary file structure
+- `packages/web/app/[toolPair]/` — Dynamic routing pages
+- `PLAN-effect-zio.md` — Detailed planning document with ZIO→Effect mappings
 
 ### 0c. Study the current plan
 Read `IMPLEMENTATION_PLAN.md` if it exists.
