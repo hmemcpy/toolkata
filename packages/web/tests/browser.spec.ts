@@ -2,7 +2,7 @@
  * Playwright Browser Tests for toolkata
  *
  * Tests cover:
- * - Cheat sheet page (search, filter, copy)
+ * - Glossary page (search, filter, copy)
  * - Swipe gesture (mobile bottom sheet)
  * - 't' key toggle
  * - Step navigation with re-init (multi-environment)
@@ -40,24 +40,24 @@ async function clearLocalStorage(page: Page): Promise<void> {
   })
 }
 
-test.describe("Cheat Sheet Page", () => {
+test.describe("Glossary Page", () => {
   test.beforeEach(async ({ page }) => {
     await clearLocalStorage(page)
   })
 
-  test("cheat sheet page loads successfully", async ({ page }) => {
-    await page.goto(`${baseUrl}/${toolPair}/cheatsheet`)
-    await expect(page.getByRole("heading", { name: /Cheat Sheet/i })).toBeVisible()
+  test("glossary page loads successfully", async ({ page }) => {
+    await page.goto(`${baseUrl}/${toolPair}/glossary`)
+    await expect(page.getByRole("heading", { name: /Glossary/i })).toBeVisible()
   })
 
-  test("cheat sheet has search input", async ({ page }) => {
-    await page.goto(`${baseUrl}/${toolPair}/cheatsheet`)
+  test("glossary has search input", async ({ page }) => {
+    await page.goto(`${baseUrl}/${toolPair}/glossary`)
     const search = page.getByPlaceholder("Search commands...")
     await expect(search).toBeVisible()
   })
 
-  test("cheat sheet search filters results", async ({ page }) => {
-    await page.goto(`${baseUrl}/${toolPair}/cheatsheet`)
+  test("glossary search filters results", async ({ page }) => {
+    await page.goto(`${baseUrl}/${toolPair}/glossary`)
     const search = page.getByPlaceholder("Search commands...")
 
     // Type "commit" to filter
@@ -69,8 +69,8 @@ test.describe("Cheat Sheet Page", () => {
     await expect(resultsCount).toBeVisible()
   })
 
-  test("cheat sheet search shows empty state for no results", async ({ page }) => {
-    await page.goto(`${baseUrl}/${toolPair}/cheatsheet`)
+  test("glossary search shows empty state for no results", async ({ page }) => {
+    await page.goto(`${baseUrl}/${toolPair}/glossary`)
     const search = page.getByPlaceholder("Search commands...")
 
     // Type something that won't match
@@ -86,8 +86,8 @@ test.describe("Cheat Sheet Page", () => {
     await expect(clearButton).toBeVisible()
   })
 
-  test("cheat sheet category filter tabs exist", async ({ page }) => {
-    await page.goto(`${baseUrl}/${toolPair}/cheatsheet`)
+  test("glossary category filter tabs exist", async ({ page }) => {
+    await page.goto(`${baseUrl}/${toolPair}/glossary`)
 
     // "All" tab should be visible
     const allTab = page.getByRole("button", { name: "All" })
@@ -95,8 +95,8 @@ test.describe("Cheat Sheet Page", () => {
     await expect(allTab).toHaveAttribute("aria-pressed", "true")
   })
 
-  test("cheat sheet category filter switches categories", async ({ page }) => {
-    await page.goto(`${baseUrl}/${toolPair}/cheatsheet`)
+  test("glossary category filter switches categories", async ({ page }) => {
+    await page.goto(`${baseUrl}/${toolPair}/glossary`)
 
     // Click on a category tab (e.g., "Branching")
     const categoryTab = page.getByRole("button", { name: "Branching" }).first()
@@ -106,8 +106,8 @@ test.describe("Cheat Sheet Page", () => {
     }
   })
 
-  test("cheat sheet has copy buttons for commands", async ({ page }) => {
-    await page.goto(`${baseUrl}/${toolPair}/cheatsheet`)
+  test("glossary has copy buttons for commands", async ({ page }) => {
+    await page.goto(`${baseUrl}/${toolPair}/glossary`)
 
     // Find copy buttons
     const copyButtons = page.getByRole("button", { name: /Copy command:/ })
@@ -241,7 +241,7 @@ test.describe("'t' Key Terminal Toggle", () => {
   })
 
   test("'t' key does not trigger when focused on input", async ({ page }) => {
-    await page.goto(`${baseUrl}/${toolPair}/cheatsheet`)
+    await page.goto(`${baseUrl}/${toolPair}/glossary`)
 
     // Focus the search input
     const search = page.getByPlaceholder("Search commands...")
@@ -307,7 +307,7 @@ test.describe("All Routes Load Successfully", () => {
     "/jj-git/10",
     "/jj-git/11",
     "/jj-git/12",
-    "/jj-git/cheatsheet",
+    "/jj-git/glossary",
     "/about",
     "/help",
     "/terms",

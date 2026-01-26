@@ -1,11 +1,11 @@
 /**
- * Cheat Sheet page - Searchable command comparison for tool pairings.
+ * Glossary page - Searchable command comparison for tool pairings.
  *
  * Features:
  * - Server component for static generation and SEO
  * - generateStaticParams for known pairings
  * - generateMetadata for SEO
- * - Route: /{toolPair}/cheatsheet (e.g., /jj-git/cheatsheet)
+ * - Route: /{toolPair}/glossary (e.g., /jj-git/glossary)
  *
  * This page provides a searchable, filterable command comparison
  * that respects the user's direction preference (git→jj or jj→git).
@@ -41,32 +41,32 @@ export async function generateMetadata({
 
   if (!pairing) {
     return {
-      title: "Cheat Sheet Not Found",
+      title: "Glossary Not Found",
     }
   }
 
   return {
-    title: `Cheat Sheet: ${pairing.to.name} ← ${pairing.from.name}`,
-    description: `Command cheat sheet for ${pairing.to.name} vs ${pairing.from.name}. Find equivalent commands and compare syntax.`,
+    title: `Glossary: ${pairing.to.name} ← ${pairing.from.name}`,
+    description: `Command glossary for ${pairing.to.name} vs ${pairing.from.name}. Find equivalent commands and compare syntax.`,
     openGraph: {
-      title: `${pairing.to.name} ← ${pairing.from.name} Cheat Sheet`,
+      title: `${pairing.to.name} ← ${pairing.from.name} Glossary`,
       description: `Compare commands between ${pairing.to.name} and ${pairing.from.name}`,
       type: "website",
     },
     twitter: {
       card: "summary",
-      title: `${pairing.to.name} ← ${pairing.from.name} Cheat Sheet`,
+      title: `${pairing.to.name} ← ${pairing.from.name} Glossary`,
       description: `Compare commands between ${pairing.to.name} and ${pairing.from.name}`,
     },
   }
 }
 
 /**
- * Cheat Sheet page component.
+ * Glossary page component.
  *
  * Displays a searchable, filterable command comparison table.
  */
-export default async function CheatSheetPage({
+export default async function GlossaryPage({
   params,
 }: {
   readonly params: Promise<{ readonly toolPair: string }>
@@ -98,9 +98,9 @@ export default async function CheatSheetPage({
         </div>
 
         {/* Title */}
-        <h1 className="text-2xl font-bold font-mono text-[var(--color-text)]">Cheat Sheet</h1>
+        <h1 className="text-2xl font-bold font-mono text-[var(--color-text)]">Glossary</h1>
 
-        {/* Client wrapper for interactive cheat sheet */}
+        {/* Client wrapper for interactive glossary */}
         <GlossaryClientWrapper
           entries={entries}
           toolPair={toolPair}

@@ -1,7 +1,7 @@
 /**
  * Glossary data module for Cats Effect ← ZIO API reference.
  *
- * Shared data source for both the cheatsheet page and the future glossary page.
+ * Shared data source for the glossary page.
  * Provides search, filtering, and category grouping capabilities.
  *
  * @module

@@ -49,7 +49,7 @@ export async function generateMetadata(props: {
  * - Key differences callout box
  * - StepList with all steps grouped by section (with progress from localStorage)
  * - Progress summary sidebar (desktop) / section (mobile) (with continue button)
- * - Link to cheat sheet
+ * - Link to glossary
  *
  * Progress features:
  * - Current step highlighted in StepList
@@ -231,10 +231,10 @@ export default async function ComparisonOverviewPage(props: {
             ← Home
           </Link>
           <Link
-            href={`/${toolPair}/cheatsheet`}
+            href={`/${toolPair}/glossary`}
             className="inline-flex items-center text-sm font-mono text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
           >
-            [Cheat Sheet →]
+            [Glossary →]
           </Link>
         </div>
 
