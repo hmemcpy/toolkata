@@ -369,7 +369,10 @@ async function validateToolPairFull(
     }
 
     // Resolve the full path to the MDX file
-    const mdxPath = resolve(contentDir, "..", firstSnippet.file.replace("content/", ""))
+    // firstSnippet.file is like "content/comparisons/jj-git/04-step.mdx"
+    // contentDir is like "packages/web/content"
+    // So we need to strip the "content/" prefix
+    const mdxPath = resolve(contentDir, firstSnippet.file.replace(/^content\//, ""))
     // Normalize "shell" to "bash" for config resolution
     const language: "bash" | "scala" | "typescript" =
       firstSnippet.language === "shell" ? "bash" : firstSnippet.language

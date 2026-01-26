@@ -3,7 +3,23 @@ title: "First-Class Conflict Handling"
 step: 9
 description: "How jj stores conflicts in commits rather than blocking work"
 gitCommands: ["git merge", "git status", "git checkout --ours/--theirs"]
-jjCommands: ["jj merge", "jj status", "jj resolve"]
+jjCommands: ["jj new", "jj status", "jj resolve"]
+validation:
+  setup:
+    - "jj git init --colocate ."
+    - "git config user.email 'test@toolkata.dev'"
+    - "git config user.name 'Test User'"
+    - "echo 'original' > app.js"
+    - "jj describe -m 'Initial commit'"
+    - "jj new"
+    - "echo 'main change' > app.js"
+    - "jj describe -m 'Main branch work'"
+    - "jj new"
+    - "jj branch create main"
+    - "jj new @"
+    - "echo 'feature change' > app.js"
+    - "jj describe -m 'Feature work'"
+    - "jj branch create feature"
 ---
 
 # First-Class Conflict Handling
@@ -33,7 +49,7 @@ git commit
 In jj, conflicts live in commits. You can continue working, view them, and resolve when ready.
 
 ```bash
-jj merge feature
+jj new @ feature
 # Conflict recorded in @
 
 # Can still work
@@ -70,8 +86,7 @@ jj resolve
   toCommands={[
     "vim app.js",
     "jj resolve app.js",
-    "jj resolve --ours app.js",
-    "jj resolve --theirs app.js",
+    "jj resolve app.js",
   ]}
 />
 
@@ -81,7 +96,7 @@ In jj, you can commit with conflicts and resolve later:
 
 ```bash
 # Merge creates conflict
-jj merge feature
+jj new @ feature
 
 # Commit the conflict state
 jj describe -m "Merged with conflicts in app.js"
@@ -132,7 +147,7 @@ Conflict in app.js:
     "git merge feature",
   ]}
   toCommands={[
-    "jj merge feature",
+    "jj new @ feature",
     "jj resolve file1",
     "jj resolve",
     "jj describe -m \"Partial merge\"",
@@ -174,7 +189,7 @@ But since jj auto-rebases descendants, you only resolve once:
     "git rebase --continue",
   ]}
   toCommands={[
-    "jj edit old-commit",
+    "jj rebase -d old-commit",
     "jj resolve",
   ]}
 />
@@ -186,9 +201,8 @@ But since jj auto-rebases descendants, you only resolve once:
     "git mergetool",
   ]}
   toCommands={[
-    "jj resolve --tool",
-    "jj resolve --ours file.js",
-    "jj resolve --theirs file.js",
+    "jj resolve --list",
+    "jj resolve file.js",
   ]}
 />
 
@@ -216,7 +230,7 @@ jj diff --conflict
 - Conflicts are stored in commits, not blocking errors
 - `jj resolve` marks conflicts as resolved
 - Can commit with conflicts and resolve later
-- `jj resolve --ours` / `--theirs` for quick resolution
+- `jj resolve --list` shows all conflicts
 - Auto-rebasing means resolve conflicts once
 - `jj op undo` to abandon problematic merges
 

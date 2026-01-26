@@ -114,6 +114,14 @@ const CONTEXT_ERROR_PATTERNS = [
   /^error: no changes added/i,
   /^error: pathspec/i,
   /^error: nothing to merge/i,
+  /^error: no stages/i, // Git: nothing added to commit
+  /merge: .+ - not something we can merge/i, // Git: nothing to merge
+  /nothing added to commit but untracked files present/i, // Git commit with no staged changes
+  /nothing to commit, working tree clean/i, // Git commit with clean tree
+  /^error: branch .+ not found/i, // Git: branch doesn't exist
+  /^error: .+ not found/i, // Git: generic not found error
+  /error: the branch .+ is not fully merged/i, // Git: branch -d fails on unmerged branches
+  /hint: if you are sure you want to delete it/i, // Git: branch -d hint
 
   // jj context errors
   /^error: no such revset/i,
@@ -125,6 +133,8 @@ const CONTEXT_ERROR_PATTERNS = [
   /^error: merge conflict but auto-show/i,
   /^error: no conflicts found/i,
   /^error: divergent changes/i,
+  /^error: no such bookmark/i, // jj: bookmark doesn't exist
+  /^error: bookmark .* not found/i, // jj: bookmark doesn't exist (alt)
 
   // File system context errors
   /no such file or directory/i,

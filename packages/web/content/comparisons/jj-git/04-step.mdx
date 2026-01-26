@@ -3,7 +3,18 @@ title: "Branching and Checkout"
 step: 4
 description: "How jj handles branches differently from git"
 gitCommands: ["git branch", "git checkout", "git checkout -b"]
-jjCommands: ["jj branch", "jj checkout", "jj new"]
+jjCommands: ["jj branch", "jj edit", "jj new"]
+validation:
+  setup:
+    - "jj git init --colocate ."
+    - "git config user.email 'test@toolkata.dev'"
+    - "git config user.name 'Test User'"
+    - "echo 'initial' > file.txt"
+    - "jj describe -m 'Initial'"
+    - "jj new"
+    - "jj branch create main"
+    - "jj new"
+    - "jj branch create old-feature"
 ---
 
 # Branching and Checkout
@@ -50,12 +61,12 @@ jj status
     "git checkout main",
   ]}
   toCommands={[
-    "jj checkout main",
+    "jj edit main",
   ]}
 />
 
 <Callout type="note">
-In jj, `jj checkout` creates a new working copy (`@`) from the target commit. It doesn't "move" anything—commits are immutable.
+In jj, `jj edit` creates a new working copy (`@`) from the target commit. It doesn't "move" anything—commits are immutable.
 </Callout>
 
 ## Listing Branches
@@ -66,8 +77,6 @@ In jj, `jj checkout` creates a new working copy (`@`) from the target commit. It
   ]}
   toCommands={[
     "jj branch list",
-    "# Or abbreviated",
-    "jj branch",
   ]}
 />
 
@@ -97,7 +106,7 @@ Let's create a feature branch and work on it:
 
 ```bash
 # 1. Start on main
-jj checkout main
+jj edit main
 
 # 2. Create a branch for your work
 jj branch create feature-auth
@@ -153,7 +162,7 @@ jj new
 # Change ID: abc123
 
 # Later, come back to it
-jj checkout abc123
+jj edit abc123
 
 # Create new work from there
 jj describe -m "Continuing experiment"
@@ -179,14 +188,14 @@ In jj, **change IDs** are more stable than branch names. They survive rebases an
     "git merge feature",
   ]}
   toCommands={[
-    "jj checkout main",
+    "jj edit main",
     "jj new",
     "vim app.js",
     "jj describe -m \"Add feature\"",
     "jj branch create feature",
-    "jj checkout main",
+    "jj edit main",
     "jj new",
-    "jj merge feature",
+    "jj new @ feature",
   ]}
 />
 
@@ -224,7 +233,7 @@ jj status
 - `@` is your working copy, independent of branches
 - `jj branch create` creates a name for current @
 - `jj branch set` moves a branch to point to current @
-- `jj checkout` creates a new @ from target commit
+- `jj edit` creates a new @ from target commit
 - Change IDs are more stable than branch names
 
 ## Next Steps
