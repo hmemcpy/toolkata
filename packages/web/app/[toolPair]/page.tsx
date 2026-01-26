@@ -352,6 +352,36 @@ export default async function ComparisonOverviewPage(props: {
                       </li>
                     </ul>
                   </>
+                ) : toolPair === "effect-zio" ? (
+                  <>
+                    <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
+                      Effect is a modern functional effect system with TypeScript-first design and
+                      cross-platform support. If you know ZIO, you&apos;ll find the concepts familiar
+                      but with cleaner syntax and better type inference.
+                    </p>
+                    <ul className="space-y-2 text-sm text-[#d1d5dc]">
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Effect&lt;A, E, R&gt; type order (result before requirements)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Effect.gen for clean composition (no for-comprehension nesting)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Context.Tag for type-safe dependency injection</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Built-in Schema for validation and encoding</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Cross-platform (Node, Browser, Deno, Bun)</span>
+                      </li>
+                    </ul>
+                  </>
                 ) : (
                   <>
                     <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">

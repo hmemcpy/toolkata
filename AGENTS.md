@@ -423,6 +423,40 @@ jjCommands: ["jj describe", "jj new"]
 ---
 ```
 
+### Overview Page Updates (REQUIRED)
+
+**When adding a new tool pairing, you MUST update `app/[toolPair]/page.tsx`:**
+
+1. **"Why {tool}?" section** — Add a conditional branch for your tool pair with:
+   - Paragraph describing the tool's value proposition
+   - 5 bullet points highlighting key features
+
+   ```tsx
+   {toolPair === "your-tool" ? (
+     <>
+       <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
+         Your tool description...
+       </p>
+       <ul className="space-y-2 text-sm text-[#d1d5dc]">
+         <li className="flex items-start gap-2">
+           <span className="text-[var(--color-accent)] mt-0.5">•</span>
+           <span>Feature 1</span>
+         </li>
+         {/* ... 4 more features */}
+       </ul>
+     </>
+   ) : existingCondition ? (
+     // existing zio-cats content
+   ) : (
+     // jj-git default content
+   )}
+   ```
+
+2. **Step metadata array** — Add steps array with title/description for each step
+3. **Estimated times Map** — Add time estimates for each step
+
+**Common Pitfall:** If you copy content from another pairing, remember to update ALL hardcoded text. The overview page has per-tool-pairing content that must be customized.
+
 ### ScalaComparisonBlock Code Format (stripMargin)
 
 Code blocks in `ScalaComparisonBlock` must use the `|` (pipe) prefix format to preserve indentation. This is required because MDX/JSX template literals strip leading whitespace from lines before the component receives them.
