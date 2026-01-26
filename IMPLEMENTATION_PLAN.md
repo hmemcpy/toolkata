@@ -1,15 +1,12 @@
 # Implementation Plan
 
-> **Status**: Planning | **Last Updated**: 2025-01-25 | **Validation**: `bun run build && bun run typecheck`
+> **Status**: Planning | **Last Updated**: 2025-01-26 | **Validation**: `bun run build && bun run typecheck`
 
 ## Summary
 
-This plan covers multiple specifications for toolkata improvements, prioritized by impact and dependencies. The primary focus areas are:
+This plan covers the **Zionomicon Tutorial Update** for cats-zio (P5), the final phase of the toolkata implementation. All technical infrastructure (P0-P4) is complete: syntax highlighting, sandbox integration, bidirectional UX, and Scastie improvements are implemented and verified.
 
-1. **P0 - Critical Fixes**: Fix cats-zio terminal connection errors
-2. **P1 - Syntax Highlighting**: Add Shiki-based code highlighting for Scala/TypeScript
-3. **P2 - Sandbox Integration**: Complete shrinking layout (state sync already works)
-4. **P3 - Bidirectional UX**: Prototype and finalize bidirectional comparison UX
+**Current state**: 18/18 technical tasks complete (100%). Remaining work is content-focused: updating 10 existing steps and creating 5 new advanced steps based on the Zionomicon eBook.
 
 ---
 
@@ -19,431 +16,670 @@ This plan covers multiple specifications for toolkata improvements, prioritized 
 
 | Feature | Location | Status |
 |---------|----------|--------|
-| **Shiki installed** | `packages/web/package.json` (shiki: ^3.6.0) | ✓ Dependency exists |
-| **DirectionContext** | `packages/web/contexts/DirectionContext.tsx` | ✓ Bidirectional toggle support |
-| **TerminalContext** | `packages/web/contexts/TerminalContext.tsx` | ✓ Terminal state machine |
-| **TerminalSidebar** | `packages/web/components/ui/TerminalSidebar.tsx` | ✓ Right sidebar with lazy-load |
-| **TryIt component** | `packages/web/components/ui/TryIt.tsx` | ✓ Editable command, expectedOutput |
-| **SideBySide** | `packages/web/components/ui/SideBySide.tsx` | ✓ Direction-aware column swap |
-| **ScalaComparisonBlock** | `packages/web/components/ui/ScalaComparisonBlock.tsx` | ✓ ZIO/CE columns with Shiki highlighting |
-| **ScastieEmbed** | `packages/web/components/ui/ScastieEmbed.tsx` | ✓ Script loading, fallback UI |
-| **Glossary data** | `packages/web/content/glossary/cats-zio.ts` | ✓ 40 API mappings (7 categories) |
-| **GlossaryClient** | `packages/web/components/ui/GlossaryClient.tsx` | ✓ Search, filter, copy |
-| **jj-git config.yml** | `packages/web/content/comparisons/jj-git/config.yml` | ✓ Template available |
-| **Tool config loading** | `packages/web/lib/content-core/tool-config.ts` | ✓ YAML parsing, cascade |
-| **PreferencesStore** | `packages/web/core/PreferencesStore.ts` | ✓ Direction persistence |
-| **InfoPanel** | `packages/web/components/ui/InfoPanel.tsx` | ✓ Split pane with terminal |
-| **Focus trap hook** | `packages/web/hooks/useFocusTrap.ts` | ✓ Accessibility |
-| **Terminal state sync** | `TerminalSidebar.tsx:318-319` + `InteractiveTerminal.tsx:258-266` | ✓ Callbacks already wired |
-| **Cats-ZIO MDX content** | `packages/web/content/comparisons/cats-zio/01-10-step.mdx` | ✓ 10 steps complete |
+| **P0-P4 All Tasks** | IMPLEMENTATION_PLAN.md (previous) | ✓ Complete |
+| **Shiki syntax highlighting** | `ScalaComparisonBlock.tsx`, `next.config.ts` | ✓ Server + client highlighting |
+| **Sandbox config** | `cats-zio/config.yml` | ✓ Disabled for cats-zio |
+| **Shrinking layout** | `ShrinkingLayout.tsx`, `TerminalSidebar.tsx` | ✓ Focus trap removed |
+| **Bidirectional UX** | `/scala-effects-demo` | ✓ 4-option prototype |
+| **Scastie UUID snippets** | `ScastieEmbed.tsx` | ✓ Snippet loading supported |
+| **Terminal state sync** | `TerminalSidebar.tsx:318-319` | ✓ Callbacks wired |
 
-### Missing (Needs Implementation)
+### Content Gaps (P5)
 
-| Feature | Spec | Impact | Complexity |
-|---------|------|--------|------------|
-| ~~**cats-zio config.yml**~~ | cats-zio-improvements.md R1 | ~~Blocks cats-zio usage~~ | ~~Low~~ |
-| ~~**Shiki rehype plugin**~~ | cats-zio-improvements.md R2 | ~~No syntax highlighting~~ | ~~Medium~~ |
-| ~~**ScalaComparisonBlock highlighting**~~ | cats-zio-improvements.md R2 | ~~No Scala highlighting~~ | ~~Medium~~ |
-| ~~**Shrinking layout**~~ | sandbox-integration.md R2 | ~~Overlay blocks content~~ | ~~Medium~~ |
-| ~~**scala-effects-demo page**~~ | cats-zio-improvements.md R3 | ~~No UX prototype~~ | ~~High~~ |
-| ~~**Scastie UUID snippets**~~ | cats-zio-improvements.md R4 | ~~Only inline code works~~ | ~~Low~~ |
-| **Dark theme verification** | cats-zio-improvements.md R4 | Verify Scastie theme works | Low |
+| Step | Current State | Required Updates | Zionomicon Source |
+|------|---------------|------------------|-------------------|
+| **1. R/E/A Signature** | Type signatures mostly correct | Add `RIO`, clarify variance, add `URIO` | ch003 (First Steps) |
+| **2. Creating Effects** | Basic constructors covered | Add `unit`, `never`, `fromTry`, async patterns | ch003, ch006 (Integrating) |
+| **3. Error Handling** | Good coverage | Add `foldZIO`, `sandbox`, error recovery | ch005 (Error Model) |
+| **4. Map/FlatMap** | Sequential composition covered | Add `as`, `unit`, `tap`, `filterOrFail` | ch003 |
+| **5. Dependency Injection** | Manual layer construction | Replace with `ZLayer.derive`, modern patterns | ch019-021 (DI chapters) |
+| **6. Resource Management** | Basic acquireRelease | Add `Scope`, composition patterns, best practices | ch016-018 (Resources) |
+| **7. Fiber Supervision** | Basic fork/join covered | Add supervision strategies, timeout, retry | ch007-010 (Fibers) |
+| **8. Streaming** | ZStream basics | Add `mapZIO`, `filterZIO`, backpressure, error recovery | (Zionomicon doesn't cover) |
+| **9. Application Structure** | ZIOAppDefault shown | Add Bootstrap, logging, Config integration | ch022 (Config) |
+| **10. Interop** | Basic interop patterns | Update version to 3.1.1.0, add conversions, Throwable note | zio.dev interop docs |
+| **11. STM** | ❌ MISSING | **NEW**: Compare ZIO STM vs cats-stm | ch023-024 (STM) |
+| **12. Concurrent Structures** | ❌ MISSING | **NEW**: Ref, Queue, Hub, Promise vs CE std | ch011-015 (Concurrent) |
+| **13. Configuration** | ❌ MISSING | **NEW**: ZIO Config vs Ciris | ch022 (Config) + research |
+| **14. HTTP** | ❌ MISSING | **NEW**: ZIO HTTP vs http4s | (external research) |
+| **15. Database** | ❌ MISSING | **NEW**: ZIO JDBC/Quill vs Doobie/Skunk | (external research) |
 
 ---
 
 ## Tasks
 
-### P0: Critical Fixes (Blocking)
+### P5: Zionomicon Tutorial Update
 
-- [x] **Create cats-zio config.yml** — Created `packages/web/content/comparisons/cats-zio/config.yml` with `sandbox: enabled: false` to prevent ERR_CONNECTION_REFUSED errors. Also fixed type error in glossary/cheatsheet pages (removed unused `categories` prop passed to `GlossaryClientWrapper`).
+#### Phase 1: Zionomicon Research
 
-**Why**: The terminal sidebar currently tries to connect for cats-zio pages, causing console errors and broken UX. Config.yml with `enabled: false` will prevent the sidebar from rendering.
+**Note**: Zionomicon content has been extracted and analyzed. Key findings:
 
-**Files**:
-- `packages/web/content/comparisons/cats-zio/config.yml` (CREATED)
-- `packages/web/app/[toolPair]/cheatsheet/page.tsx` (FIXED - removed unused categories import/prop)
-- `packages/web/app/[toolPair]/glossary/page.tsx` (FIXED - removed unused categories import/prop)
+- **Chapter structure**: 24 chapters covering essentials → concurrency → resources → DI → STM
+- **Type signatures**: Accurate `ZIO[R, E, A]` with proper variance (-R, +E, +A)
+- **Modern patterns**: `ZLayer.derive` preferred over manual construction
+- **Scope model**: `acquireRelease` returns `ZIO[R with Scope, E, A]`
+- **STM**: Built-in with `TRef`, `TMap`, `TQueue`, `TPromise`, `TArray`
+- **Concurrent structures**: `Ref`, `Promise`, `Queue`, `Hub`, `Semaphore` all covered
 
-**Validation**: Navigate to `/cats-zio/1`, verify no terminal errors in console, no sidebar FAB visible.
+**Zionomicon chapter mapping for tutorial steps:**
+| Step | Zionomicon Chapters | Key Concepts |
+|------|---------------------|--------------|
+| 1 | ch003 | Type parameters, aliases, basic constructors |
+| 2 | ch003, ch006 | Effect constructors, conversions |
+| 3 | ch005 | Error handling, catchAll, foldZIO |
+| 4 | ch003 | Map/flatMap, sequential composition |
+| 5 | ch019-021 | ZLayer, service pattern, derivation |
+| 6 | ch016-018 | acquireRelease, Scope, bracket |
+| 7 | ch007-010 | Fibers, supervision, race, timeout |
+| 8 | (not in Zionomicon) | ZStream operators (keep current) |
+| 9 | ch022 | ZIOAppDefault, Bootstrap, Config |
+| 10 | zio.dev docs | zio-interop-cats 3.1.1.0 |
+| 11 | ch023-024 | STM, TRef, TMap, TQueue |
+| 12 | ch011-015 | Ref, Promise, Queue, Hub, Semaphore |
 
-**Bug discovered**: `GlossaryClientWrapper` doesn't accept a `categories` prop (it extracts categories internally from entries), but both `cheatsheet/page.tsx` and `glossary/page.tsx` were passing it, causing TypeScript errors.
+- [x] **Analyze Zionomicon type signatures** — Extracted exact signatures for `ZIO[R, E, A]`, `IO[E, A]`, `Task[A]`, `RIO[R, A]`, `UIO[A]`, `URIO[R, A]` from ch003. Verified variance notation (-R, +E, +A).
+
+- [x] **Analyze effect constructors** — Extracted `ZIO.succeed`, `ZIO.fail`, `ZIO.attempt`, `ZIO.fromOption`, `ZIO.fromEither`, `ZIO.fromTry`, `ZIO.fromFuture`, `ZIO.async` from ch003 and ch006.
+
+- [x] **Analyze error handling operators** — Extracted `catchAll`, `catchSome`, `mapError`, `fold`, `foldZIO`, `either`, `merge`, `refineOrDie` from ch005.
+
+- [x] **Analyze composition patterns** — Extracted `map`, `flatMap`, `zip`, `zipWith`, `zipLeft` (`<*`), `zipRight` (`*>`), `foreach`, `collectAll` from ch003.
+
+- [x] **Analyze dependency injection** — Extracted ZLayer patterns from ch019-021: `ZLayer.succeed`, `ZLayer.fromZIO`, `ZLayer.derive`, service pattern, layer composition.
+
+- [x] **Analyze resource management** — Extracted `acquireRelease`, `Scope` interface, `ZIO.scoped`, resource composition, parallel finalizers from ch016-018.
+
+- [x] **Analyze fiber model** — Extracted `fork`, `forkDaemon`, `forkScoped`, `join`, `await`, `interrupt`, supervision strategies, race patterns from ch007-010.
+
+- [x] **Analyze concurrent structures** — Extracted `Ref`, `Promise`, `Queue`, `Hub`, `Semaphore` APIs with exact signatures from ch011-015.
+
+- [x] **Analyze STM** — Extracted `TRef`, `TMap`, `TQueue`, `TPromise`, `TArray` APIs and transaction patterns from ch023-024.
+
+- [x] **Analyze configuration** — Extracted ZIO Config patterns: `Config.string`, `Config.int`, nested config, validation, `ZIO.config`, `ConfigProvider` from ch022.
+
+- [x] **Analyze application structure** — Extracted `ZIOAppDefault`, `Runtime`, Bootstrap, logging patterns from ch022.
+
+#### Phase 2: Update Existing Steps
+
+- [ ] **Update Step 1: R/E/A Signature** — Add missing type aliases (`RIO`, clarify `URIO`), explain variance with contravariant/covariant notation.
+
+**Why**: Current content is mostly correct but missing `RIO[R, A] = ZIO[R, Throwable, A]` and variance explanation.
+
+**File**: `packages/web/content/comparisons/cats-zio/01-step.mdx`
+
+**Updates**:
+- Add `RIO[R, A]` type alias
+- Explain variance: `ZIO[-R, +E, +A]` (R is contravariant, E and A are covariant)
+- Add comparison table of all ZIO type aliases vs Cats Effect `IO`
+
+- [ ] **Update Step 2: Creating Effects** — Add missing constructors: `ZIO.unit`, `ZIO.never`, `ZIO.fromTry`, `ZIO.async`. Clarify `ZIO.succeed` vs `ZIO.succeedNow` difference.
+
+**Why**: Current content shows basic constructors but misses common utility constructors and async integration.
+
+**File**: `packages/web/content/comparisons/cats-zio/02-step.mdx`
+
+**Updates**:
+- Add `ZIO.unit` (single unit effect)
+- Add `ZIO.never` (never-completing effect)
+- Add `ZIO.fromTry` (Scala Try conversion)
+- Add `ZIO.async` (callback-based effects)
+- Clarify `succeed` (lazy evaluation) vs `succeedNow` (eager)
+
+- [ ] **Update Step 3: Error Handling** — Add `foldZIO`, `sandbox`, `orElseFail`, `orElseEither`, error grouping with `firstSuccess`/`firstFailure`.
+
+**Why**: Current content covers basics but misses powerful error handling operators unique to ZIO.
+
+**File**: `packages/web/content/comparisons/cats-zio/03-step.mdx`
+
+**Updates**:
+- Add `foldZIO` (effectful fold with both branches)
+- Add `sandbox` (capture full error cause)
+- Add `orElseFail`, `orElseEither` (error recovery)
+- Add `firstSuccess`, `firstFailure` (combining effects)
+
+- [ ] **Update Step 4: Map/FlatMap Purity** — Add `as`, `unit`, `tap`, `tapBoth`, `filter`, `filterOrFail`. Add parallel operators: `raceWith`, `timeout`.
+
+**Why**: Current content covers basics but misses common utility operators and parallel patterns.
+
+**File**: `packages/web/content/comparisons/cats-zio/04-step.mdx`
+
+**Updates**:
+- Add `as` (map to constant value)
+- Add `unit` (convert to unit)
+- Add `tap`, `tapBoth` (side effects)
+- Add `filter`, `filterOrFail` (value filtering)
+- Add `raceWith` (custom race behavior)
+- Add `timeout` (time-bound execution)
+
+- [ ] **Update Step 5: Dependency Injection** — **MAJOR UPDATE**: Replace all manual layer construction with `ZLayer.derive`. Add modern service pattern with `ZIO.service`, `ZIO.serviceWithZIO`. Add configuration integration with `@name` annotations.
+
+**Why**: Current content uses outdated manual construction patterns. Zionomicon recommends `ZLayer.derive` as the modern approach.
+
+**File**: `packages/web/content/comparisons/cats-zio/05-step.mdx`
+
+**Updates**:
+- Replace `ZLayer.fromZIO` with `ZLayer.derive[ServiceImpl]`
+- Show service pattern: trait + case class implementation + companion object
+- Add `ZIO.service[Service]` accessor pattern
+- Add `ZIO.serviceWith[Service]` and `ZIO.serviceWithZIO[Service]`
+- Show layer composition with `>>>` operator
+- Add configuration example with `ZIO.config[Config]`
+- Add test layer example
+
+**Key Zionomicon patterns to apply**:
+```scala
+// OLD (manual)
+val layer = ZLayer.fromZIO {
+  for {
+    dep1 <- ZIO.service[Dependency1]
+    dep2 <- ZIO.service[Dependency2]
+  } yield Service(dep1, dep2)
+}
+
+// NEW (derived)
+object ServiceImpl {
+  val layer = ZLayer.derive[ServiceImpl]
+}
+```
+
+- [ ] **Update Step 6: Resource Management** — **MAJOR UPDATE**: Add `Scope` interface explanation, show `acquireRelease` returns `ZIO[R with Scope, E, A]`, demonstrate `ZIO.scoped` usage, add parallel resource acquisition with `zipPar`.
+
+**Why**: Current content shows basic `acquireRelease` but doesn't explain the Scope model which is fundamental to ZIO 2.x.
+
+**File**: `packages/web/content/comparisons/cats-zio/06-step.mdx`
+
+**Updates**:
+- Add `Scope` trait interface (`addFinalizer`, `close`)
+- Explain `acquireRelease` signature includes `Scope`
+- Add `ZIO.scoped` for explicit scope management
+- Show `scope.extend` for extending resource lifetime
+- Add parallel resource acquisition with `zipPar`
+- Add `parallelFinalizers` for concurrent cleanup
+- Add `fromAutoCloseable` for Java/Scala resources
+
+**Key Zionomicon patterns**:
+```scala
+// Basic scope usage
+ZIO.scoped {
+  for {
+    file <- file("data.txt")
+    content <- readFile(file)
+  } yield content
+} // file automatically closed
+
+// Parallel resource acquisition
+(file("a.txt") zipPar file("b.txt")).flatMap { case (a, b) =>
+  // use both files
+}
+```
+
+- [ ] **Update Step 7: Fiber Supervision** — **MAJOR UPDATE**: Add supervision strategies explanation, show `fork` vs `forkDaemon` vs `forkScoped`, add `raceEither`, timeout patterns, retry policies.
+
+**Why**: Current content shows basic fork/join but misses supervision strategies and structured concurrency guarantees.
+
+**File**: `packages/web/content/comparisons/cats-zio/07-step.mdx`
+
+**Updates**:
+- Explain default supervision model (structured concurrency)
+- Show `fork` (current scope) vs `forkDaemon` (global scope) vs `forkScoped` (explicit scope)
+- Add `Fiber.join` vs `Fiber.await` (Exit value vs result)
+- Add `raceEither` (winner-takes-all concurrency)
+- Add timeout implementation pattern
+- Add retry policies with `Schedule`
+- Show circuit breaker pattern
+
+**Key Zionomicon patterns**:
+```scala
+// Supervision strategies
+child.fork       // Dies with parent
+child.forkDaemon // Outlives parent (global scope)
+child.forkScoped // Explicit scope management
+
+// Race pattern
+val race = zio1.raceEither(zio2).map {
+  case Left(value)  => value
+  case Right(value) => value
+}
+
+// Timeout pattern
+def timeout[R, E, A](zio: ZIO[R, E, A], duration: Duration): ZIO[R, E, Option[A]] =
+  zio.raceEither(ZIO.sleep(duration)).map {
+    case Left(value) => Some(value)
+    case Right(_)   => None
+  }
+```
+
+- [ ] **Update Step 8: Streaming** — Enhance with `mapZIO`, `filterZIO`, `groupedWithin`, transducer patterns, backpressure explanation, error recovery strategies.
+
+**Why**: Current content shows basic ZStream operators. Zionomicon doesn't cover streaming extensively, but ZStream has many powerful operators.
+
+**File**: `packages/web/content/comparisons/cats-zio/08-step.mdx`
+
+**Updates**:
+- Add `mapZIO`, `filterZIO` (effectful operators)
+- Add `groupedWithin` (time/size-based grouping)
+- Add transducer patterns (`transduce`)
+- Explain backpressure handling (automatic in ZStream)
+- Add error recovery: `catchSome`, `retry`, `catchAll`
+- Add `ZStream.fromZIO` and `ZStream.scoped` for resource-safe streams
+
+**Note**: Since Zionomicon doesn't cover streaming, use ZIO 2.x documentation for accurate operator signatures.
+
+- [ ] **Update Step 9: Application Structure** — **MAJOR UPDATE**: Add `ZIOApp` vs `ZIOAppDefault` distinction, show `Runtime.removeDefaultLoggers` bootstrap, add `ZIO.config` for configuration, demonstrate service requirements with `ZIO.service[Service]`.
+
+**Why**: Current content shows `ZIOAppDefault` but doesn't explain Bootstrap configuration or service requirements pattern.
+
+**File**: `packages/web/content/comparisons/cats-zio/09-step.mdx`
+
+**Updates**:
+- Explain `ZIOApp` vs `ZIOAppDefault` (Exit code handling)
+- Add `bootstrap` layer for runtime configuration
+- Show `Runtime.setConfigProvider` for config
+- Add `ZIO.config[AppConfig]` usage
+- Demonstrate service access with `ZIO.service[Service]`
+- Add structured logging with `ZIO.log` and log levels
+- Show graceful shutdown with `ZIO.addFinalizer`
+
+**Key Zionomicon patterns**:
+```scala
+object Main extends ZIOAppDefault {
+  override val bootstrap =
+    Runtime.removeDefaultLoggers >>>
+    Runtime.setConfigProvider(ConfigProvider.envProvider)
+
+  def run = for {
+    config <- ZIO.config[AppConfig]
+    service <- ZIO.service[MyService]
+    _ <- service.run
+  } yield ()
+}
+```
+
+- [ ] **Update Step 10: Interop** — Update dependency version to `zio-interop-cats 3.1.1.0`, add Resource↔Managed conversions, add Stream↔ZStream conversions, note Throwable-only constraint.
+
+**Why**: Current content shows `23.1.0.3` (outdated) and misses important conversion patterns.
+
+**File**: `packages/web/content/comparisons/cats-zio/10-step.mdx`
+
+**Updates**:
+- Update dependency: `"dev.zio" %% "zio-interop-cats" % "3.1.1.0"`
+- Add `Resource#toManaged` (CE → ZIO Resource conversion)
+- Add `ZManaged#toResource` (ZIO → CE Resource conversion)
+- Add `fs2.Stream#toZStream()` conversion
+- Add `ZStream#toFs2Stream` conversion
+- Add note: interop only works with `Throwable` error types
+- Show error type conversion patterns
+
+**Key interop patterns**:
+```scala
+// Resource interop
+import zio.interop.catz._
+val managed: Resource[Task, A] = ...
+val zioManaged: ZManaged[Any, Throwable, A] = managed.toManaged
+
+// Stream interop
+import zio.stream.interop.fs2z._
+val fs2Stream: fs2.Stream[Task, A] = ...
+val zioStream: ZStream[Any, Throwable, A] = fs2Stream.toZStream()
+```
+
+#### Phase 3: Create New Advanced Steps
+
+- [ ] **Create Step 11: STM** — Compare ZIO STM (built-in) vs cats-stm. Cover `TRef`, `TMap`, `TQueue`, `TPromise`, `TArray`, transaction composition, `STM.retry` for locking.
+
+**Why**: STM is a powerful ZIO feature not available in standard Cats Effect.
+
+**File**: `packages/web/content/comparisons/cats-zio/11-step.mdx` (CREATE)
+
+**Content outline**:
+- Title: "Software Transactional Memory"
+- ZIO STM basics: `type STM[+E, +A] = ZSTM[Any, E, A]`
+- TRef for transactional references
+- STM operators: `get`, `set`, `update`, `modify`
+- Transaction composition: `transfer` example (atomic bank transfer)
+- `STM.retry` for optimistic locking
+- TMap, TQueue, TPromise, TArray
+- STM limitations (no arbitrary effects, no concurrency operators)
+- Comparison: cats-stm requires external library
+
+**Code comparison**:
+```scala
+// ZIO STM (built-in)
+for {
+  from <- TRef.make(100)
+  to   <- TRef.make(0)
+  _ <- transfer(from, to, 50).commit
+} yield ()
+
+def transfer(from: TRef[Int], to: TRef[Int], amount: Int): STM[Nothing, Unit] =
+  for {
+    balance <- from.get
+    _ <- if (balance < amount) STM.fail("Insufficient")
+         else from.update(_ - amount) *> to.update(_ + amount)
+  } yield ()
+
+// cats-stm (external library)
+// (similar API but requires separate dependency)
+```
+
+- [ ] **Create Step 12: Concurrent Structures** — Compare ZIO (Ref, Promise, Queue, Hub, Semaphore) vs cats-effect-std. Cover work distribution, broadcasting, rate limiting.
+
+**Why**: ZIO includes these structures in core, while Cats Effect requires cats-effect-std.
+
+**File**: `packages/web/content/comparisons/cats-zio/12-step.mdx` (CREATE)
+
+**Content outline**:
+- Title: "Concurrent Data Structures"
+- `Ref` for shared mutable state (vs `Ref` in cats-effect-std)
+- `Promise` for work synchronization (vs `Deferred` in CE)
+- `Queue` for work distribution (vs `Queue` in cats-effect-std)
+- `Hub` for broadcasting (ZIO-only, no CE equivalent)
+- `Semaphore` for rate limiting (vs `Semaphore` in cats-effect-std)
+- Queue strategies: unbounded, bounded, sliding, dropping
+- Example: Producer-consumer pattern with Queue
+- Example: Pub-sub pattern with Hub
+
+**Code comparison**:
+```scala
+// ZIO (built-in)
+for {
+  queue <- Queue.unbounded[Int]
+  _ <- queue.offer(42)
+  value <- queue.take
+} yield value
+
+// Cats Effect (cats-effect-std)
+for {
+  queue <- Queue.unbounded[IO, Int]
+  _ <- queue.offer(42)
+  value <- queue.take
+} yield value
+```
+
+- [ ] **Create Step 13: Configuration** — Compare ZIO Config vs Ciris. Cover config descriptors, providers (env, props, HOCON), validation, nested config.
+
+**Why**: Configuration is a critical application concern. ZIO Config is feature-rich and type-safe.
+
+**File**: `packages/web/content/comparisons/cats-zio/13-step.mdx` (CREATE)
+
+**Content outline**:
+- Title: "Application Configuration"
+- ZIO Config basics: `Config` descriptor, `ConfigProvider`
+- Basic types: `Config.string`, `Config.int`, `Config.secret`
+- Automatic derivation with `zio-config-magnolia`
+- Nested configuration with `.nested("section")`
+- Validation: `.validate("message")(predicate)`
+- Providers: env, props, HOCON (typesafe-config)
+- Loading: `ZIO.config[AppConfig]`
+- Comparison: Ciris (similar API but different approach)
+
+**Code comparison**:
+```scala
+// ZIO Config
+case class AppConfig(host: String, port: Int)
+
+object AppConfig {
+  implicit val config: Config[AppConfig] =
+    (Config.string("host"), Config.int("port"))
+      .mapN(AppConfig.apply)
+}
+
+for {
+  config <- ZIO.config[AppConfig](ConfigProvider.envProvider)
+} yield config
+
+// Ciris
+case class AppConfig(host: String, port: Int)
+
+val config = for {
+  host <- env("HOST").as[String]
+  port <- env("PORT").as[Int]
+} yield AppConfig(host, port)
+
+config.load[IO]
+```
+
+- [ ] **Create Step 14: HTTP** — Compare ZIO HTTP vs http4s. Cover server routes, client requests, middleware, streaming.
+
+**Why**: HTTP is fundamental to most applications. Both libraries have different approaches.
+
+**File**: `packages/web/content/comparisons/cats-zio/14-step.mdx` (CREATE)
+
+**Content outline**:
+- Title: "HTTP Clients and Servers"
+- ZIO HTTP server: `Http.route`, `Http.collect`
+- ZIO HTTP client: `Client.request`, `ZClient`
+- http4s server: `HttpRoutes.of`, `BlazeServerBuilder`
+- http4s client: `Client[IO].expect`
+- Route patterns: path matching, query parameters
+- Streaming: ZStream vs fs2.Stream
+- Middleware: CORS, logging, authentication
+
+**Code comparison**:
+```scala
+// ZIO HTTP
+val app = Http.collect[Request] {
+  case Method.GET -> Root / "hello" / name =>
+    Response.text(s"Hello, $name!")
+
+}
+
+val server = Server.port(8080) ++ Server.app(app)
+
+// http4s
+val routes = HttpRoutes.of[IO] {
+  case GET -> Root / "hello" / name =>
+    Ok(s"Hello, $name!")
+}
+
+val server = BlazeServerBuilder[IO]
+  .bindHttp(8080)
+  .withHttpApp(routes.orNotFound)
+  .resource
+```
+
+- [ ] **Create Step 15: Database** — Compare ZIO JDBC/Quill vs Doobie/Skunk. Cover connection pooling, queries, transactions, streaming results.
+
+**Why**: Database access is essential. Different libraries have different approaches to type safety and transactions.
+
+**File**: `packages/web/content/comparisons/cats-zio/15-step.mdx` (CREATE)
+
+**Content outline**:
+- Title: "Database Access"
+- ZIO JDBC: JDBC connection, transactions, update/query
+- ZIO Quill: Type-safe SQL queries, projections
+- Doobie: Connection IO, fragments, queries
+- Skunk: PostgreSQL protocol, type-safe commands
+- Transaction patterns: `ZIO.transaction` vs `transact`
+- Streaming results: `ZStream.fromResultSet` vs `stream`
+- Connection pooling configuration
+
+**Code comparison**:
+```scala
+// ZIO JDBC
+val tx = for {
+  _ <- execute("INSERT INTO users (name) VALUES (?)", "Alice")
+  users <- query("SELECT * FROM users").as[User]
+} yield users
+
+tx.transaction.orDie
+
+// Doobie
+val tx = for {
+  _ <- sql"INSERT INTO users (name) VALUES ($name)".update.run
+  users <- sql"SELECT * FROM users".query[User].to[List]
+} yield users
+
+transact(tx)
+```
+
+#### Phase 4: Configuration Updates
+
+- [ ] **Update pairings.ts** — Change `steps: 10` to `steps: 15`, update `estimatedTime` from "~50 min" to "~75 min" (5 min per step avg).
+
+**Why**: Adding 5 new steps requires configuration update.
+
+**File**: `packages/web/content/pairings.ts`
+
+- [ ] **Update index.mdx** — Add "Advanced Topics" section after step 10, listing steps 11-15 with brief descriptions.
+
+**Why**: Landing page should reflect all available content.
+
+**File**: `packages/web/content/comparisons/cats-zio/index.mdx`
+
+**Add section**:
+```markdown
+## Advanced Topics
+
+11. [Software Transactional Memory](/cats-zio/11) — Compose atomic operations with STM
+12. [Concurrent Structures](/cats-zio/12) — Ref, Queue, Hub, Semaphore for coordination
+13. [Configuration](/cats-zio/13) — Load and validate configuration with ZIO Config
+14. [HTTP](/cats-zio/14) — Build HTTP clients and servers
+15. [Database](/cats-zio/15) — Query databases with transactions
+```
+
+- [ ] **Verify routing** — Ensure dynamic route `packages/web/app/[toolPair]/[step]/page.tsx` handles steps 11-15 via `generateStaticParams()`.
+
+**Why**: Existing routing should work automatically, but verification needed.
+
+**File**: `packages/web/app/[toolPair]/[step]/page.tsx`
+
+**Check**: The `generateStaticParams` function uses `pairing.steps` to generate routes. After updating `pairings.ts`, this should work automatically.
+
+#### Phase 5: Validation
+
+- [ ] **Run full validation** — Execute `cd packages/web && bun run build && bun run typecheck && bun run lint`.
+
+**Why**: Ensure all changes pass validation before considering complete.
+
+#### Glossary Update
+
+- [ ] **Update glossary API mappings** — Review `packages/web/content/glossary/cats-zio.ts` and ensure entries reflect ZIO 2.x and Cats Effect 3 APIs used in updated steps. Add entries for STM, concurrent structures, config.
+
+**File**: `packages/web/content/glossary/cats-zio.ts`
+
+**Potential additions**:
+- STM entries: `TRef`, `TMap`, `TQueue`, `TPromise`, `STM.succeed`, `STM.retry`
+- Concurrent entries: `Ref.make`, `Promise.make`, `Queue.unbounded`, `Hub.bounded`, `Semaphore.make`
+- Config entries: `ZIO.config`, `Config.string`, `ConfigProvider.envProvider`
 
 ---
 
-### P1: Syntax Highlighting
+## Content Style Guidelines
 
-- [x] **Install @shikijs/rehype** — Added `@shikijs/rehype` and `shiki` packages. Also installed `@shikijs/transformers` initially but removed since transformers require functions (not serializable for Turbopack).
+Per `CLAUDE.md`:
+- **Direct and concise** - No fluff, straight to technical points
+- **Show, don't tell** - Lead with code examples
+- **Side-by-side comparison** - Always show both CE and ZIO
+- **No celebration language** - No "Congratulations!", "Amazing!"
+- **Acknowledge difficulty** - "This is different from Cats Effect" is fine
 
-**Why**: Shiki is installed but not integrated into MDX pipeline. The rehype plugin processes code blocks during MDX compilation.
+### MDX Frontmatter Template
 
-- [x] **Configure Shiki in next.config.ts** — Enabled `@shikijs/rehype` plugin with `github-dark` and `github-light` themes. Had to disable MDX Rust compiler (`experimental.mdxRs: false`) because Turbopack can't serialize rehype plugin options. Used string format `"@shikijs/rehype"` instead of imported function.
-
-**Why**: next.config.ts has commented-out rehypePlugins section. Need to enable Shiki with terminal-aesthetic dark theme.
-
-**Files**:
-- `packages/web/next.config.ts` (MODIFIED)
-
-**Bug discovered**: Turbopack (Rust-based MDX compiler) cannot serialize rehype plugin options. Solution: set `experimental.mdxRs: false` and use string-based plugin reference.
-
-- [x] **Add Shiki CSS overrides** — Added CSS in `globals.css` to override Shiki's default colors: background transparent, ensure code inherits line-height, preserve inline code green accent.
-
-**Why**: Shiki applies inline styles that may conflict with terminal aesthetic. CSS overrides ensure consistent appearance.
-
-**Files**:
-- `packages/web/app/globals.css` (MODIFIED)
-
-- [x] **Update prose code block styles** — Modified prose styles in `StepPageClientWrapper.tsx` to work with Shiki-generated HTML. Added `prose-pre:code:bg-transparent prose-pre:code:text-inherit prose-pre:code:p-0` to prevent overriding Shiki's token colors.
-
-**Why**: Current prose styles target hardcoded colors. Shiki generates `<pre><code>` with inline styles that need proper cascade.
-
-**Files**:
-- `packages/web/components/ui/StepPageClientWrapper.tsx` (MODIFIED)
-
-- [x] **Add syntax highlighting to ScalaComparisonBlock** — Used Shiki's `createHighlighter` and `codeToHtml` API for client-side highlighting. Added `"use client"` directive, state for HTML output, loading state, and cancellation on unmount.
-
-**Why**: ScalaComparisonBlock uses raw `<code>{zioCode}</code>` without any highlighting. Server-side Shiki won't work for dynamic props.
-
-**Files**:
-- `packages/web/components/ui/ScalaComparisonBlock.tsx` (MODIFIED)
-
-**Validation**:
-- Scala code blocks show colored keywords, strings, comments
-- Dark theme matches terminal aesthetic (#0a0a0a background)
-- Inline code (`backticks`) still uses green accent
-- `bun run build && bun run typecheck` passes
-
+```yaml
 ---
-
-### P2: Sandbox Integration Improvements
-
-**Note**: Terminal state sync is already implemented. The callbacks are wired at `TerminalSidebar.tsx:318-319` and effects fire in `InteractiveTerminal.tsx:258-266`.
-
-- [x] ~~**Wire terminal state callbacks**~~ — Already implemented: `onStateChange` → `onTerminalStateChange`, `onSessionTimeChange` → `onTerminalTimeChange`
-
-- [x] **Implement shrinking layout** — Removed focus trap from `TerminalSidebar.tsx`. `ShrinkingLayout` component already exists and handles `margin-right`. Main content now remains interactive when sidebar is open.
-
-**Why**: Current sidebar overlays content with focus trap, blocking TryIt interaction. Spec R2 requires content to remain interactive.
-
-**Files**:
-- `packages/web/components/ui/TerminalSidebar.tsx` (MODIFIED - removed useFocusTrap, added Escape key handler, changed role from dialog to complementary)
-- `packages/web/components/ui/ShrinkingLayout.tsx` (VERIFIED - already handles margin-right based on isOpen and sidebarWidth)
-- `packages/web/app/[toolPair]/[step]/page.tsx` (VERIFIED - already uses ShrinkingLayout wrapper)
-
-**Validation**:
-- Open sidebar, verify main content is NOT blocked
-- TryIt buttons work while sidebar is open
-- Smooth transition when opening/closing
-- Mobile bottom sheet unchanged (overlay acceptable)
-
-**Changes made**:
-- Removed `useFocusTrap` import and usage from `TerminalSidebar.tsx`
-- Changed `sidebarRef` from `useFocusTrap<HTMLDivElement>(isOpen, { onEscape: closeSidebar })` to regular `useRef<HTMLDivElement>(null)`
-- Added separate Escape key handler effect that closes sidebar
-- Changed `role="dialog"` to `role="complementary"` (no longer a modal)
-- Removed `aria-modal` and `aria-hidden` attributes
-- Updated JSDoc comment from "Focus trap using inert on rest of page" to "Main content remains interactive (no focus trap)"
-- Added Playwright tests in `packages/web/tests/browser.spec.ts` for shrinking layout verification (4 tests)
-- Added Playwright tests in `packages/web/tests/browser.spec.ts` for scala-effects-demo verification (4 tests)
-
+title: "Step Title"
+step: 11
+description: "Brief description of what this step covers"
+zioCommands: ["ZIO.succeed", "ZIO.fail", "ZIO.attempt"]
+ceCommands: ["IO.pure", "IO.raiseError", "IO.delay"]
 ---
+```
 
-### P3: Bidirectional UX Prototype
+### Component Usage
 
-- [x] **Create /scala-effects-demo route** — New page demonstrating 4 bidirectional UX options for user evaluation.
-
-**Why**: Spec R3 requires a prototype page showing different approaches before committing to one.
-
-**Files**:
-- `packages/web/app/scala-effects-demo/page.tsx` (CREATED)
-- `packages/web/app/scala-effects-demo/UxPrototypeClient.tsx` (CREATED)
-
-- [x] **Implement Option 1: Column swap toggle** — Reuse DirectionToggle pattern, swap ZIO/CE columns in ScalaComparisonBlock based on direction.
-
-- [x] **Implement Option 2: Separate routes mockup** — Show how `/zio-cats` and `/cats-zio` would look with reversed default direction.
-
-- [x] **Implement Option 3: Landing chooser** — "I know ZIO" / "I know Cats Effect" buttons that set direction and navigate.
-
-- [x] **Implement Option 4: Smart cards** — Two home page cards leading to same content with direction preset in URL or localStorage.
-
-**Validation**: Navigate to `/scala-effects-demo`, all 4 options render and are interactive.
-
-**Implementation notes**:
-- Created client-side component `UxPrototypeClient.tsx` with 4 interactive demo sections
-- Each option demonstrates a different UX pattern for bidirectional comparison
-- All options are interactive and update the global direction preference
-- Includes comparison table summarizing pros/cons of each approach
-- Follows terminal aesthetic with minimal design
-
----
-
-### P4: Scastie Improvements (Enhancement)
-
-- [x] **Support UUID snippets in ScastieEmbed** — Added `snippetId` prop to load saved Scastie snippets instead of inline code. Also added `user` and `update` props for user-specific snippets and version control.
-
-**Why**: Current ScastieEmbed only supported inline code via `code` prop. Saved snippets (UUID) enable pre-configured examples with dependencies already set up.
-
-**Files**:
-- `packages/web/components/ui/ScastieEmbed.tsx` (MODIFIED - added snippetId, user, update props, updated embed logic)
-
-**Changes made**:
-- Added `snippetId`, `user`, `update` props to `ScastieEmbedProps` interface
-- Made `code` prop optional (required only when not using snippetId)
-- Added `isWorksheetMode`, `sbtConfig`, `targetType` props for inline code mode
-- Updated global `Window.ScastieEmbed` type declaration to make all properties optional
-- Updated embed logic to build options based on mode (snippet vs inline code)
-- Snippet mode uses `base64UUID` option, inline mode uses `code` + other options
-
-**Validation**: `bun run build && bun run typecheck` passes.
-
-- [x] **Verify dark theme is applied** — Verified that `theme` prop defaults to `"dark"` and is correctly passed to `window.ScastieEmbed()` in options object. Implementation verified correct (theme on lines 204, 237, 243, 251). Browser verification requires Scastie external service - implementation is correct, visual verification requires manual testing.
-
-**Files**:
-- `packages/web/components/ui/ScastieEmbed.tsx` (VERIFIED - theme prop defaults to "dark" on line 204, passed in options on lines 237, 243, 251)
-
-**Validation**: `bun run build && bun run typecheck` passes. Dark theme is correctly configured. Visual verification of Scastie's external rendering requires manual browser testing.
-
----
-
-### P5: Content Review (Research)
-
-- [ ] **Audit steps 1-5 against Zionomicon** — Review R/E/A signature, creating effects, errors, map/flatMap, ZLayers against Zionomicon patterns.
-
-**Reference**: `/Users/hmemcpy/Downloads/Zionomicon - 8.28.2025.ePub`
-
-- [ ] **Audit steps 6-10 against ZIO 2.x** — Review resources, fibers, streaming, app structure, interop against current ZIO 2.x and CE3 syntax.
-
-- [ ] **Update glossary API mappings** — Ensure `packages/web/content/glossary/cats-zio.ts` matches current ZIO 2.x and Cats Effect 3 APIs. Currently has 40 entries across 7 categories (BASICS, ERRORS, DEPENDENCIES, CONCURRENCY, STREAMING, RUNTIME, INTEROP).
-
----
-
-### Bug Fixes
-
-- [x] **Fix Biome lint errors for dangerouslySetInnerHTML** — Disabled `security.noDangerouslySetInnerHtml` rule in biome.json. The HTML is from Shiki (trusted library), not user input.
-
-**Files**:
-- `biome.json` (MODIFIED - added security.noDangerouslySetInnerHtml: "off")
-
-**Validation**: `bun run lint` passes without errors.
-
-- [x] **Fix Biome lint suggestion for parseInt** — Changed `parseInt()` to `Number.parseInt()` in browser test to follow ES2015 namespace convention. Biome suggested using `Number.parseInt` instead of global `parseInt`.
-
-**Files**:
-- `packages/web/tests/browser.spec.ts` (MODIFIED - line 727)
-
-**Validation**: `bun run lint` passes without errors.
-
-- [x] **Fix React hooks order violation in MobileBottomSheet** — All hooks (`useEffect` and 3 `useCallback`) were placed AFTER early returns, violating Rules of Hooks. When `sandboxConfig?.enabled === false` or `!isOpen`, the component returned early before hooks were called, causing "change in the order of Hooks" errors on subsequent renders.
-
-**Fix**: Moved ALL hooks BEFORE the early returns. The `useEffect` internally checks `if (!isOpen) return` to skip logic when closed.
-
-**Files**:
-- `packages/web/components/ui/MobileBottomSheet.tsx` (MODIFIED - moved useEffect before early returns)
-
-**Validation**: Dev server console no longer shows hooks order error.
-
-- [x] **Fix terminal flash on cats-zio pages** — Terminal components (TerminalToggle, TerminalSidebar, MobileBottomSheet) showed briefly before sandbox config was loaded from context. The check `sandboxConfig?.enabled === false` didn't cover the `undefined` case during initial render.
-
-**Fix**: Changed condition to `sandboxConfig === undefined || sandboxConfig.enabled === false` to hide terminal UI until config is explicitly loaded.
-
-**Files**:
-- `packages/web/components/ui/TerminalToggle.tsx` (MODIFIED)
-- `packages/web/components/ui/TerminalSidebar.tsx` (MODIFIED)
-- `packages/web/components/ui/MobileBottomSheet.tsx` (MODIFIED)
-
-**Validation**: Terminal FAB no longer appears on cats-zio pages.
-
-- [x] **Fix cats-zio overview page content** — The overview page at `/cats-zio` was showing jj-git specific content (step titles, descriptions, "Why jj?" bullet points). Content was hardcoded for jj-git only.
-
-**Fix**: Added tool-pair specific content for cats-zio (step metadata, estimated times, "Why Cats Effect?" section).
-
-**Files**:
-- `packages/web/app/[toolPair]/page.tsx` (MODIFIED - added cats-zio specific content)
-
-**Validation**: `/cats-zio` overview now shows Cats Effect 3 specific steps and introduction.
+- **ScalaComparisonBlock** for all code comparisons
+- **Callout** for tips (`type="tip"`), warnings (`type="warning"`), notes (default)
+- **ScastieEmbed** for interactive examples (optional)
+- No **TryIt** components (cats-zio has `sandbox: enabled: false`)
 
 ---
 
 ## Architecture Notes
 
-### Sandbox Config Loading Bug Fix
+### Zionomicon Content Sources
 
-**Problem**: cats-zio pages were showing terminal FAB even though `config.yml` had `sandbox.enabled: false`.
+All ZIO patterns are sourced from the Zionomicon (Sixth Release, August 28, 2025):
 
-**Root causes**:
-1. `step/page.tsx` passed `process.cwd()` to `loadToolConfig` instead of `"content/comparisons"`, causing the wrong file path
-2. `extractYamlValues()` regex matched values in YAML comments, not just in the `defaults:` section
-3. Terminal UI components didn't check `sandboxConfig.enabled` before rendering
-4. `useSandboxStatus` always polled sandbox API regardless of enabled state
+| Source | Location | Chapters |
+|--------|----------|----------|
+| **Zionomicon ePub** | `/tmp/zionomicon/EPUB/text/` | ch001-ch024 |
+| **ZIO interop docs** | https://zio.dev/guides/interop/with-cats-effect/ | Web reference |
 
-**Solution**:
-- Fixed `contentRoot` path to `"content/comparisons"` (relative to packages/web)
-- Updated `extractYamlValues()` to only parse within the `defaults:` section using regex `/defaults:\s*\n((?:[ \t]+[^\n]+\n?)+)/`
-- Added `sandboxConfig?.enabled === false` check in `TerminalToggle`, `MobileBottomSheet`, `TerminalSidebar`
-- Added `enabled` parameter to `useSandboxStatus({ enabled })` to skip polling when disabled
+### Content Verification Priority
 
-### Shiki Integration Path
-```
-MDX file → next-mdx-remote → @shikijs/rehype plugin → pre-rendered HTML → prose styles
-```
+When Zionomicon contradicts other sources (ZIO 2.x docs, blog posts):
+1. **Prefer Zionomicon** (authoritative source by ZIO creators)
+2. Verify against zio.dev official docs
+3. Check for library version differences (ZIO 2.x only)
 
-Note: For ScalaComparisonBlock, client-side highlighting is needed since code comes from props.
+### Step Dependencies
 
-### Sandbox Config Resolution
-```
-Step frontmatter → Tool-pair config.yml → Global defaults
-```
-
-Priority: frontmatter overrides config.yml overrides defaults.
-
-Resolution implemented in `packages/web/lib/content/types.ts:71-95` via `resolveSandboxConfig()`.
-
-### Terminal State Flow (Already Implemented ✓)
-```
-InteractiveTerminal.onStateChange → TerminalContext.onTerminalStateChange → setState() → StatusIndicator re-render
-```
-
-Wiring: `TerminalSidebar.tsx:318-319` passes callbacks to `InteractiveTerminal`, which fires them in `useEffect` hooks at lines 258-266.
-
-### Content Structure
-```
-packages/web/content/comparisons/
-├── jj-git/              # 12 steps, sandbox enabled
-│   ├── config.yml       # sandbox.enabled: true
-│   ├── index.mdx
-│   └── 01-12-step.mdx
-└── cats-zio/            # 10 steps, sandbox SHOULD BE disabled
-    ├── config.yml       # MISSING - needs sandbox.enabled: false
-    ├── index.mdx
-    └── 01-10-step.mdx   # Uses ScalaComparisonBlock, Callout
-```
-
-### Key File Locations
-
-| File | Purpose |
-|------|---------|
-| `packages/web/content/comparisons/cats-zio/config.yml` | **CREATED** - Disable sandbox |
-| `packages/web/next.config.ts` | **MODIFIED** - Add Shiki rehype plugin |
-| `packages/web/app/globals.css` | **MODIFIED** - Shiki CSS overrides |
-| `packages/web/components/ui/ScalaComparisonBlock.tsx` | **MODIFIED** - Add highlighting |
-| `packages/web/components/ui/TerminalSidebar.tsx` | **MODIFIED** - Remove overlay backdrop |
-| `packages/web/components/ui/StepPageClientWrapper.tsx` | **MODIFIED** - Shrinking layout margin |
-| `packages/web/app/scala-effects-demo/page.tsx` | **CREATED** - UX prototype |
-| `packages/web/components/ui/ScastieEmbed.tsx` | **MODIFIED** - UUID snippet support |
-| `packages/web/lib/content-core/tool-config.ts` | **FIXED** - Parse defaults section only, not comments |
-| `packages/web/hooks/useSandboxStatus.ts` | **MODIFIED** - Accept enabled param to skip polling |
-| `packages/web/components/ui/TerminalToggle.tsx` | **MODIFIED** - Check sandboxConfig.enabled |
-| `packages/web/components/ui/MobileBottomSheet.tsx` | **MODIFIED** - Check sandboxConfig.enabled |
-| `packages/web/app/[toolPair]/[step]/page.tsx` | **FIXED** - Pass correct contentRoot path to loadToolConfig |
-
----
-
-## Validation Checklist
-
-### After P0:
-- [x] `bun run build` succeeds
-- [x] Terminal sidebar FAB does not appear on cats-zio pages (verified via Playwright)
-- [x] jj-git pages still show terminal FAB (verified via Playwright)
-- [x] No ERR_CONNECTION_REFUSED errors caused by sandbox polling on cats-zio pages (useSandboxStatus now respects enabled flag)
-
-### After P1:
-- [x] Scala code blocks have syntax highlighting (keywords, strings, comments colored) (verified via Playwright - pink for keywords, purple for types, gray for punctuation)
-- [x] Dark theme consistent with terminal aesthetic (#0a0a0a background) (verified via Playwright)
-- [x] Inline code (`backticks`) still uses green accent (verified via Playwright - rgb(57, 217, 108))
-- [x] `bun run typecheck` passes
-- [x] ScalaComparisonBlock shows highlighted code (verified via Playwright)
-
-**Bug fixed**: `globals.css` was overriding Shiki inline styles with `.shiki, .shiki span { color: var(--color-text) !important; }`. Changed to only override background, preserve inline color styles.
-
-### After P2:
-- [x] Main content shrinks when sidebar opens (not blocked by overlay) (verified via code inspection and Playwright tests)
-- [x] TryIt buttons work while sidebar is visible (verified via code inspection - focus trap removed, no inert attribute)
-- [x] Smooth transition when opening/closing (verified via code inspection - transition CSS applied)
-- [x] Mobile bottom sheet unchanged (overlay acceptable) (verified via code inspection - mobile uses bottom sheet, not shrinking layout)
-
-### After P3:
-- [x] `/scala-effects-demo` shows all 4 options (verified via build - page renders as static content, Playwright tests added)
-- [x] User can evaluate each approach (verified via code inspection - all 4 options are interactive with buttons/toggles)
-- [x] Direction preference persists in localStorage (already verified by existing Playwright tests for direction toggle)
-
-### After P4:
-- [x] Scastie embeds load with dark theme (theme prop verified correct in code)
-- [x] UUID snippets work (snippetId support implemented)
-- [x] Fallback displays if Scastie unavailable (fallback UI implemented and tested)
-
----
-
-## Out of Scope
-
-Per specifications, the following are explicitly out of scope:
-
-- Self-hosting Scastie (use public instance)
-- Scala REPL integration with sandbox
-- Mobile-specific Scastie optimizations
-- Other Scala libraries (fs2, http4s, doobie)
-- Multiple concurrent terminal sessions
-- Terminal command history persistence
-- gVisor installation automation
-- Per-tool-pair direction preferences (global only)
-- Animated toggle transitions
-- URL parameter for direction (`?dir=reversed`)
-
----
-
-## Dependencies
-
-External:
-- Scastie embedding API (https://scastie.scala-lang.org/embedded.js)
-- Shiki syntax highlighting (already installed: shiki ^3.6.0)
-- @shikijs/rehype (needs to be installed for MDX pipeline)
-
-Internal:
-- DirectionContext for bidirectional toggle
-- TerminalContext for sidebar state (sidebarWidth already exposed)
-- ContentService for config loading (tool-config.ts)
+No strict dependencies between steps - each should be standalone. However:
+- Steps 1-4 should be read in order (fundamentals)
+- Steps 5-7 can be read independently (architecture topics)
+- Steps 11-15 are advanced and assume familiarity with basics
 
 ---
 
 ## Task Count
 
-**Total pending tasks**: 3 (content research - requires external documentation: Zionomicon ePub, ZIO 2.x docs)
-**Completed implementation tasks**: 18 (P0: cats-zio config.yml; P1: Shiki rehype plugin, next.config.ts, CSS overrides, prose styles, ScalaComparisonBlock highlighting, **CSS bug fix for Shiki colors**; P2: shrinking layout; P3: UX prototype with 4 options; P4: Scastie UUID snippet support, dark theme verification; **P0 BUG FIX**: TerminalToggle/MobileBottomSheet sandboxConfig check, useSandboxStatus enabled param, tool-config.ts defaults section parsing, step page contentRoot path; **P1 BUG FIX**: globals.css was overriding Shiki inline styles)
+**Total pending tasks**: 30
+- Phase 1: 0 tasks (research complete)
+- Phase 2: 10 tasks (update existing steps 1-10)
+- Phase 3: 5 tasks (create new steps 11-15)
+- Phase 4: 3 tasks (configuration updates)
+- Phase 5: 1 task (validation)
+- Glossary: 1 task (update API mappings)
 
-**Bugs discovered and fixed**:
+**Completed tasks**: 18 (P0-P4 technical implementation + bug fixes)
 
-1. **Sandbox config loading bug**: The cats-zio config.yml with `sandbox.enabled: false` was not being properly loaded due to:
-   - Incorrect `contentRoot` path passed to `loadToolConfig` (was `process.cwd()` instead of `"content/comparisons"`)
-   - Regex parser in `extractYamlValues` was matching values in comments instead of only in the `defaults:` section
-   - `TerminalToggle`, `MobileBottomSheet`, and `TerminalSidebar` didn't check `sandboxConfig.enabled` before rendering
-   - `useSandboxStatus` didn't accept an `enabled` parameter to skip polling when sandbox is disabled
-
-2. **Shiki color override bug**: `globals.css` lines 263-267 had `.shiki, .shiki span { color: var(--color-text) !important; }` which overrode all Shiki inline color styles. Fixed by removing the span selector and only setting background color, allowing inline styles to take effect.
-
-Priority breakdown:
-- P0: 0 tasks (all critical blockers completed)
-- P1: 0 tasks (syntax highlighting completed and verified)
-- P2: 0 tasks (shrinking layout completed and verified)
-- P3: 0 tasks (UX prototype completed and verified)
-- P4: 0 tasks (Scastie improvements completed)
-- P5: 3 tasks (content research - requires external documentation: Zionomicon ePub, ZIO 2.x docs)
-- Browser verification: 0 tasks (all verification completed via Playwright tests and code inspection)
+**Progress**: 18/48 tasks complete (37.5%)
+**Remaining work**: Content creation for steps 1-15
 
 ---
 
 ## Commands
 
 ```bash
-# Install new dependencies
-bun add -d @shikijs/rehype
-
 # Development
 bun run dev
 
-# Validation
-bun run build
-bun run typecheck
-bun run lint
-bun run test
+# Content validation
+bun run build          # Build all MDX content
+bun run typecheck      # Verify TypeScript types
+bun run lint           # Check formatting
 
-# Automated route tests
-./scripts/test-all.sh
+# Test step content (navigate to specific step)
+# http://localhost:3000/cats-zio/1
+# http://localhost:3000/cats-zio/11
 ```
+
+---
+
+## Out of Scope
+
+Per specification `specs/zionomicon-tutorial-update.md`:
+
+- Interactive Scala sandbox for cats-zio (Scastie only, no REPL)
+- Video content or tutorials
+- Cats Effect 2.x compatibility
+- ZIO 1.x compatibility
+- Translation to other languages
+- Modifying jj-git content (focus on cats-zio only)
+- Creating additional tool comparisons beyond cats-zio
+
+---
+
+## Dependencies
+
+**Content Sources**:
+- Zionomicon ePub (Sixth Release, Aug 28, 2025) - `/tmp/zionomicon/EPUB/text/`
+- zio.dev interop documentation - https://zio.dev/guides/interop/with-cats-effect/
+- ZIO 2.x API reference - https://zio.dev/api
+- Cats Effect 3.x documentation - https://typelevel.org/cats-effect/
+
+**Internal Components**:
+- `ScalaComparisonBlock` for all code comparisons
+- `Callout` for tips/warnings/notes
+- `ScastieEmbed` for interactive examples (optional)
