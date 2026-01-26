@@ -84,12 +84,14 @@ function isNonExecutableCommand(code: string, _source: string): boolean {
  * Error patterns that indicate HALLUCINATED commands/flags (validation failure).
  *
  * These patterns mean the LLM made up a command or flag that doesn't exist.
+ * ALL other errors should be treated as failures - proper setup should make them pass.
  */
 const HALLUCINATION_PATTERNS = [
   /command not found/i,
   /unknown option/i,
   /invalid option/i,
   /unrecognized option/i,
+  /unrecognized subcommand/i,
   /unexpected argument/i,
   /no such command/i,
   /is not a git command/i,
@@ -98,55 +100,9 @@ const HALLUCINATION_PATTERNS = [
 ]
 
 /**
- * Error patterns that indicate CONTEXT issues (acceptable, not hallucinations).
- *
- * These mean the command exists but the current state doesn't support it.
- * E.g., "not a git repository" - git is installed, just not in a repo.
+ * NO context error patterns - all commands should succeed with proper setup.
+ * If a command fails due to context, that's a setup problem, not a command problem.
  */
-const CONTEXT_ERROR_PATTERNS = [
-  // Git context errors
-  /^fatal: not a git repository/i,
-  /^fatal: unable to access/i,
-  /^fatal: not a valid object name/i,
-  /^fatal: bad revision/i,
-  /^fatal: /i, // Most git "fatal" errors are context issues
-  /^error: nothing to commit/i,
-  /^error: no changes added/i,
-  /^error: pathspec/i,
-  /^error: nothing to merge/i,
-  /^error: no stages/i, // Git: nothing added to commit
-  /merge: .+ - not something we can merge/i, // Git: nothing to merge
-  /nothing added to commit but untracked files present/i, // Git commit with no staged changes
-  /nothing to commit, working tree clean/i, // Git commit with clean tree
-  /^error: branch .+ not found/i, // Git: branch doesn't exist
-  /^error: .+ not found/i, // Git: generic not found error
-  /error: the branch .+ is not fully merged/i, // Git: branch -d fails on unmerged branches
-  /hint: if you are sure you want to delete it/i, // Git: branch -d hint
-
-  // jj context errors
-  /^error: no such revset/i,
-  /^error: revision .* doesn't exist/i,
-  /^error: change .* not found/i,
-  /^error: no operation id matching/i,
-  /^error: no such path/i,
-  /^error: nothing to commit/i,
-  /^error: merge conflict but auto-show/i,
-  /^error: no conflicts found/i,
-  /^error: divergent changes/i,
-  /^error: no such bookmark/i, // jj: bookmark doesn't exist
-  /^error: bookmark .* not found/i, // jj: bookmark doesn't exist (alt)
-
-  // File system context errors
-  /no such file or directory/i,
-  /permission denied/i,
-  /file not found/i,
-  /directory not found/i,
-
-  // Empty/missing data errors
-  /^error: empty .* not allowed/i,
-  /^error: no .+ provided/i,
-  /^error: missing .+ argument/i,
-]
 
 /**
  * Check if shell output indicates a hallucination (validation failure).
@@ -373,23 +329,8 @@ async function validateSnippetInContainer(
       }
     }
 
-    // Check if non-zero exit code is due to context issues (acceptable)
+    // Check exit code - any non-zero is a failure (no context error forgiveness)
     if (result.exitCode !== 0) {
-      // Check if this is a known context error pattern
-      const isContextError = CONTEXT_ERROR_PATTERNS.some((pattern) => pattern.test(combinedOutput))
-
-      if (isContextError) {
-        // Context error is acceptable - the command exists, just wrong state
-        return {
-          snippet,
-          status: "pass",
-          output: result.stdout,
-          durationMs: Date.now() - startTime,
-        }
-      }
-
-      // Unknown non-zero exit - might be a hallucination we didn't catch
-      // or some other issue. Fail to be safe.
       return {
         snippet,
         status: "fail",

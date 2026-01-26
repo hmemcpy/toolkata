@@ -4,6 +4,27 @@ step: 2
 description: "Understanding jj's core concept - your working copy IS a commit"
 gitCommands: ["git status", "git add", "git commit"]
 jjCommands: ["jj status", "jj describe", "jj new"]
+validation:
+  setup:
+    - "jj git init --colocate ."
+    - "git config user.email 'test@toolkata.dev'"
+    - "git config user.name 'Test User'"
+    - "mkdir -p src"
+    - "echo 'original' > src/app.ts"
+    - "echo 'code' > app.ts"
+    - "echo 'test' > test.ts"
+    - "git add app.ts"
+    - "git add test.ts"
+    - "echo 'staged change' > staged.txt"
+    - "git add staged.txt"
+    - "jj describe -m 'Initial'"
+    - "jj new"
+    - "jj git export"
+    - "echo 'fix' > app.ts"
+    - "git add app.ts"
+    - "jj describe -m 'Fix bug'"
+    - "jj new"
+    - "jj git export"
 ---
 
 # Mental Model: Working Copy as a Commit
