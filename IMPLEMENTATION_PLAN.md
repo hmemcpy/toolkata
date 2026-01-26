@@ -641,19 +641,19 @@ ZIO.logError("Database connection failed")
 
 ---
 
-- [ ] **Update glossary** — Add STM, CONFIG, HTTP, DATABASE categories and entries
+- [x] **Update glossary** — Add STM, CONFIG, HTTP, DATABASE categories and entries
 
 **Why**: Glossary should include APIs from all 15 steps.
 
 **File**: `packages/web/content/glossary/cats-zio.ts`
 
-**Changes**:
-1. Add new categories to type union: `"STM"`, `"CONFIG"`, `"HTTP"`, `"DATABASE"`
-2. Add STM entries (Step 11): TRef.make, STM.retry, STM.commit, TMap, TQueue
-3. Add CONFIG entries (Step 13): ZIO.config, Config.string, Config.int, ConfigProvider
-4. Add HTTP entries (Step 14): Http.collect, Client.request, Response.text
-5. Add DATABASE entries (Step 15): execute, query, transaction, ZConnectionPool
-6. Update `getCategories()` to include new categories in order
+**Completed** 2026-01-26:
+- Added new categories to type union: `"STM"`, `"CONFIG"`, `"HTTP"`, `"DATABASE"`
+- Added STM entries (Step 11): TRef.make, STM.succeed, STM.retry, .commit, TMap.empty, TQueue.unbounded
+- Added CONFIG entries (Step 13): ZIO.config, Config.string, Config.int, ConfigProvider.envProvider, deriveConfig, .withDefault, .validate
+- Added HTTP entries (Step 14): Http.collect, Response.text, Client.request, Server.serve, Method.GET -> Root, req.body.asJson, streaming response
+- Added DATABASE entries (Step 15): query(sql).as[A], execute(sql).param, .transaction, ZConnectionPool, .returning, query composition
+- Updated `getCategories()` to include new categories in order
 
 ### P4: Validation
 
@@ -727,11 +727,11 @@ No strict dependencies between steps - each should be standalone. However:
 **Total pending tasks**: 20 main tasks (P0-P4)
 - P0 (Critical): 4 tasks — Infrastructure updates (COMPLETED)
 - P1 (New Steps): 0 tasks — All new steps created (11-15)
-- P2 (Enhance): 1 task — Update steps 9 (Step 5 done, Step 6 done, Step 7 done, Step 8 done, Step 9 done)
-- P3 (Landing): 2 tasks — Index page, glossary
+- P2 (Enhance): 0 tasks — All enhancements complete (Steps 1-9)
+- P3 (Landing): 0 tasks — Index page, glossary updated
 - P4 (Validation): 1 task — Build/typecheck/lint
 
-**Completed tasks**: 16/20 main tasks (80%)
+**Completed tasks**: 17/20 main tasks (85%)
 - [x] P0: All infrastructure updates (generateStaticParams, overview page steps/times, pairings.ts)
 - [x] Step 11: STM (11-step.mdx created, validated)
 - [x] Step 12: Concurrent Structures (12-step.mdx created, validated)
@@ -748,9 +748,11 @@ No strict dependencies between steps - each should be standalone. However:
 - [x] Step 7: Fiber Supervision (added forkDaemon, forkScoped, raceEither sections)
 - [x] Step 8: Streaming (added groupedWithin, error recovery, backpressure sections)
 - [x] Step 9: Application Structure (added Bootstrap, ZIO.config, service access patterns)
+- [x] Index page: Added Enterprise Integration section for steps 11-15
+- [x] Glossary: Added STM, CONFIG, HTTP, DATABASE categories with 26 new entries
 
-**Progress**: 17/20 main tasks complete (85%)
-**Remaining work**: Landing page glossary update, validation
+**Progress**: 18/20 main tasks complete (90%)
+**Remaining work**: Final validation (P4)
 
 **Learned**:
 - MDX string interpolation requires escaping `${}` as `\${}` to avoid JSX interpretation

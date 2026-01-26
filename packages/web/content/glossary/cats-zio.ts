@@ -18,6 +18,10 @@ export type GlossaryCategory =
   | "DEPENDENCIES"
   | "CONCURRENCY"
   | "STREAMING"
+  | "STM"
+  | "CONFIG"
+  | "HTTP"
+  | "DATABASE"
   | "RUNTIME"
   | "INTEROP"
 
@@ -261,6 +265,192 @@ export const catsZioGlossary: readonly GlossaryEntry[] = [
     toCommand: "Files[IO].readAll(path)",
     note: "File streaming (fs2)",
   },
+  // STM
+  {
+    id: "stm-1",
+    category: "STM",
+    fromCommand: "TRef.make(a)",
+    toCommand: "TRef.of[F](a)",
+    note: "Create transactional reference",
+  },
+  {
+    id: "stm-2",
+    category: "STM",
+    fromCommand: "STM.succeed(a)",
+    toCommand: "STM.pure(a)",
+    note: "Pure STM value",
+  },
+  {
+    id: "stm-3",
+    category: "STM",
+    fromCommand: "STM.retry",
+    toCommand: "STM.retry",
+    note: "Retry transaction on TRef change",
+  },
+  {
+    id: "stm-4",
+    category: "STM",
+    fromCommand: "transaction.commit",
+    toCommand: "transaction.commit[F]",
+    note: "Commit STM to effect",
+  },
+  {
+    id: "stm-5",
+    category: "STM",
+    fromCommand: "TMap.empty[K, V]",
+    toCommand: "TMap.empty[F, K, V]",
+    note: "Transactional hash map",
+  },
+  {
+    id: "stm-6",
+    category: "STM",
+    fromCommand: "TQueue.unbounded[A]",
+    toCommand: "TQueue.unbounded[F, A]",
+    note: "Transactional queue",
+  },
+  // CONFIG
+  {
+    id: "config-1",
+    category: "CONFIG",
+    fromCommand: "ZIO.config[A]",
+    toCommand: "ConfigValue[F, A].load[F]",
+    note: "Load configuration",
+  },
+  {
+    id: "config-2",
+    category: "CONFIG",
+    fromCommand: "Config.string",
+    toCommand: "env(key).as[String]",
+    note: "String configuration",
+  },
+  {
+    id: "config-3",
+    category: "CONFIG",
+    fromCommand: "Config.int",
+    toCommand: "env(key).as[Int]",
+    note: "Integer configuration",
+  },
+  {
+    id: "config-4",
+    category: "CONFIG",
+    fromCommand: "ConfigProvider.envProvider",
+    toCommand: "env(key) default",
+    note: "Environment variable source",
+  },
+  {
+    id: "config-5",
+    category: "CONFIG",
+    fromCommand: "deriveConfig[A]",
+    toCommand: "parMapN(A)",
+    note: "Automatic config derivation",
+  },
+  {
+    id: "config-6",
+    category: "CONFIG",
+    fromCommand: "cfg.withDefault(value)",
+    toCommand: "ConfigValue.default(value)",
+    note: "Default value for config",
+  },
+  {
+    id: "config-7",
+    category: "CONFIG",
+    fromCommand: "cfg.validate(msg)(p)",
+    toCommand: "Custom ConfigDecoder",
+    note: "Configuration validation",
+  },
+  // HTTP
+  {
+    id: "http-1",
+    category: "HTTP",
+    fromCommand: "Http.collect[Request] { case ... }",
+    toCommand: "HttpRoutes.of[IO] { case ... }",
+    note: "Define HTTP routes",
+  },
+  {
+    id: "http-2",
+    category: "HTTP",
+    fromCommand: "Response.text(body)",
+    toCommand: "Ok(body)",
+    note: "Text response",
+  },
+  {
+    id: "http-3",
+    category: "HTTP",
+    fromCommand: "Client.request(url)",
+    toCommand: "client.expect[String](uri)",
+    note: "HTTP GET request",
+  },
+  {
+    id: "http-4",
+    category: "HTTP",
+    fromCommand: "Server.serve(app)",
+    toCommand: "BlazeServerBuilder[IO].serve",
+    note: "Start HTTP server",
+  },
+  {
+    id: "http-5",
+    category: "HTTP",
+    fromCommand: "Method.GET -> Root / \"path\"",
+    toCommand: "GET -> Root / \"path\"",
+    note: "GET route pattern",
+  },
+  {
+    id: "http-6",
+    category: "HTTP",
+    fromCommand: "req.body.asJson[A]",
+    toCommand: "req.as[A]",
+    note: "Parse JSON body",
+  },
+  {
+    id: "http-7",
+    category: "HTTP",
+    fromCommand: "Response(status, body = Body.fromStream)",
+    toCommand: "Ok(stream)",
+    note: "Streaming response",
+  },
+  // DATABASE
+  {
+    id: "database-1",
+    category: "DATABASE",
+    fromCommand: "query(sql).as[A]",
+    toCommand: "sql\"...\".query[A]",
+    note: "Execute SELECT query",
+  },
+  {
+    id: "database-2",
+    category: "DATABASE",
+    fromCommand: "execute(sql).param(v)",
+    toCommand: "sql\"...$v\"",
+    note: "Parameterized query",
+  },
+  {
+    id: "database-3",
+    category: "DATABASE",
+    fromCommand: "query(...).transaction",
+    toCommand: "sql\"...\".transact(xa)",
+    note: "Execute transaction",
+  },
+  {
+    id: "database-4",
+    category: "DATABASE",
+    fromCommand: "ZConnectionPool.h2(url, user, pass)",
+    toCommand: "Transactor.fromDataSource",
+    note: "Connection pool",
+  },
+  {
+    id: "database-5",
+    category: "DATABASE",
+    fromCommand: "execute(sql).returning",
+    toCommand: ".update.withUniqueGeneratedKeys",
+    note: "Insert and return ID",
+  },
+  {
+    id: "database-6",
+    category: "DATABASE",
+    fromCommand: "sql ++ where",
+    toCommand: "Fragment ++ Fragment",
+    note: "Query composition",
+  },
   // RUNTIME
   {
     id: "runtime-1",
@@ -338,7 +528,7 @@ export const catsZioGlossary: readonly GlossaryEntry[] = [
  * import { getCategories } from "@/content/glossary/cats-effect-zio"
  *
  * const categories = getCategories()
- * // ["BASICS", "ERRORS", "DEPENDENCIES", "CONCURRENCY", "STREAMING", "RUNTIME", "INTEROP"]
+ * // ["BASICS", "ERRORS", "DEPENDENCIES", "CONCURRENCY", "STREAMING", "STM", "CONFIG", "HTTP", "DATABASE", "RUNTIME", "INTEROP"]
  * ```
  */
 export function getCategories(): readonly GlossaryCategory[] {
@@ -348,6 +538,10 @@ export function getCategories(): readonly GlossaryCategory[] {
     "DEPENDENCIES",
     "CONCURRENCY",
     "STREAMING",
+    "STM",
+    "CONFIG",
+    "HTTP",
+    "DATABASE",
     "RUNTIME",
     "INTEROP",
   ]
