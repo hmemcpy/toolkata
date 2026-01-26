@@ -119,9 +119,9 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 
 ### P8 - Concurrency (Steps 8-10)
 
-- [ ] **Create 08-step.mdx: Fibers and Forking** — `Effect.fork`, `Fiber.join`, `Fiber.await`, `Fiber.interrupt`, supervision
-- [ ] **Create 09-step.mdx: Concurrent Combinators** — `Effect.all` with concurrency options, `Effect.race`, `Effect.forEach`, timeout
-- [ ] **Create 10-step.mdx: Ref and Concurrent State** — `Ref.make`, `Ref.get`, `Ref.set`, `Ref.update`, `Ref.modify`, `SynchronizedRef`
+- [x] **Create 08-step.mdx: Fibers and Forking** — `Effect.fork`, `Fiber.join`, `Fiber.await`, `Fiber.interrupt`, supervision
+- [x] **Create 09-step.mdx: Concurrent Combinators** — `Effect.all` with concurrency options, `Effect.race`, `Effect.forEach`, timeout
+- [x] **Create 10-step.mdx: Ref and Concurrent State** — `Ref.make`, `Ref.get`, `Ref.set`, `Ref.update`, `Ref.modify`, `SynchronizedRef`
 
 ### P9 - Advanced Topics (Steps 11-12)
 
