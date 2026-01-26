@@ -2,8 +2,8 @@
 title: "Error Handling"
 step: 3
 description: "Handling errors and recovering from failures"
-zioCommands: []
-ceCommands: []
+zioCommands: ["foldZIO", "foldCauseZIO", "orElse", "orElseFail", "orElseEither", "catchAll"]
+ceCommands: ["handleErrorWith", "recoverWith", "flatMap", "attempt"]
 ---
 
 # Error Handling
@@ -26,6 +26,115 @@ Both ZIO and Cats Effect provide powerful error handling, but with different app
   zioCode={`import zio._\n\n// Fallback to alternative\nval recovered: UIO[Int] =\n  ZIO.fail("error")\n    .orElse(ZIO.succeed(0))\n\n// Fold error and success\nval folded: UIO[Int] =\n  ZIO.fail("error")\n    .fold(_ => 0, identity)`}
   catsEffectComment="recover / recoverWith"
   zioComment="orElse / fold"
+/>
+
+## Effectful Fold
+
+`foldZIO` is the fundamental error handling operator in ZIO. It handles both error and success cases with effects.
+
+<ScalaComparisonBlock
+  catsEffectCode={`import cats.effect.IO
+
+// Fold with effectful branches
+val folded: IO[String] =
+  IO.raiseError[Int](new Exception("fail"))
+    .flatMap {
+      case Left(e) => IO.pure(s"Error: \${e.getMessage}")
+      case Right(v) => IO.pure(s"Success: \$v")
+    }`}
+  zioCode={`import zio._
+
+// foldZIO - effectful fold over error/success
+val folded: IO[String, String] =
+  ZIO.fail("error")
+    .foldZIO(
+      error => ZIO.succeed(s"Error: \$error"),
+      value => ZIO.succeed(s"Success: \$value")
+    )`}
+  catsEffectComment="Manual pattern matching on attempt"
+  zioComment="foldZIO - handles both cases effectfully"
+/>
+
+## Full Cause Handling
+
+ZIO distinguishes between **errors** (anticipated failures in the error type) and **defects** (unanticipated failures like throwing exceptions). Use `foldCauseZIO` when you need to handle both.
+
+<ScalaComparisonBlock
+  catsEffectCode={`import cats.effect.IO
+
+// CE always uses Throwable - no distinction
+val handled: IO[Int] =
+  IO.raiseError[Int](new Exception("fail"))
+    .handleErrorWith(e => IO.pure(0))
+
+// Defects (like division by zero) are indistinguishable
+val defect: IO[Int] = IO.delay(1 / 0)
+  .handleErrorWith(_ => IO.pure(-1))`}
+  zioCode={`import zio._
+
+// foldCauseZIO - handle errors AND defects
+val handled: UIO[Int] =
+  ZIO.attempt(1 / 0)  // Could defect!
+    .foldCauseZIO(
+      cause => ZIO.succeed(cause.failureOption.map(_.length).getOrElse(0)),
+      value => ZIO.succeed(value)
+    )
+
+// Recover from specific defects
+def recoverDefects[A](zio: ZIO[Any, Nothing, A]): ZIO[Any, Nothing, A] =
+  zio.foldCauseZIO(
+    cause =>
+      cause.defects match {
+        case Nil => ZIO.dieCause(cause)  // Re-raise if no defects
+        case _    => ZIO.succeed(0)       // Recover from defects
+      },
+    ZIO.succeed
+  )`}
+  catsEffectComment="All failures are Throwable - typed vs untyped"
+  zioComment="foldCauseZIO - full Cause[E] with error/defect info"
+/>
+
+<Callout variant="tip">
+In ZIO, **errors** are in your type signature and **defects** are not. Use `foldZIO` for errors and `foldCauseZIO` when you need to handle defects (like logging uncaught exceptions).
+</Callout>
+
+## Fallback Combinators
+
+ZIO provides several `orElse` variants for fallback behavior.
+
+<ScalaComparisonBlock
+  catsEffectCode={`import cats.effect.IO
+
+// Fallback to alternative effect
+val fallback: IO[Int] =
+  IO.raiseError[Int](new Exception("fail"))
+    .handleErrorWith(_ => IO.pure(0))
+
+// Recover with specific value on error
+val recover: IO[Int] =
+  IO.raiseError[Int](new Exception("fail"))
+    .recover { case _ => 0 }`}
+  zioCode={`import zio._
+
+// orElse - fallback to alternative effect
+val fallback: UIO[Int] =
+  ZIO.fail("error").orElse(ZIO.succeed(0))
+
+// orElseFail - convert success to failure
+val mustFail: IO[String, Nothing] =
+  ZIO.unit.orElseFail("didn't work")
+
+// orElseEither - switch to Either result type
+val either: UIO[Either[String, Int]] =
+  ZIO.fail("error").orElseEither(ZIO.succeed(42))
+  // Result: Left("error")
+
+// orElse on success - original wins
+val originalWins: UIO[Int] =
+  ZIO.succeed(42).orElse(ZIO.succeed(0))
+  // Result: 42`}
+  catsEffectComment="handleErrorWith / recover"
+  zioComment="orElse / orElseFail / orElseEither"
 />
 
 ## Transforming Errors

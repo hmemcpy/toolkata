@@ -119,7 +119,7 @@ All Zionomicon chapters are available at `/tmp/zionomicon/EPUB/text/`. Key chapt
 **P2 - Content - Enhance Existing Steps** (improvements to existing content):
 - [x] **Update Step 1: R/E/A Signature** — Add `RIO`, variance notation `ZIO[-R, +E, +A]`, `URIO`
 - [ ] **Update Step 2: Creating Effects** — Add `ZIO.unit`, `ZIO.never`, `ZIO.fromTry`, `ZIO.async`
-- [ ] **Update Step 3: Error Handling** — Add `foldZIO`, error recovery patterns
+- [x] **Update Step 3: Error Handling** — Add `foldZIO`, `foldCauseZIO`, error recovery patterns
 - [ ] **Update Step 4: Map/FlatMap Purity** — Add `as`, `tap`, `filterOrFail` utility operators
 - [ ] **Update Step 5: Dependency Injection** — Add `ZLayer.derive` modern pattern
 - [ ] **Update Step 6: Resource Management** — Add `Scope` interface explanation
@@ -463,7 +463,7 @@ tx.transact(transactor)
 
 ---
 
-- [ ] **Update Step 3: Error Handling** — Add `foldZIO`, error recovery
+- [x] **Update Step 3: Error Handling** — Add `foldZIO`, error recovery
 
 **Why**: ZIO has powerful error handling operators from Zionomicon ch005.
 
@@ -473,6 +473,12 @@ tx.transact(transactor)
 - Add **foldZIO** (effectful fold with both branches)
 - Add **foldCauseZIO** (fold with full Cause including defects)
 - Add **orElse**, **orElseFail**, **orElseEither**
+
+**Completed** 2026-01-26:
+- Added `foldZIO`, `foldCauseZIO` sections with code comparisons
+- Added `orElse` variants section (`orElse`, `orElseFail`, `orElseEither`)
+- Explained error vs defect distinction with Callout
+- Updated frontmatter with new commands
 
 ---
 
@@ -746,14 +752,14 @@ No strict dependencies between steps - each should be standalone. However:
 
 ## Task Count
 
-**Total pending tasks**: 24 main tasks (P0-P4)
+**Total pending tasks**: 23 main tasks (P0-P4)
 - P0 (Critical): 4 tasks — Infrastructure updates (COMPLETED)
 - P1 (New Steps): 0 tasks — All new steps created (11-15)
-- P2 (Enhance): 7 tasks — Update steps 3-9
+- P2 (Enhance): 6 tasks — Update steps 4-9
 - P3 (Landing): 2 tasks — Index page, glossary
 - P4 (Validation): 1 task — Build/typecheck/lint
 
-**Completed tasks**: 10/20 main tasks (50%)
+**Completed tasks**: 11/20 main tasks (55%)
 - [x] P0: All infrastructure updates (generateStaticParams, overview page steps/times, pairings.ts)
 - [x] Step 11: STM (11-step.mdx created, validated)
 - [x] Step 12: Concurrent Structures (12-step.mdx created, validated)
@@ -763,9 +769,10 @@ No strict dependencies between steps - each should be standalone. However:
 - [x] Step 10: Interop (version `23.1.0.3` is correct for ZIO 2.x)
 - [x] Step 1: R/E/A Signature (added variance notation, RIO, URIO type aliases)
 - [x] Step 2: Creating Effects (added ZIO.unit, ZIO.never, ZIO.fromTry)
+- [x] Step 3: Error Handling (added foldZIO, foldCauseZIO, orElse variants)
 
-**Progress**: 10/20 main tasks complete (50%)
-**Remaining work**: Enhancements to steps 3-9, landing page updates
+**Progress**: 11/20 main tasks complete (55%)
+**Remaining work**: Enhancements to steps 4-9, landing page updates
 
 **Learned**:
 - MDX string interpolation requires escaping `${}` as `\${}` to avoid JSX interpretation
