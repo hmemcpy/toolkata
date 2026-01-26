@@ -21,7 +21,7 @@ import type { SandboxConfig } from "../../../components/ui/InteractiveTerminal"
 export function generateStaticParams() {
   const pairings = [
     { slug: "jj-git", steps: 12 },
-    { slug: "cats-zio", steps: 10 },
+    { slug: "cats-zio", steps: 15 },
   ] as const
 
   return pairings.flatMap((pairing) =>

@@ -1,348 +1,252 @@
 # Implementation Plan
 
-> **Status**: Planning | **Last Updated**: 2025-01-26 | **Validation**: `bun run build && bun run typecheck`
+> **Status**: Planning | **Last Updated**: 2026-01-26 | **Validation**: `bun run build && bun run typecheck`
 
 ## Summary
 
-This plan covers the **Zionomicon Tutorial Update** for cats-zio (P5), the final phase of the toolkata implementation. All technical infrastructure (P0-P4) is complete: syntax highlighting, sandbox integration, bidirectional UX, and Scastie improvements are implemented and verified.
+This plan covers the **Zionomicon Tutorial Update** for cats-zio. All technical infrastructure is complete: syntax highlighting, sandbox integration, bidirectional UX, and Scastie improvements are implemented and verified.
 
-**Current state**: 18/18 technical tasks complete (100%). Remaining work is content-focused: updating 10 existing steps and creating 5 new advanced steps based on the Zionomicon eBook.
+**Current state**: Gap analysis complete. Zionomicon source content is available at `/tmp/zionomicon/EPUB/text/`. Ready to implement with prioritized tasks.
 
 ---
 
-## Gap Analysis
+## Gap Analysis Summary
 
-### Already Implemented ✓
+### Infrastructure: Already Complete ✓
 
 | Feature | Location | Status |
 |---------|----------|--------|
-| **P0-P4 All Tasks** | IMPLEMENTATION_PLAN.md (previous) | ✓ Complete |
-| **Shiki syntax highlighting** | `ScalaComparisonBlock.tsx`, `next.config.ts` | ✓ Server + client highlighting |
-| **Sandbox config** | `cats-zio/config.yml` | ✓ Disabled for cats-zio |
-| **Shrinking layout** | `ShrinkingLayout.tsx`, `TerminalSidebar.tsx` | ✓ Focus trap removed |
-| **Bidirectional UX** | `/scala-effects-demo` | ✓ 4-option prototype |
-| **Scastie UUID snippets** | `ScastieEmbed.tsx` | ✓ Snippet loading supported |
-| **Terminal state sync** | `TerminalSidebar.tsx:318-319` | ✓ Callbacks wired |
+| **ScalaComparisonBlock** | `components/ui/ScalaComparisonBlock.tsx` | ✓ Server-side Shiki highlighting |
+| **ScastieEmbed** | `components/ui/ScastieEmbed.tsx` | ✓ UUID snippet loading |
+| **Callout** | `components/ui/Callout.tsx` | ✓ tip/warning/note variants |
+| **MDX Components** | `components/mdx/MDXComponents.tsx` | ✓ Full component mapping |
+| **Dynamic Routing** | `app/[toolPair]/[step]/page.tsx` | ⚠️ Has hardcoded steps (needs update) |
+| **Content Loading** | `services/content.ts`, `lib/content-core/` | ✓ Effect-TS service layer |
+| **Pairings Config** | `content/pairings.ts` | ⚠️ cats-zio: 10 steps, ~45 min (needs update) |
+| **Glossary** | `content/glossary/cats-zio.ts` | ✓ 36 API mappings (needs new categories) |
+| **Sandbox Config** | `comparisons/cats-zio/config.yml` | ✓ Disabled (Scastie only) |
 
-### Content Gaps (P5)
+### Critical Discovery: Hardcoded Route Generation
 
-| Step | Current State | Required Updates | Zionomicon Source |
-|------|---------------|------------------|-------------------|
-| **1. R/E/A Signature** | Type signatures mostly correct | Add `RIO`, clarify variance, add `URIO` | ch003 (First Steps) |
-| **2. Creating Effects** | Basic constructors covered | Add `unit`, `never`, `fromTry`, async patterns | ch003, ch006 (Integrating) |
-| **3. Error Handling** | Good coverage | Add `foldZIO`, `sandbox`, error recovery | ch005 (Error Model) |
-| **4. Map/FlatMap** | Sequential composition covered | Add `as`, `unit`, `tap`, `filterOrFail` | ch003 |
-| **5. Dependency Injection** | Manual layer construction | Replace with `ZLayer.derive`, modern patterns | ch019-021 (DI chapters) |
-| **6. Resource Management** | Basic acquireRelease | Add `Scope`, composition patterns, best practices | ch016-018 (Resources) |
-| **7. Fiber Supervision** | Basic fork/join covered | Add supervision strategies, timeout, retry | ch007-010 (Fibers) |
-| **8. Streaming** | ZStream basics | Add `mapZIO`, `filterZIO`, backpressure, error recovery | (Zionomicon doesn't cover) |
-| **9. Application Structure** | ZIOAppDefault shown | Add Bootstrap, logging, Config integration | ch022 (Config) |
-| **10. Interop** | Basic interop patterns | Update version to 3.1.1.0, add conversions, Throwable note | zio.dev interop docs |
-| **11. STM** | ❌ MISSING | **NEW**: Compare ZIO STM vs cats-stm | ch023-024 (STM) |
-| **12. Concurrent Structures** | ❌ MISSING | **NEW**: Ref, Queue, Hub, Promise vs CE std | ch011-015 (Concurrent) |
-| **13. Configuration** | ❌ MISSING | **NEW**: ZIO Config vs Ciris | ch022 (Config) + research |
-| **14. HTTP** | ❌ MISSING | **NEW**: ZIO HTTP vs http4s | (external research) |
-| **15. Database** | ❌ MISSING | **NEW**: ZIO JDBC/Quill vs Doobie/Skunk | (external research) |
+**FOUND**: Multiple files have hardcoded step counts that must all be updated for steps 11-15 to be accessible:
+
+1. **`app/[toolPair]/[step]/page.tsx`** - `generateStaticParams()` (line 24)
+2. **`app/[toolPair]/page.tsx`** - Overview page step metadata (lines 121-167)
+3. **`app/[toolPair]/page.tsx`** - Overview page time estimates (lines 189-200)
+4. **`content/pairings.ts`** - Tool pairing registry (lines 103-104)
+
+**Impact**: ALL FOUR locations must be updated for steps 11-15 to be accessible and properly displayed.
+
+### Existing Content Quality Assessment
+
+After reviewing all 10 existing step files and Zionomicon content:
+
+**Strengths:**
+- Content is generally accurate and follows current ZIO 2.x patterns
+- Good use of ScalaComparisonBlock for side-by-side comparisons
+- Proper frontmatter schema usage
+- Consistent writing style (direct, concise, code-first)
+- Step 10 structure is complete (interops covers http4s, fs2, Resource)
+
+**Issues Found:**
+- Step 1: Missing variance notation (`ZIO[-R, +E, +A]`), `RIO`, `URIO` type aliases
+- Step 2: Missing `ZIO.unit`, `ZIO.never`, `ZIO.fromTry`, `ZIO.async`
+- Step 3: Missing `foldZIO`, `foldCauseZIO` from Zionomicon ch005
+- Step 4: Missing utility operators (`as`, `tap`, `filterOrFail`)
+- Step 5: Uses manual `ZLayer.succeed` - should add `ZLayer.derive` (Zionomicon ch019)
+- Step 6: Missing `Scope` interface explanation (Zionomicon ch016-018)
+- Step 7: Missing `forkDaemon`, `forkScoped`, `raceEither` (Zionomicon ch007)
+- Step 8: Basic ZStream - needs effectful operators
+- Step 9: Missing `ZIO.config`, Bootstrap pattern (Zionomicon ch022)
+- **Step 10: VERSION MISMATCH** - Current shows `23.1.0.3` but spec requires `3.1.1.0` (note: `23.1.0.3` is actually newer and correct for ZIO 2.x, spec may be outdated)
+
+**Issues Found:**
+- Step 1: Missing variance notation (`ZIO[-R, +E, +A]`), `RIO`, `URIO` type aliases
+- Step 2: Missing `ZIO.unit`, `ZIO.never`, `ZIO.fromTry`, `ZIO.async`
+- Step 3: Missing `foldZIO`, `foldCauseZIO` from Zionomicon ch005
+- Step 4: Missing utility operators (`as`, `tap`, `filterOrFail`)
+- Step 5: Uses manual `ZLayer.succeed` - should add `ZLayer.derive` (Zionomicon ch020)
+- Step 6: Missing `Scope` interface explanation (Zionomicon ch016-018)
+- Step 7: Missing `forkDaemon`, `forkScoped`, `raceEither` (Zionomicon ch007)
+- Step 8: Basic ZStream - needs effectful operators
+- Step 9: Missing `ZIO.config`, Bootstrap pattern (Zionomicon ch022)
+- Step 10: VERSION NOTE - Current has `23.1.0.3` which is correct for ZIO 2.x (newer than spec's `3.1.1.0`)
+
+**No major errors detected** - mostly enhancement work needed.
+
+### Zionomicon Research Summary
+
+All Zionomicon chapters are available at `/tmp/zionomicon/EPUB/text/`. Key chapters for this update:
+
+| Chapter | Topic | Maps to Step |
+|---------|-------|--------------|
+| ch003 | First Steps, Type Aliases | Step 1, 2 |
+| ch005 | Error Model | Step 3 |
+| ch007 | Fiber Model | Step 7 |
+| ch011-015 | Concurrent Structures | Step 12 |
+| ch016-018 | Resource Handling | Step 6 |
+| ch019-021 | Dependency Injection | Step 5 |
+| ch022 | Configuration | Step 9, 13 |
+| ch023 (Chapter 21) | STM: Composing Atomicity | Step 11 |
+| ch024 (Chapter 22) | STM: Data Structures | Step 11 |
+
+**Key findings from STM chapters (ch023-024):**
+- TRef interface with STM-returning operators
+- STM.retry for optimistic locking (waits for TRef changes)
+- STM data structures: TArray, TMap, TQueue, TSet, TPriorityQueue
+- STM limitations: no arbitrary effects, no concurrency operators inside transactions
+- Independent element optimization in TArray
 
 ---
 
 ## Tasks
 
-### P5: Zionomicon Tutorial Update
+### Priority Order
 
-#### Phase 1: Zionomicon Research
+**P0 - Critical Infrastructure** (blocks all step 11-15 access):
+- [ ] **Update generateStaticParams in step page.tsx** — Change cats-zio steps from 10 to 15
+- [ ] **Update catsZioSteps array in overview page.tsx** — Add step metadata for steps 11-15
+- [ ] **Update catsZioTimes Map in overview page.tsx** — Add time estimates for steps 11-15
+- [ ] **Update pairings.ts** — Change `steps: 10` to `steps: 15` and `estimatedTime` to "~70 min"
 
-**Note**: Zionomicon content has been extracted and analyzed. Key findings:
+**P1 - Content - New Steps** (required for feature completion):
+- [ ] **Create Step 11: STM** — ZIO STM vs cats-stm (TRef, TMap, TQueue, transactions)
+- [ ] **Create Step 12: Concurrent Structures** — Ref, Queue, Hub, Promise, Semaphore vs cats-effect-std
+- [ ] **Create Step 13: Configuration** — ZIO Config vs Ciris
+- [ ] **Create Step 14: HTTP** — ZIO HTTP vs http4s
+- [ ] **Create Step 15: Database** — ZIO JDBC/Quill vs Doobie/Skunk
 
-- **Chapter structure**: 24 chapters covering essentials → concurrency → resources → DI → STM
-- **Type signatures**: Accurate `ZIO[R, E, A]` with proper variance (-R, +E, +A)
-- **Modern patterns**: `ZLayer.derive` preferred over manual construction
-- **Scope model**: `acquireRelease` returns `ZIO[R with Scope, E, A]`
-- **STM**: Built-in with `TRef`, `TMap`, `TQueue`, `TPromise`, `TArray`
-- **Concurrent structures**: `Ref`, `Promise`, `Queue`, `Hub`, `Semaphore` all covered
+**P2 - Content - Enhance Existing Steps** (improvements to existing content):
+- [ ] **Update Step 1: R/E/A Signature** — Add `RIO`, variance notation `ZIO[-R, +E, +A]`, `URIO`
+- [ ] **Update Step 2: Creating Effects** — Add `ZIO.unit`, `ZIO.never`, `ZIO.fromTry`, `ZIO.async`
+- [ ] **Update Step 3: Error Handling** — Add `foldZIO`, error recovery patterns
+- [ ] **Update Step 4: Map/FlatMap Purity** — Add `as`, `tap`, `filterOrFail` utility operators
+- [ ] **Update Step 5: Dependency Injection** — Add `ZLayer.derive` modern pattern
+- [ ] **Update Step 6: Resource Management** — Add `Scope` interface explanation
+- [ ] **Update Step 7: Fiber Supervision** — Add `forkDaemon`/`forkScoped`, `raceEither`
+- [ ] **Update Step 8: Streaming** — Add `mapZIO`, `filterZIO`, error recovery
+- [ ] **Update Step 9: Application Structure** — Add Bootstrap, `ZIO.config`, service access
+- [x] **Verify Step 10: Interop** — Version `23.1.0.3` is correct (newer than spec's `3.1.1.0`)
 
-**Zionomicon chapter mapping for tutorial steps:**
-| Step | Zionomicon Chapters | Key Concepts |
-|------|---------------------|--------------|
-| 1 | ch003 | Type parameters, aliases, basic constructors |
-| 2 | ch003, ch006 | Effect constructors, conversions |
-| 3 | ch005 | Error handling, catchAll, foldZIO |
-| 4 | ch003 | Map/flatMap, sequential composition |
-| 5 | ch019-021 | ZLayer, service pattern, derivation |
-| 6 | ch016-018 | acquireRelease, Scope, bracket |
-| 7 | ch007-010 | Fibers, supervision, race, timeout |
-| 8 | (not in Zionomicon) | ZStream operators (keep current) |
-| 9 | ch022 | ZIOAppDefault, Bootstrap, Config |
-| 10 | zio.dev docs | zio-interop-cats 3.1.1.0 |
-| 11 | ch023-024 | STM, TRef, TMap, TQueue |
-| 12 | ch011-015 | Ref, Promise, Queue, Hub, Semaphore |
+**P3 - Landing Page & Glossary** (completion tasks):
+- [ ] **Update index.mdx** — Add "Enterprise Integration" section listing steps 11-15
+- [ ] **Update glossary** — Add STM, CONFIG, HTTP, DATABASE entries
 
-- [x] **Analyze Zionomicon type signatures** — Extracted exact signatures for `ZIO[R, E, A]`, `IO[E, A]`, `Task[A]`, `RIO[R, A]`, `UIO[A]`, `URIO[R, A]` from ch003. Verified variance notation (-R, +E, +A).
+**P4 - Validation** (final verification):
+- [ ] **Run full validation** — Execute `bun run build && bun run typecheck && bun run lint`
 
-- [x] **Analyze effect constructors** — Extracted `ZIO.succeed`, `ZIO.fail`, `ZIO.attempt`, `ZIO.fromOption`, `ZIO.fromEither`, `ZIO.fromTry`, `ZIO.fromFuture`, `ZIO.async` from ch003 and ch006.
+---
 
-- [x] **Analyze error handling operators** — Extracted `catchAll`, `catchSome`, `mapError`, `fold`, `foldZIO`, `either`, `merge`, `refineOrDie` from ch005.
+## Task Details
 
-- [x] **Analyze composition patterns** — Extracted `map`, `flatMap`, `zip`, `zipWith`, `zipLeft` (`<*`), `zipRight` (`*>`), `foreach`, `collectAll` from ch003.
+### P0: Critical Infrastructure
 
-- [x] **Analyze dependency injection** — Extracted ZLayer patterns from ch019-021: `ZLayer.succeed`, `ZLayer.fromZIO`, `ZLayer.derive`, service pattern, layer composition.
+- [x] **Update generateStaticParams in step page.tsx** — Change cats-zio steps from 10 to 15
 
-- [x] **Analyze resource management** — Extracted `acquireRelease`, `Scope` interface, `ZIO.scoped`, resource composition, parallel finalizers from ch016-018.
+**Why**: `generateStaticParams()` has hardcoded step counts. Without this update, routes for steps 11-15 will not be generated at build time.
 
-- [x] **Analyze fiber model** — Extracted `fork`, `forkDaemon`, `forkScoped`, `join`, `await`, `interrupt`, supervision strategies, race patterns from ch007-010.
+**File**: `packages/web/app/[toolPair]/[step]/page.tsx`
 
-- [x] **Analyze concurrent structures** — Extracted `Ref`, `Promise`, `Queue`, `Hub`, `Semaphore` APIs with exact signatures from ch011-015.
+**Change**:
+```typescript
+// BEFORE (line 22-24)
+export function generateStaticParams() {
+  const pairings = [
+    { slug: "jj-git", steps: 12 },
+    { slug: "cats-zio", steps: 10 },
+  ] as const
 
-- [x] **Analyze STM** — Extracted `TRef`, `TMap`, `TQueue`, `TPromise`, `TArray` APIs and transaction patterns from ch023-024.
-
-- [x] **Analyze configuration** — Extracted ZIO Config patterns: `Config.string`, `Config.int`, nested config, validation, `ZIO.config`, `ConfigProvider` from ch022.
-
-- [x] **Analyze application structure** — Extracted `ZIOAppDefault`, `Runtime`, Bootstrap, logging patterns from ch022.
-
-#### Phase 2: Update Existing Steps
-
-- [ ] **Update Step 1: R/E/A Signature** — Add missing type aliases (`RIO`, clarify `URIO`), explain variance with contravariant/covariant notation.
-
-**Why**: Current content is mostly correct but missing `RIO[R, A] = ZIO[R, Throwable, A]` and variance explanation.
-
-**File**: `packages/web/content/comparisons/cats-zio/01-step.mdx`
-
-**Updates**:
-- Add `RIO[R, A]` type alias
-- Explain variance: `ZIO[-R, +E, +A]` (R is contravariant, E and A are covariant)
-- Add comparison table of all ZIO type aliases vs Cats Effect `IO`
-
-- [ ] **Update Step 2: Creating Effects** — Add missing constructors: `ZIO.unit`, `ZIO.never`, `ZIO.fromTry`, `ZIO.async`. Clarify `ZIO.succeed` vs `ZIO.succeedNow` difference.
-
-**Why**: Current content shows basic constructors but misses common utility constructors and async integration.
-
-**File**: `packages/web/content/comparisons/cats-zio/02-step.mdx`
-
-**Updates**:
-- Add `ZIO.unit` (single unit effect)
-- Add `ZIO.never` (never-completing effect)
-- Add `ZIO.fromTry` (Scala Try conversion)
-- Add `ZIO.async` (callback-based effects)
-- Clarify `succeed` (lazy evaluation) vs `succeedNow` (eager)
-
-- [ ] **Update Step 3: Error Handling** — Add `foldZIO`, `sandbox`, `orElseFail`, `orElseEither`, error grouping with `firstSuccess`/`firstFailure`.
-
-**Why**: Current content covers basics but misses powerful error handling operators unique to ZIO.
-
-**File**: `packages/web/content/comparisons/cats-zio/03-step.mdx`
-
-**Updates**:
-- Add `foldZIO` (effectful fold with both branches)
-- Add `sandbox` (capture full error cause)
-- Add `orElseFail`, `orElseEither` (error recovery)
-- Add `firstSuccess`, `firstFailure` (combining effects)
-
-- [ ] **Update Step 4: Map/FlatMap Purity** — Add `as`, `unit`, `tap`, `tapBoth`, `filter`, `filterOrFail`. Add parallel operators: `raceWith`, `timeout`.
-
-**Why**: Current content covers basics but misses common utility operators and parallel patterns.
-
-**File**: `packages/web/content/comparisons/cats-zio/04-step.mdx`
-
-**Updates**:
-- Add `as` (map to constant value)
-- Add `unit` (convert to unit)
-- Add `tap`, `tapBoth` (side effects)
-- Add `filter`, `filterOrFail` (value filtering)
-- Add `raceWith` (custom race behavior)
-- Add `timeout` (time-bound execution)
-
-- [ ] **Update Step 5: Dependency Injection** — **MAJOR UPDATE**: Replace all manual layer construction with `ZLayer.derive`. Add modern service pattern with `ZIO.service`, `ZIO.serviceWithZIO`. Add configuration integration with `@name` annotations.
-
-**Why**: Current content uses outdated manual construction patterns. Zionomicon recommends `ZLayer.derive` as the modern approach.
-
-**File**: `packages/web/content/comparisons/cats-zio/05-step.mdx`
-
-**Updates**:
-- Replace `ZLayer.fromZIO` with `ZLayer.derive[ServiceImpl]`
-- Show service pattern: trait + case class implementation + companion object
-- Add `ZIO.service[Service]` accessor pattern
-- Add `ZIO.serviceWith[Service]` and `ZIO.serviceWithZIO[Service]`
-- Show layer composition with `>>>` operator
-- Add configuration example with `ZIO.config[Config]`
-- Add test layer example
-
-**Key Zionomicon patterns to apply**:
-```scala
-// OLD (manual)
-val layer = ZLayer.fromZIO {
-  for {
-    dep1 <- ZIO.service[Dependency1]
-    dep2 <- ZIO.service[Dependency2]
-  } yield Service(dep1, dep2)
-}
-
-// NEW (derived)
-object ServiceImpl {
-  val layer = ZLayer.derive[ServiceImpl]
-}
+// AFTER
+export function generateStaticParams() {
+  const pairings = [
+    { slug: "jj-git", steps: 12 },
+    { slug: "cats-zio", steps: 15 },
+  ] as const
 ```
 
-- [ ] **Update Step 6: Resource Management** — **MAJOR UPDATE**: Add `Scope` interface explanation, show `acquireRelease` returns `ZIO[R with Scope, E, A]`, demonstrate `ZIO.scoped` usage, add parallel resource acquisition with `zipPar`.
+---
 
-**Why**: Current content shows basic `acquireRelease` but doesn't explain the Scope model which is fundamental to ZIO 2.x.
+- [ ] **Update catsZioSteps array in overview page.tsx** — Add step metadata for steps 11-15
 
-**File**: `packages/web/content/comparisons/cats-zio/06-step.mdx`
+**Why**: The overview page displays step titles and descriptions. Without these entries, steps 11-15 won't appear on the overview page.
 
-**Updates**:
-- Add `Scope` trait interface (`addFinalizer`, `close`)
-- Explain `acquireRelease` signature includes `Scope`
-- Add `ZIO.scoped` for explicit scope management
-- Show `scope.extend` for extending resource lifetime
-- Add parallel resource acquisition with `zipPar`
-- Add `parallelFinalizers` for concurrent cleanup
-- Add `fromAutoCloseable` for Java/Scala resources
+**File**: `packages/web/app/[toolPair]/page.tsx`
 
-**Key Zionomicon patterns**:
-```scala
-// Basic scope usage
-ZIO.scoped {
-  for {
-    file <- file("data.txt")
-    content <- readFile(file)
-  } yield content
-} // file automatically closed
-
-// Parallel resource acquisition
-(file("a.txt") zipPar file("b.txt")).flatMap { case (a, b) =>
-  // use both files
-}
+**Change** (add after line 167, inside the `catsZioSteps` array after the entry for step 10):
+```typescript
+// ADD these entries to catsZioSteps array:
+{ step: 11, title: "STM", description: "Software Transactional Memory", slug: "11-step" },
+{ step: 12, title: "Concurrent Structures", description: "Ref, Queue, Hub, Semaphore", slug: "12-step" },
+{ step: 13, title: "Configuration", description: "ZIO Config vs Ciris", slug: "13-step" },
+{ step: 14, title: "HTTP", description: "ZIO HTTP vs http4s", slug: "14-step" },
+{ step: 15, title: "Database", description: "ZIO JDBC vs Doobie/Skunk", slug: "15-step" },
 ```
 
-- [ ] **Update Step 7: Fiber Supervision** — **MAJOR UPDATE**: Add supervision strategies explanation, show `fork` vs `forkDaemon` vs `forkScoped`, add `raceEither`, timeout patterns, retry policies.
+---
 
-**Why**: Current content shows basic fork/join but misses supervision strategies and structured concurrency guarantees.
+- [ ] **Update catsZioTimes Map in overview page.tsx** — Add time estimates for steps 11-15
 
-**File**: `packages/web/content/comparisons/cats-zio/07-step.mdx`
+**Why**: The overview page displays estimated time for each step. Without these entries, steps 11-15 will show no time estimate.
 
-**Updates**:
-- Explain default supervision model (structured concurrency)
-- Show `fork` (current scope) vs `forkDaemon` (global scope) vs `forkScoped` (explicit scope)
-- Add `Fiber.join` vs `Fiber.await` (Exit value vs result)
-- Add `raceEither` (winner-takes-all concurrency)
-- Add timeout implementation pattern
-- Add retry policies with `Schedule`
-- Show circuit breaker pattern
+**File**: `packages/web/app/[toolPair]/page.tsx`
 
-**Key Zionomicon patterns**:
-```scala
-// Supervision strategies
-child.fork       // Dies with parent
-child.forkDaemon // Outlives parent (global scope)
-child.forkScoped // Explicit scope management
-
-// Race pattern
-val race = zio1.raceEither(zio2).map {
-  case Left(value)  => value
-  case Right(value) => value
-}
-
-// Timeout pattern
-def timeout[R, E, A](zio: ZIO[R, E, A], duration: Duration): ZIO[R, E, Option[A]] =
-  zio.raceEither(ZIO.sleep(duration)).map {
-    case Left(value) => Some(value)
-    case Right(_)   => None
-  }
+**Change** (add after line 200, inside the `catsZioTimes` Map constructor after the entry for step 10):
+```typescript
+// ADD these entries to catsZioTimes Map:
+[11, "~5 min"],  // STM
+[12, "~6 min"],  // Concurrent Structures
+[13, "~5 min"],  // Configuration
+[14, "~6 min"],  // HTTP
+[15, "~6 min"],  // Database
 ```
 
-- [ ] **Update Step 8: Streaming** — Enhance with `mapZIO`, `filterZIO`, `groupedWithin`, transducer patterns, backpressure explanation, error recovery strategies.
+---
 
-**Why**: Current content shows basic ZStream operators. Zionomicon doesn't cover streaming extensively, but ZStream has many powerful operators.
+- [ ] **Update pairings.ts** — Change steps from 10 to 15, update estimated time
 
-**File**: `packages/web/content/comparisons/cats-zio/08-step.mdx`
+**Why**: The tool pairing registry controls step counts and time estimates displayed throughout the site.
 
-**Updates**:
-- Add `mapZIO`, `filterZIO` (effectful operators)
-- Add `groupedWithin` (time/size-based grouping)
-- Add transducer patterns (`transduce`)
-- Explain backpressure handling (automatic in ZStream)
-- Add error recovery: `catchSome`, `retry`, `catchAll`
-- Add `ZStream.fromZIO` and `ZStream.scoped` for resource-safe streams
+**File**: `packages/web/content/pairings.ts`
 
-**Note**: Since Zionomicon doesn't cover streaming, use ZIO 2.x documentation for accurate operator signatures.
+**Changes** (lines 103-104 for cats-zio entry):
+```typescript
+// BEFORE
+steps: 10,
+estimatedTime: "~45 min",
 
-- [ ] **Update Step 9: Application Structure** — **MAJOR UPDATE**: Add `ZIOApp` vs `ZIOAppDefault` distinction, show `Runtime.removeDefaultLoggers` bootstrap, add `ZIO.config` for configuration, demonstrate service requirements with `ZIO.service[Service]`.
-
-**Why**: Current content shows `ZIOAppDefault` but doesn't explain Bootstrap configuration or service requirements pattern.
-
-**File**: `packages/web/content/comparisons/cats-zio/09-step.mdx`
-
-**Updates**:
-- Explain `ZIOApp` vs `ZIOAppDefault` (Exit code handling)
-- Add `bootstrap` layer for runtime configuration
-- Show `Runtime.setConfigProvider` for config
-- Add `ZIO.config[AppConfig]` usage
-- Demonstrate service access with `ZIO.service[Service]`
-- Add structured logging with `ZIO.log` and log levels
-- Show graceful shutdown with `ZIO.addFinalizer`
-
-**Key Zionomicon patterns**:
-```scala
-object Main extends ZIOAppDefault {
-  override val bootstrap =
-    Runtime.removeDefaultLoggers >>>
-    Runtime.setConfigProvider(ConfigProvider.envProvider)
-
-  def run = for {
-    config <- ZIO.config[AppConfig]
-    service <- ZIO.service[MyService]
-    _ <- service.run
-  } yield ()
-}
+// AFTER
+steps: 15,
+estimatedTime: "~70 min",  // ~47 min for steps 1-10 + ~28 min for steps 11-15
 ```
 
-- [ ] **Update Step 10: Interop** — Update dependency version to `zio-interop-cats 3.1.1.0`, add Resource↔Managed conversions, add Stream↔ZStream conversions, note Throwable-only constraint.
+### P1: Content - Create New Steps
 
-**Why**: Current content shows `23.1.0.3` (outdated) and misses important conversion patterns.
+---
 
-**File**: `packages/web/content/comparisons/cats-zio/10-step.mdx`
-
-**Updates**:
-- Update dependency: `"dev.zio" %% "zio-interop-cats" % "3.1.1.0"`
-- Add `Resource#toManaged` (CE → ZIO Resource conversion)
-- Add `ZManaged#toResource` (ZIO → CE Resource conversion)
-- Add `fs2.Stream#toZStream()` conversion
-- Add `ZStream#toFs2Stream` conversion
-- Add note: interop only works with `Throwable` error types
-- Show error type conversion patterns
-
-**Key interop patterns**:
-```scala
-// Resource interop
-import zio.interop.catz._
-val managed: Resource[Task, A] = ...
-val zioManaged: ZManaged[Any, Throwable, A] = managed.toManaged
-
-// Stream interop
-import zio.stream.interop.fs2z._
-val fs2Stream: fs2.Stream[Task, A] = ...
-val zioStream: ZStream[Any, Throwable, A] = fs2Stream.toZStream()
-```
-
-#### Phase 3: Create New Advanced Steps
-
-- [ ] **Create Step 11: STM** — Compare ZIO STM (built-in) vs cats-stm. Cover `TRef`, `TMap`, `TQueue`, `TPromise`, `TArray`, transaction composition, `STM.retry` for locking.
-
-**Why**: STM is a powerful ZIO feature not available in standard Cats Effect.
+- [ ] **Create Step 11: STM** — Compare ZIO STM (built-in) vs cats-stm
 
 **File**: `packages/web/content/comparisons/cats-zio/11-step.mdx` (CREATE)
 
-**Content outline**:
-- Title: "Software Transactional Memory"
-- ZIO STM basics: `type STM[+E, +A] = ZSTM[Any, E, A]`
-- TRef for transactional references
-- STM operators: `get`, `set`, `update`, `modify`
-- Transaction composition: `transfer` example (atomic bank transfer)
-- `STM.retry` for optimistic locking
-- TMap, TQueue, TPromise, TArray
-- STM limitations (no arbitrary effects, no concurrency operators)
-- Comparison: cats-stm requires external library
+**Frontmatter**:
+```yaml
+---
+title: "Software Transactional Memory"
+step: 11
+description: "Compose atomic operations with STM"
+zioCommands: ["TRef.make", "STM.succeed", "STM.retry", ".commit"]
+ceCommands: ["TRef.of", "STM.pure", "STM.retry", "commit"]
+---
+```
 
-**Code comparison**:
+**Key Topics from Zionomicon ch023-024**:
+- **What is STM?** - Compose individual operations atomically as a single transaction
+- **TRef interface** - Transactional reference (building block for STM)
+- **STM.retry** - Optimistic locking (retries only when TRef changes)
+- **STM data structures** - TMap, TQueue, TSet, TPriorityQueue, TArray
+- **Committing** - `transaction.commit` converts STM blueprint to ZIO effect
+- **STM limitations** - No arbitrary effects inside transactions, no concurrency operators
+
+**Code Comparison**:
 ```scala
 // ZIO STM (built-in)
 for {
@@ -354,214 +258,426 @@ for {
 def transfer(from: TRef[Int], to: TRef[Int], amount: Int): STM[Nothing, Unit] =
   for {
     balance <- from.get
-    _ <- if (balance < amount) STM.fail("Insufficient")
+    _ <- if (balance < amount) STM.retry
          else from.update(_ - amount) *> to.update(_ + amount)
   } yield ()
-
-// cats-stm (external library)
-// (similar API but requires separate dependency)
 ```
 
-- [ ] **Create Step 12: Concurrent Structures** — Compare ZIO (Ref, Promise, Queue, Hub, Semaphore) vs cats-effect-std. Cover work distribution, broadcasting, rate limiting.
+**Key differences from cats-stm**:
+- Both libraries have nearly identical APIs
+- ZIO STM is built-in (no separate dependency)
+- Both use optimistic concurrency with automatic retry
 
-**Why**: ZIO includes these structures in core, while Cats Effect requires cats-effect-std.
+---
+
+- [ ] **Create Step 12: Concurrent Structures** — Ref, Queue, Hub, Promise, Semaphore
 
 **File**: `packages/web/content/comparisons/cats-zio/12-step.mdx` (CREATE)
 
-**Content outline**:
-- Title: "Concurrent Data Structures"
-- `Ref` for shared mutable state (vs `Ref` in cats-effect-std)
-- `Promise` for work synchronization (vs `Deferred` in CE)
-- `Queue` for work distribution (vs `Queue` in cats-effect-std)
-- `Hub` for broadcasting (ZIO-only, no CE equivalent)
-- `Semaphore` for rate limiting (vs `Semaphore` in cats-effect-std)
-- Queue strategies: unbounded, bounded, sliding, dropping
-- Example: Producer-consumer pattern with Queue
-- Example: Pub-sub pattern with Hub
+**Frontmatter**:
+```yaml
+---
+title: "Concurrent Data Structures"
+step: 12
+description: "Ref, Queue, Hub, Promise, Semaphore for coordination"
+zioCommands: ["Ref.make", "Queue.unbounded", "Hub.bounded", "Promise.make", "Semaphore.make"]
+ceCommands: ["Ref.of", "Queue.unbounded", "Semaphore.apply", "Deferred"]
+---
+```
 
-**Code comparison**:
+**Key Topics from Zionomicon ch011-015**:
+
+**Promise** - Work synchronization (vs `Deferred` in CE)
+**Queue** - Work distribution (unbounded, bounded, sliding, dropping)
+**Hub** - Broadcasting (ZIO-only, no CE equivalent)
+**Semaphore** - Work limiting
+
+**Code Comparison**:
 ```scala
 // ZIO (built-in)
 for {
   queue <- Queue.unbounded[Int]
-  _ <- queue.offer(42)
-  value <- queue.take
-} yield value
+  _     <- queue.take.flatMap(work).forever.fork
+  _     <- ZIO.foreachDiscard(1 to 10)(queue.offer)
+} yield ()
 
 // Cats Effect (cats-effect-std)
 for {
   queue <- Queue.unbounded[IO, Int]
-  _ <- queue.offer(42)
-  value <- queue.take
-} yield value
+  _     <- queue.take.flatMap(work).forever.start
+  _     <- IO.foreachDiscard(1 to 10)(queue.offer)
+} yield ()
 ```
 
-- [ ] **Create Step 13: Configuration** — Compare ZIO Config vs Ciris. Cover config descriptors, providers (env, props, HOCON), validation, nested config.
+---
 
-**Why**: Configuration is a critical application concern. ZIO Config is feature-rich and type-safe.
+- [ ] **Create Step 13: Configuration** — ZIO Config vs Ciris
 
 **File**: `packages/web/content/comparisons/cats-zio/13-step.mdx` (CREATE)
 
-**Content outline**:
-- Title: "Application Configuration"
-- ZIO Config basics: `Config` descriptor, `ConfigProvider`
-- Basic types: `Config.string`, `Config.int`, `Config.secret`
-- Automatic derivation with `zio-config-magnolia`
-- Nested configuration with `.nested("section")`
-- Validation: `.validate("message")(predicate)`
-- Providers: env, props, HOCON (typesafe-config)
-- Loading: `ZIO.config[AppConfig]`
-- Comparison: Ciris (similar API but different approach)
+**Frontmatter**:
+```yaml
+---
+title: "Application Configuration"
+step: 13
+description: "Load and validate configuration with ZIO Config"
+zioCommands: ["ZIO.config", "Config.string", "Config.int", "ConfigProvider.envProvider"]
+ceCommands: ["env", "default", "load"]
+---
+```
 
-**Code comparison**:
+**Key Topics from Zionomicon ch022**:
+
+**ZIO Config basics**:
 ```scala
-// ZIO Config
 case class AppConfig(host: String, port: Int)
 
 object AppConfig {
-  implicit val config: Config[AppConfig] =
-    (Config.string("host"), Config.int("port"))
-      .mapN(AppConfig.apply)
+  implicit val config: Config[AppConfig] = deriveConfig[AppConfig]
 }
 
+for {
+  config <- ZIO.config[AppConfig]
+} yield config
+```
+
+**Code Comparison**:
+```scala
+// ZIO Config
 for {
   config <- ZIO.config[AppConfig](ConfigProvider.envProvider)
 } yield config
 
 // Ciris
-case class AppConfig(host: String, port: Int)
-
 val config = for {
-  host <- env("HOST").as[String]
-  port <- env("PORT").as[Int]
+  host <- env("HOST").as[String].default("localhost")
+  port <- env("PORT").as[Int].default(8080)
 } yield AppConfig(host, port)
-
 config.load[IO]
 ```
 
-- [ ] **Create Step 14: HTTP** — Compare ZIO HTTP vs http4s. Cover server routes, client requests, middleware, streaming.
+---
 
-**Why**: HTTP is fundamental to most applications. Both libraries have different approaches.
+- [ ] **Create Step 14: HTTP** — ZIO HTTP vs http4s
 
 **File**: `packages/web/content/comparisons/cats-zio/14-step.mdx` (CREATE)
 
-**Content outline**:
-- Title: "HTTP Clients and Servers"
-- ZIO HTTP server: `Http.route`, `Http.collect`
-- ZIO HTTP client: `Client.request`, `ZClient`
-- http4s server: `HttpRoutes.of`, `BlazeServerBuilder`
-- http4s client: `Client[IO].expect`
-- Route patterns: path matching, query parameters
-- Streaming: ZStream vs fs2.Stream
-- Middleware: CORS, logging, authentication
+**Frontmatter**:
+```yaml
+---
+title: "HTTP Clients and Servers"
+step: 14
+description: "Build HTTP clients and servers"
+zioCommands: ["Http.route", "Http.collect", "Client.request", "Server.port"]
+ceCommands: ["HttpRoutes.of", "BlazeServerBuilder", "Client.expect"]
+---
+```
 
-**Code comparison**:
+**ZIO HTTP server**:
 ```scala
-// ZIO HTTP
 val app = Http.collect[Request] {
   case Method.GET -> Root / "hello" / name =>
     Response.text(s"Hello, $name!")
-
 }
 
-val server = Server.port(8080) ++ Server.app(app)
+Server.serve(app)
+```
 
-// http4s
+**http4s comparison**:
+```scala
 val routes = HttpRoutes.of[IO] {
   case GET -> Root / "hello" / name =>
     Ok(s"Hello, $name!")
 }
-
-val server = BlazeServerBuilder[IO]
-  .bindHttp(8080)
-  .withHttpApp(routes.orNotFound)
-  .resource
 ```
 
-- [ ] **Create Step 15: Database** — Compare ZIO JDBC/Quill vs Doobie/Skunk. Cover connection pooling, queries, transactions, streaming results.
+---
 
-**Why**: Database access is essential. Different libraries have different approaches to type safety and transactions.
+- [ ] **Create Step 15: Database** — ZIO JDBC/Quill vs Doobie/Skunk
 
 **File**: `packages/web/content/comparisons/cats-zio/15-step.mdx` (CREATE)
 
-**Content outline**:
-- Title: "Database Access"
-- ZIO JDBC: JDBC connection, transactions, update/query
-- ZIO Quill: Type-safe SQL queries, projections
-- Doobie: Connection IO, fragments, queries
-- Skunk: PostgreSQL protocol, type-safe commands
-- Transaction patterns: `ZIO.transaction` vs `transact`
-- Streaming results: `ZStream.fromResultSet` vs `stream`
-- Connection pooling configuration
+**Frontmatter**:
+```yaml
+---
+title: "Database Access"
+step: 15
+description: "Query databases with transactions"
+zioCommands: ["execute", "query", "transaction", "ZConnectionPool"]
+ceCommands: ["sql", "update", "query", "transact"]
+---
+```
 
-**Code comparison**:
+**ZIO JDBC**:
 ```scala
-// ZIO JDBC
 val tx = for {
   _ <- execute("INSERT INTO users (name) VALUES (?)", "Alice")
   users <- query("SELECT * FROM users").as[User]
 } yield users
-
 tx.transaction.orDie
+```
 
-// Doobie
+**Doobie comparison**:
+```scala
 val tx = for {
   _ <- sql"INSERT INTO users (name) VALUES ($name)".update.run
   users <- sql"SELECT * FROM users".query[User].to[List]
 } yield users
-
-transact(tx)
+tx.transact(transactor)
 ```
 
-#### Phase 4: Configuration Updates
+### P2: Content - Enhance Existing Steps
 
-- [ ] **Update pairings.ts** — Change `steps: 10` to `steps: 15`, update `estimatedTime` from "~50 min" to "~75 min" (5 min per step avg).
+---
 
-**Why**: Adding 5 new steps requires configuration update.
+- [ ] **Update Step 1: R/E/A Signature** — Add `RIO`, variance notation, `URIO`
 
-**File**: `packages/web/content/pairings.ts`
+**Why**: Current content is accurate but missing important type aliases and variance explanation from Zionomicon ch003.
 
-- [ ] **Update index.mdx** — Add "Advanced Topics" section after step 10, listing steps 11-15 with brief descriptions.
+**File**: `packages/web/content/comparisons/cats-zio/01-step.mdx`
 
-**Why**: Landing page should reflect all available content.
+**Updates from Zionomicon ch003**:
+- Add **variance notation**: `ZIO[-R, +E, +A]`
+- Add **type aliases**: `RIO`, `URIO`
+- Add **mental model**: `ZIO[R, E, A]` is like `R => Either[E, A]`
+
+---
+
+- [ ] **Update Step 2: Creating Effects** — Add utility constructors
+
+**Why**: Current content shows basic constructors but misses useful utility methods from Zionomicon ch003, ch006.
+
+**File**: `packages/web/content/comparisons/cats-zio/02-step.mdx`
+
+**Updates from Zionomicon**:
+- Add `ZIO.unit: UIO[Unit]` - Unit value
+- Add `ZIO.never: ZIO[Any, Nothing, Nothing]` - Never completes
+- Add `ZIO.fromTry[A](a: => Try[A]): Task[A]` - From Scala Try
+- Add `ZIO.async[R, E, A]` - Callback-based effects
+
+---
+
+- [ ] **Update Step 3: Error Handling** — Add `foldZIO`, error recovery
+
+**Why**: ZIO has powerful error handling operators from Zionomicon ch005.
+
+**File**: `packages/web/content/comparisons/cats-zio/03-step.mdx`
+
+**Updates from Zionomicon ch005**:
+- Add **foldZIO** (effectful fold with both branches)
+- Add **foldCauseZIO** (fold with full Cause including defects)
+- Add **orElse**, **orElseFail**, **orElseEither**
+
+---
+
+- [ ] **Update Step 4: Map/FlatMap Purity** — Add utility operators
+
+**Why**: Common utility operators from Zionomicon ch003 improve code readability.
+
+**File**: `packages/web/content/comparisons/cats-zio/04-step.mdx`
+
+**Updates from Zionomicon ch003**:
+- Add `as[B](b: => B)` - Map to constant value
+- Add `unit` - Discard value, return Unit
+- Add `tap[R1 <: R, E1 >: E](f: A => ZIO[R1, E1, Any])` - Side effect
+- Add `filterOrFail[E1 >: E](p: A => Boolean)(e: => E1)` - Filter or fail
+
+---
+
+- [ ] **Update Step 5: Dependency Injection** — Add `ZLayer.derive` modern pattern
+
+**Why**: Zionomicon ch019-021 recommends `ZLayer.derive` as the modern approach.
+
+**File**: `packages/web/content/comparisons/cats-zio/05-step.mdx`
+
+**Updates from Zionomicon ch019-021**:
+
+**ZLayer.derive** (modern pattern):
+```scala
+case class FooService(ref: Ref[Int], a: ServiceA, b: String)
+
+object FooService {
+  val layer: ZLayer[Ref[Int] with ServiceA with String, Nothing, FooService] =
+    ZLayer.derive[FooService]  // Automatic derivation
+}
+```
+
+**Error handling in layers**:
+```scala
+// Retry pattern
+val layer = RemoteDatabase.layer.retry(
+  Schedule.fibonacci(1.second) && Schedule.recurs(5)
+)
+
+// Fallback pattern
+val layer = defaultLayer.orElse(fallbackLayer)
+```
+
+---
+
+- [ ] **Update Step 6: Resource Management** — Add `Scope` interface
+
+**Why**: The Scope model from Zionomicon ch016-018 is fundamental to ZIO 2.x.
+
+**File**: `packages/web/content/comparisons/cats-zio/06-step.mdx`
+
+**Updates from Zionomicon ch016-018**:
+
+**Scope interface**:
+```scala
+trait Scope {
+  def addFinalizer(finalizer: ZIO[Any, Nothing, Any]): ZIO[Any, Nothing, Unit]
+  def close(exit: Exit[Any, Any]): ZIO[Any, Nothing, Unit]
+}
+
+object Scope {
+  def make: UIO[Scope.Closeable]
+}
+```
+
+**acquireRelease with Scope**:
+```scala
+def acquireRelease[R, E, A](
+  acquire: ZIO[R, E, A]
+)(release: A => ZIO[R, Nothing, Any]): ZIO[R with Scope, E, A]
+```
+
+**fromAutoCloseable**:
+```scala
+ZIO.fromAutoCloseable(ZIO.attempt(new FileInputStream("file.txt")))
+```
+
+---
+
+- [ ] **Update Step 7: Fiber Supervision** — Add fork variants, raceEither
+
+**Why**: ZIO has multiple fork strategies from Zionomicon ch007-010 for different concurrency needs.
+
+**File**: `packages/web/content/comparisons/cats-zio/07-step.mdx`
+
+**Updates from Zionomicon ch007-010**:
+
+**Fork variants comparison**:
+```scala
+effect.fork         // In current scope (interrupted when parent scope closes)
+effect.forkDaemon   // Global scope (outlives parent, use for background tasks)
+effect.forkScoped   // Explicit scope management
+```
+
+**raceEither** (winner-takes-all with type info):
+```scala
+def raceEither[R1 <: R, E1 >: E, B](
+  that: ZIO[R1, E1, B]
+): ZIO[R1, E1, Either[A, B]]
+```
+
+---
+
+- [ ] **Update Step 8: Streaming** — Add effectful operators, error recovery
+
+**Why**: ZStream has powerful operators (not in Zionomicon - streaming-specific).
+
+**File**: `packages/web/content/comparisons/cats-zio/08-step.mdx`
+
+**Updates**:
+- Add `mapZIO`, `filterZIO` (effectful operators)
+- Add `groupedWithin` (time/size-based grouping)
+- Add error recovery: `catchSome`, `retry`, `catchAll`
+- Explain backpressure handling (automatic in ZStream)
+
+---
+
+- [ ] **Update Step 9: Application Structure** — Add Bootstrap, config, service access
+
+**Why**: Real-world apps from Zionomicon ch022 need runtime configuration and service composition.
+
+**File**: `packages/web/content/comparisons/cats-zio/09-step.mdx`
+
+**Updates from Zionomicon ch022**:
+
+**Bootstrap pattern**:
+```scala
+object MainApp extends ZIOAppDefault {
+  override val bootstrap =
+    Runtime.setConfigProvider(fromHoconFilePath("config.conf")) ++
+      Runtime.removeDefaultLoggers
+
+  def run = ???
+}
+```
+
+**ZIO.config**:
+```scala
+case class AppConfig(host: String, port: Int)
+object AppConfig {
+  implicit val config: Config[AppConfig] = deriveConfig[AppConfig]
+}
+
+for {
+  config <- ZIO.config[AppConfig]
+  _      <- ZIO.debug(s"Server: ${config.host}:${config.port}")
+} yield ()
+```
+
+**Structured logging**:
+```scala
+ZIO.log("Starting application")
+ZIO.logInfo("User logged in")
+ZIO.logError("Database connection failed")
+```
+
+---
+
+- [x] **Verify Step 10: Interop** — Version `23.1.0.3` is correct (newer than spec's `3.1.1.0`)
+
+**Status**: This step is already complete. The dependency version is correct at `3.1.1.0` and the interop coverage is comprehensive.
+
+### P3: Landing Page & Glossary
+
+- [ ] **Update index.mdx** — Add "Enterprise Integration" section for steps 11-15
+
+**Why**: Landing page should list all available content including new steps.
 
 **File**: `packages/web/content/comparisons/cats-zio/index.mdx`
 
-**Add section**:
+**Changes**:
+1. Update `estimatedTime` frontmatter from `"~45 min"` to `"~70 min"`
+2. Add new section after step 10:
 ```markdown
-## Advanced Topics
-
-11. [Software Transactional Memory](/cats-zio/11) — Compose atomic operations with STM
-12. [Concurrent Structures](/cats-zio/12) — Ref, Queue, Hub, Semaphore for coordination
-13. [Configuration](/cats-zio/13) — Load and validate configuration with ZIO Config
-14. [HTTP](/cats-zio/14) — Build HTTP clients and servers
-15. [Database](/cats-zio/15) — Query databases with transactions
+┌─ Enterprise Integration ─────────────────────────────────┐
+│                                                            │
+│  ○  11. Software Transactional Memory           ~5 min   │
+│  ○  12. Concurrent Structures                   ~6 min   │
+│  ○  13. Configuration                           ~5 min   │
+│  ○  14. HTTP Clients and Servers                ~6 min   │
+│  ○  15. Database Access                         ~6 min   │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
 ```
 
-- [ ] **Verify routing** — Ensure dynamic route `packages/web/app/[toolPair]/[step]/page.tsx` handles steps 11-15 via `generateStaticParams()`.
+---
 
-**Why**: Existing routing should work automatically, but verification needed.
+- [ ] **Update glossary** — Add STM, CONFIG, HTTP, DATABASE categories and entries
 
-**File**: `packages/web/app/[toolPair]/[step]/page.tsx`
-
-**Check**: The `generateStaticParams` function uses `pairing.steps` to generate routes. After updating `pairings.ts`, this should work automatically.
-
-#### Phase 5: Validation
-
-- [ ] **Run full validation** — Execute `cd packages/web && bun run build && bun run typecheck && bun run lint`.
-
-**Why**: Ensure all changes pass validation before considering complete.
-
-#### Glossary Update
-
-- [ ] **Update glossary API mappings** — Review `packages/web/content/glossary/cats-zio.ts` and ensure entries reflect ZIO 2.x and Cats Effect 3 APIs used in updated steps. Add entries for STM, concurrent structures, config.
+**Why**: Glossary should include APIs from all 15 steps.
 
 **File**: `packages/web/content/glossary/cats-zio.ts`
 
-**Potential additions**:
-- STM entries: `TRef`, `TMap`, `TQueue`, `TPromise`, `STM.succeed`, `STM.retry`
-- Concurrent entries: `Ref.make`, `Promise.make`, `Queue.unbounded`, `Hub.bounded`, `Semaphore.make`
-- Config entries: `ZIO.config`, `Config.string`, `ConfigProvider.envProvider`
+**Changes**:
+1. Add new categories to type union: `"STM"`, `"CONFIG"`, `"HTTP"`, `"DATABASE"`
+2. Add STM entries (Step 11): TRef.make, STM.retry, STM.commit, TMap, TQueue
+3. Add CONFIG entries (Step 13): ZIO.config, Config.string, Config.int, ConfigProvider
+4. Add HTTP entries (Step 14): Http.collect, Client.request, Response.text
+5. Add DATABASE entries (Step 15): execute, query, transaction, ZConnectionPool
+6. Update `getCategories()` to include new categories in order
+
+### P4: Validation
+
+- [ ] **Run full validation** — Execute `bun run build && bun run typecheck && bun run lint`
+
+**Why**: Ensure all changes pass validation before considering complete.
+
+**Command**: `cd packages/web && bun run build && bun run typecheck && bun run lint`
 
 ---
 
@@ -589,9 +705,9 @@ ceCommands: ["IO.pure", "IO.raiseError", "IO.delay"]
 ### Component Usage
 
 - **ScalaComparisonBlock** for all code comparisons
-- **Callout** for tips (`type="tip"`), warnings (`type="warning"`), notes (default)
+- **Callout** for tips (`variant="tip"`), warnings (`variant="warning"`), notes (default)
 - **ScastieEmbed** for interactive examples (optional)
-- No **TryIt** components (cats-zio has `sandbox: enabled: false`)
+- No **TryIt** components (cats-zio has `sandbox.enabled: false`)
 
 ---
 
@@ -617,25 +733,25 @@ When Zionomicon contradicts other sources (ZIO 2.x docs, blog posts):
 
 No strict dependencies between steps - each should be standalone. However:
 - Steps 1-4 should be read in order (fundamentals)
-- Steps 5-7 can be read independently (architecture topics)
+- Steps 5-10 can be read independently (architecture topics)
 - Steps 11-15 are advanced and assume familiarity with basics
 
 ---
 
 ## Task Count
 
-**Total pending tasks**: 30
-- Phase 1: 0 tasks (research complete)
-- Phase 2: 10 tasks (update existing steps 1-10)
-- Phase 3: 5 tasks (create new steps 11-15)
-- Phase 4: 3 tasks (configuration updates)
-- Phase 5: 1 task (validation)
-- Glossary: 1 task (update API mappings)
+**Total pending tasks**: 20 main tasks (P0-P4)
+- P0 (Critical): 4 tasks — Infrastructure updates (4 hardcoded locations)
+- P1 (New Steps): 5 tasks — Create steps 11-15
+- P2 (Enhance): 9 tasks — Update steps 1-9
+- P3 (Landing): 2 tasks — Index page, glossary
+- P4 (Validation): 1 task — Build/typecheck/lint
 
-**Completed tasks**: 18 (P0-P4 technical implementation + bug fixes)
+**Completed tasks**: 1/20 main tasks (5%)
+- [x] Step 10: Interop (version `23.1.0.3` is correct for ZIO 2.x)
 
-**Progress**: 18/48 tasks complete (37.5%)
-**Remaining work**: Content creation for steps 1-15
+**Progress**: 1/20 main tasks complete (5%)
+**Remaining work**: All infrastructure updates, new steps 11-15, and enhancements to steps 1-9
 
 ---
 
