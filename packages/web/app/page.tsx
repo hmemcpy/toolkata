@@ -24,9 +24,9 @@ export default async function HomePage() {
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 flex-1">
         {/* Hero Section - Terminal Style */}
-        <section className="mb-6 relative">
+        <section className="mb-10 relative">
           {/* Simple bold title */}
-          <div className="text-center mb-4">
+          <div className="text-center mb-8">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold font-mono mb-3">
               <span className="text-[var(--color-text)]">tool</span>
               <span className="text-[var(--color-accent)]">kata</span>
@@ -45,13 +45,13 @@ export default async function HomePage() {
           </div>
 
           {/* Tagline as terminal output */}
-          <div className="max-w-2xl mx-auto text-center">
-            <div className="inline-block text-left bg-[var(--color-surface)] border border-[var(--color-border)] p-4 sm:p-6">
+          <div className="max-w-2xl mx-auto text-center space-y-4">
+            <div className="inline-block text-left bg-[var(--color-surface)] border border-[var(--color-border)] p-3 sm:p-4">
               <div className="font-mono text-sm sm:text-base">
                 <p className="text-[var(--color-text-muted)]">
                   <span className="text-[var(--color-accent)]">$</span> cat README.md
                 </p>
-                <div className="border-l-2 border-[var(--color-accent)] pl-4 mt-3 mb-3">
+                <div className="border-l-2 border-[var(--color-accent)] pl-4 mt-2 mb-2">
                   <p className="text-[var(--color-text)] text-lg sm:text-xl font-medium mb-2">
                     Learn X if you already know Y
                   </p>
@@ -61,7 +61,7 @@ export default async function HomePage() {
                     No fluff. Just the commands you need.
                   </p>
                 </div>
-                <div className="pt-2 border-t border-[var(--color-border)]">
+                <div className="pt-2 border-t border-[var(--color-border)] text-center">
                   <TerminalSearch />
                 </div>
               </div>

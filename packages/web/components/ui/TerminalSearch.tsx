@@ -28,12 +28,42 @@ export function TerminalSearch() {
 
   const results =
     query.length > 0
-      ? SEARCHABLE_STEPS.filter((step) => {
-          // Search across title, description, tool names, and tags
-          const tags = step.tags?.join(" ") ?? ""
-          const searchText = `${step.title} ${step.description} ${step.toName} ${step.fromName} ${tags}`.toLowerCase()
-          return searchText.includes(query.toLowerCase())
-        }).slice(0, 6)
+      ? (() => {
+          // Filter matching steps
+          const matches = SEARCHABLE_STEPS.filter((step) => {
+            const tags = step.tags?.join(" ") ?? ""
+            const searchText = `${step.title} ${step.description} ${step.toName} ${step.fromName} ${tags}`.toLowerCase()
+            return searchText.includes(query.toLowerCase())
+          })
+
+          // Group by tool pair for diversity
+          const byPairing = new Map<string, typeof SEARCHABLE_STEPS>()
+          for (const step of matches) {
+            if (!byPairing.has(step.toolPair)) {
+              byPairing.set(step.toolPair, [])
+            }
+            byPairing.get(step.toolPair)!.push(step)
+          }
+
+          // Round-robin through pairings, max 2 per pairing
+          const diverse: typeof SEARCHABLE_STEPS = []
+          const pairingKeys = Array.from(byPairing.keys())
+          let index = 0
+
+          while (diverse.length < 6 && index < pairingKeys.length * 2) {
+            for (const pairingKey of pairingKeys) {
+              const steps = byPairing.get(pairingKey)!
+              const stepIndex = Math.floor(index / pairingKeys.length)
+              if (stepIndex < steps.length && stepIndex < 2) {
+                diverse.push(steps[stepIndex])
+              }
+              if (diverse.length >= 6) break
+            }
+            index++
+          }
+
+          return diverse
+        })()
       : []
 
   const handleKeyDown = useCallback(
@@ -76,7 +106,7 @@ export function TerminalSearch() {
   const showPlaceholder = query.length === 0 && !isOpen
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative inline-block w-full max-w-md">
       <div className="flex items-center">
         <span className="text-[var(--color-accent)]">$</span>
         <input
