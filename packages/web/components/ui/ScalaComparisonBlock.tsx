@@ -48,43 +48,52 @@ interface ScalaComparisonBlockProps {
 }
 
 /**
- * Trim leading/trailing blank lines and normalize indentation.
- * Dedents code by finding the minimum indentation across non-empty lines
- * and removes that amount from each line.
+ * Process code using stripMargin-style formatting (like Scala).
+ *
+ * Each line starting with `|` has everything before and including the `|` stripped.
+ * This preserves intentional indentation that would otherwise be lost to JSX/MDX
+ * whitespace normalization.
+ *
+ * @example
+ * ```
+ * // Input:
+ * `|import zio._
+ * |
+ * |val x =
+ * |  ZIO.succeed(42)`
+ *
+ * // Output:
+ * import zio._
+ *
+ * val x =
+ *   ZIO.succeed(42)
+ * ```
  */
 function normalizeCode(code: string): string {
   const lines = code.split("\n")
 
+  // Apply stripMargin: remove everything up to and including `|` on each line
+  const strippedLines = lines.map((line) => {
+    const pipeIndex = line.indexOf("|")
+    if (pipeIndex !== -1) {
+      return line.slice(pipeIndex + 1)
+    }
+    return line
+  })
+
   // Remove leading blank lines
   let startIndex = 0
-  while (startIndex < lines.length && lines[startIndex]?.trim() === "") {
+  while (startIndex < strippedLines.length && strippedLines[startIndex]?.trim() === "") {
     startIndex++
   }
 
   // Remove trailing blank lines
-  let endIndex = lines.length - 1
-  while (endIndex >= startIndex && lines[endIndex]?.trim() === "") {
+  let endIndex = strippedLines.length - 1
+  while (endIndex >= startIndex && strippedLines[endIndex]?.trim() === "") {
     endIndex--
   }
 
-  const contentLines = lines.slice(startIndex, endIndex + 1)
-
-  // Find minimum indentation (ignoring empty lines)
-  let minIndent = Number.POSITIVE_INFINITY
-  for (const line of contentLines) {
-    if (line.trim() !== "") {
-      const indent = line.match(/^ */)?.[0]?.length ?? 0
-      minIndent = Math.min(minIndent, indent)
-    }
-  }
-
-  // Remove common indentation
-  const dedentedLines = contentLines.map((line) => {
-    if (line.trim() === "") return ""
-    return line.slice(minIndent)
-  })
-
-  return dedentedLines.join("\n")
+  return strippedLines.slice(startIndex, endIndex + 1).join("\n")
 }
 
 /**

@@ -423,6 +423,50 @@ jjCommands: ["jj describe", "jj new"]
 ---
 ```
 
+### ScalaComparisonBlock Code Format (stripMargin)
+
+Code blocks in `ScalaComparisonBlock` must use the `|` (pipe) prefix format to preserve indentation. This is required because MDX/JSX template literals strip leading whitespace from lines before the component receives them.
+
+**How it works:**
+- Each line of code starts with `|` as a margin marker
+- The `normalizeCode` function strips everything up to and including `|` on each line
+- Content after `|` is preserved exactly, including intentional indentation
+
+**Example:**
+```jsx
+<ScalaComparisonBlock
+  zioCode={`
+    |import zio._
+    |
+    |val program =
+    |  for {
+    |    _ <- Console.printLine("Hello")
+    |    _ <- Console.printLine("World")
+    |  } yield ()
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |
+    |val program: IO[Unit] =
+    |  for {
+    |    _ <- IO.println("Hello")
+    |    _ <- IO.println("World")
+    |  } yield ()
+  `}
+  zioComment="ZIO comment here"
+  catsEffectComment="Cats Effect comment here"
+/>
+```
+
+**Why this is needed:**
+Without `|` prefixes, lines like `  for {` would render as `for {` (losing the 2-space indent) because JSX normalizes whitespace in template literal attributes.
+
+**Important:**
+- Every line of code must start with `|`
+- Empty lines should just be `|` alone
+- The pipe goes at the true left margin (column 0 of intended content)
+- Indentation before `|` is for MDX readability only and is discarded
+
 ---
 
 ## Related Documentation

@@ -13,20 +13,24 @@ The fundamental difference between ZIO and Cats Effect starts with the type sign
 ## The Type Signatures
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect.IO
-
-// IO has ONE type parameter
-// Error is always Throwable
-val ceEffect: IO[Int] = IO.pure(42)`}
-  zioCode={`import zio._
-
-// ZIO has THREE type parameters with variance:
-// ZIO[-R, +E, +A] = Environment, Error, Success
-//   -R  : Contravariant environment (requires)
-//   +E  : Covariant error (can fail with)
-//   +A  : Covariant success (can produce)
-val zioEffect: ZIO[Any, Nothing, Int] =
-  ZIO.succeed(42)`}
+  catsEffectCode={`
+    |import cats.effect.IO
+    |
+    |// IO has ONE type parameter
+    |// Error is always Throwable
+    |val ceEffect: IO[Int] = IO.pure(42)
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |// ZIO has THREE type parameters with variance:
+    |// ZIO[-R, +E, +A] = Environment, Error, Success
+    |//   -R  : Contravariant environment (requires)
+    |//   +E  : Covariant error (can fail with)
+    |//   +A  : Covariant success (can produce)
+    |val zioEffect: ZIO[Any, Nothing, Int] =
+    |  ZIO.succeed(42)
+  `}
   catsEffectComment="IO[A] - Success type only"
   zioComment="ZIO[-R, +E, +A] - Variance annotations improve type inference"
 />
@@ -58,35 +62,39 @@ Cats Effect's `IO[A]` is roughly equivalent to ZIO's `ZIO[Any, Throwable, A]` (a
 ## Common Type Aliases
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect.IO
-
-// IO[A] is the only effect type
-// Error handling uses MonadError[IO, Throwable]
-val program: IO[Int] = IO.pure(42)
-
-// For "can't fail" semantics, use types
-// but IO still allows Throwable internally
-val safe: IO[Int] = IO.pure(42)`}
-  zioCode={`import zio._
-
-// UIO[A] = ZIO[Any, Nothing, A] (can't fail)
-val uio: UIO[Int] = ZIO.succeed(42)
-
-// Task[A] = ZIO[Any, Throwable, A]
-val task: Task[String] = ZIO.attempt {
-  scala.io.Source.fromFile("f").mkString
-}
-
-// IO[E, A] = ZIO[Any, E, A] (custom error)
-val io: IO[String, Int] = ZIO.fail("oops")
-
-// RIO[R, A] = ZIO[R, Throwable, A]
-// Has environment, can fail with Throwable
-val rio: RIO[Clock, Int] = Clock.currentTime
-
-// URIO[R, A] = ZIO[R, Nothing, A]
-// Has environment, cannot fail
-val urio: URIO[Clock, Long] = Clock.nanoTime`}
+  catsEffectCode={`
+    |import cats.effect.IO
+    |
+    |// IO[A] is the only effect type
+    |// Error handling uses MonadError[IO, Throwable]
+    |val program: IO[Int] = IO.pure(42)
+    |
+    |// For "can't fail" semantics, use types
+    |// but IO still allows Throwable internally
+    |val safe: IO[Int] = IO.pure(42)
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |// UIO[A] = ZIO[Any, Nothing, A] (can't fail)
+    |val uio: UIO[Int] = ZIO.succeed(42)
+    |
+    |// Task[A] = ZIO[Any, Throwable, A]
+    |val task: Task[String] = ZIO.attempt {
+    |  scala.io.Source.fromFile("f").mkString
+    |}
+    |
+    |// IO[E, A] = ZIO[Any, E, A] (custom error)
+    |val io: IO[String, Int] = ZIO.fail("oops")
+    |
+    |// RIO[R, A] = ZIO[R, Throwable, A]
+    |// Has environment, can fail with Throwable
+    |val rio: RIO[Clock, Int] = Clock.currentTime
+    |
+    |// URIO[R, A] = ZIO[R, Nothing, A]
+    |// Has environment, cannot fail
+    |val urio: URIO[Clock, Long] = Clock.nanoTime
+  `}
   catsEffectComment="IO[A] - single effect type"
   zioComment="UIO, Task, IO, RIO, URIO - type aliases for common patterns"
 />

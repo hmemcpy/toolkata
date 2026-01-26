@@ -40,11 +40,11 @@
   --zio-brand-orange-rgb: 231, 60, 0;
 
   /* Bright Red - Main logo gradient */
-  --zio-red: #FF3300;
+  --zio-red: #ff3300;
   --zio-red-rgb: 255, 51, 0;
 
   /* Orange - Logo gradient transitions */
-  --zio-orange: #FF6600;
+  --zio-orange: #ff6600;
   --zio-orange-rgb: 255, 102, 0;
 
   /* Dark Maroon - Logo contrasting elements */
@@ -52,7 +52,7 @@
   --zio-maroon-rgb: 153, 0, 0;
 
   /* Yellow - Logo tip accents */
-  --zio-yellow: #FFFF00;
+  --zio-yellow: #ffff00;
   --zio-yellow-rgb: 255, 255, 0;
 }
 

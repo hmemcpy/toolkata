@@ -139,9 +139,7 @@ const make = Effect.sync(() => {
 
     // If any images are missing, fail with clear error message
     if (missingImages.length > 0) {
-      const missingList = missingImages
-        .map((m) => `  - ${m.envName}: ${m.imageName}`)
-        .join("\n")
+      const missingList = missingImages.map((m) => `  - ${m.envName}: ${m.imageName}`).join("\n")
       const message = `Missing ${missingImages.length} environment image(s):\n${missingList}\n\nBuild images with: bun run docker:build:all`
       return yield* Effect.fail(
         new MissingImagesError({
@@ -155,7 +153,14 @@ const make = Effect.sync(() => {
     console.log(`[EnvironmentService] All ${environments.length} environment images validated`)
   })
 
-  return { get, getDefault, list, has, listNames, validateAllImages } satisfies EnvironmentServiceShape
+  return {
+    get,
+    getDefault,
+    list,
+    has,
+    listNames,
+    validateAllImages,
+  } satisfies EnvironmentServiceShape
 })
 
 // Live layer

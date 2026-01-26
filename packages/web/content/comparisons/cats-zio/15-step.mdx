@@ -23,55 +23,59 @@ We need:
 ZIO JDBC provides a lightweight JDBC layer with ZIO effects.
 
 <ScalaComparisonBlock
-  zioCode={`import zio._
-import zio.jdbc._
-import java.sql._
-
-// Execute a query and parse results
-case class User(id: Long, name: String)
-
-val findAll: ZIO[Any, Throwable, List[User]] =
-  query(
-    "SELECT id, name FROM users"
-  ).as[User]
-
-// Execute with parameters
-val findById: Long => ZIO[Any, Throwable, Option[User]] =
-  id =>
-    query(
-      "SELECT id, name FROM users WHERE id = ?"
-    ).param(id).option[User]
-
-// Execute update
-val create: String => ZIO[Any, Throwable, Long] =
-  name =>
-    execute(
-      "INSERT INTO users (name) VALUES (?)"
-    ).param(name).returning`}
-  catsEffectCode={`import cats.effect._
-import doobie._
-import doobie.implicits._
-import cats._
-
-case class User(id: Long, name: String)
-
-// Execute a query and parse results
-val findAll: IO[List[User]] =
-  sql"SELECT id, name FROM users"
-    .query[User]
-    .to[List]
-
-// Execute with parameters
-def findById(id: Long): IO[Option[User]] =
-  sql"SELECT id, name FROM users WHERE id = \$id"
-    .query[User]
-    .option
-
-// Execute update
-def create(name: String): IO[Long] =
-  sql"INSERT INTO users (name) VALUES (\$name)"
-    .update
-    .withUniqueGeneratedKeys[Long]("id")`}
+  zioCode={`
+    |import zio._
+    |import zio.jdbc._
+    |import java.sql._
+    |
+    |// Execute a query and parse results
+    |case class User(id: Long, name: String)
+    |
+    |val findAll: ZIO[Any, Throwable, List[User]] =
+    |  query(
+    |    "SELECT id, name FROM users"
+    |  ).as[User]
+    |
+    |// Execute with parameters
+    |val findById: Long => ZIO[Any, Throwable, Option[User]] =
+    |  id =>
+    |    query(
+    |      "SELECT id, name FROM users WHERE id = ?"
+    |    ).param(id).option[User]
+    |
+    |// Execute update
+    |val create: String => ZIO[Any, Throwable, Long] =
+    |  name =>
+    |    execute(
+    |      "INSERT INTO users (name) VALUES (?)"
+    |    ).param(name).returning
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import doobie._
+    |import doobie.implicits._
+    |import cats._
+    |
+    |case class User(id: Long, name: String)
+    |
+    |// Execute a query and parse results
+    |val findAll: IO[List[User]] =
+    |  sql"SELECT id, name FROM users"
+    |    .query[User]
+    |    .to[List]
+    |
+    |// Execute with parameters
+    |def findById(id: Long): IO[Option[User]] =
+    |  sql"SELECT id, name FROM users WHERE id = \$id"
+    |    .query[User]
+    |    .option
+    |
+    |// Execute update
+    |def create(name: String): IO[Long] =
+    |  sql"INSERT INTO users (name) VALUES (\$name)"
+    |    .update
+    |    .withUniqueGeneratedKeys[Long]("id")
+  `}
   zioComment="query() for SELECT, execute() for INSERT/UPDATE/DELETE"
   catsEffectComment="sql interpolator for queries, .update for modifications"
 />
@@ -85,61 +89,65 @@ ZIO JDBC uses a fluent API with `.param()` for parameters. Doobie uses string in
 Both libraries use connection pools for efficient database access.
 
 <ScalaComparisonBlock
-  zioCode={`import zio._
-import zio.jdbc._
-import javax.sql.DataSource
-import com.zaxxer.hikari.HikariDataSource
-
-// Create connection pool
-def layer: ZLayer[Any, Throwable, ZConnectionPool] = {
-  val dataSource: HikariDataSource =
-    new HikariDataSource()
-  dataSource.setJdbcUrl("jdbc:postgresql://localhost/mydb")
-  dataSource.setUsername("user")
-  dataSource.setPassword("pass")
-
-  ZConnectionPool.h2(
-    url = "jdbc:postgresql://localhost/mydb",
-    username = "some-user",
-    password = "secret-password"
-  )
-}
-
-// Or use existing DataSource
-def fromDataSource(ds: DataSource) =
-  ZConnectionPool.fromDataSource(ds)
-
-// Run query with pool
-def findAll: ZIO[ZConnectionPool, Throwable, List[User]] =
-  query("SELECT id, name FROM users").as[User]`}
-  catsEffectCode={`import cats.effect._
-import doobie._
-import doobie.hikari._
-import com.zaxxer.hikari.HikariConfig
-
-// Create transactor (connection pool)
-val transactor: IO[HiKariTransactor[IO]] = {
-  val config = new HikariConfig()
-  config.setJdbcUrl("jdbc:postgresql://localhost/mydb")
-  config.setUsername("user")
-  config.setPassword("pass")
-
-  HiKariTransactor[IO](config)
-}
-
-// Or use helper
-val transactorSimple: Resource[IO, Transactor[IO]] =
-  Transactor.fromDataSource[IO](
-    dataSource,
-    connectEC
-  )
-
-// Run query with transactor
-val findAll: IO[List[User]] =
-  sql"SELECT id, name FROM users"
-    .query[User]
-    .to[List]
-    .transact(transactor)}`}
+  zioCode={`
+    |import zio._
+    |import zio.jdbc._
+    |import javax.sql.DataSource
+    |import com.zaxxer.hikari.HikariDataSource
+    |
+    |// Create connection pool
+    |def layer: ZLayer[Any, Throwable, ZConnectionPool] = {
+    |  val dataSource: HikariDataSource =
+    |    new HikariDataSource()
+    |  dataSource.setJdbcUrl("jdbc:postgresql://localhost/mydb")
+    |  dataSource.setUsername("user")
+    |  dataSource.setPassword("pass")
+    |
+    |  ZConnectionPool.h2(
+    |    url = "jdbc:postgresql://localhost/mydb",
+    |    username = "some-user",
+    |    password = "secret-password"
+    |  )
+    |}
+    |
+    |// Or use existing DataSource
+    |def fromDataSource(ds: DataSource) =
+    |  ZConnectionPool.fromDataSource(ds)
+    |
+    |// Run query with pool
+    |def findAll: ZIO[ZConnectionPool, Throwable, List[User]] =
+    |  query("SELECT id, name FROM users").as[User]
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import doobie._
+    |import doobie.hikari._
+    |import com.zaxxer.hikari.HikariConfig
+    |
+    |// Create transactor (connection pool)
+    |val transactor: IO[HiKariTransactor[IO]] = {
+    |  val config = new HikariConfig()
+    |  config.setJdbcUrl("jdbc:postgresql://localhost/mydb")
+    |  config.setUsername("user")
+    |  config.setPassword("pass")
+    |
+    |  HiKariTransactor[IO](config)
+    |}
+    |
+    |// Or use helper
+    |val transactorSimple: Resource[IO, Transactor[IO]] =
+    |  Transactor.fromDataSource[IO](
+    |    dataSource,
+    |    connectEC
+    |  )
+    |
+    |// Run query with transactor
+    |val findAll: IO[List[User]] =
+    |  sql"SELECT id, name FROM users"
+    |    .query[User]
+    |    .to[List]
+    |    .transact(transactor)
+  `}
   zioComment="ZConnectionPool ZLayer for dependency injection"
   catsEffectComment="Transactor[F] wraps connection pool"
 />
@@ -149,89 +157,93 @@ val findAll: IO[List[User]] =
 Both libraries support transactional operations with rollback on failure.
 
 <ScalaComparisonBlock
-  zioCode={`import zio._
-import zio.jdbc._
-
-// Transaction for atomic operations
-val transfer: (
-  Long,
-  Long,
-  Int
-) => ZIO[ZConnectionPool, Throwable, Unit] =
-  (from, to, amount) =>
-    (for {
-      _ <- execute(
-        "UPDATE accounts SET balance = balance - ? WHERE id = ?"
-      ).param(amount).param(from)
-      _ <- execute(
-        "UPDATE accounts SET balance = balance + ? WHERE id = ?"
-      ).param(amount).param(to)
-    } yield ()).transaction
-
-// Nested transactions
-val outerTx: ZIO[ZConnectionPool, Throwable, Unit] =
-  (for {
-    _ <- execute("INSERT INTO users (name) VALUES (?)")
-      .param("Alice")
-    _ <- innerOperation.transaction // Nested
-  } yield ()).transaction
-
-// Transaction with isolation level
-val serializableTx =
-  (for {
-    _ <- someUpdate
-    _ <- anotherUpdate
-  } yield ()).transactionWithIsolation(
-    IsolationLevel.Serializable
-  )`}
-  catsEffectCode={`import cats.effect._
-import doobie._
-
-// Transaction for atomic operations
-def transfer(
-  from: Long,
-  to: Long,
-  amount: Int
-): IO[Unit] = {
-  val tx =
-    for {
-      _ <- sql"""
-        UPDATE accounts
-        SET balance = balance - \$amount
-        WHERE id = \$from
-      """.update.run
-      _ <- sql"""
-        UPDATE accounts
-        SET balance = balance + \$amount
-        WHERE id = \$to
-      """.update.run
-    } yield ()
-
-  tx.transact(transactor)
-}
-
-// Nested transactions
-val outerTx: IO[Unit] = {
-  val tx =
-    for {
-      _ <- sql"INSERT INTO users (name) VALUES ('Alice')".update.run
-      _ <- innerOperation.transact(transactor) // Nested
-    } yield ()
-
-  tx.transact(transactor)
-}
-
-// Transaction with isolation level
-val serializableTx: IO[Unit] =
-  sql"SELECT * FROM accounts"
-    .query[Account]
-    .to[List]
-    .transact(
-      transactor
-        .setTransactionIsolation(
-          java.sql.Connection.TRANSACTION_SERIALIZABLE
-        )
-    )`}
+  zioCode={`
+    |import zio._
+    |import zio.jdbc._
+    |
+    |// Transaction for atomic operations
+    |val transfer: (
+    |  Long,
+    |  Long,
+    |  Int
+    |) => ZIO[ZConnectionPool, Throwable, Unit] =
+    |  (from, to, amount) =>
+    |    (for {
+    |      _ <- execute(
+    |        "UPDATE accounts SET balance = balance - ? WHERE id = ?"
+    |      ).param(amount).param(from)
+    |      _ <- execute(
+    |        "UPDATE accounts SET balance = balance + ? WHERE id = ?"
+    |      ).param(amount).param(to)
+    |    } yield ()).transaction
+    |
+    |// Nested transactions
+    |val outerTx: ZIO[ZConnectionPool, Throwable, Unit] =
+    |  (for {
+    |    _ <- execute("INSERT INTO users (name) VALUES (?)")
+    |      .param("Alice")
+    |    _ <- innerOperation.transaction // Nested
+    |  } yield ()).transaction
+    |
+    |// Transaction with isolation level
+    |val serializableTx =
+    |  (for {
+    |    _ <- someUpdate
+    |    _ <- anotherUpdate
+    |  } yield ()).transactionWithIsolation(
+    |    IsolationLevel.Serializable
+    |  )
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import doobie._
+    |
+    |// Transaction for atomic operations
+    |def transfer(
+    |  from: Long,
+    |  to: Long,
+    |  amount: Int
+    |): IO[Unit] = {
+    |  val tx =
+    |    for {
+    |      _ <- sql"""
+    |        UPDATE accounts
+    |        SET balance = balance - \$amount
+    |        WHERE id = \$from
+    |      """.update.run
+    |      _ <- sql"""
+    |        UPDATE accounts
+    |        SET balance = balance + \$amount
+    |        WHERE id = \$to
+    |      """.update.run
+    |    } yield ()
+    |
+    |  tx.transact(transactor)
+    |}
+    |
+    |// Nested transactions
+    |val outerTx: IO[Unit] = {
+    |  val tx =
+    |    for {
+    |      _ <- sql"INSERT INTO users (name) VALUES ('Alice')".update.run
+    |      _ <- innerOperation.transact(transactor) // Nested
+    |    } yield ()
+    |
+    |  tx.transact(transactor)
+    |}
+    |
+    |// Transaction with isolation level
+    |val serializableTx: IO[Unit] =
+    |  sql"SELECT * FROM accounts"
+    |    .query[Account]
+    |    .to[List]
+    |    .transact(
+    |      transactor
+    |        .setTransactionIsolation(
+    |          java.sql.Connection.TRANSACTION_SERIALIZABLE
+    |        )
+    |    )
+  `}
   zioComment=".transaction wraps in transactional boundary"
   catsEffectComment=".transact(transactor) runs transactionally"
 />
@@ -245,85 +257,89 @@ Transactions are automatically rolled back on failure. Both libraries handle rol
 Both libraries support composing queries from smaller fragments.
 
 <ScalaComparisonBlock
-  zioCode={`import zio._
-import zio.jdbc._
-
-// Composable query fragments
-def whereId(id: Long): SqlFragment =
-  sql"WHERE id = ".param(id)
-
-def whereName(name: String): SqlFragment =
-  sql"AND name = ".param(name)
-
-// Dynamic query building
-def findUser(
-  id: Option[Long],
-  name: Option[String]
-): ZIO[Any, Throwable, List[User]] = {
-  val base = sql"SELECT id, name FROM users"
-
-  val where = SqlFragment.join(
-    List(
-      id.map(i => sql"id = ".param(i)),
-      name.map(n => sql"name = ".param(n))
-    ).flatten,
-    sql" AND "
-  )
-
-  (base ++ where).query[User]
-}
-
-// Reusable fragments
-val userTable = sql"users"
-val idColumn = sql"id"
-val nameColumn = sql"name"
-
-val selectUsers =
-  sql"SELECT " ++ idColumn ++ sql", " ++ nameColumn ++
-    sql" FROM " ++ userTable`}
-  catsEffectCode={`import cats.effect._
-import doobie._
-
-// Fragment composition
-val whereId: Long => Fragment =
-  id => fr"WHERE id = $id"
-
-val whereName: String => Fragment =
-  name => fr"AND name = $name"
-
-// Dynamic query building
-def findUser(
-  id: Option[Long],
-  name: Option[String]
-): Query[User] = {
-  val base: Fragment =
-    fr"SELECT id, name FROM users"
-
-  val conditions: List[Fragment] =
-    List(
-      id.map(i => fr"id = $i"),
-      name.map(n => fr"name = $n")
-    ).flatten
-
-  val where: Fragment =
-    if (conditions.isEmpty)
-      Fragment.empty
-    else
-      conditions
-        .reduce(_ ++ fr"AND" ++ _)
-        .enclose(fr"WHERE ", fr"")
-
-  (base ++ where).query[User]
-}
-
-// Reusable fragments
-val userTable: Fragment = fr"users"
-val idCol: Fragment = fr"id"
-val nameCol: Fragment = fr"name"
-
-val selectUsers: Fragment =
-  fr"SELECT " ++ idCol ++ fr", " ++ nameCol ++
-    fr" FROM " ++ userTable`}
+  zioCode={`
+    |import zio._
+    |import zio.jdbc._
+    |
+    |// Composable query fragments
+    |def whereId(id: Long): SqlFragment =
+    |  sql"WHERE id = ".param(id)
+    |
+    |def whereName(name: String): SqlFragment =
+    |  sql"AND name = ".param(name)
+    |
+    |// Dynamic query building
+    |def findUser(
+    |  id: Option[Long],
+    |  name: Option[String]
+    |): ZIO[Any, Throwable, List[User]] = {
+    |  val base = sql"SELECT id, name FROM users"
+    |
+    |  val where = SqlFragment.join(
+    |    List(
+    |      id.map(i => sql"id = ".param(i)),
+    |      name.map(n => sql"name = ".param(n))
+    |    ).flatten,
+    |    sql" AND "
+    |  )
+    |
+    |  (base ++ where).query[User]
+    |}
+    |
+    |// Reusable fragments
+    |val userTable = sql"users"
+    |val idColumn = sql"id"
+    |val nameColumn = sql"name"
+    |
+    |val selectUsers =
+    |  sql"SELECT " ++ idColumn ++ sql", " ++ nameColumn ++
+    |    sql" FROM " ++ userTable
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import doobie._
+    |
+    |// Fragment composition
+    |val whereId: Long => Fragment =
+    |  id => fr"WHERE id = \$id"
+    |
+    |val whereName: String => Fragment =
+    |  name => fr"AND name = \$name"
+    |
+    |// Dynamic query building
+    |def findUser(
+    |  id: Option[Long],
+    |  name: Option[String]
+    |): Query[User] = {
+    |  val base: Fragment =
+    |    fr"SELECT id, name FROM users"
+    |
+    |  val conditions: List[Fragment] =
+    |    List(
+    |      id.map(i => fr"id = \$i"),
+    |      name.map(n => fr"name = \$n")
+    |    ).flatten
+    |
+    |  val where: Fragment =
+    |    if (conditions.isEmpty)
+    |      Fragment.empty
+    |    else
+    |      conditions
+    |        .reduce(_ ++ fr"AND" ++ _)
+    |        .enclose(fr"WHERE ", fr"")
+    |
+    |  (base ++ where).query[User]
+    |}
+    |
+    |// Reusable fragments
+    |val userTable: Fragment = fr"users"
+    |val idCol: Fragment = fr"id"
+    |val nameCol: Fragment = fr"name"
+    |
+    |val selectUsers: Fragment =
+    |  fr"SELECT " ++ idCol ++ fr", " ++ nameCol ++
+    |    fr" FROM " ++ userTable
+  `}
   zioComment="SqlFragment with ++ operator for composition"
   catsEffectComment="Fragment with ++ for composition"
 />
@@ -333,376 +349,70 @@ val selectUsers: Fragment =
 Both libraries provide detailed error information for database failures.
 
 <ScalaComparisonBlock
-  zioCode={`import zio._
-import zio.jdbc._
-
-val queryWithHandling =
-  query("SELECT * FROM users")
-    .as[User]
-    .catchSome {
-      case _: SQLException =>
-        ZIO.debug("Database connection failed")
-
-      case e: Throwable =>
-        ZIO.debug(s"Query error: \${e.getMessage}")
-    }
-
-// Retry on connection errors
-val withRetry =
-  query("SELECT * FROM users")
-    .as[User]
-    .retry(
-      Schedule.exponential(1.second) &&
-        Schedule.recurs(5)
-    )
-    .catchAll { e =>
-      ZIO.debug(s"Failed after retries: \${e.getMessage}")
-    }`}
-  catsEffectCode={`import cats.effect._
-import doobie._
-import scala.concurrent.duration._
-
-val queryWithHandling: IO[List[User]] =
-  sql"SELECT * FROM users"
-    .query[User]
-    .to[List]
-    .handleErrorWith {
-      case _: java.sql.SQLException =>
-        IO.println("Database connection failed")
-          .as(List.empty)
-
-      case e =>
-        IO.println(s"Query error: \${e.getMessage}")
-          .as(List.empty)
-    }
-
-// Retry on connection errors
-val withRetry: IO[List[User]] =
-  sql"SELECT * FROM users"
-    .query[User]
-    .to[List]
-    .transact(transactor)
-    .handleErrorWith {
-      case _: java.sql.SQLException =>
-        // Retry logic
-        sql"SELECT * FROM users"
-          .query[User]
-          .to[List]
-          .transact(transactor)
-    }`}
+  zioCode={`
+    |import zio._
+    |import zio.jdbc._
+    |
+    |val queryWithHandling =
+    |  query("SELECT * FROM users")
+    |    .as[User]
+    |    .catchSome {
+    |      case _: SQLException =>
+    |        ZIO.debug("Database connection failed")
+    |
+    |      case e: Throwable =>
+    |        ZIO.debug(s"Query error: \${e.getMessage}")
+    |    }
+    |
+    |// Retry on connection errors
+    |val withRetry =
+    |  query("SELECT * FROM users")
+    |    .as[User]
+    |    .retry(
+    |      Schedule.exponential(1.second) &&
+    |        Schedule.recurs(5)
+    |    )
+    |    .catchAll { e =>
+    |      ZIO.debug(s"Failed after retries: \${e.getMessage}")
+    |    }
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import doobie._
+    |import scala.concurrent.duration._
+    |
+    |val queryWithHandling: IO[List[User]] =
+    |  sql"SELECT * FROM users"
+    |    .query[User]
+    |    .to[List]
+    |    .handleErrorWith {
+    |      case _: java.sql.SQLException =>
+    |        IO.println("Database connection failed")
+    |          .as(List.empty)
+    |
+    |      case e =>
+    |        IO.println(s"Query error: \${e.getMessage}")
+    |          .as(List.empty)
+    |    }
+    |
+    |// Retry on connection errors
+    |val withRetry: IO[List[User]] =
+    |  sql"SELECT * FROM users"
+    |    .query[User]
+    |    .to[List]
+    |    .transact(transactor)
+    |    .handleErrorWith {
+    |      case _: java.sql.SQLException =>
+    |        // Retry logic
+    |        sql"SELECT * FROM users"
+    |          .query[User]
+    |          .to[List]
+    |          .transact(transactor)
+    |    }
+  `}
   zioComment="ZIO error handling with catchSome"
   catsEffectComment="IO error handling with handleErrorWith"
 />
-
-## Schema Migration
-
-Both libraries integrate with schema migration tools.
-
-<ScalaComparisonBlock
-  zioCode={`import zio._
-import zio.jdbc._
-import zio.migrata.Migrata
-
-// Define migrations
-val migrations = List(
-  Migration(
-    id = "001_create_users",
-    up = sql"""
-      CREATE TABLE users (
-        id BIGSERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL
-      )
-    """,
-    down = sql"DROP TABLE users"
-  ),
-  Migration(
-    id = "002_add_email",
-    up = sql"""
-      ALTER TABLE users
-      ADD COLUMN email VARCHAR(255)
-    """,
-    down = sql"""
-      ALTER TABLE users
-      DROP COLUMN email
-    """
-  )
-)
-
-// Run migrations
-val runMigrations
-  : ZIO[ZConnectionPool, Throwable, Unit] =
-  Migrata.run(migrations)`}
-  catsEffectCode={`import cats.effect._
-import doobie._
-
-// Use Flyway for migrations (recommended)
-val runMigrations: IO[Unit] =
-  IO {
-    org.flywaydb.core.Flyway
-      .configure()
-      .dataSource(
-        "jdbc:postgresql://localhost/mydb",
-        "user",
-        "pass"
-      )
-      .load()
-      .migrate()
-  }
-
-// Or define migrations manually
-case class Migration(
-  name: String,
-  up: Update0,
-  down: Update0
-)
-
-val migrations = List(
-  Migration(
-    "001_create_users",
-    sql"""
-      CREATE TABLE users (
-        id BIGSERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL
-      )
-    """.update,
-    sql"DROP TABLE users".update
-  )
-)
-
-// Execute migration
-def runMigrations(
-  xa: Transactor[IO]
-): IO[Unit] =
-  migrations.traverse_(m =>
-    m.up.run.transact(xa)
-  )`}
-  zioComment="ZIO Migrata for schema migrations"
-  catsEffectComment="Use Flyway or manual migrations"
-/>
-
-## Quill: Compile-Time SQL
-
-ZIO Quill provides compile-time query validation and type-safe queries.
-
-<ScalaComparisonBlock
-  zioCode={`import zio._
-import io.getquill._
-import javax.sql.DataSource
-
-// Quill context
-val ctx = new PostgresZioJdbcContext(SnakeCase, "ctx")
-
-case class User(id: Long, name: String)
-
-// Compile-time query validation
-val findAll =
-  ctx.run(query[User])
-
-// Quoted queries are type-checked
-def findById(id: Long) =
-  ctx.run(
-    query[User].filter(_.id == lift(id))
-  )
-
-// Composable queries
-def findActiveUsers =
-  ctx.run(
-    query[User]
-      .filter(_.name != lift(""))
-      .sortBy(_.id)
-  )
-
-// Insert, Update, Delete
-def insert(name: String) =
-  ctx.run(
-    query[User].insert(
-      _.name -> lift(name)
-    )
-  )
-
-def updateName(id: Long, name: String) =
-  ctx.run(
-    query[User]
-      .filter(_.id == lift(id))
-      .update(_.name -> lift(name))
-  )
-
-// Transaction support
-val transfer =
-  ctx.transaction {
-    for {
-      _ <- ctx.run(
-        query[Account]
-          .filter(_.id == lift(fromId))
-          .update(_.balance -> lift(balance - amount))
-      )
-      _ <- ctx.run(
-        query[Account]
-          .filter(_.id == lift(toId))
-          .update(_.balance -> lift(balance + amount))
-      )
-    } yield ()
-  }`}
-  catsEffectCode={`import cats.effect._
-import doobie._
-
-// Doobie provides runtime query validation
-case class User(id: Long, name: String)
-
-val findAll =
-  sql"SELECT id, name FROM users"
-    .query[User]
-    .to[List]
-
-// Parameterized queries
-def findById(id: Long) =
-  sql"SELECT id, name FROM users WHERE id = \$id"
-    .query[User]
-    .option
-
-// Composable fragments
-def findActiveUsers =
-  sql"""
-    SELECT id, name FROM users
-    WHERE name <> ''
-    ORDER BY id
-  """.query[User]
-    .to[List]
-
-// Insert, Update, Delete
-def insert(name: String) =
-  sql"INSERT INTO users (name) VALUES (\$name)"
-    .update
-    .withUniqueGeneratedKeys[Long]("id")
-
-def updateName(id: Long, name: String) =
-  sql"""
-    UPDATE users
-    SET name = \$name
-    WHERE id = \$id
-  """.update.run
-
-// Transaction support
-val transfer =
-  (
-    sql"""
-      UPDATE accounts
-      SET balance = balance - \$amount
-      WHERE id = \$fromId
-    """.update.run,
-    sql"""
-      UPDATE accounts
-      SET balance = balance + \$amount
-      WHERE id = \$toId
-    """.update.run
-  ).mapN(_ + _).transact(transactor)`}
-  zioComment="Quill: compile-time validation, quoted DSL"
-  catsEffectComment="Doobie: runtime validation, sql interpolator"
-/>
-
-<Callout variant="tip">
-ZIO Quill validates queries at compile time and provides a quoted DSL. Doobie validates at runtime and uses string interpolation. Both are production-ready.
-</Callout>
-
-## PostgreSQL: Skunk vs ZIO PostgreSQL
-
-For PostgreSQL-specific applications, both libraries offer protocol-level drivers.
-
-<ScalaComparisonBlock
-  zioCode={`import zio._
-import zio.postgresql._
-import zio.schema._
-
-case class User(id: Long, name: String)
-
-object User {
-  implicit val schema: Schema[User] =
-    DeriveSchema.gen[User]
-}
-
-// Execute query
-val findAll =
-  execute("SELECT * FROM users")
-    .to[User]
-
-// Parameterized query
-val findById =
-  execute("SELECT * FROM users WHERE id = $1")
-    .args(42)
-    .option[User]
-
-// Transaction
-val tx =
-  transaction {
-    for {
-      _ <- execute(
-        "INSERT INTO users (name) VALUES ($1)"
-      ).args("Alice")
-      _ <- execute(
-        "INSERT INTO posts (user_id, title) VALUES ($1, $2)"
-      ).args(1, "First post")
-    } yield ()
-  }`}
-  catsEffectCode={`import cats.effect._
-import skunk._
-import skunk.implicits._
-import skunk.codec.all._
-
-case class User(id: Long, name: String)
-
-// Session from pool
-def session: Resource[IO, Session[IO]] =
-  Session.pooled[IO](
-    host = "localhost",
-    port = 5432,
-    user = "user",
-    database = "mydb",
-    max = 10
-  )
-
-// Execute query
-val findAll: Session[IO] => IO[List[User]] =
-  s =>
-    s.execute(
-      sql"SELECT id, name FROM users"
-        .query(int8 ~ varchar)
-        .map { case id ~ name =>
-          User(id, name)
-        }
-    )
-
-// Parameterized query
-val findById: Long => Session[IO] => IO[Option[User]] =
-  id =>
-    s =>
-      s.prepare(
-        sql"SELECT id, name FROM users WHERE id = $int8"
-          .query(int8 ~ varchar)
-          .map { case id ~ name =>
-            User(id, name)
-          }
-      ).flatMap(_.option(id))
-
-// Transaction
-val tx: Session[IO] => IO[Unit] =
-  s =>
-    s.transaction.use {
-      sql"INSERT INTO users (name) VALUES ($text)"
-        .command
-        .execute("Alice")
-        .flatMap(_ =>
-          sql"INSERT INTO posts (user_id, title) VALUES ($int8, $text)"
-            .command
-            .execute(1L, "First post")
-        )
-    }`}
-  zioComment="ZIO PostgreSQL with Schema derivation"
-  catsEffectComment="Skunk with codec system"
-/>
-
-<Callout variant="warning">
-Skunk and ZIO PostgreSQL are PostgreSQL-specific. For database-agnostic code, use Doobie or ZIO JDBC.
-</Callout>
 
 ## Key Differences
 

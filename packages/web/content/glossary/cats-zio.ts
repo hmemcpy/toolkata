@@ -390,8 +390,8 @@ export const catsZioGlossary: readonly GlossaryEntry[] = [
   {
     id: "http-5",
     category: "HTTP",
-    fromCommand: "Method.GET -> Root / \"path\"",
-    toCommand: "GET -> Root / \"path\"",
+    fromCommand: 'Method.GET -> Root / "path"',
+    toCommand: 'GET -> Root / "path"',
     note: "GET route pattern",
   },
   {
@@ -413,21 +413,21 @@ export const catsZioGlossary: readonly GlossaryEntry[] = [
     id: "database-1",
     category: "DATABASE",
     fromCommand: "query(sql).as[A]",
-    toCommand: "sql\"...\".query[A]",
+    toCommand: 'sql"...".query[A]',
     note: "Execute SELECT query",
   },
   {
     id: "database-2",
     category: "DATABASE",
     fromCommand: "execute(sql).param(v)",
-    toCommand: "sql\"...$v\"",
+    toCommand: 'sql"...$v"',
     note: "Parameterized query",
   },
   {
     id: "database-3",
     category: "DATABASE",
     fromCommand: "query(...).transaction",
-    toCommand: "sql\"...\".transact(xa)",
+    toCommand: 'sql"...".transact(xa)',
     note: "Execute transaction",
   },
   {

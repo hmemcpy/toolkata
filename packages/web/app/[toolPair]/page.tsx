@@ -165,7 +165,12 @@ export default async function ComparisonOverviewPage(props: {
     },
     { step: 10, title: "Interop", description: "ZIO-CE interop, migration", slug: "10-step" },
     { step: 11, title: "STM", description: "Software Transactional Memory", slug: "11-step" },
-    { step: 12, title: "Concurrent Structures", description: "Ref, Queue, Hub, Semaphore", slug: "12-step" },
+    {
+      step: 12,
+      title: "Concurrent Structures",
+      description: "Ref, Queue, Hub, Semaphore",
+      slug: "12-step",
+    },
     { step: 13, title: "Configuration", description: "ZIO Config vs Ciris", slug: "13-step" },
     { step: 14, title: "HTTP", description: "ZIO HTTP vs http4s", slug: "14-step" },
     { step: 15, title: "Database", description: "ZIO JDBC vs Doobie/Skunk", slug: "15-step" },

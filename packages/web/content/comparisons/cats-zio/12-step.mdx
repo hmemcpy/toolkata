@@ -15,27 +15,31 @@ ZIO and Cats Effect provide concurrent data structures for coordinating work bet
 `Ref` holds a single mutable value that can be safely accessed and modified concurrently.
 
 <ScalaComparisonBlock
-  zioCode={`import zio._
-
-// Create and modify a Ref
-val program =
-  for {
-    counter <- Ref.make(0)
-    _       <- counter.update(_ + 1)
-    _       <- counter.update(_ + 1)
-    value   <- counter.get
-  } yield value`}
-  catsEffectCode={`import cats.effect._
-import cats.effect.std._
-
-// Create and modify a Ref
-val program: IO[Int] =
-  for {
-    counter <- Ref.of[IO, Int](0)
-    _       <- counter.update(_ + 1)
-    _       <- counter.update(_ + 1)
-    value   <- counter.get
-  } yield value`}
+  zioCode={`
+    |import zio._
+    |
+    |// Create and modify a Ref
+    |val program =
+    |  for {
+    |    counter <- Ref.make(0)
+    |    _       <- counter.update(_ + 1)
+    |    _       <- counter.update(_ + 1)
+    |    value   <- counter.get
+    |  } yield value
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import cats.effect.std._
+    |
+    |// Create and modify a Ref
+    |val program: IO[Int] =
+    |  for {
+    |    counter <- Ref.of[IO, Int](0)
+    |    _       <- counter.update(_ + 1)
+    |    _       <- counter.update(_ + 1)
+    |    value   <- counter.get
+    |  } yield value
+  `}
   zioComment="Ref is built into ZIO"
   catsEffectComment="Ref requires cats-effect-std"
 />
@@ -47,27 +51,31 @@ Both libraries provide atomic operations: `update`, `modify`, `getAndUpdate`, `u
 `Queue` distributes work among multiple consumers. Each value is consumed by exactly one fiber.
 
 <ScalaComparisonBlock
-  zioCode={`import zio._
-
-// Distribute work to two workers
-val program =
-  for {
-    queue <- Queue.unbounded[Int]
-    _     <- queue.take.flatMap(work).forever.fork
-    _     <- queue.take.flatMap(work).forever.fork
-    _     <- ZIO.foreachDiscard(1 to 10)(queue.offer)
-  } yield ()`}
-  catsEffectCode={`import cats.effect._
-import cats.effect.std._
-
-// Distribute work to two workers
-val program: IO[Unit] =
-  for {
-    queue <- Queue.unbounded[IO, Int]
-    _     <- queue.take.flatMap(work).forever.start
-    _     <- queue.take.flatMap(work).forever.start
-    _     <- IO.foreachDiscard(1 to 10)(queue.offer)
-  } yield ()`}
+  zioCode={`
+    |import zio._
+    |
+    |// Distribute work to two workers
+    |val program =
+    |  for {
+    |    queue <- Queue.unbounded[Int]
+    |    _     <- queue.take.flatMap(work).forever.fork
+    |    _     <- queue.take.flatMap(work).forever.fork
+    |    _     <- ZIO.foreachDiscard(1 to 10)(queue.offer)
+    |  } yield ()
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import cats.effect.std._
+    |
+    |// Distribute work to two workers
+    |val program: IO[Unit] =
+    |  for {
+    |    queue <- Queue.unbounded[IO, Int]
+    |    _     <- queue.take.flatMap(work).forever.start
+    |    _     <- queue.take.flatMap(work).forever.start
+    |    _     <- IO.foreachDiscard(1 to 10)(queue.offer)
+    |  } yield ()
+  `}
   zioComment="ZIO uses .fork for concurrent execution"
   catsEffectComment="Cats Effect uses .start for concurrent execution"
 />
@@ -77,18 +85,22 @@ val program: IO[Unit] =
 Both libraries support bounded queues with different strategies when full:
 
 <ScalaComparisonBlock
-  zioCode={`import zio._
-
-// Different queue strategies
-val bounded   = Queue.bounded[Int](100)   // Back pressure
-val sliding   = Queue.sliding[Int](100)    // Drop oldest
-val dropping  = Queue.dropping[Int](100)   // Drop new`}
-  catsEffectCode={`import cats.effect._
-import cats.effect.std._
-
-// Different queue strategies
-val bounded   = Queue.bounded[IO, Int](100)   // Back pressure
-val dropping  = Queue.dropping[IO, Int](100)  // Drop new`}
+  zioCode={`
+    |import zio._
+    |
+    |// Different queue strategies
+    |val bounded   = Queue.bounded[Int](100)   // Back pressure
+    |val sliding   = Queue.sliding[Int](100)    // Drop oldest
+    |val dropping  = Queue.dropping[Int](100)   // Drop new
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import cats.effect.std._
+    |
+    |// Different queue strategies
+    |val bounded   = Queue.bounded[IO, Int](100)   // Back pressure
+    |val dropping  = Queue.dropping[IO, Int](100)  // Drop new
+  `}
   zioComment="ZIO: bounded, sliding, dropping"
   catsEffectComment="CE: bounded, dropping (no sliding in cats-effect-std)"
 />
@@ -102,32 +114,36 @@ Cats Effect does not provide a sliding queue. For sliding behavior, use fs2 `bro
 `Hub` broadcasts values to multiple subscribers. Each value is received by every subscriber (ZIO-only feature).
 
 <ScalaComparisonBlock
-  zioCode={`import zio._
-
-// Broadcast to multiple subscribers
-val program =
-  for {
-    hub <- Hub.bounded[Int](100)
-    _   <- hub.subscribe.flatMap(
-            dequeue => dequeue.take.flatMap(log).forever
-          ).fork
-    _   <- hub.subscribe.flatMap(
-            dequeue => dequeue.take.flatMap(persist).forever
-          ).fork
-    _   <- hub.publish(42)
-  } yield ()`}
-  catsEffectCode={`// No direct Hub equivalent in cats-effect
-// Use multiple queues or fs2 broadcast:
-import fs2._
-
-val stream: Stream[IO, Int] = Stream(1, 2, 3)
-
-// Broadcast to multiple sinks
-stream
-  .broadcastThrough[IO](
-    _.evalMap(log),
-    _.evalMap(persist)
-  )`}
+  zioCode={`
+    |import zio._
+    |
+    |// Broadcast to multiple subscribers
+    |val program =
+    |  for {
+    |    hub <- Hub.bounded[Int](100)
+    |    _   <- hub.subscribe.flatMap(
+    |            dequeue => dequeue.take.flatMap(log).forever
+    |          ).fork
+    |    _   <- hub.subscribe.flatMap(
+    |            dequeue => dequeue.take.flatMap(persist).forever
+    |          ).fork
+    |    _   <- hub.publish(42)
+    |  } yield ()
+  `}
+  catsEffectCode={`
+    |// No direct Hub equivalent in cats-effect
+    |// Use multiple queues or fs2 broadcast:
+    |import fs2._
+    |
+    |val stream: Stream[IO, Int] = Stream(1, 2, 3)
+    |
+    |// Broadcast to multiple sinks
+    |stream
+    |  .broadcastThrough[IO](
+    |    _.evalMap(log),
+    |    _.evalMap(persist)
+    |  )
+  `}
   zioComment="Hub is built-in, optimized for broadcast"
   catsEffectComment="Use fs2 Stream broadcasting instead"
 />
@@ -141,25 +157,29 @@ Cats Effect does not have a built-in `Hub` equivalent. Use fs2 `Stream.broadcast
 `Promise` allows one fiber to wait for a value to be set by another fiber.
 
 <ScalaComparisonBlock
-  zioCode={`import zio._
-
-// Coordinate two fibers
-val program =
-  for {
-    promise <- Promise.make[Nothing, Unit]
-    _       <- (Console.print("Hello, ") *> promise.succeed(())).fork
-    _       <- (promise.await *> Console.print("World!\n")).fork
-  } yield ()`}
-  catsEffectCode={`import cats.effect._
-import cats.effect.std._
-
-// Coordinate two fibers
-val program: IO[Unit] =
-  for {
-    deferred <- Deferred[IO, Unit]
-    _        <- (IO.print("Hello, ") *> deferred.complete(())).start
-    _        <- (deferred.get *> IO.print("World!\n")).start
-  } yield ()`}
+  zioCode={`
+    |import zio._
+    |
+    |// Coordinate two fibers
+    |val program =
+    |  for {
+    |    promise <- Promise.make[Nothing, Unit]
+    |    _       <- (Console.print("Hello, ") *> promise.succeed(())).fork
+    |    _       <- (promise.await *> Console.print("World!\n")).fork
+    |  } yield ()
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import cats.effect.std._
+    |
+    |// Coordinate two fibers
+    |val program: IO[Unit] =
+    |  for {
+    |    deferred <- Deferred[IO, Unit]
+    |    _        <- (IO.print("Hello, ") *> deferred.complete(())).start
+    |    _        <- (deferred.get *> IO.print("World!\n")).start
+    |  } yield ()
+  `}
   zioComment="Promise: succeed/await"
   catsEffectComment="Deferred: complete/get"
 />
@@ -173,32 +193,36 @@ val program: IO[Unit] =
 `Semaphore` limits the number of fibers that can access a resource concurrently.
 
 <ScalaComparisonBlock
-  zioCode={`import zio._
-
-// Limit to 5 concurrent database connections
-val program =
-  for {
-    semaphore <- Semaphore.make(5)
-    _         <- ZIO.foreachPar(1 to 100) { id =>
-                   semaphore.withPermit {
-                     queryDatabase(id)
-                   }
-                 }
-  } yield ()`}
-  catsEffectCode={`import cats.effect._
-import cats.effect.std._
-import cats.syntax.all._
-
-// Limit to 5 concurrent database connections
-val program: IO[Unit] =
-  for {
-    semaphore <- Semaphore[IO](5)
-    _         <- (1 to 100).parTraverse_ { id =>
-                   semaphore.permit.use { _ =>
-                     queryDatabase(id)
-                   }
-                 }
-  } yield ()`}
+  zioCode={`
+    |import zio._
+    |
+    |// Limit to 5 concurrent database connections
+    |val program =
+    |  for {
+    |    semaphore <- Semaphore.make(5)
+    |    _         <- ZIO.foreachPar(1 to 100) { id =>
+    |                   semaphore.withPermit {
+    |                     queryDatabase(id)
+    |                   }
+    |                 }
+    |  } yield ()
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import cats.effect.std._
+    |import cats.syntax.all._
+    |
+    |// Limit to 5 concurrent database connections
+    |val program: IO[Unit] =
+    |  for {
+    |    semaphore <- Semaphore[IO](5)
+    |    _         <- (1 to 100).parTraverse_ { id =>
+    |                   semaphore.permit.use { _ =>
+    |                     queryDatabase(id)
+    |                   }
+    |                 }
+    |  } yield ()
+  `}
   zioComment="withPermit automatically acquires/releases"
   catsEffectComment="permit.use creates a scoped resource"
 />
@@ -206,35 +230,39 @@ val program: IO[Unit] =
 ### Semaphore Pattern Differences
 
 <ScalaComparisonBlock
-  zioCode={`import zio._
-
-// ZIO semaphore patterns
-val semaphore = Semaphore.make(5)
-
-// Pattern 1: withPermit (auto release)
-semaphore.withPermit(action)
-
-// Pattern 2: manual acquire/release
-for {
-  _ <- semaphore.acquire
-  _ <- action
-  _ <- semaphore.release
-} yield ()`}
-  catsEffectCode={`import cats.effect._
-import cats.effect.std._
-
-// Cats Effect semaphore patterns
-val semaphore = Semaphore[IO](5)
-
-// Pattern 1: permit.use (auto release)
-semaphore.permit.use { _ => action }
-
-// Pattern 2: manual acquire/release
-for {
-  _ <- semaphore.acquire
-  _ <- action
-  _ <- semaphore.release
-} yield ()`}
+  zioCode={`
+    |import zio._
+    |
+    |// ZIO semaphore patterns
+    |val semaphore = Semaphore.make(5)
+    |
+    |// Pattern 1: withPermit (auto release)
+    |semaphore.withPermit(action)
+    |
+    |// Pattern 2: manual acquire/release
+    |for {
+    |  _ <- semaphore.acquire
+    |  _ <- action
+    |  _ <- semaphore.release
+    |} yield ()
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import cats.effect.std._
+    |
+    |// Cats Effect semaphore patterns
+    |val semaphore = Semaphore[IO](5)
+    |
+    |// Pattern 1: permit.use (auto release)
+    |semaphore.permit.use { _ => action }
+    |
+    |// Pattern 2: manual acquire/release
+    |for {
+    |  _ <- semaphore.acquire
+    |  _ <- action
+    |  _ <- semaphore.release
+    |} yield ()
+  `}
   zioComment="withPermit takes ZIO directly"
   catsEffectComment="permit.use takes a function returning IO"
 />

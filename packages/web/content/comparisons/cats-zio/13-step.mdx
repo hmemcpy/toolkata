@@ -24,40 +24,45 @@ Hardcoding values forces redeployments for environment changes. We need:
 Both libraries load configuration values into typesafe case classes.
 
 <ScalaComparisonBlock
-  zioCode={`import zio._
-import zio.config._
-import zio.config.magnolia._
-
-case class AppConfig(host: String, port: Int)
-
-object AppConfig {
-  implicit val cfg: Config[AppConfig] =
-    deriveConfig[AppConfig]
-}
-
-object MainApp extends ZIOAppDefault {
-  def run =
-    for {
-      cfg <- ZIO.config[AppConfig]
-      _   <- Console.printLine(s"Server: \${cfg.host}:\${cfg.port}")
-    } yield ()`}
-  catsEffectCode={`import cats.effect._
-import cats.syntax.all._
-import ciris._
-
-case class AppConfig(host: String, port: Int)
-
-object MainApp extends IOApp.Simple {
-  val cfg: ConfigValue[IO, AppConfig] = (
-    env("HOST").as[String].default("localhost"),
-    env("PORT").as[Int].default(8080)
-  ).parMapN(AppConfig)
-
-  val run: IO[Unit] =
-    cfg.flatMap { c =>
-      IO.println(s"Server: \${c.host}:\${c.port}")
-    }
-  }`}
+  zioCode={`
+    |import zio._
+    |import zio.config._
+    |import zio.config.magnolia._
+    |
+    |case class AppConfig(host: String, port: Int)
+    |
+    |object AppConfig {
+    |  implicit val cfg: Config[AppConfig] =
+    |    deriveConfig[AppConfig]
+    |}
+    |
+    |object MainApp extends ZIOAppDefault {
+    |  def run =
+    |    for {
+    |      cfg <- ZIO.config[AppConfig]
+    |      _   <- Console.printLine(s"Server: \${cfg.host}:\${cfg.port}")
+    |    } yield ()
+    |}
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import cats.syntax.all._
+    |import ciris._
+    |
+    |case class AppConfig(host: String, port: Int)
+    |
+    |object MainApp extends IOApp.Simple {
+    |  val cfg: ConfigValue[IO, AppConfig] = (
+    |    env("HOST").as[String].default("localhost"),
+    |    env("PORT").as[Int].default(8080)
+    |  ).parMapN(AppConfig)
+    |
+    |  val run: IO[Unit] =
+    |    cfg.flatMap { c =>
+    |      IO.println(s"Server: \${c.host}:\${c.port}")
+    |    }
+    |}
+  `}
   zioComment="ZIO Config is built-in"
   catsEffectComment="Ciris is a separate library"
 />
@@ -71,41 +76,45 @@ ZIO Config is built into ZIO core. Ciris is a separate dependency: `is.ciris:cir
 Both libraries support multiple configuration sources with fallback behavior.
 
 <ScalaComparisonBlock
-  zioCode={`import zio._
-import zio.config._
-
-// Environment variables
-val envCfg: ConfigProvider =
-  ConfigProvider.envProvider
-
-// System properties
-val propCfg: ConfigProvider =
-  ConfigProvider.propsProvider
-
-// Fallback chain: try env, then props
-val fallback: ConfigProvider =
-  envCfg.orElse(propCfg)
-
-// Use custom provider for a specific load
-val cfg =
-  ZIO.withConfigProvider(fallback) {
-    ZIO.config[AppConfig]
-  }`}
-  catsEffectCode={`import cats.effect._
-import ciris._
-
-// Environment variables
-val port =
-  env("API_PORT").as[Int]
-
-// System property fallback
-val portWithFallback =
-  env("API_PORT").as[Int]
-    .or(prop("api.port").as[Int])
-
-// Load with effect type
-val cfg: IO[Int] =
-  portWithFallback.load[IO]`}
+  zioCode={`
+    |import zio._
+    |import zio.config._
+    |
+    |// Environment variables
+    |val envCfg: ConfigProvider =
+    |  ConfigProvider.envProvider
+    |
+    |// System properties
+    |val propCfg: ConfigProvider =
+    |  ConfigProvider.propsProvider
+    |
+    |// Fallback chain: try env, then props
+    |val fallback: ConfigProvider =
+    |  envCfg.orElse(propCfg)
+    |
+    |// Use custom provider for a specific load
+    |val cfg =
+    |  ZIO.withConfigProvider(fallback) {
+    |    ZIO.config[AppConfig]
+    |  }
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import ciris._
+    |
+    |// Environment variables
+    |val port =
+    |  env("API_PORT").as[Int]
+    |
+    |// System property fallback
+    |val portWithFallback =
+    |  env("API_PORT").as[Int]
+    |    .or(prop("api.port").as[Int])
+    |
+    |// Load with effect type
+    |val cfg: IO[Int] =
+    |  portWithFallback.load[IO]
+  `}
   zioComment="ConfigProvider has orElse for fallback"
   catsEffectComment="ConfigValue has or for fallback"
 />
@@ -115,70 +124,74 @@ val cfg: IO[Int] =
 Real applications have nested configuration structures.
 
 <ScalaComparisonBlock
-  zioCode={`import zio._
-import zio.config._
-import zio.config.magnolia._
-
-case class DatabaseConfig(
-  url: String,
-  username: String,
-  password: Secret // Prevents logging leaks
-)
-
-case class AppConfig(
-  host: String,
-  port: Int,
-  database: DatabaseConfig
-)
-
-object AppConfig {
-  implicit val cfg: Config[AppConfig] =
-    deriveConfig[AppConfig]
-}
-
-// config.conf:
-// host = "localhost"
-// port = 8080
-// database {
-//   url = "jdbc:postgresql://localhost/mydb"
-//   username = "user"
-//   password = "secret"
-// }
-
-val program =
-  for {
-    cfg <- ZIO.config[AppConfig]
-  } yield cfg`}
-  catsEffectCode={`import cats.effect._
-import cats.syntax.all._
-import ciris._
-
-case class DatabaseConfig(
-  url: String,
-  username: String,
-  password: String
-)
-
-case class AppConfig(
-  host: String,
-  port: Int,
-  database: DatabaseConfig
-)
-
-// Environment variables with underscores for nesting:
-// DATABASE_URL = "jdbc:postgresql://localhost/mydb"
-// DATABASE_USERNAME = "user"
-// DATABASE_PASSWORD = "secret"
-
-val cfg: ConfigValue[IO, AppConfig] = (
-  env("HOST").as[String].default("localhost"),
-  env("PORT").as[Int].default(8080),
-  (
-    env("DATABASE_URL").as[String],
-    env("DATABASE_USERNAME").as[String],
-    env("DATABASE_PASSWORD").secret[String]
-  ).parMapN(DatabaseConfig)
-).parMapN(AppConfig)`}
+  zioCode={`
+    |import zio._
+    |import zio.config._
+    |import zio.config.magnolia._
+    |
+    |case class DatabaseConfig(
+    |  url: String,
+    |  username: String,
+    |  password: Secret // Prevents logging leaks
+    |)
+    |
+    |case class AppConfig(
+    |  host: String,
+    |  port: Int,
+    |  database: DatabaseConfig
+    |)
+    |
+    |object AppConfig {
+    |  implicit val cfg: Config[AppConfig] =
+    |    deriveConfig[AppConfig]
+    |}
+    |
+    |// config.conf:
+    |// host = "localhost"
+    |// port = 8080
+    |// database {
+    |//   url = "jdbc:postgresql://localhost/mydb"
+    |//   username = "user"
+    |//   password = "secret"
+    |// }
+    |
+    |val program =
+    |  for {
+    |    cfg <- ZIO.config[AppConfig]
+    |  } yield cfg
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import cats.syntax.all._
+    |import ciris._
+    |
+    |case class DatabaseConfig(
+    |  url: String,
+    |  username: String,
+    |  password: String
+    |)
+    |
+    |case class AppConfig(
+    |  host: String,
+    |  port: Int,
+    |  database: DatabaseConfig
+    |)
+    |
+    |// Environment variables with underscores for nesting:
+    |// DATABASE_URL = "jdbc:postgresql://localhost/mydb"
+    |// DATABASE_USERNAME = "user"
+    |// DATABASE_PASSWORD = "secret"
+    |
+    |val cfg: ConfigValue[IO, AppConfig] = (
+    |  env("HOST").as[String].default("localhost"),
+    |  env("PORT").as[Int].default(8080),
+    |  (
+    |    env("DATABASE_URL").as[String],
+    |    env("DATABASE_USERNAME").as[String],
+    |    env("DATABASE_PASSWORD").secret[String]
+    |  ).parMapN(DatabaseConfig)
+    |).parMapN(AppConfig)
+  `}
   zioComment="Nested configs from HOCON files"
   catsEffectComment="Nested configs via underscore naming convention"
 />
@@ -188,54 +201,58 @@ val cfg: ConfigValue[IO, AppConfig] = (
 Both libraries handle optional configuration with sensible defaults.
 
 <ScalaComparisonBlock
-  zioCode={`import zio._
-import zio.config._
-
-case class AppConfig(
-  host: String,
-  port: Int,
-  timeout: Option[Duration] // Optional
-)
-
-object AppConfig {
-  implicit val cfg: Config[AppConfig] =
-    deriveConfig[AppConfig]
-}
-
-// ZIO Config derives Optional automatically
-// For custom defaults, use withDefault:
-val portCfg =
-  Config.int("port").withDefault(8080)
-
-// Or validate values:
-val validatedPort =
-  Config.int("port").validate(
-    "Port must be between 1-65535"
-  )(p => p >= 1 && p <= 65535)`}
-  catsEffectCode={`import cats.effect._
-import cats.syntax.all._
-import ciris._
-import scala.concurrent.duration._
-
-case class AppConfig(
-  host: String,
-  port: Int,
-  timeout: Option[Duration]
-)
-
-// .option wraps in Option
-val timeout =
-  env("TIMEOUT").as[Duration].option
-
-// .default provides a fallback
-val retries =
-  env("RETRIES").as[Int].default(3)
-
-val cfg: ConfigValue[IO, AppConfig] = (
-  env("HOST").as[String].default("localhost"),
-  env("PORT").as[Int].default(8080),
-  timeout
-).parMapN(AppConfig)`}
+  zioCode={`
+    |import zio._
+    |import zio.config._
+    |
+    |case class AppConfig(
+    |  host: String,
+    |  port: Int,
+    |  timeout: Option[Duration] // Optional
+    |)
+    |
+    |object AppConfig {
+    |  implicit val cfg: Config[AppConfig] =
+    |    deriveConfig[AppConfig]
+    |}
+    |
+    |// ZIO Config derives Optional automatically
+    |// For custom defaults, use withDefault:
+    |val portCfg =
+    |  Config.int("port").withDefault(8080)
+    |
+    |// Or validate values:
+    |val validatedPort =
+    |  Config.int("port").validate(
+    |    "Port must be between 1-65535"
+    |  )(p => p >= 1 && p <= 65535)
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import cats.syntax.all._
+    |import ciris._
+    |import scala.concurrent.duration._
+    |
+    |case class AppConfig(
+    |  host: String,
+    |  port: Int,
+    |  timeout: Option[Duration]
+    |)
+    |
+    |// .option wraps in Option
+    |val timeout =
+    |  env("TIMEOUT").as[Duration].option
+    |
+    |// .default provides a fallback
+    |val retries =
+    |  env("RETRIES").as[Int].default(3)
+    |
+    |val cfg: ConfigValue[IO, AppConfig] = (
+    |  env("HOST").as[String].default("localhost"),
+    |  env("PORT").as[Int].default(8080),
+    |  timeout
+    |).parMapN(AppConfig)
+  `}
   zioComment="Optional derived automatically"
   catsEffectComment="Use .option for optional values"
 />
@@ -245,61 +262,65 @@ val cfg: ConfigValue[IO, AppConfig] = (
 Validate configuration values before your application starts.
 
 <ScalaComparisonBlock
-  zioCode={`import zio._
-import zio.config._
-
-// Validate port range
-val portCfg =
-  Config
-    .int("port")
-    .validate("Port must be 1-65535")(
-      p => p >= 1 && p <= 65535
-    )
-
-// Custom type with validation
-sealed abstract case class PositiveInt(value: Int)
-
-object PositiveInt {
-  def make(value: Int): Option[PositiveInt] =
-    if (value > 0) Some(new PositiveInt(value) {})
-    else None
-
-  implicit val cfg: Config[PositiveInt] =
-    Config.int.mapOrFail { value =>
-      make(value)
-        .toRight(
-          Config.Error.InvalidData(
-            Chunk.empty,
-            s"\$value is not positive"
-          )
-        )
-    }
-}
-
-val maxRetries =
-  ZIO.config[PositiveInt](
-    Config.int("max_retries")
-  )`}
-  catsEffectCode={`import cats.effect._
-import cats.syntax.all._
-import ciris._
-
-// Custom decoder with validation
-sealed abstract case class PositiveInt(value: Int)
-
-object PositiveInt {
-  def make(value: Int): Option[PositiveInt] =
-    if (value > 0) Some(new PositiveInt(value) {})
-    else None
-
-  implicit val decoder: ConfigDecoder[String, PositiveInt] =
-    ConfigDecoder[String, Int].mapOption("PositiveInt")(
-      make
-    )
-}
-
-val maxRetries: ConfigValue[IO, PositiveInt] =
-  env("MAX_RETRIES").as[PositiveInt]`}
+  zioCode={`
+    |import zio._
+    |import zio.config._
+    |
+    |// Validate port range
+    |val portCfg =
+    |  Config
+    |    .int("port")
+    |    .validate("Port must be 1-65535")(
+    |      p => p >= 1 && p <= 65535
+    |    )
+    |
+    |// Custom type with validation
+    |sealed abstract case class PositiveInt(value: Int)
+    |
+    |object PositiveInt {
+    |  def make(value: Int): Option[PositiveInt] =
+    |    if (value > 0) Some(new PositiveInt(value) {})
+    |    else None
+    |
+    |  implicit val cfg: Config[PositiveInt] =
+    |    Config.int.mapOrFail { value =>
+    |      make(value)
+    |        .toRight(
+    |          Config.Error.InvalidData(
+    |            Chunk.empty,
+    |            s"\$value is not positive"
+    |          )
+    |        )
+    |    }
+    |}
+    |
+    |val maxRetries =
+    |  ZIO.config[PositiveInt](
+    |    Config.int("max_retries")
+    |  )
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import cats.syntax.all._
+    |import ciris._
+    |
+    |// Custom decoder with validation
+    |sealed abstract case class PositiveInt(value: Int)
+    |
+    |object PositiveInt {
+    |  def make(value: Int): Option[PositiveInt] =
+    |    if (value > 0) Some(new PositiveInt(value) {})
+    |    else None
+    |
+    |  implicit val decoder: ConfigDecoder[String, PositiveInt] =
+    |    ConfigDecoder[String, Int].mapOption("PositiveInt")(
+    |      make
+    |    )
+    |}
+    |
+    |val maxRetries: ConfigValue[IO, PositiveInt] =
+    |  env("MAX_RETRIES").as[PositiveInt]
+  `}
   zioComment="Use .validate or .mapOrFail"
   catsEffectComment="Write custom ConfigDecoder instances"
 />
@@ -309,33 +330,37 @@ val maxRetries: ConfigValue[IO, PositiveInt] =
 Handle sensitive configuration securely.
 
 <ScalaComparisonBlock
-  zioCode={`import zio._
-import zio.config._
-
-case class DatabaseConfig(
-  url: String,
-  password: Secret // Prevents accidental logging
-)
-
-object DatabaseConfig {
-  implicit val cfg: Config[DatabaseConfig] =
-    deriveConfig[DatabaseConfig]
-}
-
-// ZIO Config's Secret type:
-// - Won't show in toString/debug output
-// - Uses constant-time comparison
-// - Can be wiped from memory after use`}
-  catsEffectCode={`import cats.effect._
-import ciris._
-
-// Using .secret to wrap sensitive values
-val apiKey: ConfigValue[IO, Secret[String]] =
-  env("API_KEY").secret
-
-// Secret displays hash, not actual value:
-// Secret("RacrqvWjuu4KVmnTG9b6xyZMTP7jnX")
-// => Secret(0a7425a)`}
+  zioCode={`
+    |import zio._
+    |import zio.config._
+    |
+    |case class DatabaseConfig(
+    |  url: String,
+    |  password: Secret // Prevents accidental logging
+    |)
+    |
+    |object DatabaseConfig {
+    |  implicit val cfg: Config[DatabaseConfig] =
+    |    deriveConfig[DatabaseConfig]
+    |}
+    |
+    |// ZIO Config's Secret type:
+    |// - Won't show in toString/debug output
+    |// - Uses constant-time comparison
+    |// - Can be wiped from memory after use
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import ciris._
+    |
+    |// Using .secret to wrap sensitive values
+    |val apiKey: ConfigValue[IO, Secret[String]] =
+    |  env("API_KEY").secret
+    |
+    |// Secret displays hash, not actual value:
+    |// Secret("RacrqvWjuu4KVmnTG9b6xyZMTP7jnX")
+    |// => Secret(0a7425a)
+  `}
   zioComment="Secret type prevents leaks"
   catsEffectComment=".secret wraps in Secret type"
 />
