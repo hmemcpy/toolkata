@@ -1,0 +1,20 @@
+# Default sandbox settings for effect-zio comparison
+#
+# The effect-zio tutorial uses code comparisons between ZIO (Scala) and Effect (TypeScript).
+# Terminal functionality is disabled as this is a conceptual comparison tutorial.
+#
+# Override in step frontmatter:
+# ---
+# sandbox:
+#   enabled: true
+#   environment: "typescript"
+#   timeout: 120
+#   init: []
+# ---
+
+defaults:
+  sandbox:
+    enabled: false
+    environment: "typescript"
+    timeout: 60
+    init: []

@@ -1,0 +1,76 @@
+---
+title: "Effect for ZIO Developers"
+description: "Learn Effect if you already know ZIO"
+estimatedTime: "~75 min"
+---
+
+# Effect ← ZIO
+
+**Effect** for developers who know **ZIO 2**.
+
+## Why Learn Effect?
+
+Effect is a powerful functional effect system for TypeScript that brings ZIO's principles to the JavaScript ecosystem. While Effect and ZIO share the same core design philosophy, they differ in parameter order, error handling semantics, and ecosystem integration.
+
+### Key Differences
+
+- **Parameter Order:** Effect is `Effect<A, E, R>` vs ZIO's `ZIO[-R, +E, +A]` — Success type comes first
+- **Type System:** No variance annotations, no type aliases needed for readability
+- **Error Channel:** Fatal defects (`Effect.die`) vs typed errors (`Effect.fail`)
+- **Generators:** `Effect.gen` with `yield*` instead of for-comprehensions
+- **Services:** `Context.Tag` class pattern vs `ZIO.service[T]`
+
+## What You'll Learn
+
+┌─ Fundamentals ──────────────────────────────────────┐
+│                                                      │
+│  →  1. Effect<A,E,R> vs ZIO[-R,+E,+A]        ~5 min   │
+│  ○  2. Creating Effects                     ~5 min   │
+│  ○  3. Error Handling                       ~5 min   │
+│  ○  4. Composition with Generators          ~4 min   │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+
+┌─ Application Architecture ───────────────────────────┐
+│                                                      │
+│  ○  5. Services and Context.Tag            ~6 min   │
+│  ○  6. Layers                             ~5 min   │
+│  ○  7. Resource Management                ~5 min   │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+
+┌─ Concurrency ─────────────────────────────────────────┐
+│                                                      │
+│  ○  8. Fibers and Forking                   ~6 min   │
+│  ○  9. Concurrent Combinators              ~5 min   │
+│  ○  10. Ref and Concurrent State            ~5 min   │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+
+┌─ Advanced Topics ─────────────────────────────────────┐
+│                                                      │
+│  ○  11. STM                              ~6 min   │
+│  ○  12. Streaming                         ~6 min   │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+
+┌─ Ecosystem ───────────────────────────────────────────┐
+│                                                      │
+│  ○  13. Schema (Validation)                 ~6 min   │
+│  ○  14. Platform & HTTP                     ~6 min   │
+│  ○  15. Database Access                    ~6 min   │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+
+<Callout variant="tip">
+Effect brings ZIO's principled effect system to TypeScript with full type safety,
+excellent error messages, and zero runtime overhead when compiled.
+</Callout>
+
+## Prerequisites
+
+- TypeScript 5.0+
+- Basic familiarity with functional programming concepts
+- Experience with ZIO 2
+
+[Start Learning →](/effect-zio/1)

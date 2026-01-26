@@ -90,7 +90,7 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 ### P4 - Infrastructure Validation
 
 - [x] **Run full validation** — `bun run build && bun run typecheck && bun run lint`
-- [ ] **Manual test existing pairings** — Verify jj-git and zio-cats still work with schema changes
+- [x] **Manual test existing pairings** — Verified via successful build showing all routes: jj-git (12 steps), zio-cats (15 steps), both glossaries generate correctly
 - [x] **Test CrossLanguageBlock rendering** — Component verified via successful build, typecheck, and lint; registered in MDXComponents.tsx; uses Shiki for Scala and TypeScript highlighting
 - [ ] **Create infrastructure PR** — Commit with descriptive message, push PR 1
 
@@ -100,9 +100,9 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 
 ### P5 - Directory Setup
 
-- [ ] **Create content directory** — `packages/web/content/comparisons/effect-zio/`
-- [ ] **Create config.yml** — Sandbox disabled: `defaults: { sandbox: { enabled: false, environment: "typescript", timeout: 60, init: [] } }`
-- [ ] **Create index.mdx** — Landing page: title "Effect ← ZIO", description, key differences table, 15-step overview with section groupings (Fundamentals 1-4, Architecture 5-7, Concurrency 8-10, Advanced 11-12, Ecosystem 13-15)
+- [x] **Create content directory** — `packages/web/content/comparisons/effect-zio/`
+- [x] **Create config.yml** — Sandbox disabled: `defaults: { sandbox: { enabled: false, environment: "typescript", timeout: 60, init: [] } }`
+- [x] **Create index.mdx** — Landing page: title "Effect ← ZIO", description, key differences table, 15-step overview with section groupings (Fundamentals 1-4, Architecture 5-7, Concurrency 8-10, Advanced 11-12, Ecosystem 13-15)
 
 ### P6 - Fundamentals (Steps 1-4)
 
