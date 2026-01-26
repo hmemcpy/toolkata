@@ -32,7 +32,9 @@ interface UseSandboxStatusResult {
 // Default poll interval (30 seconds)
 const POLL_INTERVAL = 30000
 
-export function useSandboxStatus(opts: { readonly enabled?: boolean } = {}): UseSandboxStatusResult {
+export function useSandboxStatus(
+  opts: { readonly enabled?: boolean } = {},
+): UseSandboxStatusResult {
   const { enabled = true } = opts
   const [status, setStatus] = useState<SandboxStatus | null>(null)
   const [isLoading, setIsLoading] = useState(true)

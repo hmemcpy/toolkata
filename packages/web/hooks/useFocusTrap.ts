@@ -55,13 +55,11 @@ function getFocusableElements(container: HTMLElement): readonly HTMLElement[] {
     "[contenteditable]",
   ].join(", ")
 
-  return Array.from(container.querySelectorAll<HTMLElement>(focusableSelectors)).filter(
-    (el) => {
-      // Filter out hidden elements
-      const style = window.getComputedStyle(el)
-      return style.display !== "none" && style.visibility !== "hidden" && el.offsetParent !== null
-    },
-  )
+  return Array.from(container.querySelectorAll<HTMLElement>(focusableSelectors)).filter((el) => {
+    // Filter out hidden elements
+    const style = window.getComputedStyle(el)
+    return style.display !== "none" && style.visibility !== "hidden" && el.offsetParent !== null
+  })
 }
 
 /**

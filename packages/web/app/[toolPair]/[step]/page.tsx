@@ -1,5 +1,6 @@
 import { MDXRemote } from "next-mdx-remote/rsc"
 import { notFound } from "next/navigation"
+import remarkGfm from "remark-gfm"
 import { Footer } from "../../../components/ui/Footer"
 import { Header } from "../../../components/ui/Header"
 import { ShrinkingLayout } from "../../../components/ui/ShrinkingLayout"
@@ -130,7 +131,15 @@ export default async function StepPage(props: {
           >
             {/* MDX Content */}
             <article className="prose prose-invert max-w-none">
-              <MDXRemote source={content} components={mdxComponents} />
+              <MDXRemote
+                source={content}
+                components={mdxComponents}
+                options={{
+                  mdxOptions: {
+                    remarkPlugins: [remarkGfm],
+                  },
+                }}
+              />
             </article>
           </StepPageClientWrapper>
         </main>

@@ -264,18 +264,15 @@ select:focus {
   background: var(--color-surface) !important;
 }
 
-/* ScalaComparisonBlock shiki container - preserve whitespace and indentation */
+/* ScalaComparisonBlock shiki container - transparent background to match container */
 .shiki-container pre {
   margin: 0;
   padding: 0;
   background: transparent !important;
-  white-space: pre;
-  overflow-x: auto;
 }
 
-.shiki-container pre code {
-  white-space: pre;
-  display: block;
+.shiki-container .shiki {
+  background: transparent !important;
 }
 
 /* Light theme Shiki overrides */

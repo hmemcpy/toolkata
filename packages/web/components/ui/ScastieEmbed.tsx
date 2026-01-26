@@ -261,7 +261,18 @@ export function ScastieEmbed({
     return () => {
       cancelled = true
     }
-  }, [code, snippetId, user, update, theme, scalaVersion, dependencies, isWorksheetMode, sbtConfig, targetType])
+  }, [
+    code,
+    snippetId,
+    user,
+    update,
+    theme,
+    scalaVersion,
+    dependencies,
+    isWorksheetMode,
+    sbtConfig,
+    targetType,
+  ])
 
   // Fallback: static code block
   if (hasError || !isLoaded) {
@@ -275,9 +286,7 @@ export function ScastieEmbed({
           <code>{code}</code>
         </pre>
         {!isLoaded && (
-          <p className="mt-2 text-xs text-[var(--color-text-muted)]">
-            Loading Scala playground...
-          </p>
+          <p className="mt-2 text-xs text-[var(--color-text-muted)]">Loading Scala playground...</p>
         )}
         {hasError && (
           <p className="mt-2 text-xs text-[var(--color-warning)]">

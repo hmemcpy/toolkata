@@ -5,6 +5,8 @@
  * Tutorial direction: Cats Effect (what you know) → ZIO (what you're learning).
  * Cats Effect shown on left (purple), ZIO on right (blue).
  *
+ * Uses server-side Shiki highlighting to avoid flash of unstyled content.
+ *
  * @example
  * ```tsx
  * <ScalaComparisonBlock
@@ -16,23 +18,16 @@
  * ```
  */
 
-"use client"
-
-import { useEffect, useState } from "react"
-import {
-  createHighlighter,
-  type BundledLanguage,
-  type BundledTheme,
-} from "shiki"
+import { codeToHtml } from "shiki"
 
 interface ScalaComparisonBlockProps {
   /**
-   * ZIO code to display (left column).
+   * ZIO code to display (right column).
    */
   readonly zioCode: string
 
   /**
-   * Cats Effect code to display (right column).
+   * Cats Effect code to display (left column).
    */
   readonly catsEffectCode: string
 
@@ -57,82 +52,44 @@ interface ScalaComparisonBlockProps {
  *
  * Shows Cats Effect code (purple) on the left and ZIO code (blue) on the right.
  * This matches the tutorial direction: Cats Effect → ZIO.
- * Uses Shiki for client-side syntax highlighting.
+ * Uses server-side Shiki highlighting for instant rendering without flash.
  */
-export function ScalaComparisonBlock({
+export async function ScalaComparisonBlock({
   zioCode,
   catsEffectCode,
   zioComment,
   catsEffectComment,
   language = "scala",
 }: ScalaComparisonBlockProps) {
-  const [zioHtml, setZioHtml] = useState<string>("")
-  const [ceHtml, setCeHtml] = useState<string>("")
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function highlightCode() {
-      try {
-        const highlighter = await createHighlighter({
-          themes: ["github-dark"],
-          langs: [language as BundledLanguage],
-        })
-
-        if (cancelled) return
-
-        const zioHighlighted = highlighter.codeToHtml(zioCode, {
-          lang: language as BundledLanguage,
-          theme: "github-dark" as BundledTheme,
-        })
-
-        const ceHighlighted = highlighter.codeToHtml(catsEffectCode, {
-          lang: language as BundledLanguage,
-          theme: "github-dark" as BundledTheme,
-        })
-
-        if (cancelled) return
-
-        setZioHtml(zioHighlighted)
-        setCeHtml(ceHighlighted)
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    highlightCode()
-
-    return () => {
-      cancelled = true
-    }
-  }, [zioCode, catsEffectCode, language])
+  // Server-side syntax highlighting - no loading state needed
+  const [ceHtml, zioHtml] = await Promise.all([
+    codeToHtml(catsEffectCode, {
+      lang: language,
+      theme: "github-dark",
+    }),
+    codeToHtml(zioCode, {
+      lang: language,
+      theme: "github-dark",
+    }),
+  ])
 
   return (
     <div className="my-6 grid grid-cols-1 gap-4 md:grid-cols-2">
       {/* Cats Effect column (purple) - what you know */}
-      <div className="overflow-hidden rounded border border-[var(--color-border)] bg-[var(--color-ce-bg)]">
-        <div className="border-b border-[var(--color-border)] px-4 py-2">
+      <div className="overflow-hidden rounded border border-[var(--color-border-focus)] bg-[var(--color-ce-bg)]">
+        <div className="border-b border-[var(--color-border-focus)] px-4 py-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-ce)]">
             Cats Effect
           </span>
         </div>
         <div className="p-4">
-          {isLoading ? (
-            <pre className="overflow-x-auto text-sm text-[var(--color-text)]">
-              <code>{catsEffectCode}</code>
-            </pre>
-          ) : (
-            <div
-              className="shiki-container text-sm"
-              dangerouslySetInnerHTML={{ __html: ceHtml }}
-              style={{ background: "transparent" }}
-            />
-          )}
+          <div
+            className="shiki-container text-sm"
+            dangerouslySetInnerHTML={{ __html: ceHtml }}
+            style={{ background: "transparent" }}
+          />
           {catsEffectComment && (
-            <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+            <p className="mt-3 border-t border-[var(--color-border)] pt-3 text-xs text-[var(--color-text-muted)]">
               {catsEffectComment}
             </p>
           )}
@@ -140,26 +97,20 @@ export function ScalaComparisonBlock({
       </div>
 
       {/* ZIO column (blue) - what you're learning */}
-      <div className="overflow-hidden rounded border border-[var(--color-border)] bg-[var(--color-zio-bg)]">
-        <div className="border-b border-[var(--color-border)] px-4 py-2">
+      <div className="overflow-hidden rounded border border-[var(--color-border-focus)] bg-[var(--color-zio-bg)]">
+        <div className="border-b border-[var(--color-border-focus)] px-4 py-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-zio)]">
             ZIO
           </span>
         </div>
         <div className="p-4">
-          {isLoading ? (
-            <pre className="overflow-x-auto text-sm text-[var(--color-text)]">
-              <code>{zioCode}</code>
-            </pre>
-          ) : (
-            <div
-              className="shiki-container text-sm"
-              dangerouslySetInnerHTML={{ __html: zioHtml }}
-              style={{ background: "transparent" }}
-            />
-          )}
+          <div
+            className="shiki-container text-sm"
+            dangerouslySetInnerHTML={{ __html: zioHtml }}
+            style={{ background: "transparent" }}
+          />
           {zioComment && (
-            <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+            <p className="mt-3 border-t border-[var(--color-border)] pt-3 text-xs text-[var(--color-text-muted)]">
               {zioComment}
             </p>
           )}

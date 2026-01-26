@@ -282,7 +282,7 @@ test.describe("Step Navigation with Multi-Environment Re-init", () => {
 
     // TryIt buttons should be visible if sandbox is enabled
     const tryItButtons = page.getByRole("button", { name: /Try it/i })
-    const hasTryIt = await tryItButtons.count() > 0
+    const hasTryIt = (await tryItButtons.count()) > 0
 
     // If sandbox is disabled, TryIt buttons should not appear
     // This depends on the actual content - adjust as needed

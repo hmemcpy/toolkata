@@ -13,39 +13,8 @@ Both libraries provide robust resource management with guaranteed cleanup.
 ## Basic Resource Pattern
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect._
-import java.io._
-
-// Resource.make(acquire)(release)
-val fileResource: Resource[IO, BufferedReader] =
-  Resource.make(
-    IO.blocking(new BufferedReader(new FileReader("data.txt")))
-  )(reader =>
-    IO.blocking(reader.close()).handleErrorWith(_ => IO.unit)
-  )
-
-// Use the resource
-val content: IO[String] =
-  fileResource.use { reader =>
-    IO.blocking(reader.readLine())
-  }`}
-  zioCode={`import zio._
-import java.io._
-
-// ZIO.acquireRelease(acquire)(release)
-val fileScoped: ZIO[Scope, Throwable, BufferedReader] =
-  ZIO.acquireRelease(
-    ZIO.attemptBlocking(new BufferedReader(new FileReader("data.txt")))
-  )(reader =>
-    ZIO.succeed(reader.close())
-  )
-
-// Use with scoped
-val content: Task[String] = ZIO.scoped {
-  fileScoped.flatMap { reader =>
-    ZIO.attemptBlocking(reader.readLine())
-  }
-}`}
+  catsEffectCode={`import cats.effect._\nimport java.io._\n\n// Resource.make(acquire)(release)\nval fileResource: Resource[IO, BufferedReader] =\n  Resource.make(\n    IO.blocking(new BufferedReader(new FileReader("data.txt")))\n  )(reader =>\n    IO.blocking(reader.close()).handleErrorWith(_ => IO.unit)\n  )\n\n// Use the resource\nval content: IO[String] =\n  fileResource.use { reader =>\n    IO.blocking(reader.readLine())\n  }`}
+  zioCode={`import zio._\nimport java.io._\n\n// ZIO.acquireRelease(acquire)(release)\nval fileScoped: ZIO[Scope, Throwable, BufferedReader] =\n  ZIO.acquireRelease(\n    ZIO.attemptBlocking(new BufferedReader(new FileReader("data.txt")))\n  )(reader =>\n    ZIO.succeed(reader.close())\n  )\n\n// Use with scoped\nval content: Task[String] = ZIO.scoped {\n  fileScoped.flatMap { reader =>\n    ZIO.attemptBlocking(reader.readLine())\n  }\n}`}
   catsEffectComment="Resource.make - acquire/release pattern"
   zioComment="ZIO.acquireRelease with Scope"
 />
@@ -53,38 +22,8 @@ val content: Task[String] = ZIO.scoped {
 ## Resource Composition
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect._
-
-val dbResource: Resource[IO, Database] = ???
-val cacheResource: Resource[IO, Cache] = ???
-
-// Compose with for-comprehension
-val appResource: Resource[IO, (Database, Cache)] =
-  for {
-    db <- dbResource
-    cache <- cacheResource
-  } yield (db, cache)
-
-// Both released in reverse order
-val program: IO[Unit] =
-  appResource.use { case (db, cache) =>
-    IO.println("Using both resources")
-  }`}
-  zioCode={`import zio._
-
-val dbScoped: ZIO[Scope, Throwable, Database] = ???
-val cacheScoped: ZIO[Scope, Throwable, Cache] = ???
-
-// Compose in for-comprehension
-val program: Task[Unit] = ZIO.scoped {
-  for {
-    db <- dbScoped
-    cache <- cacheScoped
-    _ <- ZIO.succeed(println("Using both resources"))
-  } yield ()
-}
-
-// Both released in reverse order`}
+  catsEffectCode={`import cats.effect._\n\nval dbResource: Resource[IO, Database] = ???\nval cacheResource: Resource[IO, Cache] = ???\n\n// Compose with for-comprehension\nval appResource: Resource[IO, (Database, Cache)] =\n  for {\n    db <- dbResource\n    cache <- cacheResource\n  } yield (db, cache)\n\n// Both released in reverse order\nval program: IO[Unit] =\n  appResource.use { case (db, cache) =>\n    IO.println("Using both resources")\n  }`}
+  zioCode={`import zio._\n\nval dbScoped: ZIO[Scope, Throwable, Database] = ???\nval cacheScoped: ZIO[Scope, Throwable, Cache] = ???\n\n// Compose in for-comprehension\nval program: Task[Unit] = ZIO.scoped {\n  for {\n    db <- dbScoped\n    cache <- cacheScoped\n    _ <- ZIO.succeed(println("Using both resources"))\n  } yield ()\n}\n\n// Both released in reverse order`}
   catsEffectComment="Resource composition via flatMap"
   zioComment="Scoped composition via flatMap"
 />
@@ -97,25 +36,8 @@ even if the program fails or is interrupted.
 ## Bracket Pattern
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect.IO
-
-// bracket(acquire)(release)(use)
-val result: IO[String] =
-  IO.blocking(openConnection())
-    .bracket(conn => IO.blocking(conn.close())) { conn =>
-      IO.blocking(conn.fetch())
-    }`}
-  zioCode={`import zio._
-
-// ZIO.acquireReleaseWith(acquire)(release)(use)
-val result: Task[String] =
-  ZIO.acquireReleaseWith(
-    ZIO.attemptBlocking(openConnection())
-  )(conn =>
-    ZIO.succeed(conn.close())
-  )(conn =>
-    ZIO.attemptBlocking(conn.fetch())
-  )`}
+  catsEffectCode={`import cats.effect.IO\n\n// bracket(acquire)(release)(use)\nval result: IO[String] =\n  IO.blocking(openConnection())\n    .bracket(conn => IO.blocking(conn.close())) { conn =>\n      IO.blocking(conn.fetch())\n    }`}
+  zioCode={`import zio._\n\n// ZIO.acquireReleaseWith(acquire)(release)(use)\nval result: Task[String] =\n  ZIO.acquireReleaseWith(\n    ZIO.attemptBlocking(openConnection())\n  )(conn =>\n    ZIO.succeed(conn.close())\n  )(conn =>\n    ZIO.attemptBlocking(conn.fetch())\n  )`}
   catsEffectComment="bracket - inline resource usage"
   zioComment="acquireReleaseWith - inline resource usage"
 />
@@ -123,22 +45,8 @@ val result: Task[String] =
 ## fromAutoCloseable
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect._
-import java.io._
-
-// Automatically close AutoCloseable
-val reader: Resource[IO, BufferedReader] =
-  Resource.fromAutoCloseable(
-    IO.blocking(new BufferedReader(new FileReader("data.txt")))
-  )`}
-  zioCode={`import zio._
-import java.io._
-
-// Automatically close AutoCloseable
-val reader: ZIO[Scope, Throwable, BufferedReader] =
-  ZIO.fromAutoCloseable(
-    ZIO.attemptBlocking(new BufferedReader(new FileReader("data.txt")))
-  )`}
+  catsEffectCode={`import cats.effect._\nimport java.io._\n\n// Automatically close AutoCloseable\nval reader: Resource[IO, BufferedReader] =\n  Resource.fromAutoCloseable(\n    IO.blocking(new BufferedReader(new FileReader("data.txt")))\n  )`}
+  zioCode={`import zio._\nimport java.io._\n\n// Automatically close AutoCloseable\nval reader: ZIO[Scope, Throwable, BufferedReader] =\n  ZIO.fromAutoCloseable(\n    ZIO.attemptBlocking(new BufferedReader(new FileReader("data.txt")))\n  )`}
   catsEffectComment="Resource.fromAutoCloseable"
   zioComment="ZIO.fromAutoCloseable"
 />
@@ -146,35 +54,8 @@ val reader: ZIO[Scope, Throwable, BufferedReader] =
 ## Finalizers
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect.IO
-
-// guarantee - always runs
-val withCleanup: IO[Int] =
-  IO.pure(42)
-    .guarantee(IO.println("Always runs"))
-
-// guaranteeCase - runs with outcome
-val withOutcome: IO[Int] =
-  IO.pure(42)
-    .guaranteeCase {
-      case Outcome.Succeeded(_) => IO.println("Success!")
-      case Outcome.Errored(e) => IO.println(s"Failed: $e")
-      case Outcome.Canceled() => IO.println("Canceled!")
-    }`}
-  zioCode={`import zio._
-
-// ensuring - always runs
-val withCleanup: UIO[Int] =
-  ZIO.succeed(42)
-    .ensuring(ZIO.succeed(println("Always runs")))
-
-// onExit - runs with exit value
-val withOutcome: UIO[Int] =
-  ZIO.succeed(42)
-    .onExit {
-      case Exit.Success(_) => ZIO.succeed(println("Success!"))
-      case Exit.Failure(cause) => ZIO.succeed(println(s"Failed: $cause"))
-    }`}
+  catsEffectCode={`import cats.effect.IO\n\n// guarantee - always runs\nval withCleanup: IO[Int] =\n  IO.pure(42)\n    .guarantee(IO.println("Always runs"))\n\n// guaranteeCase - runs with outcome\nval withOutcome: IO[Int] =\n  IO.pure(42)\n    .guaranteeCase {\n      case Outcome.Succeeded(_) => IO.println("Success!")\n      case Outcome.Errored(e) => IO.println(s"Failed: $e")\n      case Outcome.Canceled() => IO.println("Canceled!")\n    }`}
+  zioCode={`import zio._\n\n// ensuring - always runs\nval withCleanup: UIO[Int] =\n  ZIO.succeed(42)\n    .ensuring(ZIO.succeed(println("Always runs")))\n\n// onExit - runs with exit value\nval withOutcome: UIO[Int] =\n  ZIO.succeed(42)\n    .onExit {\n      case Exit.Success(_) => ZIO.succeed(println("Success!"))\n      case Exit.Failure(cause) => ZIO.succeed(println(s"Failed: $cause"))\n    }`}
   catsEffectComment="guarantee / guaranteeCase"
   zioComment="ensuring / onExit"
 />
@@ -182,28 +63,8 @@ val withOutcome: UIO[Int] =
 ## Resource Allocation
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect._
-
-// Allocate and get finalizer separately
-val allocated: IO[(Database, IO[Unit])] =
-  dbResource.allocated
-
-// Use then release manually
-val program: IO[Unit] = allocated.flatMap { case (db, release) =>
-  db.query *> release
-}`}
-  zioCode={`import zio._
-
-// Reserving a resource
-val reserved: UIO[Reservation[Any, Throwable, Database]] =
-  dbScoped.reserve
-
-// Manual acquire/release
-val program: Task[Unit] = reserved.flatMap { r =>
-  r.acquire.flatMap { db =>
-    db.query *> r.release(Exit.unit)
-  }
-}`}
+  catsEffectCode={`import cats.effect._\n\n// Allocate and get finalizer separately\nval allocated: IO[(Database, IO[Unit])] =\n  dbResource.allocated\n\n// Use then release manually\nval program: IO[Unit] = allocated.flatMap { case (db, release) =>\n  db.query *> release\n}`}
+  zioCode={`import zio._\n\n// Reserving a resource\nval reserved: UIO[Reservation[Any, Throwable, Database]] =\n  dbScoped.reserve\n\n// Manual acquire/release\nval program: Task[Unit] = reserved.flatMap { r =>\n  r.acquire.flatMap { db =>\n    db.query *> r.release(Exit.unit)\n  }\n}`}
   catsEffectComment="allocated - manual resource control"
   zioComment="reserve - manual resource control"
 />

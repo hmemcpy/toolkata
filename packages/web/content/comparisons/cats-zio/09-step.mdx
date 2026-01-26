@@ -13,41 +13,8 @@ Both libraries provide application templates for running complete programs.
 ## Main Entry Point
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect._
-
-// Simple app (no args)
-object Main extends IOApp.Simple {
-  def run: IO[Unit] = for {
-    _ <- IO.println("Hello, World!")
-    _ <- IO.println("Application complete")
-  } yield ()
-}
-
-// With command-line args
-object MainArgs extends IOApp {
-  def run(args: List[String]): IO[ExitCode] = for {
-    name <- IO.pure(args.headOption.getOrElse("World"))
-    _ <- IO.println(s"Hello, $name!")
-  } yield ExitCode.Success
-}`}
-  zioCode={`import zio._
-
-// Simple app
-object Main extends ZIOAppDefault {
-  def run: ZIO[Any, Any, Any] = for {
-    _ <- Console.printLine("Hello, World!")
-    _ <- Console.printLine("Application complete")
-  } yield ()
-}
-
-// With custom bootstrap
-object MainCustom extends ZIOAppDefault {
-  override val bootstrap: ZLayer[ZIOAppArgs, Any, Any] =
-    Runtime.removeDefaultLoggers
-
-  def run: ZIO[Any, Any, Any] =
-    Console.printLine("Custom runtime!")
-}`}
+  catsEffectCode={`import cats.effect._\n\n// Simple app (no args)\nobject Main extends IOApp.Simple {\n  def run: IO[Unit] = for {\n    _ <- IO.println("Hello, World!")\n    _ <- IO.println("Application complete")\n  } yield ()\n}\n\n// With command-line args\nobject MainArgs extends IOApp {\n  def run(args: List[String]): IO[ExitCode] = for {\n    name <- IO.pure(args.headOption.getOrElse("World"))\n    _ <- IO.println(s"Hello, $name!")\n  } yield ExitCode.Success\n}`}
+  zioCode={`import zio._\n\n// Simple app\nobject Main extends ZIOAppDefault {\n  def run: ZIO[Any, Any, Any] = for {\n    _ <- Console.printLine("Hello, World!")\n    _ <- Console.printLine("Application complete")\n  } yield ()\n}\n\n// With custom bootstrap\nobject MainCustom extends ZIOAppDefault {\n  override val bootstrap: ZLayer[ZIOAppArgs, Any, Any] =\n    Runtime.removeDefaultLoggers\n\n  def run: ZIO[Any, Any, Any] =\n    Console.printLine("Custom runtime!")\n}`}
   catsEffectComment="IOApp.Simple / IOApp"
   zioComment="ZIOAppDefault / ZIOApp"
 />
@@ -55,29 +22,8 @@ object MainCustom extends ZIOAppDefault {
 ## Exit Codes
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect._
-
-object MainExit extends IOApp {
-  def run(args: List[String]): IO[ExitCode] =
-    IO.pure(ExitCode.Success)
-
-  // Or with error
-  def runWithError(args: List[String]): IO[ExitCode] =
-    IO.raiseError[Unit](new Exception("fail"))
-      .as(ExitCode.Success)
-      .handleError(_ => ExitCode.Error)
-}`}
-  zioCode={`import zio._
-
-object MainExit extends ZIOAppDefault {
-  // Return value determines exit code
-  def run: ZIO[Any, Any, Any] =
-    ZIO.succeed(())  // Exit code 0
-
-  // Or explicit exit
-  def runExplicit: ZIO[Any, Nothing, ExitCode] =
-    ZIO.succeed(ExitCode.success)
-}`}
+  catsEffectCode={`import cats.effect._\n\nobject MainExit extends IOApp {\n  def run(args: List[String]): IO[ExitCode] =\n    IO.pure(ExitCode.Success)\n\n  // Or with error\n  def runWithError(args: List[String]): IO[ExitCode] =\n    IO.raiseError[Unit](new Exception("fail"))\n      .as(ExitCode.Success)\n      .handleError(_ => ExitCode.Error)\n}`}
+  zioCode={`import zio._\n\nobject MainExit extends ZIOAppDefault {\n  // Return value determines exit code\n  def run: ZIO[Any, Any, Any] =\n    ZIO.succeed(())  // Exit code 0\n\n  // Or explicit exit\n  def runExplicit: ZIO[Any, Nothing, ExitCode] =\n    ZIO.succeed(ExitCode.success)\n}`}
   catsEffectComment="ExitCode.Success / ExitCode.Error"
   zioComment="Return type determines exit code"
 />
@@ -85,37 +31,8 @@ object MainExit extends ZIOAppDefault {
 ## Graceful Shutdown
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect._
-import scala.concurrent.duration._
-
-object MainShutdown extends IOApp.Simple {
-  def run: IO[Unit] = {
-    val program = for {
-      _ <- IO.println("Starting...")
-      _ <- IO.sleep(10.seconds)
-      _ <- IO.println("Complete")
-    } yield ()
-
-    program.onCancel(
-      IO.println("Shutting down gracefully...")
-    )
-  }
-}`}
-  zioCode={`import zio._
-
-object MainShutdown extends ZIOAppDefault {
-  def run: ZIO[Any, Any, Any] = {
-    val program = for {
-      _ <- Console.printLine("Starting...")
-      _ <- ZIO.sleep(10.seconds)
-      _ <- Console.printLine("Complete")
-    } yield ()
-
-    program.onInterrupt(
-      Console.printLine("Shutting down gracefully...")
-    )
-  }
-}`}
+  catsEffectCode={`import cats.effect._\nimport scala.concurrent.duration._\n\nobject MainShutdown extends IOApp.Simple {\n  def run: IO[Unit] = {\n    val program = for {\n      _ <- IO.println("Starting...")\n      _ <- IO.sleep(10.seconds)\n      _ <- IO.println("Complete")\n    } yield ()\n\n    program.onCancel(\n      IO.println("Shutting down gracefully...")\n    )\n  }\n}`}
+  zioCode={`import zio._\n\nobject MainShutdown extends ZIOAppDefault {\n  def run: ZIO[Any, Any, Any] = {\n    val program = for {\n      _ <- Console.printLine("Starting...")\n      _ <- ZIO.sleep(10.seconds)\n      _ <- Console.printLine("Complete")\n    } yield ()\n\n    program.onInterrupt(\n      Console.printLine("Shutting down gracefully...")\n    )\n  }\n}`}
   catsEffectComment="onCancel - handle SIGINT/SIGTERM"
   zioComment="onInterrupt - handle SIGINT/SIGTERM"
 />
@@ -128,35 +45,8 @@ handlers before exiting.
 ## Logging
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect._
-// Using log4cats (external library)
-// import org.typelevel.log4cats.slf4j.Slf4jLogger
-
-object MainLog extends IOApp.Simple {
-  def run: IO[Unit] = for {
-    // Console logging (built-in)
-    _ <- IO.println("[INFO] Application started")
-    _ <- IO.println("[DEBUG] Processing...")
-    _ <- IO.println("[INFO] Application complete")
-  } yield ()
-
-  // With log4cats:
-  // for {
-  //   logger <- Slf4jLogger.create[IO]
-  //   _ <- logger.info("Application started")
-  // } yield ()
-}`}
-  zioCode={`import zio._
-
-object MainLog extends ZIOAppDefault {
-  def run: ZIO[Any, Any, Any] = for {
-    // Built-in logging
-    _ <- ZIO.logInfo("Application started")
-    _ <- ZIO.logDebug("Processing...")
-    _ <- ZIO.logWarning("Potential issue")
-    _ <- ZIO.logError("Something went wrong")
-  } yield ()
-}`}
+  catsEffectCode={`import cats.effect._\n// Using log4cats (external library)\n// import org.typelevel.log4cats.slf4j.Slf4jLogger\n\nobject MainLog extends IOApp.Simple {\n  def run: IO[Unit] = for {\n    // Console logging (built-in)\n    _ <- IO.println("[INFO] Application started")\n    _ <- IO.println("[DEBUG] Processing...")\n    _ <- IO.println("[INFO] Application complete")\n  } yield ()\n\n  // With log4cats:\n  // for {\n  //   logger <- Slf4jLogger.create[IO]\n  //   _ <- logger.info("Application started")\n  // } yield ()\n}`}
+  zioCode={`import zio._\n\nobject MainLog extends ZIOAppDefault {\n  def run: ZIO[Any, Any, Any] = for {\n    // Built-in logging\n    _ <- ZIO.logInfo("Application started")\n    _ <- ZIO.logDebug("Processing...")\n    _ <- ZIO.logWarning("Potential issue")\n    _ <- ZIO.logError("Something went wrong")\n  } yield ()\n}`}
   catsEffectComment="Console or log4cats (external)"
   zioComment="ZIO.log* - built-in logging"
 />
@@ -164,31 +54,8 @@ object MainLog extends ZIOAppDefault {
 ## Resource Lifecycle in Apps
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect._
-
-object MainResource extends IOApp.Simple {
-  def run: IO[Unit] = {
-    val dbResource = Resource.make(
-      IO.println("Opening DB") *> IO.pure("db-connection")
-    )(_ => IO.println("Closing DB"))
-
-    dbResource.use { db =>
-      IO.println(s"Using $db")
-    }
-  }
-}`}
-  zioCode={`import zio._
-
-object MainResource extends ZIOAppDefault {
-  def run: ZIO[Any, Any, Any] = ZIO.scoped {
-    for {
-      db <- ZIO.acquireRelease(
-        Console.printLine("Opening DB").as("db-connection")
-      )(_ => Console.printLine("Closing DB"))
-      _ <- Console.printLine(s"Using $db")
-    } yield ()
-  }
-}`}
+  catsEffectCode={`import cats.effect._\n\nobject MainResource extends IOApp.Simple {\n  def run: IO[Unit] = {\n    val dbResource = Resource.make(\n      IO.println("Opening DB") *> IO.pure("db-connection")\n    )(_ => IO.println("Closing DB"))\n\n    dbResource.use { db =>\n      IO.println(s"Using $db")\n    }\n  }\n}`}
+  zioCode={`import zio._\n\nobject MainResource extends ZIOAppDefault {\n  def run: ZIO[Any, Any, Any] = ZIO.scoped {\n    for {\n      db <- ZIO.acquireRelease(\n        Console.printLine("Opening DB").as("db-connection")\n      )(_ => Console.printLine("Closing DB"))\n      _ <- Console.printLine(s"Using $db")\n    } yield ()\n  }\n}`}
   catsEffectComment="Resource.use in IOApp"
   zioComment="ZIO.scoped with acquireRelease"
 />
@@ -196,54 +63,8 @@ object MainResource extends ZIOAppDefault {
 ## Multiple Services
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect._
-
-trait Database { def query: IO[Int] }
-trait Cache { def get: IO[Option[Int]] }
-
-object MainServices extends IOApp.Simple {
-  def run: IO[Unit] = {
-    // Create services
-    val db: Database = new Database {
-      def query = IO.pure(42)
-    }
-    val cache: Cache = new Cache {
-      def get = IO.pure(Some(42))
-    }
-
-    // Use services
-    for {
-      cached <- cache.get
-      result <- cached.fold(db.query)(IO.pure)
-      _ <- IO.println(s"Result: $result")
-    } yield ()
-  }
-}`}
-  zioCode={`import zio._
-
-trait Database { def query: UIO[Int] }
-trait Cache { def get: UIO[Option[Int]] }
-
-object MainServices extends ZIOAppDefault {
-  val dbLayer: ULayer[Database] = ZLayer.succeed(
-    new Database { def query = ZIO.succeed(42) }
-  )
-  val cacheLayer: ULayer[Cache] = ZLayer.succeed(
-    new Cache { def get = ZIO.succeed(Some(42)) }
-  )
-
-  def run: ZIO[Any, Any, Any] = {
-    val program: ZIO[Database & Cache, Nothing, Unit] = for {
-      cached <- ZIO.serviceWithZIO[Cache](_.get)
-      result <- cached.fold(
-        ZIO.serviceWithZIO[Database](_.query)
-      )(ZIO.succeed(_))
-      _ <- Console.printLine(s"Result: $result")
-    } yield ()
-
-    program.provide(dbLayer, cacheLayer)
-  }
-}`}
+  catsEffectCode={`import cats.effect._\n\ntrait Database { def query: IO[Int] }\ntrait Cache { def get: IO[Option[Int]] }\n\nobject MainServices extends IOApp.Simple {\n  def run: IO[Unit] = {\n    // Create services\n    val db: Database = new Database {\n      def query = IO.pure(42)\n    }\n    val cache: Cache = new Cache {\n      def get = IO.pure(Some(42))\n    }\n\n    // Use services\n    for {\n      cached <- cache.get\n      result <- cached.fold(db.query)(IO.pure)\n      _ <- IO.println(s"Result: $result")\n    } yield ()\n  }\n}`}
+  zioCode={`import zio._\n\ntrait Database { def query: UIO[Int] }\ntrait Cache { def get: UIO[Option[Int]] }\n\nobject MainServices extends ZIOAppDefault {\n  val dbLayer: ULayer[Database] = ZLayer.succeed(\n    new Database { def query = ZIO.succeed(42) }\n  )\n  val cacheLayer: ULayer[Cache] = ZLayer.succeed(\n    new Cache { def get = ZIO.succeed(Some(42)) }\n  )\n\n  def run: ZIO[Any, Any, Any] = {\n    val program: ZIO[Database & Cache, Nothing, Unit] = for {\n      cached <- ZIO.serviceWithZIO[Cache](_.get)\n      result <- cached.fold(\n        ZIO.serviceWithZIO[Database](_.query)\n      )(ZIO.succeed(_))\n      _ <- Console.printLine(s"Result: $result")\n    } yield ()\n\n    program.provide(dbLayer, cacheLayer)\n  }\n}`}
   catsEffectComment="Services as constructor parameters"
   zioComment="Services via ZLayer and provide"
 />

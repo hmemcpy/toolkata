@@ -13,18 +13,9 @@ The fundamental difference between ZIO and Cats Effect starts with the type sign
 ## The Type Signatures
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect.IO
-
-// Cats Effect 3: IO has ONE type parameter
-// Error type is always Throwable (not in signature)
-val ceEffect: IO[Int] = IO.pure(42)`}
-  zioCode={`import zio._
-
-// ZIO has THREE type parameters
-// ZIO[R, E, A] = Environment, Error, Success
-val zioEffect: ZIO[Any, Nothing, Int] =
-  ZIO.succeed(42)`}
-  catsEffectComment="IO[A] - Success type only (error is Throwable)"
+  catsEffectCode={`import cats.effect.IO\n\n// IO has ONE type parameter\n// Error is always Throwable\nval ceEffect: IO[Int] = IO.pure(42)`}
+  zioCode={`import zio._\n\n// ZIO has THREE type parameters\n// ZIO[R, E, A] = Environment, Error, Success\nval zioEffect: ZIO[Any, Nothing, Int] =\n  ZIO.succeed(42)`}
+  catsEffectComment="IO[A] - Success type only"
   zioComment="ZIO[R, E, A] - Environment, Error, Success"
 />
 

@@ -16,10 +16,7 @@ export interface GlossarySearchState {
 /**
  * Simple search function for glossary entries.
  */
-function searchEntries(
-  entries: readonly GlossaryEntry[],
-  query: string,
-): readonly GlossaryEntry[] {
+function searchEntries(entries: readonly GlossaryEntry[], query: string): readonly GlossaryEntry[] {
   if (!query) {
     return entries
   }

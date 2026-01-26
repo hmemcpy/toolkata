@@ -13,21 +13,8 @@ Both libraries provide similar constructors for creating effects from pure value
 ## Pure Values
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect.IO
-
-// Lift a pure value into IO
-val pure: IO[Int] = IO.pure(42)
-
-// Also works with any type
-val pureString: IO[String] = IO.pure("hello")`}
-  zioCode={`import zio._
-
-// Lift a pure value into ZIO
-val pure: UIO[Int] = ZIO.succeed(42)
-
-// With explicit types
-val pureExplicit: ZIO[Any, Nothing, Int] =
-  ZIO.succeed(42)`}
+  catsEffectCode={`import cats.effect.IO\n\n// Lift a pure value into IO\nval pure: IO[Int] = IO.pure(42)\n\n// Also works with any type\nval pureString: IO[String] = IO.pure("hello")`}
+  zioCode={`import zio._\n\n// Lift a pure value into ZIO\nval pure: UIO[Int] = ZIO.succeed(42)\n\n// With explicit types\nval pureExplicit: ZIO[Any, Nothing, Int] =\n  ZIO.succeed(42)`}
   catsEffectComment="IO.pure - lift pure value"
   zioComment="ZIO.succeed - lift pure value"
 />
@@ -35,30 +22,8 @@ val pureExplicit: ZIO[Any, Nothing, Int] =
 ## Side Effects (May Throw)
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect.IO
-import scala.io.Source
-
-// Suspend a side effect that may throw
-val readFile: IO[String] = IO.delay {
-  Source.fromFile("data.txt").mkString
-}
-
-// IO.blocking for blocking operations
-val blocking: IO[String] = IO.blocking {
-  Source.fromFile("data.txt").mkString
-}`}
-  zioCode={`import zio._
-import scala.io.Source
-
-// Suspend a side effect that may throw
-val readFile: Task[String] = ZIO.attempt {
-  Source.fromFile("data.txt").mkString
-}
-
-// ZIO.attemptBlocking for blocking I/O
-val blocking: Task[String] = ZIO.attemptBlocking {
-  Source.fromFile("data.txt").mkString
-}`}
+  catsEffectCode={`import cats.effect.IO\nimport scala.io.Source\n\n// Suspend a side effect that may throw\nval readFile: IO[String] = IO.delay {\n  Source.fromFile("data.txt").mkString\n}\n\n// IO.blocking for blocking operations\nval blocking: IO[String] = IO.blocking {\n  Source.fromFile("data.txt").mkString\n}`}
+  zioCode={`import zio._\nimport scala.io.Source\n\n// Suspend a side effect that may throw\nval readFile: Task[String] = ZIO.attempt {\n  Source.fromFile("data.txt").mkString\n}\n\n// ZIO.attemptBlocking for blocking I/O\nval blocking: Task[String] = ZIO.attemptBlocking {\n  Source.fromFile("data.txt").mkString\n}`}
   catsEffectComment="IO.delay / IO.blocking - suspend side effects"
   zioComment="ZIO.attempt / ZIO.attemptBlocking - suspend side effects"
 />
@@ -66,24 +31,8 @@ val blocking: Task[String] = ZIO.attemptBlocking {
 ## Failures
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect.IO
-
-// Raise an error (must be Throwable)
-val fail: IO[Int] =
-  IO.raiseError(new Exception("Something went wrong"))
-
-// From a string (wrap in Exception)
-val failStr: IO[Int] =
-  IO.raiseError(new RuntimeException("oops"))`}
-  zioCode={`import zio._
-
-// Fail with any error type
-val fail: IO[String, Int] =
-  ZIO.fail("Something went wrong")
-
-// Fail with Throwable
-val failThrowable: Task[Int] =
-  ZIO.fail(new Exception("oops"))`}
+  catsEffectCode={`import cats.effect.IO\n\n// Raise an error (must be Throwable)\nval fail: IO[Int] =\n  IO.raiseError(new Exception("Something went wrong"))\n\n// From a string (wrap in Exception)\nval failStr: IO[Int] =\n  IO.raiseError(new RuntimeException("oops"))`}
+  zioCode={`import zio._\n\n// Fail with any error type\nval fail: IO[String, Int] =\n  ZIO.fail("Something went wrong")\n\n// Fail with Throwable\nval failThrowable: Task[Int] =\n  ZIO.fail(new Exception("oops"))`}
   catsEffectComment="IO.raiseError - error must be Throwable"
   zioComment="ZIO.fail - error can be any type"
 />
@@ -95,26 +44,8 @@ Cats Effect requires errors to be `Throwable`. ZIO allows any error type via the
 ## From Option/Either
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect.IO
-
-// From Option (None becomes error)
-val fromOpt: IO[Int] =
-  IO.fromOption(Some(42))(
-    new NoSuchElementException("empty")
-  )
-
-// From Either
-val fromEither: IO[Int] =
-  IO.fromEither(Right(42))`}
-  zioCode={`import zio._
-
-// From Option (None becomes None error)
-val fromOpt: IO[Option[Nothing], Int] =
-  ZIO.fromOption(Some(42))
-
-// From Either
-val fromEither: IO[String, Int] =
-  ZIO.fromEither(Right(42))`}
+  catsEffectCode={`import cats.effect.IO\n\n// From Option (None becomes error)\nval fromOpt: IO[Int] =\n  IO.fromOption(Some(42))(\n    new NoSuchElementException("empty")\n  )\n\n// From Either\nval fromEither: IO[Int] =\n  IO.fromEither(Right(42))`}
+  zioCode={`import zio._\n\n// From Option (None becomes None error)\nval fromOpt: IO[Option[Nothing], Int] =\n  ZIO.fromOption(Some(42))\n\n// From Either\nval fromEither: IO[String, Int] =\n  ZIO.fromEither(Right(42))`}
   catsEffectComment="IO.fromOption / IO.fromEither"
   zioComment="ZIO.fromOption / ZIO.fromEither"
 />
@@ -122,29 +53,8 @@ val fromEither: IO[String, Int] =
 ## Async Effects
 
 <ScalaComparisonBlock
-  catsEffectCode={`import cats.effect.IO
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
-
-// From Future
-val fromFuture: IO[Int] =
-  IO.fromFuture(IO(Future.successful(42)))
-
-// Async callback
-val async: IO[Int] = IO.async_ { cb =>
-  cb(Right(42))
-}`}
-  zioCode={`import zio._
-import scala.concurrent.Future
-
-// From Future
-val fromFuture: Task[Int] =
-  ZIO.fromFuture(_ => Future.successful(42))
-
-// Async callback
-val async: Task[Int] = ZIO.async { cb =>
-  cb(ZIO.succeed(42))
-}`}
+  catsEffectCode={`import cats.effect.IO\nimport scala.concurrent.Future\nimport scala.concurrent.ExecutionContext.Implicits.global\n\n// From Future\nval fromFuture: IO[Int] =\n  IO.fromFuture(IO(Future.successful(42)))\n\n// Async callback\nval async: IO[Int] = IO.async_ { cb =>\n  cb(Right(42))\n}`}
+  zioCode={`import zio._\nimport scala.concurrent.Future\n\n// From Future\nval fromFuture: Task[Int] =\n  ZIO.fromFuture(_ => Future.successful(42))\n\n// Async callback\nval async: Task[Int] = ZIO.async { cb =>\n  cb(ZIO.succeed(42))\n}`}
   catsEffectComment="IO.fromFuture / IO.async_"
   zioComment="ZIO.fromFuture / ZIO.async"
 />
