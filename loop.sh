@@ -12,6 +12,7 @@ set -e
 
 MODE="plan"
 AUTO_MODE=true
+PLAN_MAX_ITERATIONS=5
 MAX_ITERATIONS=0
 ITERATION=0
 CONSECUTIVE_FAILURES=0
@@ -192,7 +193,7 @@ handle_usage_limit() {
 }
 
 if [[ "$AUTO_MODE" == true ]]; then
-  echo -e "${GREEN}Ralph loop: AUTO mode (plan → build)${NC}"
+  echo -e "${GREEN}Ralph loop: AUTO mode (plan ×${PLAN_MAX_ITERATIONS} → build)${NC}"
   [[ $MAX_ITERATIONS -gt 0 ]] && echo "Max build iterations: $MAX_ITERATIONS"
 else
   echo -e "${GREEN}Ralph loop: $(echo "$MODE" | tr '[:lower:]' '[:upper:]') mode${NC}"
@@ -279,24 +280,20 @@ while true; do
 
   CONSECUTIVE_FAILURES=0
 
+  # In auto mode, switch from plan to build after hitting plan cap
+  if [[ "$AUTO_MODE" == true && "$MODE" == "plan" && $ITERATION -ge $PLAN_MAX_ITERATIONS ]]; then
+    switch_to_build_mode
+    continue
+  fi
+
   if [[ "$RESULT_MSG" =~ "RALPH_COMPLETE" ]] || [[ "$OUTPUT" =~ "RALPH_COMPLETE" ]]; then
     echo ""
     echo -e "${GREEN}=== Ralph Complete ===${NC}"
-
-    if [[ "$AUTO_MODE" == true && "$MODE" == "plan" ]]; then
-      switch_to_build_mode
-      continue
-    fi
-
     echo -e "${GREEN}All tasks finished.${NC}"
     break
   fi
 
   if [[ $MAX_ITERATIONS -gt 0 && $ITERATION -ge $MAX_ITERATIONS ]]; then
-    if [[ "$AUTO_MODE" == true && "$MODE" == "plan" ]]; then
-      switch_to_build_mode
-      continue
-    fi
     echo ""
     echo -e "${GREEN}Reached max iterations ($MAX_ITERATIONS).${NC}"
     break

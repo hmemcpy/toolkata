@@ -6,7 +6,8 @@ Implement ONE task from the plan, validate, commit, exit.
 
 Study with subagents:
 - @AGENTS.md or @CLAUDE.md (how to build/test)
-- @specs/* (requirements)
+- @specs/snippet-validation.md (requirements)
+- @SNIPPET-VALIDATION.md (detailed design)
 - @IMPLEMENTATION_PLAN.md (current state)
 
 ### Check for completion

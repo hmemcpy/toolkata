@@ -1,227 +1,162 @@
-# Implementation Plan: Effect ← ZIO Tutorial
+# Implementation Plan: Snippet Validation System
 
-> **Scope**: Multiple related files | **Risk**: Aggressive | **Validation**: `bun run build && bun run typecheck && bun run lint`
+> **Scope**: Multiple related files | **Risk**: Aggressive | **Validation**: `bun run build && bun run typecheck && bun run lint && bun test`
 
 ## Summary
 
-Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in two PRs: (1) infrastructure changes (schema, components, search) and (2) content creation. Infrastructure PR enables cross-language comparisons, searchable tags, and language-based categorization.
+Build a headless snippet validation system that extracts code from MDX, executes against sandbox environments, and fails the build on errors. Priority: get jj-git working end-to-end first, then expand to Scala/TypeScript. Uses existing SandboxClient infrastructure with new silent init command support.
 
 ---
 
-## Gap Analysis (2026-01-26)
+## Phase 1: Silent Init Commands in Sandbox API
 
-### What Already Exists
+- [ ] **Add silent flag to WebSocket init message** — Update `packages/sandbox-api/src/services/websocket.ts` to support `{ type: "init", commands: [...], silent: true }` that suppresses output
+- [ ] **Implement output buffering for silent mode** — Buffer init command output, only send on error or if `silent: false`
+- [ ] **Add initComplete response with success/error** — Return `{ type: "initComplete", success: boolean, error?: string, output?: string }`
+- [ ] **Test silent init manually** — Create test script that connects via WebSocket, sends silent init, verifies no output leakage
 
-| Component | Status | Location |
-|-----------|--------|----------|
-| ScalaComparisonBlock | ✅ Complete | `components/ui/ScalaComparisonBlock.tsx` |
-| SideBySide | ✅ Complete | `components/ui/SideBySide.tsx` |
-| TerminalSearch | ⚠️ Partial | `components/ui/TerminalSearch.tsx` (hardcoded jj-git only, see TODO line 20-21) |
-| devicons-react | ✅ Installed | `package.json` (v1.5.0) |
-| LessonCard icons | ✅ Complete | `scala`, `typescript`, `git-branch`, `arrows-clockwise` (jj) all handled |
-| zio-cats tutorial | ✅ Complete | 15 steps in `content/comparisons/zio-cats/` |
-| jj-git tutorial | ✅ Complete | 12 steps in `content/comparisons/jj-git/` |
-| Glossary system | ✅ Complete | `jj-git.ts`, `zio-cats.ts` with search/filter/categories |
-| Dynamic routing | ✅ Complete | `app/[toolPair]/` handles both pairings |
-| MDX component registry | ✅ Complete | `components/mdx/MDXComponents.tsx` (7 components) |
-| Shiki highlighting | ✅ Complete | Used in ScalaComparisonBlock (server-side) |
-| ToolPairing interface | ✅ Complete | `content/pairings.ts` with slug, from/to, category, steps, status |
+## Phase 2: Sandbox Manager (Auto-start)
 
-### What's Missing
+- [ ] **Create sandbox-manager.ts** — New file `packages/web/scripts/sandbox-manager.ts` with `ensureSandboxRunning()` function
+- [ ] **Implement health check** — `GET /api/v1/status` with timeout, return boolean
+- [ ] **Implement spawn logic** — `Bun.spawn()` for sandbox-api dev server, wait for healthy (30s timeout)
+- [ ] **Implement cleanup function** — Kill child process, await exit
+- [ ] **Add environment variable support** — `SANDBOX_API_URL` override for CI/custom setups
 
-| Component | Status | Required For |
-|-----------|--------|--------------|
-| CrossLanguageBlock | ❌ Not created | Effect-ZIO tutorial (Scala↔TypeScript side-by-side) |
-| `tags` field in ToolPairing | ✅ Complete | Added to interface, populated in jj-git and zio-cats |
-| `language` field in ToolPairing | ✅ Complete | Added to interface, populated in jj-git and zio-cats |
-| jj icon in LessonCard | ✅ Complete | Custom SVG with `arrows-clockwise` icon |
-| Dynamic search data | ❌ Missing | Search uses hardcoded `SEARCHABLE_STEPS` (jj-git only) |
-| effect-zio content directory | ❌ Missing | All 15 steps + index.mdx + config.yml |
-| effect-zio glossary | ❌ Missing | ZIO→Effect command mappings in `content/glossary/effect-zio.ts` |
-| effect-zio pairing entry | ❌ Missing | Not in `toolPairings` array in pairings.ts |
-| effect-zio steps in overview page | ❌ Missing | `effectZioSteps` array + `effectZioTimes` Map needed |
-| effect-zio in generateStaticParams | ❌ Missing | All 3 routing pages need updates |
-| zio-cats entries in TerminalSearch | ❌ Missing | Only jj-git searchable currently |
+## Phase 3: Snippet Extraction (jj-git only)
 
-### Key Implementation References
+- [ ] **Create snippet-extractor.ts** — New file `packages/web/scripts/snippet-extractor.ts`
+- [ ] **Implement MDX file discovery** — Glob `content/comparisons/jj-git/**/*.mdx`
+- [ ] **Extract SideBySide commands** — Regex for `<SideBySide` component, parse `fromCommands` and `toCommands` arrays
+- [ ] **Extract TryIt commands** — Regex for `<TryIt` component, parse `command` prop
+- [ ] **Extract markdown code blocks** — Regex for ` ```bash` blocks
+- [ ] **Implement normalizeCode** — Strip `|` prefix (reuse logic from ScalaComparisonBlock)
+- [ ] **Output ExtractedSnippet interface** — `{ file, toolPair, step, lineStart, language, source, code, prop? }`
 
-- **ScalaComparisonBlock pattern**: `packages/web/components/ui/ScalaComparisonBlock.tsx` — Async server component with Shiki `codeToHtml()`, `normalizeCode()` function for stripMargin, grid layout
-- **Glossary pattern**: `packages/web/content/glossary/zio-cats.ts` — TypeScript file with `GlossaryEntry` interface, categories, search/filter functions
-- **Pairing registration**: Add to `toolPairings` array in `packages/web/content/pairings.ts`
-- **Step metadata**: Hard-coded arrays in `packages/web/app/[toolPair]/page.tsx` (see `jjGitSteps`, `catsZioSteps`)
-- **generateStaticParams locations**:
-  - Overview: `app/[toolPair]/page.tsx:17-19`
-  - Steps: `app/[toolPair]/[step]/page.tsx:21-33`
-  - Glossary: `app/[toolPair]/glossary/page.tsx:27-29`
+## Phase 4: Config Resolution
 
----
+- [ ] **Create config-resolver.ts** — New file `packages/web/scripts/config-resolver.ts`
+- [ ] **Load pairing config.yml** — Parse `content/comparisons/{pairing}/config.yml` validation section
+- [ ] **Parse step frontmatter** — Extract `validation:` section from MDX frontmatter
+- [ ] **Merge config hierarchy** — Pairing → Step → Component (imports concatenate, setup overrides)
+- [ ] **Add validation schema to frontmatter** — Update `packages/web/lib/content/schemas.ts` with optional `validation` field
 
-## PR 1: Infrastructure Changes
+## Phase 5: Headless Validator (jj-git)
 
-### P0 - Schema Updates (Blocking)
+- [ ] **Create headless-validator.ts** — New file `packages/web/scripts/headless-validator.ts`
+- [ ] **Implement session creation** — Use SandboxClient to create session for tool pair
+- [ ] **Implement command execution** — Send command via WebSocket, collect output until prompt returns
+- [ ] **Implement error detection for shell** — Check for `error:`, `fatal:`, `usage:` patterns in output
+- [ ] **Implement session reuse per step** — Group snippets by step, single session per step
+- [ ] **Implement cleanup** — Destroy session after step completes
 
-- [x] **Update ToolPairing interface** — Add `tags?: readonly string[]` and `language?: "typescript" | "scala" | "shell"` fields to `content/pairings.ts:24-79`
-- [x] **Update jj-git pairing with new fields** — Add `language: "shell"`, `tags: ["git", "jj", "vcs", "version-control"]` to the jj-git entry (lines 109-127)
-- [x] **Update zio-cats pairing with new fields** — Add `language: "scala"`, `tags: ["scala", "zio", "cats-effect", "functional"]` to the zio-cats entry (lines 88-107)
+## Phase 6: CLI Entry Point
 
-### P1 - Icon Support
+- [ ] **Create validate-snippets.ts** — New file `packages/web/scripts/validate-snippets.ts`
+- [ ] **Implement CLI argument parsing** — `--strict`, `--tool-pair`, `--step`, `--verbose`
+- [ ] **Orchestrate validation flow** — Sandbox manager → Extract → Resolve config → Validate → Report
+- [ ] **Implement console reporter** — Per-step pass/fail, summary, failure details with file:line
+- [ ] **Exit with code 1 on failures** — For CI integration
 
-- [x] **Add TypeScript icon case to LessonCard** — Import `TypescriptOriginal` from devicons-react, add `case "typescript":` in `getToolIcon()` at `components/ui/LessonCard.tsx:13-18`
-- [x] **Add Git icon case to LessonCard** — Import `GitOriginal` from devicons-react, add `case "git-branch":`
-- [x] **Add jj icon case to LessonCard** — Create custom `JjIcon` SVG component with `arrows-clockwise`, add `case "arrows-clockwise":`
-- [x] **Verify brand colors in pairings** — TypeScript `#3178C6`, Scala `#DC322F`, Git `#f05032`, ZIO `#0066ff`, Cats Effect `#8b5cf6`, jj `#39d96c` — All existing pairings (zio-cats, jj-git) have correct colors
+## Phase 7: Step-Level Caching
 
-### P2 - CrossLanguageBlock Component
+- [ ] **Create validation-cache.ts** — New file `packages/web/scripts/validation-cache.ts`
+- [ ] **Implement step hash computation** — SHA256 of (config.yml + step MDX content)
+- [ ] **Implement cache storage** — JSON file in `.validation-cache/` directory
+- [ ] **Implement cache lookup** — Skip validation if hash matches
+- [ ] **Add --no-cache flag** — Force re-validation
 
-- [x] **Create CrossLanguageBlock component** — New file `components/ui/CrossLanguageBlock.tsx` (UI component like ScalaComparisonBlock)
-- [x] **Copy ScalaComparisonBlock structure** — Async server component with Shiki `codeToHtml()`, reuse `normalizeCode()` function for stripMargin
-- [x] **Implement dual-panel layout** — ZIO (Scala) left panel with label "ZIO (Scala)", Effect (TypeScript) right panel with label "Effect (TypeScript)"
-- [x] **Configure language-specific highlighting** — `language: "scala"` for `zioCode` prop, `language: "typescript"` for `effectCode` prop
-- [x] **Add mobile responsive stacking** — `grid-cols-1 md:grid-cols-2` pattern from ScalaComparisonBlock
-- [x] **Register in MDX components** — Add `CrossLanguageBlock` to `components/mdx/MDXComponents.tsx` exports
+## Phase 8: Validation Config for jj-git
 
-### P3 - Search Improvements (Can defer to later PR)
+- [ ] **Update jj-git config.yml** — Add `validation:` section with prelude setup commands
+- [ ] **Test end-to-end jj-git validation** — Run `bun run scripts/validate-snippets.ts --tool-pair jj-git`
+- [ ] **Fix any failing snippets** — Update MDX or config as needed
 
-- [x] **Add zio-cats steps to TerminalSearch** — Add 15 entries to `SEARCHABLE_STEPS` array (zio-cats currently missing)
-- [x] **Create search data loader** — Function in `lib/` to build searchable steps from pairings + step metadata arrays
-- [x] **Update TerminalSearch component** — Replace hardcoded `SEARCHABLE_STEPS` with dynamic data (address TODO on line 20-21)
-- [x] **Add tags to search matching** — Include pairing tags in filter logic alongside title/description
+## Phase 9: Build Integration
 
-### P4 - Infrastructure Validation
+- [ ] **Add validate:snippets script** — Update `packages/web/package.json`
+- [ ] **Add prebuild hook** — Run validation before `next build` (with `--strict`)
+- [ ] **Create Playwright test for validation** — Test that validation script runs and reports correctly
 
-- [x] **Run full validation** — `bun run build && bun run typecheck && bun run lint`
-- [x] **Manual test existing pairings** — Verified via successful build showing all routes: jj-git (12 steps), zio-cats (15 steps), both glossaries generate correctly
-- [x] **Test CrossLanguageBlock rendering** — Component verified via successful build, typecheck, and lint; registered in MDXComponents.tsx; uses Shiki for Scala and TypeScript highlighting
-- [x] **Infrastructure complete** — All 20 infrastructure tasks done (see git log for 15 commits)
+## Phase 10: Scala Environment (zio-cats)
 
----
+- [ ] **Create Dockerfile.scala** — Eclipse Temurin JDK 21 + scala-cli + pre-cached deps
+- [ ] **Register scala environment** — Update `packages/sandbox-api/src/environments/builtin.ts`
+- [ ] **Update docker-build-all.sh** — Build scala image
+- [ ] **Extend snippet-extractor for ScalaComparisonBlock** — Extract `zioCode`, `catsEffectCode` props
+- [ ] **Implement Scala validation logic** — Write snippet to file, run `scala-cli compile`, check exit code
+- [ ] **Add zio-cats config.yml validation section** — Imports prelude for ZIO and Cats Effect
+- [ ] **Test zio-cats validation** — Run full validation, fix any issues
 
-## PR 2: Content Creation
+## Phase 11: TypeScript Environment (effect-zio)
 
-### P5 - Directory Setup
+- [ ] **Create Dockerfile.typescript** — Node 22 + tsx + typescript + effect
+- [ ] **Register typescript environment** — Update builtin.ts
+- [ ] **Extend snippet-extractor for CrossLanguageBlock** — Extract `zioCode`, `effectCode` props
+- [ ] **Implement TypeScript validation logic** — Write snippet to file, run `tsc --noEmit`, check exit code
+- [ ] **Add effect-zio config.yml validation section** — Imports prelude for Effect
+- [ ] **Test effect-zio validation** — Run full validation, fix any issues
 
-- [x] **Create content directory** — `packages/web/content/comparisons/effect-zio/`
-- [x] **Create config.yml** — Sandbox disabled: `defaults: { sandbox: { enabled: false, environment: "typescript", timeout: 60, init: [] } }`
-- [x] **Create index.mdx** — Landing page: title "Effect ← ZIO", description, key differences table, 15-step overview with section groupings (Fundamentals 1-4, Architecture 5-7, Concurrency 8-10, Advanced 11-12, Ecosystem 13-15)
+## Phase 12: Component Props Support
 
-### P6 - Fundamentals (Steps 1-4)
+- [ ] **Add validate prop to ScalaComparisonBlock** — Skip validation when `validate={false}`
+- [ ] **Add validate prop to CrossLanguageBlock** — Skip validation when `validate={false}`
+- [ ] **Add validate prop to SideBySide** — Skip validation when `validate={false}`
+- [ ] **Add setup prop to TryIt** — Override prelude setup for specific command
+- [ ] **Add extraImports prop to comparison blocks** — Extend prelude imports
 
-- [x] **Create 01-step.mdx: Effect<A,E,R> vs ZIO[-R,+E,+A]** — Critical parameter order difference (`A,E,R` vs `R,E,A`), type meanings, mental model, no type aliases in Effect
-- [x] **Create 02-step.mdx: Creating Effects** — `Effect.succeed`, `Effect.fail`, `Effect.sync`, `Effect.try`, `Effect.tryPromise`, `Effect.async`, `Effect.suspend`
-- [x] **Create 03-step.mdx: Error Handling** — Typed errors vs defects, `catchAll`, `catchSome`, `mapError`, `orElse`, `Effect.either`, `Effect.die`
-- [x] **Create 04-step.mdx: Composition with Generators** — `Effect.gen` vs for-comprehension, `yield*` syntax, pipe alternative
+## Phase 13: CI Integration
 
-### P7 - Application Architecture (Steps 5-7)
-
-- [x] **Create 05-step.mdx: Services and Context.Tag** — Dependency injection, `Context.Tag` class pattern vs `ZIO.service[T]`, `yield* Tag` access
-- [x] **Create 06-step.mdx: Layers** — `Layer.succeed`, `Layer.effect`, `Layer.scoped`, `Layer.provide`, `Layer.merge` composition vs ZLayer equivalents
-- [x] **Create 07-step.mdx: Resource Management** — `Effect.acquireRelease`, `Effect.scoped`, Scope service, finalizers
-
-### P8 - Concurrency (Steps 8-10)
-
-- [x] **Create 08-step.mdx: Fibers and Forking** — `Effect.fork`, `Fiber.join`, `Fiber.await`, `Fiber.interrupt`, supervision
-- [x] **Create 09-step.mdx: Concurrent Combinators** — `Effect.all` with concurrency options, `Effect.race`, `Effect.forEach`, timeout
-- [x] **Create 10-step.mdx: Ref and Concurrent State** — `Ref.make`, `Ref.get`, `Ref.set`, `Ref.update`, `Ref.modify`, `SynchronizedRef`
-
-### P9 - Advanced Topics (Steps 11-12)
-
-- [x] **Create 11-step.mdx: STM** — `TRef`, `STM` type, `STM.commit`, composing transactions, retry semantics
-- [x] **Create 12-step.mdx: Streaming** — `Stream<A,E,R>` type, creation, map/flatMap/filter, `Stream.runCollect`, Sink
-
-### P10 - Ecosystem (Steps 13-15)
-
-- [x] **Create 13-step.mdx: Schema (Validation)** — `Schema<A,I,R>`, decoding, encoding, composition, vs zio-schema
-- [x] **Create 14-step.mdx: Platform & HTTP** — @effect/platform overview, HttpClient service, cross-platform abstractions
-- [x] **Create 15-step.mdx: Database Access** — @effect/sql, @effect/sql-pg, SqlClient service, transactions
-
-### P11 - Glossary & Routing Integration
-
-- [x] **Create glossary file** — `content/glossary/effect-zio.ts` with categories: CORE, ERRORS, COMPOSITION, SERVICES, LAYERS, CONCURRENCY, STREAMING, SCHEMA, HTTP, SQL (49 entries total)
-- [x] **Add effect-zio to pairings.ts** — Full entry with from: ZIO (#DC322F, icon: scala), to: Effect (#3178C6, icon: typescript), category: "Frameworks & Libraries", steps: 15, status: "published", language: "typescript", tags: ["typescript", "effect", "zio", "scala", "functional"]
-- [x] **Update overview page generateStaticParams** — Added `{ slug: "effect-zio" }` to pairings array
-- [x] **Update step page generateStaticParams** — Added `{ slug: "effect-zio", steps: 15 }` to pairings array
-- [x] **Update glossary page generateStaticParams** — Added `{ toolPair: "effect-zio" }` to pairings array
-- [x] **Add effectZioSteps array** — 15 step metadata entries (title, step, description, slug)
-- [x] **Add effectZioTimes Map** — Estimated times for each step
-- [x] **Update overview page step selection** — Added `toolPair === "effect-zio"` case
-- [x] **Import effect-zio glossary in glossary page** — Import and case for `toolPair === "effect-zio"`
-- [x] **Add effect-zio to TerminalSearch** — Add 15 entries to `SEARCHABLE_STEPS` array for effect-zio steps
-
-### P12 - Content Validation
-
-- [x] **Run full validation** — `bun run build && bun run typecheck && bun run lint` ✅ PASSED
-- [x] **Test /effect-zio route** — Overview page loads with all 15 steps listed (verified via static generation)
-- [x] **Test /effect-zio/1 through /effect-zio/15** — All step pages render with CrossLanguageBlock (verified via build)
-- [x] **Test /effect-zio/glossary** — Glossary page generates correctly (verified via build)
-- [x] **Content complete** — All 35 content tasks done + search integration working (lib/search-data.ts includes effect-zio)
+- [ ] **Create GitHub Actions workflow** — `.github/workflows/validate-snippets.yml`
+- [ ] **Configure sandbox-api startup in CI** — Docker or local spawn
+- [ ] **Add caching for validation results** — Cache `.validation-cache/` directory
+- [ ] **Test PR validation** — Verify workflow runs on content changes
 
 ---
 
 ## Task Count
 
-**Total**: 55 tasks
-- PR 1 (Infrastructure): 20 tasks ✅ Complete
-- PR 2 (Content): 35 tasks ✅ Complete
+**Total**: 54 tasks
+- Phase 1 (Silent Init): 4 tasks
+- Phase 2 (Sandbox Manager): 5 tasks
+- Phase 3 (Extraction): 7 tasks
+- Phase 4 (Config): 4 tasks
+- Phase 5 (Validator): 6 tasks
+- Phase 6 (CLI): 5 tasks
+- Phase 7 (Caching): 5 tasks
+- Phase 8 (jj-git Config): 3 tasks
+- Phase 9 (Build): 3 tasks
+- Phase 10 (Scala): 7 tasks
+- Phase 11 (TypeScript): 6 tasks
+- Phase 12 (Props): 5 tasks
+- Phase 13 (CI): 4 tasks
 
-**Progress**: 55/55 tasks complete (100%)
-
-**Status**: Implementation complete. All validation passing. Ready to push commits (15 ahead of origin).
+**Progress**: 0/54 tasks complete (0%)
 
 ---
 
 ## Dependencies
 
 ```
-P0 (Schema) ─────────────────────────────────────┐
-                                                  │
-P1 (Icons) ──────────────────────────────────────┤
-                                                  │
-P2 (CrossLanguageBlock) ─────────────────────────┼──► P4 (Validation) ──► PR 1
-                                                  │
-P3 (Search) ─────────────────────────────────────┘
-     │
-     └──► Can defer to separate PR if needed
-
-PR 1 Complete ──► P5-P12 (Content) ──► PR 2
+Phase 1 (Silent Init) ──────────────────────────┐
+                                                 │
+Phase 2 (Sandbox Manager) ──────────────────────┤
+                                                 │
+Phase 3 (Extraction) ───────────────────────────┼──► Phase 5 (Validator) ──► Phase 6 (CLI)
+                                                 │           │
+Phase 4 (Config) ───────────────────────────────┘           │
+                                                             │
+                                    Phase 7 (Caching) ◄──────┘
+                                             │
+                                             ▼
+                        Phase 8 (jj-git) ──► Phase 9 (Build) ──► Phase 13 (CI)
+                                             │
+                        Phase 10 (Scala) ◄───┴───► Phase 11 (TypeScript)
+                                             │
+                        Phase 12 (Props) ◄───┘
 ```
 
-**Critical Path**: P0 → P2 → P4 → P5 → P6-P10 → P11 → P12
-
----
-
-## Learned
-
-_(Updated during implementation)_
-
-### MDX Template Literal Pitfalls (Critical)
-
-When writing MDX with code blocks containing template literals (`${variable}`), the MDX parser evaluates these as JavaScript expressions. This causes "variable is not defined" errors during static generation.
-
-**Solution Patterns:**
-1. **String concatenation**: Replace `` `Value: ${n}` `` with `"Value: " + n`
-2. **Literal values**: Replace `${user.name}` with `"user"` or `"example"`
-3. **Escaped backticks**: Avoid `\"` in JSX attributes - rewrite without escaping
-
-**Examples of fixes applied:**
-- Step 3: `` `Error: ${error}` `` → `"Error: " + error`
-- Step 4: `` `Sum: ${x + y}` `` → `"Sum: " + (x + y).toString()`
-- Step 10: `` `Result: ${n}` `` → `"Result: " + n.toString()`
-- Step 15: `${user.name}` → `"user"` (literal values)
-
-### Multiline Type Annotations in MDX
-
-Effect type annotations like `Effect<Type1, Type2, Type3>` split across lines with `|>` syntax cause MDX parsing errors because `|>` is interpreted as JSX attribute syntax.
-
-**Solution**: Keep type annotations on single line: `Effect<Type1, Type2, Type3>`
-
-### GlossaryEntry Structure
-
-The `GlossaryEntry` interface uses specific field names:
-- `id` (not `term`)
-- `fromCommand` (not `zio`)
-- `toCommand` (not `effect`)
-- `note` (not `notes`)
-- `category` (required)
+**Critical Path**: Phase 1 → Phase 2 → Phase 3 → Phase 5 → Phase 6 → Phase 8 (jj-git working E2E)
 
 ---
 
@@ -229,15 +164,18 @@ The `GlossaryEntry` interface uses specific field names:
 
 ```bash
 # Development
-cd packages/web && bun run dev
+cd packages/sandbox-api && bun run dev  # Start sandbox API
+cd packages/web && bun run dev          # Start web dev server
 
 # Validation
-bun run build && bun run typecheck && bun run lint
+bun run --cwd packages/web scripts/validate-snippets.ts --tool-pair jj-git
+bun run --cwd packages/web scripts/validate-snippets.ts --strict
 
-# Test routes
-# http://localhost:3000/effect-zio
-# http://localhost:3000/effect-zio/1
-# http://localhost:3000/effect-zio/glossary
+# Full build with validation
+bun run --cwd packages/web build
+
+# Tests
+bun run test
 ```
 
 ---
@@ -246,41 +184,81 @@ bun run build && bun run typecheck && bun run lint
 
 | Purpose | File Path |
 |---------|-----------|
-| Pairing schema | `packages/web/content/pairings.ts` |
-| ScalaComparisonBlock (model) | `packages/web/components/ui/ScalaComparisonBlock.tsx` |
-| MDX components registry | `packages/web/components/mdx/MDXComponents.tsx` |
-| LessonCard icons | `packages/web/components/ui/LessonCard.tsx:10-19` |
-| TerminalSearch (has TODO) | `packages/web/components/ui/TerminalSearch.tsx:20-21` |
-| Overview page routing | `packages/web/app/[toolPair]/page.tsx` |
-| Step page routing | `packages/web/app/[toolPair]/[step]/page.tsx` |
-| Glossary page | `packages/web/app/[toolPair]/glossary/page.tsx` |
-| zio-cats glossary (model) | `packages/web/content/glossary/zio-cats.ts` |
-| zio-cats tutorial (model) | `packages/web/content/comparisons/zio-cats/` |
-| Effect-ZIO spec | `specs/effect-zio.md` |
+| WebSocket service | `packages/sandbox-api/src/services/websocket.ts` |
+| SandboxClient | `packages/web/services/sandbox-client.ts` |
+| TryIt component | `packages/web/components/ui/TryIt.tsx` |
+| InteractiveTerminal | `packages/web/components/ui/InteractiveTerminal.tsx` |
+| ScalaComparisonBlock | `packages/web/components/ui/ScalaComparisonBlock.tsx` |
+| CrossLanguageBlock | `packages/web/components/ui/CrossLanguageBlock.tsx` |
+| SideBySide | `packages/web/components/ui/SideBySide.tsx` |
+| Content schemas | `packages/web/lib/content/schemas.ts` |
+| jj-git config | `packages/web/content/comparisons/jj-git/config.yml` |
+| Environments | `packages/sandbox-api/src/environments/builtin.ts` |
+| Spec document | `SNIPPET-VALIDATION.md` |
 
 ---
 
-## Key Concept Mappings (Reference)
+## Learned
 
-### Type Signature (CRITICAL)
-| ZIO (Scala) | Effect (TypeScript) |
-|-------------|---------------------|
-| `ZIO[-R, +E, +A]` | `Effect<A, E, R>` |
+_(Updated during implementation)_
 
-**Effect puts Success (A) first, not Requirements (R)!**
+---
 
-### Common Mappings
-| ZIO | Effect |
-|-----|--------|
-| `ZIO.succeed(x)` | `Effect.succeed(x)` |
-| `ZIO.fail(e)` | `Effect.fail(e)` |
-| `ZIO.attempt(...)` | `Effect.try(...)` |
-| `ZIO.fromPromise(...)` | `Effect.tryPromise(...)` |
-| `for { a <- fa } yield a` | `Effect.gen(function* () { const a = yield* fa; return a })` |
-| `ZIO.service[T]` | `yield* Tag` |
-| `ZLayer.succeed(...)` | `Layer.succeed(Tag, ...)` |
-| `fa.provideLayer(layer)` | `Effect.provide(fa, layer)` |
-| `ZIO.fork` | `Effect.fork` |
-| `Fiber.join` | `Fiber.join` |
-| `Ref.make(...)` | `Ref.make(...)` |
-| `ZStream` | `Stream` |
+## Gap Analysis (2026-01-26)
+
+### What Already Exists
+
+**Multi-Environment Docker Infrastructure (can be leveraged):**
+- `packages/sandbox-api/src/environments/` - Complete environment registry with Effect-TS service
+- `packages/sandbox-api/src/environments/builtin.ts` - 3 environments registered (bash, node, python)
+- `packages/sandbox-api/docker/environments/` - Dockerfiles for bash, node, python
+- `packages/sandbox-api/scripts/docker-build-all.sh` - Multi-environment build with 11 tests
+
+**WebSocket Init Commands (partial - needs enhancement):**
+- `websocket.ts` lines 89-94, 292-329: `executeInitCommands()` method exists
+- Runs commands silently (doesn't echo to user), has 200ms delays, 30s timeout
+- **Missing:** `silent: true` flag option, `initComplete` response type
+
+**Content Infrastructure:**
+- `packages/web/lib/content/schemas.ts` - Zod frontmatter validation (needs `validation` field added)
+- `packages/web/lib/content/types.ts` - `SandboxConfig` type, `resolveSandboxConfig()` function
+- All 3 `config.yml` files exist (need `validation:` sections added)
+
+### What Does NOT Exist (54 tasks remain)
+
+**Validation Scripts (0/6 created):**
+- [ ] `packages/web/scripts/validate-snippets.ts`
+- [ ] `packages/web/scripts/snippet-extractor.ts`
+- [ ] `packages/web/scripts/headless-validator.ts`
+- [ ] `packages/web/scripts/config-resolver.ts`
+- [ ] `packages/web/scripts/sandbox-manager.ts`
+- [ ] `packages/web/scripts/validation-cache.ts`
+
+**New Docker Environments (0/2):**
+- [ ] `packages/sandbox-api/docker/environments/scala/Dockerfile`
+- [ ] `packages/sandbox-api/docker/environments/typescript/Dockerfile`
+
+**Component Props (0/4):**
+- [ ] `ScalaComparisonBlock.tsx` - needs `validate`, `extraImports` props
+- [ ] `CrossLanguageBlock.tsx` - needs `validate`, `extraImports` props
+- [ ] `SideBySide.tsx` - needs `validate` prop
+- [ ] `TryIt.tsx` - needs `setup` prop
+
+**Config Updates (0/3):**
+- [ ] `jj-git/config.yml` - needs `validation:` section
+- [ ] `zio-cats/config.yml` - needs `validation:` section with Scala imports/wrapper
+- [ ] `effect-zio/config.yml` - needs `validation:` + `secondary:` sections
+
+**Other:**
+- [ ] `.github/workflows/validate-snippets.yml`
+- [ ] `.validation-cache/` directory structure
+- [ ] `packages/web/lib/content/schemas.ts` - add `validation` field to frontmatter
+
+### Critical Path Confirmed
+
+Phase 1 → Phase 2 → Phase 3 → Phase 5 → Phase 6 → Phase 8 gets jj-git working E2E.
+
+Priority order:
+1. **P0** - Phases 1-6, 8 (jj-git E2E) — unblocks all content validation
+2. **P1** - Phases 7, 9 (caching, build integration) — enables CI workflow
+3. **P2** - Phases 10-13 (Scala/TS environments, component props, CI) — completes system
