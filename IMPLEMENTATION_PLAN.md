@@ -149,7 +149,7 @@ Build a headless snippet validation system that extracts code from MDX, executes
 ### P0.7: Validation Config for jj-git
 
 - [x] **Update jj-git config.yml** — Add `validation:` section with shell setup commands (git init, config user.email/name). Uses `jj git init --colocate .` and sets git user.email/name globally.
-- [ ] **Add validation schema to stepFrontmatterSchema** — Update `packages/web/lib/content/schemas.ts` with optional `validation` field
+- [x] **Add validation schema to stepFrontmatterSchema** — Update `packages/web/lib/content/schemas.ts` with optional `validation` field. Added `validationConfigSchema` with `imports`, `setup`, and `wrapper` fields. Exported `ValidationConfig` type.
 - [ ] **Test end-to-end jj-git validation** — Run `bun run scripts/validate-snippets.ts --tool-pair jj-git`
 - [ ] **Fix any failing snippets** — Update MDX content or config as needed to pass validation
 
@@ -326,12 +326,13 @@ _(Updated during implementation)_
 - **Config resolution:** `config-resolver.ts` created with full support for 3-level config hierarchy (pairing config.yml → step frontmatter → component props). Falls back to `defaults.sandbox.init` if no `validation:` section exists.
 - **Headless validator:** Uses Bun's native WebSocket (browser-compatible API) instead of `ws` package to avoid adding dependencies to packages/web. Prompt detection uses 500ms settle time after last output.
 - **CLI arg parsing:** Biome lint requires `for...of` loops. Used iterator pattern (`args[Symbol.iterator]()`) to handle args with values like `--tool-pair X` while complying with lint rules.
+- **Pre-existing bug:** Playwright tests fail with "Playwright Test did not expect test.describe() to be called here" when run via `bun test`. This is a Playwright/Bun compatibility issue unrelated to snippet validation work. Tests should be run via `bun run --cwd packages/web test` instead.
 
 ---
 
 ## Progress
 
-**P0**: 35/42 tasks complete (83%) — P0.6 CLI Entry Point complete
+**P0**: 36/42 tasks complete (86%) — P0.7 validation schema added
 **P1**: 0/13 tasks complete (0%)
 **P2**: 0/25 tasks complete (0%)
-**Total**: 35/80 tasks complete (44%)
+**Total**: 36/80 tasks complete (45%)

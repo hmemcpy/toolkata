@@ -24,6 +24,35 @@ export const sandboxConfigSchema = z
   .optional()
 
 /**
+ * Validation configuration schema for step frontmatter.
+ *
+ * Used by the snippet validation system to customize validation behavior
+ * at the step level. Can extend or override the pairing-level config.
+ *
+ * @example
+ * ```yaml
+ * validation:
+ *   imports:
+ *     - "import zio.stream._"
+ *   setup:
+ *     - "jj git init ."
+ *     - "echo 'content' > file.txt"
+ *   wrapper: |
+ *     object Snippet { ${code} }
+ * ```
+ */
+export const validationConfigSchema = z
+  .object({
+    /** Additional import statements to prepend to code snippets (concatenated with pairing config) */
+    imports: z.array(z.string()).optional(),
+    /** Shell commands to run before validation (overrides pairing config) */
+    setup: z.array(z.string()).optional(),
+    /** Code wrapper template with ${code} placeholder (overrides pairing config) */
+    wrapper: z.string().optional(),
+  })
+  .optional()
+
+/**
  * MDX frontmatter schema for tutorial steps.
  *
  * Validates the frontmatter of content/*.mdx files to ensure
@@ -51,6 +80,7 @@ export const stepFrontmatterSchema = z.object({
   gitCommands: z.array(z.string()).optional(),
   jjCommands: z.array(z.string()).optional(),
   sandbox: sandboxConfigSchema,
+  validation: validationConfigSchema,
 })
 
 /**
@@ -76,3 +106,4 @@ export const frontmatterSchema = z.discriminatedUnion("type", [
 export type StepFrontmatter = z.infer<typeof stepFrontmatterSchema>
 export type IndexFrontmatter = z.infer<typeof indexFrontmatterSchema>
 export type Frontmatter = z.infer<typeof frontmatterSchema>
+export type ValidationConfig = z.infer<typeof validationConfigSchema>
