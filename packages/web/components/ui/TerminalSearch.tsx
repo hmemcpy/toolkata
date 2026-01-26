@@ -57,6 +57,11 @@ export function TerminalSearch() {
     [results, selectedIndex],
   )
 
+  // Auto-focus input on mount
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
