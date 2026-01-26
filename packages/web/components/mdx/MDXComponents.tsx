@@ -6,6 +6,7 @@
  */
 
 import { Callout } from "../ui/Callout"
+import { CrossLanguageBlock } from "../ui/CrossLanguageBlock"
 import { SideBySide } from "../ui/SideBySide"
 import { ScalaComparisonBlock } from "../ui/ScalaComparisonBlock"
 import { ScastieEmbed } from "../ui/ScastieEmbed"
@@ -23,6 +24,7 @@ import { TryIt } from "../ui/TryIt"
 export const mdxComponents = {
   SideBySide,
   ScalaComparisonBlock,
+  CrossLanguageBlock,
   ScastieEmbed,
   Callout,
   Tabs,

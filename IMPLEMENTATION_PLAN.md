@@ -73,12 +73,12 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 
 ### P2 - CrossLanguageBlock Component
 
-- [ ] **Create CrossLanguageBlock component** — New file `components/ui/CrossLanguageBlock.tsx` (UI component like ScalaComparisonBlock)
-- [ ] **Copy ScalaComparisonBlock structure** — Async server component with Shiki `codeToHtml()`, reuse `normalizeCode()` function for stripMargin
-- [ ] **Implement dual-panel layout** — ZIO (Scala) left panel with label "ZIO (Scala)", Effect (TypeScript) right panel with label "Effect (TypeScript)"
-- [ ] **Configure language-specific highlighting** — `language: "scala"` for `zioCode` prop, `language: "typescript"` for `effectCode` prop
-- [ ] **Add mobile responsive stacking** — `grid-cols-1 md:grid-cols-2` pattern from ScalaComparisonBlock
-- [ ] **Register in MDX components** — Add `CrossLanguageBlock` to `components/mdx/MDXComponents.tsx` exports
+- [x] **Create CrossLanguageBlock component** — New file `components/ui/CrossLanguageBlock.tsx` (UI component like ScalaComparisonBlock)
+- [x] **Copy ScalaComparisonBlock structure** — Async server component with Shiki `codeToHtml()`, reuse `normalizeCode()` function for stripMargin
+- [x] **Implement dual-panel layout** — ZIO (Scala) left panel with label "ZIO (Scala)", Effect (TypeScript) right panel with label "Effect (TypeScript)"
+- [x] **Configure language-specific highlighting** — `language: "scala"` for `zioCode` prop, `language: "typescript"` for `effectCode` prop
+- [x] **Add mobile responsive stacking** — `grid-cols-1 md:grid-cols-2` pattern from ScalaComparisonBlock
+- [x] **Register in MDX components** — Add `CrossLanguageBlock` to `components/mdx/MDXComponents.tsx` exports
 
 ### P3 - Search Improvements (Can defer to later PR)
 
@@ -163,7 +163,7 @@ Implement a 15-step tutorial teaching Effect.TS to ZIO developers. Delivered in 
 - PR 1 (Infrastructure): 20 tasks
 - PR 2 (Content): 35 tasks
 
-**Progress**: 6/55 tasks complete (11%)
+**Progress**: 12/55 tasks complete (22%)
 
 ---
 
