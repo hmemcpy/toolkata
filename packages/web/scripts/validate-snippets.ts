@@ -28,6 +28,12 @@ import {
   type StepValidationResult,
   type ValidationSummary,
 } from "./docker-validator.js"
+import {
+  loadCacheEntry,
+  saveCacheEntry,
+  clearAllCache,
+  type StepCacheEntry,
+} from "./validation-cache.js"
 
 /**
  * CLI options parsed from command line arguments.
@@ -38,6 +44,8 @@ interface CliOptions {
   readonly step?: number
   readonly parallel: boolean
   readonly verbose: boolean
+  readonly noCache: boolean
+  readonly clearCache: boolean
   readonly help: boolean
 }
 
@@ -50,6 +58,8 @@ function parseArgs(args: string[]): CliOptions {
   let step: number | undefined
   let parallel = false
   let verbose = false
+  let noCache = false
+  let clearCache = false
   let help = false
 
   const iter = args[Symbol.iterator]()
@@ -82,6 +92,12 @@ function parseArgs(args: string[]): CliOptions {
       case "--verbose":
         verbose = true
         break
+      case "--no-cache":
+        noCache = true
+        break
+      case "--clear-cache":
+        clearCache = true
+        break
       case "--help":
       case "-h":
         help = true
@@ -97,7 +113,7 @@ function parseArgs(args: string[]): CliOptions {
   }
 
   // Build return object conditionally to satisfy exactOptionalPropertyTypes
-  const base = { strict, parallel, verbose, help }
+  const base = { strict, parallel, verbose, noCache, clearCache, help }
   if (toolPair !== undefined && step !== undefined) {
     return { ...base, toolPair, step }
   }
@@ -128,6 +144,8 @@ Options:
   --step N          Only validate specific step number
   --parallel        Run snippets in parallel (faster, but harder to debug)
   --verbose         Show all output, not just errors
+  --no-cache        Force re-validation ignoring cache
+  --clear-cache     Clear all cached validation results
   --help, -h        Show this help message
 
 Prerequisites:
@@ -141,6 +159,8 @@ Examples:
   bun run scripts/validate-snippets.ts --parallel         # Run in parallel (faster)
   bun run scripts/validate-snippets.ts --strict           # Fail build on errors
   bun run scripts/validate-snippets.ts --verbose          # Show detailed output
+  bun run scripts/validate-snippets.ts --no-cache         # Skip cache, revalidate all
+  bun run scripts/validate-snippets.ts --clear-cache      # Clear cache only
 `)
 }
 
@@ -256,6 +276,7 @@ function printSummary(summaries: Map<string, ValidationSummary>): void {
 async function validateToolPairFull(
   toolPair: string,
   contentDir: string,
+  scriptDir: string,
   options: CliOptions,
 ): Promise<{ stepResults: StepValidationResult[]; summary: ValidationSummary }> {
   console.log(`\nValidating ${toolPair}...`)
@@ -310,6 +331,43 @@ async function validateToolPairFull(
 
     if (!firstSnippet) continue
 
+    let result: StepValidationResult
+
+    // Check cache unless --no-cache is specified
+    if (!options.noCache) {
+      const cacheLookup = await loadCacheEntry(scriptDir, toolPair, step)
+      if (cacheLookup.hit && cacheLookup.entry) {
+        // Cache hit - reconstruct StepValidationResult from cache
+        const cachedResult = cacheLookup.entry
+        result = {
+          step,
+          toolPair,
+          results: cachedResult.snippetResults.map((sr) => {
+            const base = {
+              snippet: firstSnippet, // Use first snippet as reference
+              status: sr.result,
+              output: sr.output,
+              durationMs: sr.durationMs,
+            }
+            // Only add error if defined (exactOptionalPropertyTypes)
+            if (sr.error !== undefined) {
+              return { ...base, error: sr.error }
+            }
+            return base
+          }),
+          totalDurationMs: 0, // Cached results don't track total duration
+        }
+
+        const passCount = result.results.filter((r) => r.status === "pass").length
+        const failCount = result.results.filter((r) => r.status === "fail").length
+        const skipCount = result.results.filter((r) => r.status === "skipped").length
+
+        console.log(`  \x1b[90m⊝ Cache hit\x1b[0m Step ${step}: ${passCount} passed, ${failCount} failed, ${skipCount} skipped`)
+        stepResults.push(result)
+        continue
+      }
+    }
+
     // Resolve the full path to the MDX file
     const mdxPath = resolve(contentDir, "..", firstSnippet.file.replace("content/", ""))
     // Normalize "shell" to "bash" for config resolution
@@ -317,11 +375,44 @@ async function validateToolPairFull(
       firstSnippet.language === "shell" ? "bash" : firstSnippet.language
     const config = await resolveSnippetConfig(contentDir, toolPair, mdxPath, language)
 
-    const result = await validateStep(toolPair, step, stepSnippets, config, {
+    result = await validateStep(toolPair, step, stepSnippets, config, {
       verbose: options.verbose,
       parallel: options.parallel,
       maxParallel: 4,
     })
+
+    // Save to cache
+    if (!options.noCache) {
+      const { computeStepHash } = await import("./validation-cache.js")
+      const stepHash = await computeStepHash(scriptDir, toolPair, step)
+
+      // Determine overall result (fail if any snippet failed)
+      const hasFailures = result.results.some((r) => r.status === "fail")
+      const overallResult: "pass" | "fail" = hasFailures ? "fail" : "pass"
+
+      const cacheEntry: StepCacheEntry = {
+        stepHash,
+        toolPair,
+        step,
+        result: overallResult,
+        snippetResults: result.results.map((sr) => {
+          const base = {
+            lineStart: sr.snippet.lineStart,
+            result: sr.status,
+            output: sr.output,
+            durationMs: sr.durationMs,
+          }
+          // Only add error if defined (exactOptionalPropertyTypes)
+          if (sr.error !== undefined) {
+            return { ...base, error: sr.error }
+          }
+          return base
+        }),
+        timestamp: Date.now(),
+      }
+
+      await saveCacheEntry(scriptDir, cacheEntry)
+    }
 
     stepResults.push(result)
     printStepResult(result, options.verbose)
@@ -379,6 +470,18 @@ async function main(): Promise<void> {
 
   console.log("=== Snippet Validation ===")
 
+  // Determine content directory (relative to this script)
+  const scriptDir = new URL(".", import.meta.url).pathname
+
+  // Handle --clear-cache flag (exits after clearing)
+  if (options.clearCache) {
+    console.log("Clearing validation cache...")
+    await clearAllCache(scriptDir)
+    console.log("Cache cleared.")
+    clearTimeout(timeoutId)
+    process.exit(0)
+  }
+
   // Check Docker prerequisites
   const dockerReady = await checkDockerPrerequisites()
   if (!dockerReady) {
@@ -388,8 +491,6 @@ async function main(): Promise<void> {
     process.exit(1)
   }
 
-  // Determine content directory (relative to this script)
-  const scriptDir = new URL(".", import.meta.url).pathname
   const contentDir = resolve(scriptDir, "..", "content")
 
   if (!existsSync(contentDir)) {
@@ -447,7 +548,7 @@ async function main(): Promise<void> {
 
     // Validate each tool pair
     for (const toolPair of toolPairs) {
-      const { summary } = await validateToolPairFull(toolPair, contentDir, options)
+      const { summary } = await validateToolPairFull(toolPair, contentDir, scriptDir, options)
       allSummaries.set(toolPair, summary)
     }
 

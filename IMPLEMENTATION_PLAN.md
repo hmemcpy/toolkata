@@ -159,17 +159,18 @@ Build a headless snippet validation system that extracts code from MDX, executes
 
 ### P1.1: Step-Level Caching
 
-- [ ] **Create validation-cache.ts** — New file `packages/web/scripts/validation-cache.ts`
-- [ ] **Implement step hash computation** — SHA256 of (config.yml content + step MDX content)
-- [ ] **Implement cache storage** — JSON file per step in `.validation-cache/` directory
-- [ ] **Implement cache lookup** — Compare hash, skip validation if match, return cached result
-- [ ] **Add `--no-cache` flag** — Force re-validation ignoring cache
+- [x] **Create validation-cache.ts** — New file `packages/web/scripts/validation-cache.ts`
+- [x] **Implement step hash computation** — SHA256 of (config.yml content + step MDX content)
+- [x] **Implement cache storage** — JSON file per step in `.validation-cache/` directory
+- [x] **Implement cache lookup** — Compare hash, skip validation if match, return cached result
+- [x] **Add `--no-cache` flag** — Force re-validation ignoring cache
+- [x] **Add .validation-cache to .gitignore** — Prevent cache from being committed
+- [x] **Add `--clear-cache` flag** — Clear all cached validation results
 
 ### P1.2: Build Integration
 
 - [ ] **Add validate:snippets script** — Update `packages/web/package.json` with `"validate:snippets": "bun run scripts/validate-snippets.ts"`
 - [ ] **Add prebuild hook** — Update package.json with `"prebuild": "bun run validate:snippets --strict"`
-- [ ] **Add .validation-cache to .gitignore** — Prevent cache from being committed
 - [ ] **Test full build** — Run `bun run build`, verify validation runs first
 
 ### P1.3: CI Integration
@@ -231,15 +232,15 @@ Build a headless snippet validation system that extracts code from MDX, executes
 | P0 | CLI Entry Point | 5 |
 | P0 | jj-git Config | 4 |
 | **P0 Total** | | **38** |
-| P1 | Caching | 5 |
-| P1 | Build Integration | 4 |
+| P1 | Caching | 7 |
+| P1 | Build Integration | 3 |
 | P1 | CI Integration | 4 |
-| **P1 Total** | | **13** |
+| **P1 Total** | | **14** |
 | P2 | Scala Environment | 9 |
 | P2 | TypeScript Environment | 9 |
 | P2 | Component Props | 7 |
 | **P2 Total** | | **25** |
-| **Grand Total** | | **76** |
+| **Grand Total** | | **77** |
 
 ---
 
@@ -341,12 +342,14 @@ _(Updated during implementation)_
 - **TryIt skip for sandbox limitations:** Added `validate={false}` to 3 TryIt commands: `jj log -r 'heads()'` (jj CLI API changed - heads() now requires arguments), `jj op undo` (twice - permission denied removing config.toml in restricted sandbox).
 - **TypeScript strict mode fixes:** Cast `spawn` result to EventEmitter via `unknown` to satisfy strict TypeScript types when accessing `.on()` methods. The `ChildProcessByStdio` type doesn't expose EventEmitter methods directly.
 - **jj-git validation complete:** All 239 snippets pass - 36 TryIt commands validated, 203 skipped (SideBySide + pseudo-code + non-executable).
+- **Validation cache implemented:** Step-level caching in `.validation-cache/` directory with SHA256 hash of (config.yml + step MDX). Cache hit shows as gray "⊝ Cache hit" indicator. `--no-cache` flag bypasses cache, `--clear-cache` removes all cached results.
+- **exactOptionalPropertyTypes cache fix:** When reconstructing cached results, conditionally add `error` property only if defined to satisfy `exactOptionalPropertyTypes: true`.
 
 ---
 
 ## Progress
 
 **P0**: 38/38 tasks complete (100%) — jj-git snippet validation fully working
-**P1**: 0/13 tasks complete (0%)
+**P1**: 7/14 tasks complete (50%) — Step-level caching fully implemented
 **P2**: 0/25 tasks complete (0%)
-**Total**: 38/76 tasks complete (50%)
+**Total**: 45/77 tasks complete (58%)
