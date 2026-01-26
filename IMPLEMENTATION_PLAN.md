@@ -117,7 +117,7 @@ All Zionomicon chapters are available at `/tmp/zionomicon/EPUB/text/`. Key chapt
 - [x] **Create Step 15: Database** — ZIO JDBC/Quill vs Doobie/Skunk
 
 **P2 - Content - Enhance Existing Steps** (improvements to existing content):
-- [ ] **Update Step 1: R/E/A Signature** — Add `RIO`, variance notation `ZIO[-R, +E, +A]`, `URIO`
+- [x] **Update Step 1: R/E/A Signature** — Add `RIO`, variance notation `ZIO[-R, +E, +A]`, `URIO`
 - [ ] **Update Step 2: Creating Effects** — Add `ZIO.unit`, `ZIO.never`, `ZIO.fromTry`, `ZIO.async`
 - [ ] **Update Step 3: Error Handling** — Add `foldZIO`, error recovery patterns
 - [ ] **Update Step 4: Map/FlatMap Purity** — Add `as`, `tap`, `filterOrFail` utility operators
@@ -430,16 +430,17 @@ tx.transact(transactor)
 
 ---
 
-- [ ] **Update Step 1: R/E/A Signature** — Add `RIO`, variance notation, `URIO`
+- [x] **Update Step 1: R/E/A Signature** — Add `RIO`, variance notation, `URIO`
 
 **Why**: Current content is accurate but missing important type aliases and variance explanation from Zionomicon ch003.
 
 **File**: `packages/web/content/comparisons/cats-zio/01-step.mdx`
 
 **Updates from Zionomicon ch003**:
-- Add **variance notation**: `ZIO[-R, +E, +A]`
+- Add **variance notation**: `ZIO[-R, +E, +A]` (contravariant R, covariant E and A)
 - Add **type aliases**: `RIO`, `URIO`
 - Add **mental model**: `ZIO[R, E, A]` is like `R => Either[E, A]`
+- Added type alias reference callout with all 5 aliases explained
 
 ---
 
@@ -740,14 +741,14 @@ No strict dependencies between steps - each should be standalone. However:
 
 ## Task Count
 
-**Total pending tasks**: 28 main tasks (P0-P4)
+**Total pending tasks**: 27 main tasks (P0-P4)
 - P0 (Critical): 4 tasks — Infrastructure updates (COMPLETED)
 - P1 (New Steps): 0 tasks — All new steps created (11-15)
-- P2 (Enhance): 9 tasks — Update steps 1-9
+- P2 (Enhance): 8 tasks — Update steps 2-9
 - P3 (Landing): 2 tasks — Index page, glossary
 - P4 (Validation): 1 task — Build/typecheck/lint
 
-**Completed tasks**: 8/20 main tasks (40%)
+**Completed tasks**: 9/20 main tasks (45%)
 - [x] P0: All infrastructure updates (generateStaticParams, overview page steps/times, pairings.ts)
 - [x] Step 11: STM (11-step.mdx created, validated)
 - [x] Step 12: Concurrent Structures (12-step.mdx created, validated)
@@ -755,9 +756,10 @@ No strict dependencies between steps - each should be standalone. However:
 - [x] Step 14: HTTP (14-step.mdx created, validated)
 - [x] Step 15: Database (15-step.mdx created, validated)
 - [x] Step 10: Interop (version `23.1.0.3` is correct for ZIO 2.x)
+- [x] Step 1: R/E/A Signature (added variance notation, RIO, URIO type aliases)
 
-**Progress**: 8/20 main tasks complete (40%)
-**Remaining work**: Enhancements to steps 1-9, landing page updates
+**Progress**: 9/20 main tasks complete (45%)
+**Remaining work**: Enhancements to steps 2-9, landing page updates
 
 **Learned**:
 - MDX string interpolation requires escaping `${}` as `\${}` to avoid JSX interpretation
