@@ -118,9 +118,9 @@ All Zionomicon chapters are available at `/tmp/zionomicon/EPUB/text/`. Key chapt
 
 **P2 - Content - Enhance Existing Steps** (improvements to existing content):
 - [x] **Update Step 1: R/E/A Signature** — Add `RIO`, variance notation `ZIO[-R, +E, +A]`, `URIO`
-- [ ] **Update Step 2: Creating Effects** — Add `ZIO.unit`, `ZIO.never`, `ZIO.fromTry`, `ZIO.async`
+- [x] **Update Step 2: Creating Effects** — Add `ZIO.unit`, `ZIO.never`, `ZIO.fromTry`, `ZIO.async`
 - [x] **Update Step 3: Error Handling** — Add `foldZIO`, `foldCauseZIO`, error recovery patterns
-- [ ] **Update Step 4: Map/FlatMap Purity** — Add `as`, `tap`, `filterOrFail` utility operators
+- [x] **Update Step 4: Map/FlatMap Purity** — Add `as`, `tap`, `filterOrFail` utility operators
 - [ ] **Update Step 5: Dependency Injection** — Add `ZLayer.derive` modern pattern
 - [ ] **Update Step 6: Resource Management** — Add `Scope` interface explanation
 - [ ] **Update Step 7: Fiber Supervision** — Add `forkDaemon`/`forkScoped`, `raceEither`
@@ -482,7 +482,7 @@ tx.transact(transactor)
 
 ---
 
-- [ ] **Update Step 4: Map/FlatMap Purity** — Add utility operators
+- [x] **Update Step 4: Map/FlatMap Purity** — Add utility operators
 
 **Why**: Common utility operators from Zionomicon ch003 improve code readability.
 
@@ -493,6 +493,12 @@ tx.transact(transactor)
 - Add `unit` - Discard value, return Unit
 - Add `tap[R1 <: R, E1 >: E](f: A => ZIO[R1, E1, Any])` - Side effect
 - Add `filterOrFail[E1 >: E](p: A => Boolean)(e: => E1)` - Filter or fail
+
+**Completed** 2026-01-26:
+- Added `as`, `unit`, `tap`, `filterOrFail` sections with ScalaComparisonBlock comparisons
+- Compared ZIO (`as`, `unit`, `tap`, `filterOrFail`) vs Cats Effect (`as`, `void`, `tap`, `raiseErrorUnless`)
+- Added helpful callouts explaining when to use each operator
+- Updated frontmatter with new commands
 
 ---
 
@@ -752,14 +758,14 @@ No strict dependencies between steps - each should be standalone. However:
 
 ## Task Count
 
-**Total pending tasks**: 23 main tasks (P0-P4)
+**Total pending tasks**: 20 main tasks (P0-P4)
 - P0 (Critical): 4 tasks — Infrastructure updates (COMPLETED)
 - P1 (New Steps): 0 tasks — All new steps created (11-15)
-- P2 (Enhance): 6 tasks — Update steps 4-9
+- P2 (Enhance): 5 tasks — Update steps 5-9
 - P3 (Landing): 2 tasks — Index page, glossary
 - P4 (Validation): 1 task — Build/typecheck/lint
 
-**Completed tasks**: 11/20 main tasks (55%)
+**Completed tasks**: 12/20 main tasks (60%)
 - [x] P0: All infrastructure updates (generateStaticParams, overview page steps/times, pairings.ts)
 - [x] Step 11: STM (11-step.mdx created, validated)
 - [x] Step 12: Concurrent Structures (12-step.mdx created, validated)
@@ -770,9 +776,10 @@ No strict dependencies between steps - each should be standalone. However:
 - [x] Step 1: R/E/A Signature (added variance notation, RIO, URIO type aliases)
 - [x] Step 2: Creating Effects (added ZIO.unit, ZIO.never, ZIO.fromTry)
 - [x] Step 3: Error Handling (added foldZIO, foldCauseZIO, orElse variants)
+- [x] Step 4: Map/FlatMap Purity (added `as`, `tap`, `filterOrFail` utility operators)
 
-**Progress**: 11/20 main tasks complete (55%)
-**Remaining work**: Enhancements to steps 4-9, landing page updates
+**Progress**: 12/20 main tasks complete (60%)
+**Remaining work**: Enhancements to steps 5-9, landing page updates
 
 **Learned**:
 - MDX string interpolation requires escaping `${}` as `\${}` to avoid JSX interpretation

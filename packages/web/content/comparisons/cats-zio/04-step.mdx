@@ -2,8 +2,8 @@
 title: "Map/FlatMap Purity"
 step: 4
 description: "Referential transparency and functional composition"
-zioCommands: []
-ceCommands: []
+zioCommands: [".map", ".flatMap", ".as", ".unit", ".tap", "filterOrFail", "<&>", ".zipWithPar"]
+ceCommands: [".map", ".flatMap", ".as", ".void", ".tap", ".raiseErrorUnless", ".parTupled"]
 ---
 
 # Map/FlatMap Purity
@@ -40,6 +40,45 @@ Both ZIO and Cats Effect guarantee referential transparency through their effect
 <Callout variant="tip">
 Both libraries short-circuit on errors in flatMap chains. This is called
 "fail-fast" semantics and is fundamental to monadic error handling.
+</Callout>
+
+## Utility Operators
+
+Both libraries provide utility operators that simplify common patterns.
+
+### Discard Value (as/unit)
+
+<ScalaComparisonBlock
+  catsEffectCode={`import cats.effect.IO\n\n// Map to constant value\nval answer: IO[String] =\n  IO.pure(42).as("answer")\n\n// Discard value to Unit\nval unit: IO[Unit] =\n  IO.pure(42).void`}
+  zioCode={`import zio._\n\n// Map to constant value\nval answer: UIO[String] =\n  ZIO.succeed(42).as("answer")\n\n// Discard value to Unit\nval unit: UIO[Unit] =\n  ZIO.succeed(42).unit`}
+  catsEffectComment=".as / .void - constant or unit value"
+  zioComment=".as / .unit - constant or unit value"
+/>
+
+### Side Effects (tap)
+
+<ScalaComparisonBlock
+  catsEffectCode={`import cats.effect.IO\n\n// Execute side effect, pass through value\nval tapped: IO[Int] =\n  IO.pure(42)\n    .tap(n => IO.println(s\"Got: \\$n\"))\n\n// Result: still contains 42`}
+  zioCode={`import zio._\n\n// Execute side effect, pass through value\nval tapped: UIO[Int] =\n  ZIO.succeed(42)\n    .tap(n => ZIO.succeed(println(s\"Got: \\$n\")))\n\n// Result: still contains 42`}
+  catsEffectComment=".tap - side effect, keep value"
+  zioComment=".tap - side effect, keep value"
+/>
+
+<Callout variant="tip">
+<code>.tap</code> is useful for logging, debugging, or metrics without breaking the effect chain. The side effect runs, but the original value passes through unchanged.
+</Callout>
+
+### Filter or Fail
+
+<ScalaComparisonBlock
+  catsEffectCode={`import cats.effect.IO\n\n// Filter or raise error\nval filtered: IO[Int] =\n  IO.pure(42)\n    .raiseErrorUnless(\n      _ > 50,\n      new Exception(\"Value too small\")\n    )\n\n// Result: Exception(\"Value too small\")`}
+  zioCode={`import zio._\n\n// Filter or fail with custom error\nval filtered: IO[String, Int] =\n  ZIO.succeed(42)\n    .filterOrFail(\n      _ > 50,\n      \"Value too small\"\n    )\n\n// Result: ZIO.fail(\"Value too small\")`}
+  catsEffectComment=".raiseErrorUnless / .raiseErrorWhen"
+  zioComment=".filterOrFail - filter or fail"
+/>
+
+<Callout variant="warning">
+<code>filterOrFail</code> fails when the predicate returns <code>false</code>. Use <code>.filter</code> (on <code>Option</code>-returning effects) to return <code>None</code> instead of failing.
 </Callout>
 
 ## Parallel Composition
