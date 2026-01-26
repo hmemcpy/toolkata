@@ -17,3 +17,18 @@ defaults:
     environment: "bash"
     timeout: 60
     init: []
+
+# Validation configuration for build-time snippet validation.
+#
+# The validation system extracts code snippets from MDX and executes them
+# against the sandbox to ensure all tutorial examples work correctly.
+#
+# Setup commands run before each step's snippets are validated.
+# They prepare the environment (git config, repo init) so commands work.
+validation:
+  environment: "bash"
+  prelude:
+    setup:
+      - "git config --global user.email 'test@toolkata.dev'"
+      - "git config --global user.name 'Test User'"
+      - "jj git init --colocate ."

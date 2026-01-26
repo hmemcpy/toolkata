@@ -148,7 +148,7 @@ Build a headless snippet validation system that extracts code from MDX, executes
 
 ### P0.7: Validation Config for jj-git
 
-- [ ] **Update jj-git config.yml** — Add `validation:` section with shell setup commands (git init, config user.email/name)
+- [x] **Update jj-git config.yml** — Add `validation:` section with shell setup commands (git init, config user.email/name). Uses `jj git init --colocate .` and sets git user.email/name globally.
 - [ ] **Add validation schema to stepFrontmatterSchema** — Update `packages/web/lib/content/schemas.ts` with optional `validation` field
 - [ ] **Test end-to-end jj-git validation** — Run `bun run scripts/validate-snippets.ts --tool-pair jj-git`
 - [ ] **Fix any failing snippets** — Update MDX content or config as needed to pass validation
