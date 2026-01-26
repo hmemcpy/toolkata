@@ -122,10 +122,10 @@ Build a headless snippet validation system that extracts code from MDX, executes
 
 ### P0.4: Config Resolution
 
-- [ ] **Create config-resolver.ts** — New file `packages/web/scripts/config-resolver.ts`
-- [ ] **Load pairing config.yml** — Parse `content/comparisons/{pairing}/config.yml` for `validation:` section
-- [ ] **Parse step frontmatter** — Extract `validation:` section from MDX frontmatter using gray-matter
-- [ ] **Merge config hierarchy** — Pairing prelude → Step → Component: imports concatenate, setup overrides
+- [x] **Create config-resolver.ts** — New file `packages/web/scripts/config-resolver.ts`
+- [x] **Load pairing config.yml** — Parse `content/comparisons/{pairing}/config.yml` for `validation:` section (also falls back to `defaults.sandbox`)
+- [x] **Parse step frontmatter** — Extract `validation:` section from MDX frontmatter using gray-matter
+- [x] **Merge config hierarchy** — Pairing prelude → Step → Component: imports concatenate, setup overrides
 
 ### P0.5: Headless Validator (jj-git)
 
@@ -322,12 +322,14 @@ _(Updated during implementation)_
 - **Solved:** Used per-session `suppressionState` Map to track output suppression. PTY callback checks this map before sending data.
 - **Pre-existing bug:** `packages/sandbox-api` has TypeScript errors when run with `bun run typecheck` (uses stricter settings than root tsconfig). These are unrelated to snippet validation work.
 - **Snippet extraction tested:** 324 snippets extracted from jj-git (12 steps), includes SideBySide, TryIt, and codeblock sources
+- **TypeScript strictness:** `exactOptionalPropertyTypes: true` requires conditional object building instead of assigning `undefined` to optional properties. Helper functions needed to construct objects with only defined properties.
+- **Config resolution:** `config-resolver.ts` created with full support for 3-level config hierarchy (pairing config.yml → step frontmatter → component props). Falls back to `defaults.sandbox.init` if no `validation:` section exists.
 
 ---
 
 ## Progress
 
-**P0**: 18/42 tasks complete (43%) — P0.3 Snippet Extraction complete
+**P0**: 22/42 tasks complete (52%) — P0.4 Config Resolution complete
 **P1**: 0/13 tasks complete (0%)
 **P2**: 0/25 tasks complete (0%)
-**Total**: 18/80 tasks complete (23%)
+**Total**: 22/80 tasks complete (28%)
