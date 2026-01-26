@@ -1,13 +1,13 @@
+"use client"
+
 import { Footer } from "../../components/ui/Footer"
 import { Header } from "../../components/ui/Header"
-import type { Metadata } from "next"
-
-export const metadata: Metadata = {
-  title: "Help | toolkata",
-  description: "Get help with toolkata - keyboard shortcuts, FAQ, and support",
-}
+import { ReportBugModal } from "../../components/ui/ReportBugModal"
+import { useState } from "react"
 
 export default function HelpPage() {
+  const [isBugModalOpen, setIsBugModalOpen] = useState(false)
+
   return (
     <div className="bg-[var(--color-bg)] min-h-screen flex flex-col">
       <Header />
@@ -160,9 +160,9 @@ export default function HelpPage() {
                   working. What do I do?
                 </p>
                 <p className="text-[var(--color-text-muted)] text-sm">
-                  <span className="text-[var(--color-text-dim)]">A:</span> Click &quot;Use static
-                  mode&quot; to copy commands and run them locally. The sandbox may be temporarily
-                  unavailable during high traffic.
+                  <span className="text-[var(--color-text-dim)]">A:</span> The sandbox may be temporarily
+                  unavailable. You can still follow the lessons by reading the content. If the problem
+                  persists, please report the bug so we can investigate.
                 </p>
               </div>
             </div>
@@ -174,23 +174,35 @@ export default function HelpPage() {
               <span className="text-[var(--color-accent)]">#</span>
               Support
             </h2>
-            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm text-[var(--color-text-muted)]">
-              <p className="mb-3">Found a bug or have a suggestion?</p>
-              <a
-                href="https://github.com/hmemcpy/toolkata/issues"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-[var(--color-accent)] hover:underline"
-              >
-                <span>→</span>
-                <span>Open an issue on GitHub</span>
-              </a>
+            <div className="border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm text-[var(--color-text-muted)] space-y-3">
+              <p>Found a bug or have a suggestion?</p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsBugModalOpen(true)}
+                  className="inline-flex items-center gap-2 text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors"
+                >
+                  <span>→</span>
+                  <span>Report a bug</span>
+                </button>
+                <a
+                  href="https://github.com/hmemcpy/toolkata/issues"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors"
+                >
+                  <span>→</span>
+                  <span>Open an issue on GitHub</span>
+                </a>
+              </div>
             </div>
           </section>
         </div>
       </main>
 
       <Footer />
+
+      <ReportBugModal isOpen={isBugModalOpen} onClose={() => setIsBugModalOpen(false)} context={{ page: "Help" }} />
     </div>
   )
 }
