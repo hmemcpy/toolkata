@@ -200,7 +200,7 @@ Cats Effect relies on the compiler checking function parameters.
     |trait Config { val port: Int }
     |
     |def server(config: Config): IO[Unit] =
-    |  IO.println(s"Starting on port $${config.port}")
+    |  IO.println(s"Starting on port \${config.port}")
     |
     |// Provide at call site
     |val program: IO[Unit] =
@@ -213,7 +213,7 @@ Cats Effect relies on the compiler checking function parameters.
     |
     |val server: ZIO[Config, Nothing, Unit] =
     |  ZIO.serviceWith[Config](c =>
-    |    println(s"Starting on port $${c.port}")
+    |    println(s"Starting on port \${c.port}")
     |  )
     |
     |// Provide layer

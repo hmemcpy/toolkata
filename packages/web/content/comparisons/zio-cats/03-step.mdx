@@ -95,7 +95,7 @@ Both ZIO and Cats Effect provide powerful error handling, but with different app
     |  IO.raiseError[Int](new Exception("fail"))
     |    .attempt
     |    .flatMap {
-    |      case Left(e) => IO.pure(s"Error: $${e.getMessage}")
+    |      case Left(e) => IO.pure(s"Error: \${e.getMessage}")
     |      case Right(v) => IO.pure(s"Success: $$v")
     |    }
   `}
