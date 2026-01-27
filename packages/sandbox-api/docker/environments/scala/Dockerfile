@@ -44,7 +44,9 @@ FROM toolkata-sandbox-base:latest
 USER root
 
 # Install JVM (required for scala)
-RUN apk add --no-cache openjdk-21-jre
+# Remove su/sudo after install (apk may reinstall busybox symlinks)
+RUN apk add --no-cache openjdk-21-jre && \
+    rm -f /bin/su /usr/bin/su /sbin/su /usr/sbin/su 2>/dev/null || true
 
 # Copy scala-cli from builder stage
 COPY --from=builder /usr/local/bin/scala-cli /usr/local/bin/scala-cli

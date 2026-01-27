@@ -24,7 +24,9 @@ FROM toolkata-sandbox-base:latest
 USER root
 
 # Install git (jj is copied from builder stage)
-RUN apk add --no-cache git
+# Remove su/sudo after install (apk may reinstall busybox symlinks)
+RUN apk add --no-cache git && \
+    rm -f /bin/su /usr/bin/su /sbin/su /usr/sbin/su 2>/dev/null || true
 
 # Copy jj binary from builder stage
 COPY --from=builder /tmp/jj /usr/bin/jj

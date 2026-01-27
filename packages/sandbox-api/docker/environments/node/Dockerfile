@@ -11,9 +11,11 @@ USER root
 
 # Install Node.js LTS from official repository
 # Using wolfi-base packages for security and minimal size
+# Remove su/sudo after install (apk may reinstall busybox symlinks)
 RUN apk add --no-cache \
     nodejs-20 \
-    npm
+    npm && \
+    rm -f /bin/su /usr/bin/su /sbin/su /usr/sbin/su 2>/dev/null || true
 
 # Verify installations
 RUN node --version && npm --version
@@ -23,6 +25,11 @@ RUN node --version && npm --version
 RUN npm config set loglevel error && \
     npm config set fund false && \
     npm config set audit false
+
+# Fix npm cache ownership - npm config creates it as root
+# Create and fix ownership of all npm directories that may be created
+RUN mkdir -p /home/toolkata/.npm && \
+    chown -R sandbox:sandbox /home/toolkata/.npm
 
 # Update .bashrc to show Node.js version in prompt
 RUN cat <<'BASHRC' >> /home/toolkata/.bashrc

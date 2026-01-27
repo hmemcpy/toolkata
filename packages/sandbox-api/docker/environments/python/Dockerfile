@@ -11,9 +11,11 @@ USER root
 
 # Install Python 3 from wolfi-base packages
 # Using minimal packages for security and size
+# Remove su/sudo after install (apk may reinstall busybox symlinks)
 RUN apk add --no-cache \
     python3 \
-    py3-pip
+    py3-pip && \
+    rm -f /bin/su /usr/bin/su /sbin/su /usr/sbin/su 2>/dev/null || true
 
 # Verify installations
 RUN python3 --version && pip3 --version

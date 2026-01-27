@@ -10,6 +10,8 @@ Build a headless snippet validation system that extracts code from MDX, executes
 
 ## Implementation Status (Updated 2026-01-27)
 
+> **Current State**: Core implementation complete (P0-P2). Ready for E2E testing of Scala/TypeScript environments (P3).
+
 ### Completed Infrastructure
 
 **Validation Scripts (6/6 complete):**
@@ -212,7 +214,12 @@ Build a headless snippet validation system that extracts code from MDX, executes
 | P2 | TypeScript Environment | 9 |
 | P2 | Component Props | 7 |
 | **P2 Total** | | **25** |
-| **Grand Total** | | **77** |
+| P3 | E2E Testing | 5 |
+| P3 | CI Integration Testing | 3 |
+| P3 | Documentation | 2 |
+| P3 | Nice to Have | 3 |
+| **P3 Total** | | **13** |
+| **Grand Total** | | **90** |
 
 ---
 
@@ -235,9 +242,14 @@ P0.4 (Config) ──────────────────────
                         P2.1 (Scala) ◄─────────────┼───────► P2.2 (TypeScript)
                                                    │
                         P2.3 (Component Props) ◄───┘
+                                                   │
+                                                   ▼
+                        P3.1 (E2E Testing) ──► P3.2 (CI Testing) ──► P3.3 (Docs)
+                                                                        │
+                                                        P3.4 (Nice to Have) ◄──┘
 ```
 
-**Critical Path**: P0.1 + P0.2 + P0.3 + P0.4 → P0.5 → P0.6 → P0.7 (jj-git working E2E)
+**Critical Path**: P0-P2 complete → P3.1 (E2E Testing) → P3.2 (CI Testing) → P3.3 (Docs)
 
 ---
 
@@ -325,27 +337,41 @@ _(Updated during implementation)_
 **P0**: 38/38 tasks complete (100%) — jj-git snippet validation fully working
 **P1**: 14/14 tasks complete (100%) — Caching, build integration, CI workflow complete
 **P2**: 25/25 tasks complete (100%) — Scala, TypeScript, and component props complete
-**Total**: 77/77 tasks complete (100%)
+**P3**: 1/13 tasks complete (8%) — Post-MVP production readiness pending
+**Total**: 78/90 tasks complete (87%)
 
 ---
 
-## Remaining Work (Post-MVP)
+---
 
-The core implementation is complete. These items remain for full production use:
+## P3: Post-MVP Production Readiness
 
-### High Priority
-- [ ] **Run zio-cats validation E2E** — Test actual MDX content against scala environment
-- [ ] **Run effect-zio validation E2E** — Test actual MDX content against typescript/scala environments
-- [ ] **Rebuild all Docker images** — Run `bun run docker:build` in sandbox-api to rebuild with scala fixes
-- [ ] **Fix any failing zio-cats/effect-zio snippets** — May need `validate={false}` or content fixes
+The core implementation (P0-P2) is complete. These tasks remain for full production use.
 
-### Medium Priority
-- [ ] **Push and test CI workflow** — Create PR to verify GitHub Actions workflow runs correctly
-- [ ] **Document validation in AGENTS.md** — Add section on running snippet validation
+### P3.1: E2E Testing for Scala/TypeScript Environments
 
-### Low Priority (Nice to Have)
-- [ ] **Parallel validation** — Validate multiple tool-pairs concurrently
-- [ ] **Better error messages** — Include expected vs actual output in failures
+- [x] **Rebuild all Docker images** — Run `bun run docker:build:all` in `packages/sandbox-api/` to rebuild with scala-cli v1.11.0 fixes. All 20 tests pass.
+- [x] **Fix headless-validator.ts for Scala** — Add `--jvm system` flag to scala-cli commands to use container's JDK instead of downloading one. Already completed - both headless-validator.ts and docker-validator.ts have `--server=false --jvm system` flags.
+- [ ] **Run zio-cats validation E2E** — Execute `bun run validate:snippets --tool-pair zio-cats --verbose` and verify all snippets compile
+- [ ] **Fix any failing zio-cats snippets** — Add `validate={false}` to pseudo-code, fix content errors, or update imports
+- [ ] **Run effect-zio validation E2E** — Execute `bun run validate:snippets --tool-pair effect-zio --verbose` and verify both TypeScript and Scala snippets compile
+- [ ] **Fix any failing effect-zio snippets** — May need `validate={false}` or content/import fixes
+
+### P3.2: CI Integration Testing
+
+- [ ] **Push and test CI workflow** — Create PR to `main` branch to verify `.github/workflows/validate-snippets.yml` runs correctly
+- [ ] **Verify Docker image build in CI** — Ensure CI can build sandbox Docker images
+- [ ] **Test cache persistence** — Verify GitHub Actions cache for `.validation-cache/` works across runs
+
+### P3.3: Documentation & Polish
+
+- [ ] **Document validation in CLAUDE.md** — Add section on running snippet validation and common issues
+- [ ] **Add validation troubleshooting guide** — Common errors and how to fix them
+
+### P3.4: Nice to Have (Low Priority)
+
+- [ ] **Parallel validation** — Validate multiple tool-pairs concurrently with `--parallel` flag
+- [ ] **Better error messages** — Include expected vs actual output in validation failures
 - [ ] **Validation report file** — Output JSON report for CI artifact storage
 
 **Learned (2026-01-27):**
@@ -356,3 +382,7 @@ The core implementation is complete. These items remain for full production use:
 - **scala-cli bloop bug FIXED**: Updated to scala-cli v1.11.0 (latest release) and use `--server=false --jvm system` flags. The `--server=false` disables bloop server, `--jvm system` uses the container's system JDK instead of downloading its own. Pre-cached ZIO 2.1.14 and Cats Effect 3.5.7 dependencies in the Docker image for instant compilation. Image size is now 755MB (includes deps).
 - **TypeScript unused variable pattern**: Use underscore prefix (`_validate`) instead of eslint-disable comments to satisfy both TypeScript and Biome linting for intentionally unused props in React components. The `eslint-disable-next-line @typescript-eslint/no-unused-vars` comment approach doesn't suppress TypeScript's TS6133 errors.
 - **Bug fixed (2026-01-27)**: prebuild hook was missing from packages/web/package.json despite P1.2 task being marked complete. Added `"prebuild": "bun run validate:snippets --strict"` to ensure validation runs before every build. This was discovered when testing the build process.
+- **Docker image security hardening (2026-01-27)**: `apk add` in child Dockerfiles may reinstall `su` via busybox symlinks. Must add `rm -f /bin/su /usr/bin/su /sbin/su /usr/sbin/su 2>/dev/null || true` after every `apk add --no-cache` command. Fixed in bash, node, python, scala, and typescript environment Dockerfiles.
+- **npm cache ownership (2026-01-27)**: When running npm commands as root during Docker build, the `.npm` cache directory gets created with root ownership. Must add `mkdir -p /home/toolkata/.npm && chown -R sandbox:sandbox /home/toolkata/.npm` after npm config commands in node Dockerfile.
+- **Docker build test fixes (2026-01-27)**: Multiple test script fixes needed: (1) TypeScript version 5.3.0 no longer available in npm, updated to 5.7.3. (2) Python test had nested single quotes issue, changed inner quotes to escaped double quotes. (3) Scala tests needed `--server=false` flag to avoid Bloop. (4) Scala 3 requires `@main def` functions for top-level statements (not just `println`). (5) Cats Effect test needed proper IOApp.Simple pattern. (6) Effect-TS test needed Console.log via Effect.tap (Effect.succeed doesn't print).
+- **Validation system vs Docker tests**: The docker-build-all.sh tests use `scala-cli run --server=false`, but the headless-validator.ts uses raw `scala-cli compile`. Need to add `--jvm system` flag to headless-validator.ts for Scala snippets to use the container's JDK.

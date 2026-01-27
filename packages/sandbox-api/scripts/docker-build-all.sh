@@ -313,7 +313,7 @@ EOF
 EOF
 
         # Try to install a small package (non-interactively)
-        npm install --silent --no-audit --no-fund typescript@5.3.0 2>/dev/null || npm install typescript@5.3.0
+        npm install --silent --no-audit --no-fund typescript@5.7.3 2>/dev/null || npm install typescript@5.7.3
 
         # Verify it was installed
         [ -d node_modules/typescript ]
@@ -375,7 +375,7 @@ EOF
         pip3 install --quiet --no-input typer 2>/dev/null || pip3 install typer
 
         # Verify it was installed
-        python3 -c "import typer; print('typer imported successfully')"
+        python3 -c "import typer; print(\"typer imported successfully\")"
 
         echo "pip install works"
     '
@@ -403,23 +403,22 @@ EOF
 
     # Test 13: Scala can compile a simple snippet
     log_info "  Test 13: Testing Scala can compile snippets..."
-    docker run --rm "$ENV_IMAGE_NAME:scala" /bin/bash -c '
+    docker run --rm "$ENV_IMAGE_NAME:scala" /bin/bash -c "
         set -e
 
-        # Create a simple Scala file
-        cat > test.scala << EOF
-//> using scala 3.5.0
+        # Create a simple Scala file with @main function (required for Scala 3 top-level statements)
+        echo '//> using scala 3.5.0
 
-val x = 42
-println(s"Hello from Scala: $x")
-EOF
+@main def run(): Unit =
+  val x = 42
+  println(s\"Hello from Scala: \$x\")' > test.scala
 
-        # Compile and run it
-        OUTPUT=$(scala-cli run test.scala)
-        echo "$OUTPUT" | grep -q "Hello from Scala: 42"
+        # Compile and run it with --server=false to avoid Bloop
+        OUTPUT=\$(scala-cli run --server=false test.scala)
+        echo \"\$OUTPUT\" | grep -q \"Hello from Scala: 42\"
 
-        echo "Scala compilation and execution works"
-    '
+        echo \"Scala compilation and execution works\"
+    "
     if [ $? -ne 0 ]; then
         log_error "Test 13 failed: Scala compilation broken"
         exit 2
@@ -441,7 +440,7 @@ val program: ZIO[Any, Nothing, Unit] =
 override def run = program
 EOF
 
-        scala-cli run test-zio.scala 2>&1 | grep -q "Hello from ZIO"
+        scala-cli run --server=false test-zio.scala 2>&1 | grep -q "Hello from ZIO"
 
         echo "ZIO library works"
     '
@@ -452,23 +451,23 @@ EOF
 
     # Test 15: Cats Effect is available
     log_info "  Test 15: Testing Cats Effect library is available..."
-    docker run --rm "$ENV_IMAGE_NAME:scala" /bin/bash -c '
+    docker run --rm "$ENV_IMAGE_NAME:scala" /bin/bash -c "
         set -e
 
-        cat > test-ce.scala << EOF
-//> using dep org.typelevel::cats-effect::3.5.7
+        # Create a Cats Effect IOApp file (Scala 3 syntax)
+        echo '//> using dep org.typelevel::cats-effect::3.5.7
 
 import cats.effect._
 
-val program = IO.println("Hello from Cats Effect")
+object Main extends IOApp.Simple:
+  def run: IO[Unit] = IO.println(\"Hello from Cats Effect\")' > test-ce.scala
 
-program.unsafeRunSync()
-EOF
+        # Run with --server=false to avoid Bloop
+        OUTPUT=\$(scala-cli run --server=false test-ce.scala 2>&1)
+        echo \"\$OUTPUT\" | grep -q \"Hello from Cats Effect\"
 
-        scala-cli run test-ce.scala 2>&1 | grep -q "Hello from Cats Effect"
-
-        echo "Cats Effect library works"
-    '
+        echo \"Cats Effect library works\"
+    "
     if [ $? -ne 0 ]; then
         log_error "Test 15 failed: Cats Effect library not available"
         exit 2
@@ -539,10 +538,13 @@ EOF
         set -e
 
         # Create a TypeScript file using Effect
+        # Use Effect.tap to print the value
         cat > test-effect.ts << EOF
-import { Effect } from "effect"
+import { Effect, Console } from "effect"
 
-const program = Effect.succeed("Hello from Effect")
+const program = Effect.succeed("Hello from Effect").pipe(
+  Effect.tap((msg) => Console.log(msg))
+)
 
 Effect.runPromise(program)
 EOF

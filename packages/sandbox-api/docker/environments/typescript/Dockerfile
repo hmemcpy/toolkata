@@ -11,9 +11,11 @@ USER root
 
 # Install Node.js 22 LTS from official repository
 # Using wolfi-base packages for security and minimal size
+# Remove su/sudo after install (apk may reinstall busybox symlinks)
 RUN apk add --no-cache \
     nodejs-22 \
-    npm
+    npm && \
+    rm -f /bin/su /usr/bin/su /sbin/su /usr/sbin/su 2>/dev/null || true
 
 # Verify installations
 RUN node --version && npm --version
