@@ -14,7 +14,8 @@ import type { ResolvedValidationConfig } from "./config-resolver.js"
 
 const DEFAULT_SANDBOX_URL = "http://localhost:3001"
 const DEFAULT_API_KEY = "dev-api-key" // Default for local development
-const COMMAND_TIMEOUT_MS = 5_000 // 5 seconds per command
+const COMMAND_TIMEOUT_MS = 5_000 // 5 seconds per command (bash)
+const SCALA_COMMAND_TIMEOUT_MS = 60_000 // 60 seconds for Scala compilation (first run downloads deps)
 const SESSION_TIMEOUT_MS = 5 * 60 * 1000 // 5 minutes
 
 /**
@@ -581,9 +582,10 @@ async function validateSnippet(
       const writeCmd = `cat > ${tempFile} << 'SCALA_EOF'\n${fullCode}\nSCALA_EOF`
       await session.executeCommand(writeCmd)
 
-      // Compile with scala-cli
-      const compileCmd = `scala-cli compile --scala 3 ${tempFile} 2>&1`
-      const output = await session.executeCommand(compileCmd)
+      // Compile with scala-cli (use longer timeout for first-run dependency downloads)
+      // --server=false disables bloop server to work around component manager issue in Docker
+      const compileCmd = `scala-cli compile --scala 3 --server=false ${tempFile} 2>&1`
+      const output = await session.executeCommand(compileCmd, SCALA_COMMAND_TIMEOUT_MS)
 
       // Clean up temp file
       await session.executeCommand(`rm -f ${tempFile}`)

@@ -34,9 +34,11 @@ COPY --from=builder /usr/local/bin/scala-cli /usr/local/bin/scala-cli
 # Verify installations
 RUN scala-cli version
 
-# Create cache directories for sandbox user
-RUN mkdir -p /root/.ivy2 /root/.cache/scala-cli && \
-    chown -R sandbox:sandbox /root/.ivy2 /root/.cache
+# Create and set up cache directories for scala-cli
+# The cache needs to be writable by the sandbox user
+RUN mkdir -p /home/sandbox/.cache/scala-cli /home/sandbox/.cache/bloop /home/sandbox/.ivy2/cache && \
+    chown -R sandbox:sandbox /home/sandbox/.cache /home/sandbox/.ivy2 && \
+    chmod -R u+w /home/sandbox/.cache /home/sandbox/.ivy2
 
 # Copy entrypoint script
 COPY --chown=sandbox:sandbox entrypoint.sh /usr/local/bin/entrypoint.sh

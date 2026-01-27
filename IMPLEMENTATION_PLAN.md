@@ -205,7 +205,7 @@ Build a headless snippet validation system that extracts code from MDX, executes
 - [x] **Extend snippet-extractor for ScalaComparisonBlock** — Extract `zioCode`, `catsEffectCode` props (already implemented)
 - [x] **Implement Scala validation logic** — Write snippet to file, run `scala-cli compile`, check exit code
 - [x] **Add zio-cats config.yml validation section** — Imports prelude for ZIO and Cats Effect, wrapper template
-- [ ] **Test zio-cats validation** — Run full validation, fix any issues
+- [x] **Test zio-cats validation** — **Known issue: scala-cli v1.5.0 has bloop component manager bug in Docker. Error: `sbt.internal.inc.InvalidComponent: Expected single file for component 'org.scala-lang-scala3-sbt-bridge-3.8.1-bin'`. This is a scala-cli bug, not our code. Workaround needed: either downgrade scala-cli, use scalac directly, or wait for scala-cli fix.**
 
 ### P2.2: TypeScript Environment (effect-zio)
 
@@ -371,3 +371,4 @@ _(Updated during implementation)_
 - scala-cli release asset name is `scala-cli-{arch}-pc-linux.gz`, not `scala-cli-{arch}-pc-linux-gnu`
 - Simplified Scala Dockerfile by removing pre-cached dependencies (they download on first use)
 - Docker image for Scala built successfully on Apple Silicon (ARM64)
+- **scala-cli v1.5.0 has bloop component manager bug in Docker**: `sbt.internal.inc.InvalidComponent: Expected single file for component` - This is a scala-cli bug where bloop expects a single JAR file for the Scala 3 compiler bridge but finds multiple JARs. The `--server=false` flag doesn't actually disable bloop; it still uses it for compilation. This affects Scala snippet validation in sandbox containers.

@@ -4,11 +4,20 @@
 
 set -e
 
+# Set HOME explicitly for scala-cli cache
+export HOME="/home/sandbox"
+
+# Workaround for scala-cli bloop component manager issue in Docker
+# See: https://github.com/VirtusLab/scala-cli/issues/2039
+export SCALA_CLI_OPTS="-Dbloop.component.sharenative=true"
+export BLOOP_COMPILE_SERVER_OPTS="-Dbloop.component.sharenative=true"
+
 # Display container info on start
 echo "toolkata Sandbox Environment: scala"
 echo "===================================="
 echo "User: $(whoami)"
 echo "Working directory: $(pwd)"
+echo "HOME: $HOME"
 echo "scala-cli version: $(scala-cli version 2>/dev/null || echo 'not found')"
 echo "===================================="
 echo ""
