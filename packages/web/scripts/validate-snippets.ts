@@ -427,25 +427,49 @@ async function validateToolPairFull(
 
 /**
  * Check if Docker is available and the image exists.
+ * Checks both bash and scala images.
  */
-async function checkDockerPrerequisites(): Promise<boolean> {
+async function checkDockerPrerequisites(toolPairs: string[]): Promise<{ ok: boolean; missing: string[] }> {
   const { spawn } = await import("node:child_process")
 
-  return new Promise((resolve) => {
-    const proc = spawn("docker", ["image", "inspect", "toolkata-env:bash"], {
-      stdio: ["ignore", "pipe", "pipe"],
+  const images = new Set<string>(["toolkata-env:bash"])
+
+  // Add scala image if zio-cats or effect-zio is being validated
+  for (const toolPair of toolPairs) {
+    if (toolPair === "zio-cats" || toolPair === "effect-zio") {
+      images.add("toolkata-env:scala")
+      break
+    }
+  }
+
+  const missing: string[] = []
+  let ok = true
+
+  // Check each required image
+  for (const image of images) {
+    const exists = await new Promise<boolean>((resolve) => {
+      const proc = spawn("docker", ["image", "inspect", image], {
+        stdio: ["ignore", "pipe", "pipe"],
+      })
+
+      // Cast to EventEmitter to access event methods
+      const emitter = proc as unknown as EventEmitter & { kill(signal?: NodeJS.Signals): void }
+      emitter.on("close", (code: number | null) => {
+        resolve(code === 0)
+      })
+
+      emitter.on("error", () => {
+        resolve(false)
+      })
     })
 
-    // Cast to EventEmitter to access event methods
-    const emitter = proc as unknown as EventEmitter & { kill(signal?: NodeJS.Signals): void }
-    emitter.on("close", (code: number | null) => {
-      resolve(code === 0)
-    })
+    if (!exists) {
+      ok = false
+      missing.push(image)
+    }
+  }
 
-    emitter.on("error", () => {
-      resolve(false)
-    })
-  })
+  return { ok, missing }
 }
 
 // Script-level timeout (5 minutes for full validation)
@@ -485,15 +509,6 @@ async function main(): Promise<void> {
     process.exit(0)
   }
 
-  // Check Docker prerequisites
-  const dockerReady = await checkDockerPrerequisites()
-  if (!dockerReady) {
-    console.error("Error: Docker image 'toolkata-env:bash' not found.")
-    console.error("Build it with: bun run --cwd packages/sandbox-api docker:build")
-    clearTimeout(timeoutId)
-    process.exit(1)
-  }
-
   const contentDir = resolve(scriptDir, "..", "content")
 
   if (!existsSync(contentDir)) {
@@ -523,6 +538,15 @@ async function main(): Promise<void> {
     console.log("No tool pairs found to validate.")
     clearTimeout(timeoutId)
     process.exit(0)
+  }
+
+  // Check Docker prerequisites (after we know which tool pairs to validate)
+  const dockerCheck = await checkDockerPrerequisites(toolPairs)
+  if (!dockerCheck.ok) {
+    console.error(`Error: Required Docker image(s) not found: ${dockerCheck.missing.join(", ")}`)
+    console.error("Build missing images with: bun run --cwd packages/sandbox-api docker:build")
+    clearTimeout(timeoutId)
+    process.exit(1)
   }
 
   console.log(`Tool pairs: ${toolPairs.join(", ")}`)

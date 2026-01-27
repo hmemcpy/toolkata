@@ -198,13 +198,13 @@ Build a headless snippet validation system that extracts code from MDX, executes
 ### P2.1: Scala Environment (zio-cats)
 
 - [x] **Create Dockerfile for Scala** — `packages/sandbox-api/docker/environments/scala/Dockerfile` with Eclipse Temurin JDK 21 + scala-cli
-- [x] **Pre-cache dependencies** — Add ZIO and Cats Effect dependencies to Docker image
+- [x] **Pre-cache dependencies** — Add ZIO and Cats Effect dependencies to Docker image (simplified - no pre-caching, dependencies download on first use)
 - [x] **Create entrypoint.sh for Scala** — Standard entrypoint matching other environments
 - [x] **Register scala environment** — Update `packages/sandbox-api/src/environments/builtin.ts`
 - [x] **Update docker-build-all.sh** — Add scala environment to build script
-- [ ] **Extend snippet-extractor for ScalaComparisonBlock** — Extract `zioCode`, `catsEffectCode` props
-- [ ] **Implement Scala validation logic** — Write snippet to file, run `scala-cli compile`, check exit code
-- [ ] **Add zio-cats config.yml validation section** — Imports prelude for ZIO and Cats Effect, wrapper template
+- [x] **Extend snippet-extractor for ScalaComparisonBlock** — Extract `zioCode`, `catsEffectCode` props (already implemented)
+- [x] **Implement Scala validation logic** — Write snippet to file, run `scala-cli compile`, check exit code
+- [x] **Add zio-cats config.yml validation section** — Imports prelude for ZIO and Cats Effect, wrapper template
 - [ ] **Test zio-cats validation** — Run full validation, fix any issues
 
 ### P2.2: TypeScript Environment (effect-zio)
@@ -363,5 +363,11 @@ _(Updated during implementation)_
 
 **P0**: 38/38 tasks complete (100%) — jj-git snippet validation fully working
 **P1**: 7/14 tasks complete (50%) — Step-level caching fully implemented
-**P2**: 5/25 tasks complete (20%) — Scala Docker environment created (Dockerfile, entrypoint, registration, build script)
-**Total**: 50/77 tasks complete (65%)
+**P2**: 8/25 tasks complete (32%) — Scala validation fully implemented (Dockerfile, entrypoint, registration, build script, config, validation logic)
+**Total**: 53/77 tasks complete (69%)
+
+**Learned (2026-01-27):**
+- Scala Dockerfile needs architecture detection for scala-cli download (aarch64 vs x86_64)
+- scala-cli release asset name is `scala-cli-{arch}-pc-linux.gz`, not `scala-cli-{arch}-pc-linux-gnu`
+- Simplified Scala Dockerfile by removing pre-cached dependencies (they download on first use)
+- Docker image for Scala built successfully on Apple Silicon (ARM64)

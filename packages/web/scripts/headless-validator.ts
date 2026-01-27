@@ -97,6 +97,18 @@ const SHELL_ERROR_PATTERNS = [
 ]
 
 /**
+ * Error patterns that indicate Scala compilation failure.
+ */
+const SCALA_ERROR_PATTERNS = [
+  /^error:/im,
+  /Found:/im,
+  /Expected:/im,
+  /Not found:/im,
+  /type mismatch/i,
+  /ambiguous/i,
+]
+
+/**
  * Check if shell output indicates an error.
  */
 function detectShellError(output: string): string | null {
@@ -113,6 +125,45 @@ function detectShellError(output: string): string | null {
     }
   }
   return null
+}
+
+/**
+ * Check if Scala compilation output indicates an error.
+ */
+function detectScalaError(output: string): string | null {
+  for (const pattern of SCALA_ERROR_PATTERNS) {
+    if (pattern.test(output)) {
+      // Extract the error line
+      const lines = output.split("\n")
+      for (const line of lines) {
+        if (pattern.test(line)) {
+          return line.trim()
+        }
+      }
+      return "Compilation error detected"
+    }
+  }
+  return null
+}
+
+/**
+ * Prepare Scala code for compilation by wrapping with imports and wrapper.
+ */
+function prepareScalaCode(code: string, config: ResolvedValidationConfig): string {
+  const lines: string[] = []
+
+  // Add imports
+  for (const imp of config.imports) {
+    lines.push(imp)
+  }
+
+  lines.push("") // Blank line after imports
+
+  // Add code wrapped in the template
+  const wrapped = config.wrapper?.replace("${code}", code) ?? code
+  lines.push(wrapped)
+
+  return lines.join("\n")
 }
 
 /**
@@ -515,8 +566,58 @@ async function validateSnippet(
     }
   }
 
-  // For Scala/TypeScript, we need different environments (P2 implementation)
-  // For now, skip these with a note
+  // For Scala snippets, compile using scala-cli
+  if (snippet.language === "scala") {
+    try {
+      // Prepare code with imports and wrapper
+      const fullCode = prepareScalaCode(snippet.code, config)
+
+      if (verbose) {
+        console.log(`[HeadlessValidator] Compiling Scala: ${snippet.code.substring(0, 50)}...`)
+      }
+
+      // Write code to a temp file and compile it
+      const tempFile = `/tmp/snippet_${Date.now()}.scala`
+      const writeCmd = `cat > ${tempFile} << 'SCALA_EOF'\n${fullCode}\nSCALA_EOF`
+      await session.executeCommand(writeCmd)
+
+      // Compile with scala-cli
+      const compileCmd = `scala-cli compile --scala 3 ${tempFile} 2>&1`
+      const output = await session.executeCommand(compileCmd)
+
+      // Clean up temp file
+      await session.executeCommand(`rm -f ${tempFile}`)
+
+      // Check for compilation errors
+      const errorMsg = detectScalaError(output)
+      if (errorMsg) {
+        return {
+          snippet,
+          status: "fail",
+          output,
+          error: errorMsg,
+          durationMs: Date.now() - startTime,
+        }
+      }
+
+      return {
+        snippet,
+        status: "pass",
+        output: "Compilation successful",
+        durationMs: Date.now() - startTime,
+      }
+    } catch (err: unknown) {
+      return {
+        snippet,
+        status: "fail",
+        output: "",
+        error: err instanceof Error ? err.message : String(err),
+        durationMs: Date.now() - startTime,
+      }
+    }
+  }
+
+  // For TypeScript, not yet implemented
   return {
     snippet,
     status: "skipped",

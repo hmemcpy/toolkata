@@ -16,8 +16,24 @@ import type { ExtractedSnippet } from "./snippet-extractor.js"
 import { isPseudoCode } from "./snippet-extractor.js"
 import type { ResolvedValidationConfig } from "./config-resolver.js"
 
-// Use our existing bash environment image
-const DOCKER_IMAGE = "toolkata-env:bash"
+// Docker images for different environments
+const BASH_IMAGE = "toolkata-env:bash"
+const SCALA_IMAGE = "toolkata-env:scala"
+
+/**
+ * Get the Docker image for a given environment.
+ */
+function getImageForEnvironment(environment: string): string {
+  switch (environment) {
+    case "bash":
+    case "shell":
+      return BASH_IMAGE
+    case "scala":
+      return SCALA_IMAGE
+    default:
+      return BASH_IMAGE
+  }
+}
 
 /**
  * Result of validating a single snippet.
@@ -100,6 +116,18 @@ const HALLUCINATION_PATTERNS = [
 ]
 
 /**
+ * Error patterns that indicate Scala compilation failure.
+ */
+const SCALA_ERROR_PATTERNS = [
+  /^error:/im,
+  /Found:/im,
+  /Expected:/im,
+  /Not found:/im,
+  /type mismatch/i,
+  /ambiguous/i,
+]
+
+/**
  * NO context error patterns - all commands should succeed with proper setup.
  * If a command fails due to context, that's a setup problem, not a command problem.
  */
@@ -124,6 +152,45 @@ function detectShellError(output: string): string | null {
     }
   }
   return null
+}
+
+/**
+ * Check if Scala compilation output indicates an error.
+ */
+function detectScalaError(output: string): string | null {
+  for (const pattern of SCALA_ERROR_PATTERNS) {
+    if (pattern.test(output)) {
+      // Extract the error line
+      const lines = output.split("\n")
+      for (const line of lines) {
+        if (pattern.test(line)) {
+          return line.trim()
+        }
+      }
+      return "Compilation error detected"
+    }
+  }
+  return null
+}
+
+/**
+ * Prepare Scala code for compilation by wrapping with imports and wrapper.
+ */
+function prepareScalaCode(code: string, config: ResolvedValidationConfig): string {
+  const lines: string[] = []
+
+  // Add imports
+  for (const imp of config.imports) {
+    lines.push(imp)
+  }
+
+  lines.push("") // Blank line after imports
+
+  // Add code wrapped in the template
+  const wrapped = config.wrapper?.replace("${code}", code) ?? code
+  lines.push(wrapped)
+
+  return lines.join("\n")
 }
 
 /**
@@ -171,7 +238,7 @@ function runCommand(
 /**
  * Create and start a container, returning its ID.
  */
-async function createContainer(name: string): Promise<string | null> {
+async function createContainer(name: string, image: string): Promise<string | null> {
   const result = await runCommand("docker", [
     "run",
     "-d",
@@ -181,7 +248,7 @@ async function createContainer(name: string): Promise<string | null> {
     "sandbox",
     "--workdir",
     "/home/sandbox",
-    DOCKER_IMAGE,
+    image,
     "sleep",
     "infinity",
   ])
@@ -260,8 +327,11 @@ async function validateSnippetInContainer(
     }
   }
 
-  // Only handle bash/shell
-  if (snippet.language !== "bash" && snippet.language !== "shell") {
+  // Only handle bash/shell and scala
+  const isBash = snippet.language === "bash" || snippet.language === "shell"
+  const isScala = snippet.language === "scala"
+
+  if (!isBash && !isScala) {
     return {
       snippet,
       status: "skipped",
@@ -270,49 +340,119 @@ async function validateSnippetInContainer(
     }
   }
 
+  // Determine the Docker image to use
+  const dockerImage = getImageForEnvironment(snippet.language)
+
   const containerName = `toolkata-validate-${randomUUID().slice(0, 8)}`
 
   try {
     if (verbose) {
-      console.log(`[Docker] Starting container ${containerName} for: ${snippet.code.substring(0, 40)}...`)
+      const preview = snippet.code.substring(0, 40)
+      console.log(`[Docker] Starting ${snippet.language} container ${containerName} for: ${preview}...`)
     }
 
-    // Start container
-    const containerId = await createContainer(containerName)
+    // Start container with appropriate image
+    const containerId = await createContainer(containerName, dockerImage)
     if (!containerId) {
       return {
         snippet,
         status: "fail",
         output: "",
-        error: "Failed to create container",
+        error: `Failed to create container using image ${dockerImage}`,
         durationMs: Date.now() - startTime,
       }
     }
 
-    // Run setup commands
-    for (const setupCmd of config.setup) {
-      if (verbose) {
-        console.log(`[Docker] Setup: ${setupCmd}`)
-      }
-      const result = await execInContainer(containerName, setupCmd)
+    // Run setup commands (for bash only)
+    if (isBash) {
+      for (const setupCmd of config.setup) {
+        if (verbose) {
+          console.log(`[Docker] Setup: ${setupCmd}`)
+        }
+        const result = await execInContainer(containerName, setupCmd)
 
+        if (result.exitCode !== 0) {
+          return {
+            snippet,
+            status: "fail",
+            output: result.stdout,
+            error: `Setup failed: ${result.stderr || result.stdout}`,
+            durationMs: Date.now() - startTime,
+          }
+        }
+      }
+    }
+
+    let result: { stdout: string; stderr: string; exitCode: number }
+
+    if (isScala) {
+      // For Scala, prepare code with imports and wrapper, then compile
+      const fullCode = prepareScalaCode(snippet.code, config)
+
+      if (verbose) {
+        console.log("[Docker] Compiling Scala snippet")
+      }
+
+      // Write code to temp file and compile
+      const tempFile = `/tmp/snippet_${Date.now()}.scala`
+      const writeCmd = `cat > ${tempFile} << 'SCALA_EOF'\n${fullCode}\nSCALA_EOF`
+
+      const writeResult = await execInContainer(containerName, writeCmd)
+      if (writeResult.exitCode !== 0) {
+        return {
+          snippet,
+          status: "fail",
+          output: writeResult.stdout,
+          error: `Failed to write temp file: ${writeResult.stderr}`,
+          durationMs: Date.now() - startTime,
+        }
+      }
+
+      // Compile with scala-cli
+      const compileCmd = `scala-cli compile --scala 3 ${tempFile} 2>&1`
+      result = await execInContainer(containerName, compileCmd)
+
+      // Clean up temp file
+      await execInContainer(containerName, `rm -f ${tempFile}`)
+
+      // Check for compilation errors
+      const combinedOutput = result.stdout + result.stderr
+      const errorMsg = detectScalaError(combinedOutput)
+      if (errorMsg) {
+        return {
+          snippet,
+          status: "fail",
+          output: combinedOutput,
+          error: errorMsg,
+          durationMs: Date.now() - startTime,
+        }
+      }
+
+      // Exit code should be 0 for successful compilation
       if (result.exitCode !== 0) {
         return {
           snippet,
           status: "fail",
           output: result.stdout,
-          error: `Setup failed: ${result.stderr || result.stdout}`,
+          error: result.stderr || `Compilation failed with exit code ${result.exitCode}`,
           durationMs: Date.now() - startTime,
         }
       }
+
+      return {
+        snippet,
+        status: "pass",
+        output: "Compilation successful",
+        durationMs: Date.now() - startTime,
+      }
     }
 
-    // Run the actual snippet command
+    // For bash/shell, execute the command directly
     if (verbose) {
       console.log(`[Docker] Executing: ${snippet.code}`)
     }
 
-    const result = await execInContainer(containerName, snippet.code)
+    result = await execInContainer(containerName, snippet.code)
 
     // Combine output for pattern matching
     const combinedOutput = result.stdout + result.stderr
