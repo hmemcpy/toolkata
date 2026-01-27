@@ -13,10 +13,11 @@
  *   --step N          Only validate specific step number
  *   --parallel        Run snippets in parallel (faster, but harder to debug)
  *   --verbose         Show all output, not just errors
+ *   --output-json X   Output JSON report to file (for CI artifact storage)
  *   --help            Show this help message
  */
 
-import { existsSync } from "node:fs"
+import { existsSync, writeFileSync } from "node:fs"
 import { join, resolve } from "node:path"
 import type { EventEmitter } from "node:events"
 import { glob } from "glob"
@@ -46,6 +47,7 @@ interface CliOptions {
   readonly verbose: boolean
   readonly noCache: boolean
   readonly clearCache: boolean
+  readonly outputJson?: string
   readonly help: boolean
 }
 
@@ -60,6 +62,7 @@ function parseArgs(args: string[]): CliOptions {
   let verbose = false
   let noCache = false
   let clearCache = false
+  let outputJson: string | undefined
   let help = false
 
   const iter = args[Symbol.iterator]()
@@ -98,6 +101,15 @@ function parseArgs(args: string[]): CliOptions {
       case "--clear-cache":
         clearCache = true
         break
+      case "--output-json": {
+        next = iter.next()
+        outputJson = next.value
+        if (!outputJson) {
+          console.error("Error: --output-json requires a file path")
+          process.exit(1)
+        }
+        break
+      }
       case "--help":
       case "-h":
         help = true
@@ -114,16 +126,19 @@ function parseArgs(args: string[]): CliOptions {
 
   // Build return object conditionally to satisfy exactOptionalPropertyTypes
   const base = { strict, parallel, verbose, noCache, clearCache, help }
-  if (toolPair !== undefined && step !== undefined) {
-    return { ...base, toolPair, step }
-  }
+
+  // Build result object with only defined optional properties
+  let result: CliOptions = base
   if (toolPair !== undefined) {
-    return { ...base, toolPair }
+    result = { ...result, toolPair }
   }
   if (step !== undefined) {
-    return { ...base, step }
+    result = { ...result, step }
   }
-  return base
+  if (outputJson !== undefined) {
+    result = { ...result, outputJson }
+  }
+  return result
 }
 
 /**
@@ -146,6 +161,7 @@ Options:
   --verbose         Show all output, not just errors
   --no-cache        Force re-validation ignoring cache
   --clear-cache     Clear all cached validation results
+  --output-json X   Output JSON report to file (for CI artifact storage)
   --help, -h        Show this help message
 
 Prerequisites:
@@ -161,6 +177,7 @@ Examples:
   bun run scripts/validate-snippets.ts --verbose          # Show detailed output
   bun run scripts/validate-snippets.ts --no-cache         # Skip cache, revalidate all
   bun run scripts/validate-snippets.ts --clear-cache      # Clear cache only
+  bun run scripts/validate-snippets.ts --output-json report.json  # Output JSON report
 `)
 }
 
@@ -337,6 +354,98 @@ function printSummary(summaries: Map<string, ValidationSummary>): void {
   } else {
     console.log("\n\x1b[32mValidation passed!\x1b[0m")
   }
+}
+
+/**
+ * JSON report structure for validation results.
+ */
+interface ValidationReport {
+  readonly timestamp: string
+  readonly version: string
+  readonly success: boolean
+  readonly summary: {
+    readonly totalSnippets: number
+    readonly passed: number
+    readonly failed: number
+    readonly skipped: number
+    readonly totalDurationMs: number
+  }
+  readonly toolPairs: readonly {
+    readonly name: string
+    readonly summary: {
+      readonly totalSnippets: number
+      readonly passed: number
+      readonly failed: number
+      readonly skipped: number
+      readonly totalDurationMs: number
+    }
+    readonly failures: readonly {
+      readonly file: string
+      readonly lineStart: number
+      readonly source: string
+      readonly prop?: string
+      readonly code: string
+      readonly error: string
+      readonly output: string
+    }[]
+  }[]
+}
+
+/**
+ * Generate a JSON report from validation summaries.
+ */
+function generateJsonReport(summaries: Map<string, ValidationSummary>): ValidationReport {
+  let totalSnippets = 0
+  let totalPassed = 0
+  let totalFailed = 0
+  let totalSkipped = 0
+  let totalDuration = 0
+
+  const toolPairs: ValidationReport["toolPairs"][number][] = []
+
+  for (const [name, summary] of summaries) {
+    totalSnippets += summary.totalSnippets
+    totalPassed += summary.passed
+    totalFailed += summary.failed
+    totalSkipped += summary.skipped
+    totalDuration += summary.totalDurationMs
+
+    toolPairs.push({
+      name,
+      summary: {
+        totalSnippets: summary.totalSnippets,
+        passed: summary.passed,
+        failed: summary.failed,
+        skipped: summary.skipped,
+        totalDurationMs: summary.totalDurationMs,
+      },
+      failures: summary.failures,
+    })
+  }
+
+  return {
+    timestamp: new Date().toISOString(),
+    version: "1.0.0",
+    success: totalFailed === 0,
+    summary: {
+      totalSnippets,
+      passed: totalPassed,
+      failed: totalFailed,
+      skipped: totalSkipped,
+      totalDurationMs: totalDuration,
+    },
+    toolPairs,
+  }
+}
+
+/**
+ * Write JSON report to a file.
+ */
+function writeJsonReport(summaries: Map<string, ValidationSummary>, filePath: string): void {
+  const report = generateJsonReport(summaries)
+  const json = JSON.stringify(report, null, 2)
+  writeFileSync(filePath, json, "utf-8")
+  console.log(`\nJSON report written to: ${filePath}`)
 }
 
 /**
@@ -650,6 +759,11 @@ async function main(): Promise<void> {
 
     // Print final summary
     printSummary(allSummaries)
+
+    // Write JSON report if requested
+    if (options.outputJson) {
+      writeJsonReport(allSummaries, options.outputJson)
+    }
 
     // Check for failures
     let totalFailed = 0

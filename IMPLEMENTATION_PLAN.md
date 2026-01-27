@@ -372,7 +372,7 @@ The core implementation (P0-P2) is complete. These tasks remain for full product
 
 - [ ] **Parallel validation** — Validate multiple tool-pairs concurrently with `--parallel` flag
 - [x] **Better error messages** — Include expected vs actual output in validation failures. Updated `ValidationSummary.failures` to include `code` and `output` fields. Enhanced `printStepResult` to show code preview and up to 10 lines of output for failures. Added consolidated failure report at end of summary showing code, error, and truncated output for each failure.
-- [ ] **Validation report file** — Output JSON report for CI artifact storage
+- [x] **Validation report file** — Output JSON report for CI artifact storage. Added `--output-json <path>` flag to validate-snippets.ts that writes a structured JSON report containing timestamp, version, overall success status, summary totals, and per-tool-pair results with failures.
 
 **Learned (2026-01-27):**
 - Scala Dockerfile needs architecture detection for scala-cli download (aarch64 vs x86_64)
