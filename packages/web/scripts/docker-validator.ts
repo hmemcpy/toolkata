@@ -180,10 +180,32 @@ function detectScalaError(output: string): string | null {
  * These are the dependencies needed for the imports used in zio-cats lessons.
  */
 const SCALA_DEPENDENCY_MAP: Record<string, string> = {
+  // Core libraries
   "import zio": '//> using dep "dev.zio::zio:2.1.14"',
   "import zio.stream": '//> using dep "dev.zio::zio-streams:2.1.14"',
+  "import zio.stm": '//> using dep "dev.zio::zio:2.1.14"', // STM is in zio core
   "import cats.effect": '//> using dep "org.typelevel::cats-effect:3.5.7"',
   "import fs2": '//> using dep "co.fs2::fs2-core:3.11.0"',
+
+  // NOTE: cats-stm (coop) is not available for Scala 3.x stable
+  // Step 11 snippets using coop remain marked as validate={false}
+
+  // HTTP
+  "import zio.http": '//> using dep "dev.zio::zio-http:3.0.1"',
+  "import org.http4s":
+    '//> using dep "org.http4s::http4s-dsl:0.23.30"\n//> using dep "org.http4s::http4s-ember-server:0.23.30"\n//> using dep "org.http4s::http4s-ember-client:0.23.30"\n//> using dep "org.http4s::http4s-circe:0.23.30"',
+
+  // JSON
+  "import zio.json": '//> using dep "dev.zio::zio-json:0.7.3"',
+  "import io.circe": '//> using dep "io.circe::circe-generic:0.14.10"',
+
+  // Database
+  "import zio.jdbc": '//> using dep "dev.zio::zio-jdbc:0.1.2"',
+  "import doobie": '//> using dep "org.tpolecat::doobie-core:1.0.0-RC6"',
+
+  // Config
+  "import zio.config": '//> using dep "dev.zio::zio-config:4.0.2"',
+  "import ciris": '//> using dep "is.cir::ciris:3.6.0"',
 }
 
 /**

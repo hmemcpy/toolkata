@@ -17,22 +17,72 @@ RUN ARCH=$(uname -m) && \
 # Verify scala-cli installation
 RUN scala-cli version
 
-# Pre-cache ZIO and Cats Effect dependencies using --server=false (no Bloop)
+# Pre-cache dependencies using --server=false (no Bloop)
 RUN mkdir -p /tmp/warmup
 
-# Pre-cache ZIO 2.1.x (using --server=false to avoid Bloop)
+# Pre-cache ZIO core + streams + stm
 RUN echo '//> using dep "dev.zio::zio:2.1.14"' > /tmp/warmup/zio.scala && \
-    echo 'import zio._' >> /tmp/warmup/zio.scala && \
+    echo '//> using dep "dev.zio::zio-streams:2.1.14"' >> /tmp/warmup/zio.scala && \
+    echo 'import zio._; import zio.stm._; import zio.stream._' >> /tmp/warmup/zio.scala && \
     echo 'object ZioWarmup { val x: UIO[Int] = ZIO.succeed(42) }' >> /tmp/warmup/zio.scala && \
     scala-cli compile --server=false /tmp/warmup/zio.scala && \
-    echo "ZIO cached successfully"
+    echo "ZIO + streams + stm cached successfully"
 
-# Pre-cache Cats Effect 3.5.x
+# Pre-cache Cats Effect + fs2
 RUN echo '//> using dep "org.typelevel::cats-effect:3.5.7"' > /tmp/warmup/cats.scala && \
-    echo 'import cats.effect._' >> /tmp/warmup/cats.scala && \
+    echo '//> using dep "co.fs2::fs2-core:3.11.0"' >> /tmp/warmup/cats.scala && \
+    echo 'import cats.effect._; import fs2._' >> /tmp/warmup/cats.scala && \
     echo 'object CatsWarmup { val x: IO[Int] = IO.pure(42) }' >> /tmp/warmup/cats.scala && \
     scala-cli compile --server=false /tmp/warmup/cats.scala && \
-    echo "Cats Effect cached successfully"
+    echo "Cats Effect + fs2 cached successfully"
+
+# NOTE: cats-stm (coop) is not available for Scala 3.x stable
+# Step 11 snippets using coop remain marked as validate={false}
+
+# Pre-cache ZIO HTTP
+RUN echo '//> using dep "dev.zio::zio-http:3.0.1"' > /tmp/warmup/ziohttp.scala && \
+    echo 'import zio.http._' >> /tmp/warmup/ziohttp.scala && \
+    echo 'object ZioHttpWarmup { val x = 1 }' >> /tmp/warmup/ziohttp.scala && \
+    scala-cli compile --server=false /tmp/warmup/ziohttp.scala && \
+    echo "ZIO HTTP cached successfully"
+
+# Pre-cache http4s (ember server/client + circe)
+RUN echo '//> using dep "org.http4s::http4s-dsl:0.23.30"' > /tmp/warmup/http4s.scala && \
+    echo '//> using dep "org.http4s::http4s-ember-server:0.23.30"' >> /tmp/warmup/http4s.scala && \
+    echo '//> using dep "org.http4s::http4s-ember-client:0.23.30"' >> /tmp/warmup/http4s.scala && \
+    echo '//> using dep "org.http4s::http4s-circe:0.23.30"' >> /tmp/warmup/http4s.scala && \
+    echo 'import org.http4s._' >> /tmp/warmup/http4s.scala && \
+    echo 'object Http4sWarmup { val x = 1 }' >> /tmp/warmup/http4s.scala && \
+    scala-cli compile --server=false /tmp/warmup/http4s.scala && \
+    echo "http4s cached successfully"
+
+# Pre-cache ZIO JSON
+RUN echo '//> using dep "dev.zio::zio-json:0.7.3"' > /tmp/warmup/ziojson.scala && \
+    echo 'import zio.json._' >> /tmp/warmup/ziojson.scala && \
+    echo 'object ZioJsonWarmup { val x = 1 }' >> /tmp/warmup/ziojson.scala && \
+    scala-cli compile --server=false /tmp/warmup/ziojson.scala && \
+    echo "ZIO JSON cached successfully"
+
+# Pre-cache Circe
+RUN echo '//> using dep "io.circe::circe-generic:0.14.10"' > /tmp/warmup/circe.scala && \
+    echo 'import io.circe._' >> /tmp/warmup/circe.scala && \
+    echo 'object CirceWarmup { val x = 1 }' >> /tmp/warmup/circe.scala && \
+    scala-cli compile --server=false /tmp/warmup/circe.scala && \
+    echo "Circe cached successfully"
+
+# Pre-cache ZIO JDBC
+RUN echo '//> using dep "dev.zio::zio-jdbc:0.1.2"' > /tmp/warmup/ziojdbc.scala && \
+    echo 'import zio.jdbc._' >> /tmp/warmup/ziojdbc.scala && \
+    echo 'object ZioJdbcWarmup { val x = 1 }' >> /tmp/warmup/ziojdbc.scala && \
+    scala-cli compile --server=false /tmp/warmup/ziojdbc.scala && \
+    echo "ZIO JDBC cached successfully"
+
+# Pre-cache Doobie
+RUN echo '//> using dep "org.tpolecat::doobie-core:1.0.0-RC6"' > /tmp/warmup/doobie.scala && \
+    echo 'import doobie._' >> /tmp/warmup/doobie.scala && \
+    echo 'object DoobieWarmup { val x = 1 }' >> /tmp/warmup/doobie.scala && \
+    scala-cli compile --server=false /tmp/warmup/doobie.scala && \
+    echo "Doobie cached successfully"
 
 # Clean up warmup files but keep the cache
 RUN rm -rf /tmp/warmup
