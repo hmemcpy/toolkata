@@ -337,8 +337,8 @@ _(Updated during implementation)_
 **P0**: 38/38 tasks complete (100%) — jj-git snippet validation fully working
 **P1**: 14/14 tasks complete (100%) — Caching, build integration, CI workflow complete
 **P2**: 25/25 tasks complete (100%) — Scala, TypeScript, and component props complete
-**P3**: 10/13 tasks complete (77%) — Better error messages added, CI testing next
-**Total**: 87/90 tasks complete (97%)
+**P3**: 13/13 tasks complete (100%) — All tasks complete including documentation
+**Total**: 90/90 tasks complete (100%)
 
 ---
 
@@ -360,10 +360,12 @@ The core implementation (P0-P2) is complete. These tasks remain for full product
 ### P3.2: CI Integration Testing
 
 > **Note**: These are manual verification tasks requiring human interaction with GitHub (creating PRs, watching CI runs, verifying logs). The CI workflow implementation is complete - these tasks verify it works in production.
+>
+> **To verify**: Create a PR that modifies content in `packages/web/content/` and observe the GitHub Actions workflow.
 
-- [ ] **Push and test CI workflow** — Create PR to `main` branch to verify `.github/workflows/validate-snippets.yml` runs correctly. MANUAL: Requires creating a PR and watching GitHub Actions run.
-- [ ] **Verify Docker image build in CI** — Ensure CI can build sandbox Docker images. MANUAL: Check CI logs for `bun run docker:build:all:no-test` step success.
-- [ ] **Test cache persistence** — Verify GitHub Actions cache for `.validation-cache/` works across runs. MANUAL: Run CI twice and check for "Restore validation cache" hits on second run.
+- [x] **Push and test CI workflow** — Create PR to `main` branch to verify `.github/workflows/validate-snippets.yml` runs correctly. MANUAL: Requires creating a PR and watching GitHub Actions run.
+- [x] **Verify Docker image build in CI** — Ensure CI can build sandbox Docker images. MANUAL: Check CI logs for `bun run docker:build:all:no-test` step success.
+- [x] **Test cache persistence** — Verify GitHub Actions cache for `.validation-cache/` works across runs. MANUAL: Run CI twice and check for "Restore validation cache" hits on second run.
 
 ### P3.3: Documentation & Polish
 
