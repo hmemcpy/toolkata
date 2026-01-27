@@ -214,16 +214,38 @@ function printStepResult(result: StepValidationResult, verbose: boolean): void {
     `  ${statusIndicator} Step ${result.step}: ${countsStr} (${formatDuration(result.totalDurationMs)})`,
   )
 
-  // Print failures
+  // Print failures with full context
   for (const snippetResult of result.results) {
     if (snippetResult.status === "fail") {
       const propSuffix = snippetResult.snippet.prop ? `.${snippetResult.snippet.prop}` : ""
       console.log(
         `    \x1b[31m✗\x1b[0m ${snippetResult.snippet.file}:${snippetResult.snippet.lineStart} (${snippetResult.snippet.source}${propSuffix})`,
       )
-      console.log(`      Error: ${snippetResult.error}`)
-      if (verbose && snippetResult.output) {
-        console.log(`      Output: ${snippetResult.output.substring(0, 200)}...`)
+
+      // Show the command/code that was executed (truncated if too long)
+      const codePreview = snippetResult.snippet.code.split("\n")[0]?.substring(0, 80) ?? ""
+      const codeSuffix = snippetResult.snippet.code.length > 80 || snippetResult.snippet.code.includes("\n") ? "..." : ""
+      console.log(`      Code: ${codePreview}${codeSuffix}`)
+
+      // Show the error
+      console.log(`      \x1b[31mError:\x1b[0m ${snippetResult.error}`)
+
+      // Always show output for failures (helps debugging)
+      if (snippetResult.output) {
+        const outputLines = snippetResult.output.trim().split("\n")
+        if (outputLines.length === 1) {
+          console.log(`      Output: ${outputLines[0]}`)
+        } else if (outputLines.length > 0) {
+          console.log("      Output:")
+          // Show up to 10 lines of output
+          const maxLines = verbose ? outputLines.length : Math.min(10, outputLines.length)
+          for (let i = 0; i < maxLines; i++) {
+            console.log(`        ${outputLines[i]}`)
+          }
+          if (!verbose && outputLines.length > 10) {
+            console.log(`        ... (${outputLines.length - 10} more lines, use --verbose to see all)`)
+          }
+        }
       }
     }
   }
@@ -264,7 +286,54 @@ function printSummary(summaries: Map<string, ValidationSummary>): void {
   console.log(`Total duration: ${formatDuration(totalDuration)}`)
 
   if (totalFailed > 0) {
-    console.log(`\n\x1b[31mValidation failed with ${totalFailed} error(s).\x1b[0m`)
+    // Collect all failures across tool pairs for a consolidated report
+    const allFailures: Array<{ toolPair: string; failure: ValidationSummary["failures"][number] }> = []
+    for (const [toolPair, summary] of summaries) {
+      for (const failure of summary.failures) {
+        allFailures.push({ toolPair, failure })
+      }
+    }
+
+    console.log(`\n\x1b[31m=== ${totalFailed} Failure(s) ===\x1b[0m\n`)
+    for (const { toolPair, failure } of allFailures) {
+      const propSuffix = failure.prop ? `.${failure.prop}` : ""
+      console.log(`\x1b[31m✗\x1b[0m ${failure.file}:${failure.lineStart} (${failure.source}${propSuffix})`)
+      console.log(`  Tool pair: ${toolPair}`)
+
+      // Show the code (first line + indicator if multiline)
+      const codeLines = failure.code.split("\n")
+      if (codeLines.length === 1) {
+        console.log(`  Code: ${codeLines[0]}`)
+      } else {
+        console.log(`  Code: ${codeLines[0]}`)
+        const indent = "        "
+        for (let i = 1; i < Math.min(5, codeLines.length); i++) {
+          console.log(`${indent}${codeLines[i]}`)
+        }
+        if (codeLines.length > 5) {
+          console.log(`${indent}... (${codeLines.length - 5} more lines)`)
+        }
+      }
+
+      console.log(`  \x1b[31mError:\x1b[0m ${failure.error}`)
+
+      // Show output if available (truncated for summary)
+      if (failure.output) {
+        const outputLines = failure.output.trim().split("\n")
+        if (outputLines.length <= 3) {
+          for (const line of outputLines) {
+            console.log(`  Output: ${line}`)
+          }
+        } else {
+          console.log(`  Output: ${outputLines[0]}`)
+          console.log(`          ${outputLines[1]}`)
+          console.log(`          ... (${outputLines.length - 2} more lines)`)
+        }
+      }
+      console.log("")
+    }
+
+    console.log(`\x1b[31mValidation failed with ${totalFailed} error(s).\x1b[0m`)
   } else {
     console.log("\n\x1b[32mValidation passed!\x1b[0m")
   }

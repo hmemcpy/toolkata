@@ -671,7 +671,10 @@ export interface ValidationSummary {
     readonly file: string
     readonly lineStart: number
     readonly source: string
+    readonly prop?: string
+    readonly code: string
     readonly error: string
+    readonly output: string
   }[]
 }
 
@@ -687,7 +690,10 @@ export function computeSummary(results: readonly StepValidationResult[]): Valida
     file: string
     lineStart: number
     source: string
+    prop?: string
+    code: string
     error: string
+    output: string
   }[] = []
 
   for (const stepResult of results) {
@@ -697,15 +703,24 @@ export function computeSummary(results: readonly StepValidationResult[]): Valida
         case "pass":
           passed++
           break
-        case "fail":
+        case "fail": {
           failed++
-          failures.push({
+          const base = {
             file: snippetResult.snippet.file,
             lineStart: snippetResult.snippet.lineStart,
             source: snippetResult.snippet.source,
+            code: snippetResult.snippet.code,
             error: snippetResult.error ?? "Unknown error",
-          })
+            output: snippetResult.output,
+          }
+          // Only add prop if defined (exactOptionalPropertyTypes)
+          if (snippetResult.snippet.prop !== undefined) {
+            failures.push({ ...base, prop: snippetResult.snippet.prop })
+          } else {
+            failures.push(base)
+          }
           break
+        }
         case "skipped":
           skipped++
           break

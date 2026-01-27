@@ -337,8 +337,8 @@ _(Updated during implementation)_
 **P0**: 38/38 tasks complete (100%) — jj-git snippet validation fully working
 **P1**: 14/14 tasks complete (100%) — Caching, build integration, CI workflow complete
 **P2**: 25/25 tasks complete (100%) — Scala, TypeScript, and component props complete
-**P3**: 9/13 tasks complete (69%) — Documentation complete, CI testing next
-**Total**: 86/90 tasks complete (96%)
+**P3**: 10/13 tasks complete (77%) — Better error messages added, CI testing next
+**Total**: 87/90 tasks complete (97%)
 
 ---
 
@@ -371,7 +371,7 @@ The core implementation (P0-P2) is complete. These tasks remain for full product
 ### P3.4: Nice to Have (Low Priority)
 
 - [ ] **Parallel validation** — Validate multiple tool-pairs concurrently with `--parallel` flag
-- [ ] **Better error messages** — Include expected vs actual output in validation failures
+- [x] **Better error messages** — Include expected vs actual output in validation failures. Updated `ValidationSummary.failures` to include `code` and `output` fields. Enhanced `printStepResult` to show code preview and up to 10 lines of output for failures. Added consolidated failure report at end of summary showing code, error, and truncated output for each failure.
 - [ ] **Validation report file** — Output JSON report for CI artifact storage
 
 **Learned (2026-01-27):**
