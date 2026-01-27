@@ -43,7 +43,9 @@ ZIO and Cats Effect take fundamentally different approaches to dependency inject
 
 ## ZIO Service Pattern
 
+{/* Pattern example - ZIO service pattern with companion objects doesn't compile in isolation */}
 <ScalaComparisonBlock
+  validate={false}
   catsEffectCode={`
     |import cats.effect.IO
     |
@@ -89,7 +91,9 @@ ZIO and Cats Effect take fundamentally different approaches to dependency inject
 
 ## Cats Effect: Tagless Final
 
+{/* Pattern example - Tagless Final with implicits/context bounds */}
 <ScalaComparisonBlock
+  validate={false}
   catsEffectCode={`
     |import cats.effect.IO
     |import cats.Monad
@@ -126,7 +130,8 @@ ZIO and Cats Effect take fundamentally different approaches to dependency inject
     |
     |// The effect type is always ZIO
     |def program: ZIO[UserService, Nothing, String] =
-    |  UserService.getUser(1).map(_.fold("Not found")(_.name))
+    |  ZIO.serviceWithZIO[UserService](_.getUser(1))
+    |    .map(_.fold("Not found")(_.name))
   `}
   catsEffectComment="Tagless Final - abstract over F[_]"
   zioComment="ZIO uses environment (R) instead"
@@ -167,6 +172,12 @@ ZIO and Cats Effect take fundamentally different approaches to dependency inject
     |    case None => ZIO.serviceWithZIO[Database](_.query)
     |  }
     |
+    |// Layer implementations
+    |val databaseLayer: ULayer[Database] =
+    |  ZLayer.succeed(new Database { def query = ZIO.succeed(42) })
+    |val cacheLayer: ULayer[Cache] =
+    |  ZLayer.succeed(new Cache { def get = ZIO.none })
+    |
     |// Compose layers with ++
     |val appLayer: ULayer[Database & Cache] =
     |  databaseLayer ++ cacheLayer
@@ -189,7 +200,7 @@ Cats Effect relies on the compiler checking function parameters.
     |trait Config { val port: Int }
     |
     |def server(config: Config): IO[Unit] =
-    |  IO.println(s"Starting on port \${config.port}")
+    |  IO.println(s"Starting on port $${config.port}")
     |
     |// Provide at call site
     |val program: IO[Unit] =
@@ -202,7 +213,7 @@ Cats Effect relies on the compiler checking function parameters.
     |
     |val server: ZIO[Config, Nothing, Unit] =
     |  ZIO.serviceWith[Config](c =>
-    |    println(s"Starting on port \${c.port}")
+    |    println(s"Starting on port $${c.port}")
     |  )
     |
     |// Provide layer

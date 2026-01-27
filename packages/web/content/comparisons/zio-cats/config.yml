@@ -25,6 +25,10 @@ validation:
       - "import cats.effect.unsafe.implicits.global"
       - "import fs2._"
     wrapper: |
+      // Common types used across tutorials
+      case class User(id: Int, name: String)
+      case class AppError(message: String) extends Throwable(message)
+
       object Snippet {
         ${code}
       }
