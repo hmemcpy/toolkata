@@ -255,7 +255,9 @@ function parseJsArray(arrayStr: string): string[] {
 
   while (current < inner.length) {
     // Skip whitespace and commas
-    while (current < inner.length && /[\s,]/.test(inner[current])) {
+    while (current < inner.length) {
+      const char = inner[current]
+      if (char && !/[\s,]/.test(char)) break
       current++
     }
 
