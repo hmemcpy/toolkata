@@ -527,7 +527,9 @@ function isNonExecutableCommand(code: string): boolean {
   if (/^cd\s+\w+$/.test(trimmed) && !/^cd\s+(\/|~|\.)/.test(trimmed)) return true
 
   // Commands with placeholders
-  if (/\{[^}]+\}/.test(trimmed)) return true // {placeholder} syntax
+  // Match simple placeholders like {repo-url}, {your-name} but NOT code blocks
+  // Code blocks contain periods, parens, or are multi-line
+  if (/\{[a-zA-Z][a-zA-Z0-9_-]*\}/.test(trimmed) && !/[.()]/.test(trimmed)) return true
   if (/<[^>]+>/.test(trimmed) && !trimmed.startsWith("jj log")) return true // <placeholder> syntax
 
   // URL-based commands that need network (git clone, remote add)

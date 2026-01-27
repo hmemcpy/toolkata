@@ -87,7 +87,6 @@ Both ZIO and Cats Effect provide powerful error handling, but with different app
 `foldZIO` is the fundamental error handling operator in ZIO. It handles both error and success cases with effects.
 
 <ScalaComparisonBlock
-  validate={false}
   catsEffectCode={`
     |import cats.effect.IO
     |
@@ -96,8 +95,8 @@ Both ZIO and Cats Effect provide powerful error handling, but with different app
     |  IO.raiseError[Int](new Exception("fail"))
     |    .attempt
     |    .flatMap {
-    |      case Left(e) => IO.pure(s"Error: \${e.getMessage}")
-    |      case Right(v) => IO.pure(s"Success: \$v")
+    |      case Left(e) => IO.pure(s"Error: $${e.getMessage}")
+    |      case Right(v) => IO.pure(s"Success: $$v")
     |    }
   `}
   zioCode={`
@@ -107,8 +106,8 @@ Both ZIO and Cats Effect provide powerful error handling, but with different app
     |val folded: IO[String, String] =
     |  ZIO.fail("error")
     |    .foldZIO(
-    |      error => ZIO.succeed(s"Error: \$error"),
-    |      value => ZIO.succeed(s"Success: \$value")
+    |      error => ZIO.succeed(s"Error: $$error"),
+    |      value => ZIO.succeed(s"Success: $$value")
     |    )
   `}
   catsEffectComment="Manual pattern matching on attempt"
@@ -139,20 +138,20 @@ ZIO distinguishes between **errors** (anticipated failures in the error type) an
     |val handled: UIO[Int] =
     |  ZIO.attempt(1 / 0)  // Could defect!
     |    .foldCauseZIO(
-    |      cause => ZIO.succeed(cause.failureOption.map(_.length).getOrElse(0)),
+    |      cause => ZIO.succeed(cause.failures.headOption.map(_.getMessage.length).getOrElse(0)),
     |      value => ZIO.succeed(value)
     |    )
     |
-    |// Recover from specific defects
-    |def recoverDefects[A](zio: ZIO[Any, Nothing, A]): ZIO[Any, Nothing, A] =
-    |  zio.foldCauseZIO(
-    |    cause =>
-    |      cause.defects match {
-    |        case Nil => ZIO.dieCause(cause)  // Re-raise if no defects
-    |        case _    => ZIO.succeed(0)       // Recover from defects
+    |// Recover from defects - returns error count
+    |val recoverDefects: UIO[Int] =
+    |  ZIO.die(new RuntimeException("defect"))
+    |    .foldCauseZIO(
+    |      cause => cause.defects match {
+    |        case Nil => ZIO.succeed(-1)  // No defects
+    |        case ds  => ZIO.succeed(ds.length) // Count defects
     |      },
-    |    ZIO.succeed
-    |  )
+    |      _ => ZIO.succeed(0)
+    |    )
   `}
   catsEffectComment="All failures are Throwable - typed vs untyped"
   zioComment="foldCauseZIO - full Cause[E] with error/defect info"
@@ -167,7 +166,6 @@ In ZIO, **errors** are in your type signature and **defects** are not. Use `fold
 ZIO provides several `orElse` variants for fallback behavior.
 
 <ScalaComparisonBlock
-  validate={false}
   catsEffectCode={`
     |import cats.effect.IO
     |
@@ -188,19 +186,17 @@ ZIO provides several `orElse` variants for fallback behavior.
     |val fallback: UIO[Int] =
     |  ZIO.fail("error").orElse(ZIO.succeed(0))
     |
-    |// orElseFail - add error possibility
-    |val mayFail: IO[String, Unit] =
-    |  ZIO.unit.orElseFail("didn't work")
+    |// orElseFail - replace error type
+    |val mayFail: IO[String, Int] =
+    |  ZIO.fail(42).orElseFail("replaced error")
     |
     |// orElseEither - switch to Either result type
     |val either: UIO[Either[String, Int]] =
     |  ZIO.fail("error").orElseEither(ZIO.succeed(42))
-    |  // Result: Left("error")
     |
-    |// orElse on success - original wins
+    |// orElse on failable effect - original wins on success
     |val originalWins: UIO[Int] =
-    |  ZIO.succeed(42).orElse(ZIO.succeed(0))
-    |  // Result: 42
+    |  ZIO.attempt(42).orElse(ZIO.succeed(0))
   `}
   catsEffectComment="handleErrorWith / recover"
   zioComment="orElse / orElseFail / orElseEither"
@@ -211,6 +207,7 @@ ZIO provides several `orElse` variants for fallback behavior.
 <ScalaComparisonBlock
   catsEffectCode={`
     |import cats.effect.IO
+    |import cats.syntax.all._
     |
     |// Transform error type
     |val adapted: IO[Int] =
@@ -281,7 +278,6 @@ Cats Effect always uses `Throwable`, so you transform within that type.
 ## Ensuring (Finally)
 
 <ScalaComparisonBlock
-  validate={false}
   catsEffectCode={`
     |import cats.effect.IO
     |
@@ -293,7 +289,7 @@ Cats Effect always uses `Throwable`, so you transform within that type.
     |// On error only
     |val onError: IO[Int] =
     |  IO.raiseError[Int](new Exception("fail"))
-    |    .onError(e => IO.println(s"Error: \$e"))
+    |    .onError(e => IO.println(s"Error: $$e"))
   `}
   zioCode={`
     |import zio._
@@ -306,7 +302,7 @@ Cats Effect always uses `Throwable`, so you transform within that type.
     |// On error only
     |val onError: IO[String, Int] =
     |  ZIO.fail("fail")
-    |    .onError(e => ZIO.succeed(println(s"Error: \$e")))
+    |    .onError(e => ZIO.succeed(println(s"Error: $$e")))
   `}
   catsEffectComment="guarantee / onError"
   zioComment="ensuring / onError"

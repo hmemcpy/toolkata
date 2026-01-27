@@ -79,7 +79,9 @@ function isNonExecutableCommand(code: string, _source: string): boolean {
   if (/^(vim|vi|nano|emacs|code|subl)\s/.test(trimmed)) return true
 
   // Placeholders with curly braces (not real commands)
-  if (/\{[^}]+\}/.test(trimmed)) return true
+  // Match simple placeholders like {repo-url}, {your-name} but NOT code blocks
+  // Code blocks contain periods, parens, or are multi-line
+  if (/\{[a-zA-Z][a-zA-Z0-9_-]*\}/.test(trimmed) && !/[.()]/.test(trimmed)) return true
 
   // Diagram-style text (not actual commands)
   // e.g., "[Working Copy] → [Staging] → [Repository]"
