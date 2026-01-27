@@ -1,0 +1,74 @@
+name: Validate Snippets
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/web/content/**"
+      - "packages/web/scripts/validate-snippets.ts"
+      - "packages/web/scripts/snippet-extractor.ts"
+      - "packages/web/scripts/headless-validator.ts"
+      - "packages/web/scripts/config-resolver.ts"
+      - "packages/web/scripts/sandbox-manager.ts"
+      - "packages/web/scripts/validation-cache.ts"
+      - "packages/sandbox-api/docker/**"
+      - "packages/sandbox-api/src/environments/**"
+      - ".github/workflows/validate-snippets.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "packages/web/content/**"
+      - "packages/web/scripts/validate-snippets.ts"
+      - "packages/web/scripts/snippet-extractor.ts"
+      - "packages/web/scripts/headless-validator.ts"
+      - "packages/web/scripts/config-resolver.ts"
+      - "packages/web/scripts/sandbox-manager.ts"
+      - "packages/web/scripts/validation-cache.ts"
+      - "packages/sandbox-api/docker/**"
+      - "packages/sandbox-api/src/environments/**"
+      - ".github/workflows/validate-snippets.yml"
+  workflow_dispatch:
+
+jobs:
+  validate-snippets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build sandbox Docker images (all environments)
+        working-directory: packages/sandbox-api
+        run: bun run docker:build:all:no-test
+
+      - name: Restore validation cache
+        uses: actions/cache/restore@v4
+        with:
+          path: packages/web/.validation-cache
+          key: validation-${{ hashFiles('packages/web/content/**') }}
+          restore-keys: |
+            validation-
+
+      - name: Validate snippets
+        working-directory: packages/web
+        run: bun run validate:snippets --strict
+        env:
+          SANDBOX_API_URL: http://localhost:3001
+
+      - name: Save validation cache
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: packages/web/.validation-cache
+          key: validation-${{ hashFiles('packages/web/content/**') }}

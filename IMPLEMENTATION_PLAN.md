@@ -186,9 +186,9 @@ Build a headless snippet validation system that extracts code from MDX, executes
 
 ### P1.3: CI Integration
 
-- [ ] **Create GitHub Actions workflow** — `.github/workflows/validate-snippets.yml` triggered on content changes
-- [ ] **Configure sandbox-api in CI** — Build Docker image, start container in workflow
-- [ ] **Add caching for validation results** — GitHub Actions cache for `.validation-cache/` directory
+- [x] **Create GitHub Actions workflow** — `.github/workflows/validate-snippets.yml` triggered on content changes
+- [x] **Configure sandbox-api in CI** — Build Docker image, start container in workflow
+- [x] **Add caching for validation results** — GitHub Actions cache for `.validation-cache/` directory
 - [ ] **Test PR validation** — Create test PR with content change, verify workflow runs
 
 ---
