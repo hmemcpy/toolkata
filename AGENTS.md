@@ -587,6 +587,113 @@ Use browser DevTools or `/agent-browser` to verify:
 
 ---
 
+## Snippet Validation
+
+Build-time validation system that executes code snippets from MDX content against sandbox Docker containers to ensure all tutorial examples compile and run correctly.
+
+### Running Validation
+
+```bash
+cd packages/web
+
+# Validate all snippets (runs automatically before build)
+bun run validate:snippets
+
+# Validate with strict mode (fails on errors, used in CI)
+bun run validate:snippets --strict
+
+# Validate specific tool pairing
+bun run validate:snippets --tool-pair jj-git
+bun run validate:snippets --tool-pair zio-cats
+bun run validate:snippets --tool-pair effect-zio
+
+# Validate specific step
+bun run validate:snippets --tool-pair jj-git --step 3
+
+# Show verbose output
+bun run validate:snippets --verbose
+
+# Skip cache (force re-validation)
+bun run validate:snippets --no-cache
+
+# Clear all cached results
+bun run validate:snippets --clear-cache
+```
+
+### How It Works
+
+1. **Extraction** — Parses MDX files and extracts code from `TryIt`, `SideBySide`, `ScalaComparisonBlock`, and `CrossLanguageBlock` components
+2. **Config Resolution** — Merges validation config from three levels: pairing `config.yml` → step frontmatter → component props
+3. **Execution** — Runs snippets in isolated Docker containers (bash for jj-git, scala for zio-cats, typescript for effect-zio)
+4. **Error Detection** — Checks for tool-specific error patterns (shell errors, compilation failures)
+5. **Caching** — Caches results at step level (SHA256 hash of config + MDX content)
+
+### Skipping Validation
+
+Add `validate={false}` prop to skip validation for specific snippets:
+
+```jsx
+{/* Pseudo-code or external dependencies */}
+<ScalaComparisonBlock
+  validate={false}
+  zioCode={`val x = ???  // placeholder`}
+  ...
+/>
+
+{/* Commands with sandbox limitations */}
+<TryIt
+  validate={false}
+  command="jj op undo"
+/>
+```
+
+**When to use `validate={false}`:**
+- Pseudo-code with `???` or `...` placeholders
+- Code using external libraries not in the sandbox (ciris, doobie, zio-schema)
+- Commands that don't work in the restricted sandbox environment
+- Teaching examples that show concepts but aren't meant to run
+
+### Adding New Tool Pairings
+
+1. Create `content/comparisons/{pairing}/config.yml` with validation config:
+
+```yaml
+validation:
+  environment: bash  # or scala, typescript
+  prelude:
+    setup:
+      - "init command 1"
+      - "init command 2"
+    imports:  # for scala/typescript
+      - "import foo._"
+```
+
+2. Build the appropriate Docker environment image (if new environment type)
+3. Run `bun run validate:snippets --tool-pair {pairing}` to validate
+
+### Common Issues
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| "not a git repository" | Missing init setup | Add `jj git init .` to config.yml prelude |
+| "value X is not a member" | Missing import | Add import to config.yml prelude or use `extraImports` prop |
+| Compilation timeout | Bloop server issues | Scala uses `--server=false --jvm system` flags |
+| "command not found" | Missing tool in sandbox | Check Docker image has required tools |
+| Context error (expected) | Snippet needs prior state | Add `validate={false}` — these are teaching examples |
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `scripts/validate-snippets.ts` | CLI entry point |
+| `scripts/snippet-extractor.ts` | MDX parsing and snippet extraction |
+| `scripts/docker-validator.ts` | Docker-based validation execution |
+| `scripts/config-resolver.ts` | 3-level config merging |
+| `scripts/validation-cache.ts` | Step-level caching |
+| `.validation-cache/` | Cached validation results (gitignored) |
+
+---
+
 ## Sandbox Docker Image
 
 The sandbox API runs user commands in isolated Docker containers. The image is built from `packages/sandbox-api/docker/`.

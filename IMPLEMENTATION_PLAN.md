@@ -337,8 +337,8 @@ _(Updated during implementation)_
 **P0**: 38/38 tasks complete (100%) — jj-git snippet validation fully working
 **P1**: 14/14 tasks complete (100%) — Caching, build integration, CI workflow complete
 **P2**: 25/25 tasks complete (100%) — Scala, TypeScript, and component props complete
-**P3**: 7/13 tasks complete (54%) — zio-cats and effect-zio E2E validation complete, CI testing next
-**Total**: 84/90 tasks complete (93%)
+**P3**: 8/13 tasks complete (62%) — Documentation added, CI testing next
+**Total**: 85/90 tasks complete (94%)
 
 ---
 
@@ -365,7 +365,7 @@ The core implementation (P0-P2) is complete. These tasks remain for full product
 
 ### P3.3: Documentation & Polish
 
-- [ ] **Document validation in CLAUDE.md** — Add section on running snippet validation and common issues
+- [x] **Document validation in CLAUDE.md** — Add section on running snippet validation and common issues. Added comprehensive "Snippet Validation" section covering: running validation commands, how it works, skipping validation with `validate={false}`, adding new tool pairings, common issues table, and key files reference. CLAUDE.md is a symlink to AGENTS.md so both files are updated.
 - [ ] **Add validation troubleshooting guide** — Common errors and how to fix them
 
 ### P3.4: Nice to Have (Low Priority)
