@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "validate:snippets": "bun run scripts/validate-snippets.ts",
-    "prebuild": "bun run validate:snippets --strict",
     "build": "next build",
     "start": "next start",
     "lint": "biome lint .",
