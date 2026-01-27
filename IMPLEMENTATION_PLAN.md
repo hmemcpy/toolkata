@@ -359,9 +359,11 @@ The core implementation (P0-P2) is complete. These tasks remain for full product
 
 ### P3.2: CI Integration Testing
 
-- [ ] **Push and test CI workflow** — Create PR to `main` branch to verify `.github/workflows/validate-snippets.yml` runs correctly
-- [ ] **Verify Docker image build in CI** — Ensure CI can build sandbox Docker images
-- [ ] **Test cache persistence** — Verify GitHub Actions cache for `.validation-cache/` works across runs
+> **Note**: These are manual verification tasks requiring human interaction with GitHub (creating PRs, watching CI runs, verifying logs). The CI workflow implementation is complete - these tasks verify it works in production.
+
+- [ ] **Push and test CI workflow** — Create PR to `main` branch to verify `.github/workflows/validate-snippets.yml` runs correctly. MANUAL: Requires creating a PR and watching GitHub Actions run.
+- [ ] **Verify Docker image build in CI** — Ensure CI can build sandbox Docker images. MANUAL: Check CI logs for `bun run docker:build:all:no-test` step success.
+- [ ] **Test cache persistence** — Verify GitHub Actions cache for `.validation-cache/` works across runs. MANUAL: Run CI twice and check for "Restore validation cache" hits on second run.
 
 ### P3.3: Documentation & Polish
 
