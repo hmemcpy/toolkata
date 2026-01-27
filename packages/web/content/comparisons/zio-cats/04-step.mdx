@@ -158,16 +158,14 @@ Both libraries provide utility operators that simplify common patterns.
 ### Side Effects (tap)
 
 <ScalaComparisonBlock
-  validate={false}
   catsEffectCode={`
     |import cats.effect.IO
+    |import cats.syntax.all._
     |
     |// Execute side effect, pass through value
     |val tapped: IO[Int] =
     |  IO.pure(42)
-    |    .tap(n => IO.println(s"Got: \$n"))
-    |
-    |// Result: still contains 42
+    |    .flatTap(n => IO.println(s"Got: $$n"))
   `}
   zioCode={`
     |import zio._
@@ -175,11 +173,9 @@ Both libraries provide utility operators that simplify common patterns.
     |// Execute side effect, pass through value
     |val tapped: UIO[Int] =
     |  ZIO.succeed(42)
-    |    .tap(n => ZIO.succeed(println(s"Got: \$n")))
-    |
-    |// Result: still contains 42
+    |    .tap(n => ZIO.succeed(println(s"Got: $$n")))
   `}
-  catsEffectComment=".tap - side effect, keep value"
+  catsEffectComment=".flatTap - side effect, keep value"
   zioComment=".tap - side effect, keep value"
 />
 
@@ -190,19 +186,14 @@ Both libraries provide utility operators that simplify common patterns.
 ### Filter or Fail
 
 <ScalaComparisonBlock
-  validate={false}
   catsEffectCode={`
     |import cats.effect.IO
+    |import cats.syntax.all._
     |
     |// Filter or raise error
     |val filtered: IO[Int] =
     |  IO.pure(42)
-    |    .raiseErrorUnless(
-    |      _ > 50,
-    |      new Exception("Value too small")
-    |    )
-    |
-    |// Result: Exception("Value too small")
+    |    .ensure(new Exception("Value too small"))(_ > 50)
   `}
   zioCode={`
     |import zio._
@@ -210,12 +201,7 @@ Both libraries provide utility operators that simplify common patterns.
     |// Filter or fail with custom error
     |val filtered: IO[String, Int] =
     |  ZIO.succeed(42)
-    |    .filterOrFail(
-    |      _ > 50,
-    |      "Value too small"
-    |    )
-    |
-    |// Result: ZIO.fail("Value too small")
+    |    .filterOrFail(_ > 50)("Value too small")
   `}
   catsEffectComment=".raiseErrorUnless / .raiseErrorWhen"
   zioComment=".filterOrFail - filter or fail"
