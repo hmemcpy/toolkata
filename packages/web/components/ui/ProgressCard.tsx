@@ -111,7 +111,7 @@ export function ProgressCard({ toolPair, totalSteps, initialProgress }: Progress
       <button
         type="button"
         onClick={resetProgress}
-        className="w-full text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
+        className="w-full text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)] cursor-pointer"
       >
         Reset Progress
       </button>
