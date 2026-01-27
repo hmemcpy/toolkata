@@ -123,6 +123,18 @@ fi
 SCALA_SIZE=$(docker images "$ENV_IMAGE_NAME:scala" --format "{{.Size}}")
 log_info "scala environment size: $SCALA_SIZE"
 
+# Build typescript environment image
+log_info "Building typescript environment image: $ENV_IMAGE_NAME:typescript"
+docker build -t "$ENV_IMAGE_NAME:typescript" "$DOCKER_DIR/environments/typescript"
+
+if [ $? -ne 0 ]; then
+    log_error "typescript environment image build failed"
+    exit 1
+fi
+
+TYPESCRIPT_SIZE=$(docker images "$ENV_IMAGE_NAME:typescript" --format "{{.Size}}")
+log_info "typescript environment size: $TYPESCRIPT_SIZE"
+
 # Step 3: Run tests if enabled
 if [ "$RUN_TESTS" = true ]; then
     log_step "Running tests..."
@@ -482,6 +494,90 @@ EOF
 
     log_info "scala environment tests passed!"
 
+    # Test typescript environment
+    log_info "Testing typescript environment..."
+
+    # Test 17: Node.js, tsx, tsc are available
+    log_info "  Test 17: Checking Node.js, tsx, tsc are installed..."
+    docker run --rm "$ENV_IMAGE_NAME:typescript" /bin/bash -c '
+        set -e
+        node --version > /dev/null
+        npm --version > /dev/null
+        tsx --version > /dev/null
+        tsc --version > /dev/null
+        echo "Node.js, npm, tsx, tsc are available"
+    '
+    if [ $? -ne 0 ]; then
+        log_error "Test 17 failed: Node.js/npm/tsx/tsc not available in typescript environment"
+        exit 2
+    fi
+
+    # Test 18: TypeScript can compile a simple snippet
+    log_info "  Test 18: Testing TypeScript can compile snippets..."
+    docker run --rm "$ENV_IMAGE_NAME:typescript" /bin/bash -c '
+        set -e
+
+        # Create a simple TypeScript file
+        cat > test.ts << EOF
+const x: number = 42
+console.log("Hello from TypeScript")
+EOF
+
+        # Compile it with tsc (noEmit)
+        tsc --noEmit test.ts
+
+        echo "TypeScript compilation works"
+    '
+    if [ $? -ne 0 ]; then
+        log_error "Test 18 failed: TypeScript compilation broken"
+        exit 2
+    fi
+
+    # Test 19: Effect package is available
+    log_info "  Test 19: Testing Effect package is available..."
+    docker run --rm "$ENV_IMAGE_NAME:typescript" /bin/bash -c '
+        set -e
+
+        # Create a TypeScript file using Effect
+        cat > test-effect.ts << EOF
+import { Effect } from "effect"
+
+const program = Effect.succeed("Hello from Effect")
+
+Effect.runPromise(program)
+EOF
+
+        # Run it with tsx
+        OUTPUT=$(tsx test-effect.ts)
+        echo "$OUTPUT" | grep -q "Hello from Effect"
+
+        echo "Effect package works"
+    '
+    if [ $? -ne 0 ]; then
+        log_error "Test 19 failed: Effect package not available"
+        exit 2
+    fi
+
+    # Test 20: Verify user is non-root in typescript
+    log_info "  Test 20: Verifying non-root user in typescript..."
+    docker run --rm "$ENV_IMAGE_NAME:typescript" /bin/bash -c '
+        set -e
+
+        CURRENT_USER=$(whoami)
+        if [ "$CURRENT_USER" = "root" ]; then
+            echo "FAIL: Running as root"
+            exit 1
+        fi
+
+        echo "Running as non-root user: $CURRENT_USER"
+    '
+    if [ $? -ne 0 ]; then
+        log_error "Test 20 failed: Running as root in typescript environment"
+        exit 2
+    fi
+
+    log_info "typescript environment tests passed!"
+
     log_info "All environment tests passed!"
 fi
 
@@ -491,4 +587,5 @@ log_info "bash env:       $ENV_IMAGE_NAME:bash ($BASH_SIZE)"
 log_info "node env:       $ENV_IMAGE_NAME:node ($NODE_SIZE)"
 log_info "python env:     $ENV_IMAGE_NAME:python ($PYTHON_SIZE)"
 log_info "scala env:      $ENV_IMAGE_NAME:scala ($SCALA_SIZE)"
+log_info "typescript env: $ENV_IMAGE_NAME:typescript ($TYPESCRIPT_SIZE)"
 log_info "Done. All images ready."

@@ -18,3 +18,24 @@ defaults:
     environment: "typescript"
     timeout: 60
     init: []
+
+# Validation settings for snippet testing
+validation:
+  # Primary environment for Effect (TypeScript) snippets
+  environment: typescript
+  prelude:
+    imports:
+      - "import { Effect } from \"effect\""
+      - "import { Console } from \"effect\""
+
+  # Secondary environment for ZIO (Scala) snippets in CrossLanguageBlock
+  secondary:
+    environment: scala
+    prelude:
+      imports:
+        - "import zio._"
+        - "import zio.Console._"
+      wrapper: |
+        object Snippet {
+          ${code}
+        }

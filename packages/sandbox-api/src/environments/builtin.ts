@@ -47,12 +47,23 @@ export const scalaEnvironment: EnvironmentConfig = {
   category: "runtime",
 } as const
 
+// TypeScript environment - for TypeScript/Effect lessons
+export const typescriptEnvironment: EnvironmentConfig = {
+  name: "typescript",
+  dockerImage: "toolkata-env:typescript",
+  defaultTimeout: 60000, // 60 seconds (tsc --noEmit is fast)
+  defaultInitCommands: [],
+  description: "Node.js 22 with tsx, typescript, and effect package pre-installed",
+  category: "runtime",
+} as const
+
 // Registry of all built-in environments
 export const builtinEnvironments: readonly EnvironmentConfig[] = [
   bashEnvironment,
   nodeEnvironment,
   pythonEnvironment,
   scalaEnvironment,
+  typescriptEnvironment,
 ] as const
 
 // Helper: Get environment by name

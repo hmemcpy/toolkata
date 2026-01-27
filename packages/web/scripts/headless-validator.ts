@@ -110,6 +110,18 @@ const SCALA_ERROR_PATTERNS = [
 ]
 
 /**
+ * Error patterns that indicate TypeScript compilation failure.
+ */
+const TYPESCRIPT_ERROR_PATTERNS = [
+  /^error TS\d+/im,
+  /Cannot find name/i,
+  /Property .* does not exist/i,
+  /Type .* is not assignable/i,
+  /Argument of type .* is not assignable/i,
+  /Module .* has no exported member/i,
+]
+
+/**
  * Check if shell output indicates an error.
  */
 function detectShellError(output: string): string | null {
@@ -148,6 +160,25 @@ function detectScalaError(output: string): string | null {
 }
 
 /**
+ * Check if TypeScript compilation output indicates an error.
+ */
+function detectTypeError(output: string): string | null {
+  for (const pattern of TYPESCRIPT_ERROR_PATTERNS) {
+    if (pattern.test(output)) {
+      // Extract the error line
+      const lines = output.split("\n")
+      for (const line of lines) {
+        if (pattern.test(line)) {
+          return line.trim()
+        }
+      }
+      return "TypeScript error detected"
+    }
+  }
+  return null
+}
+
+/**
  * Prepare Scala code for compilation by wrapping with imports and wrapper.
  */
 function prepareScalaCode(code: string, config: ResolvedValidationConfig): string {
@@ -163,6 +194,25 @@ function prepareScalaCode(code: string, config: ResolvedValidationConfig): strin
   // Add code wrapped in the template
   const wrapped = config.wrapper?.replace("${code}", code) ?? code
   lines.push(wrapped)
+
+  return lines.join("\n")
+}
+
+/**
+ * Prepare TypeScript code for compilation by adding imports.
+ */
+function prepareTypeScriptCode(code: string, config: ResolvedValidationConfig): string {
+  const lines: string[] = []
+
+  // Add imports
+  for (const imp of config.imports) {
+    lines.push(imp)
+  }
+
+  lines.push("") // Blank line after imports
+
+  // Add the code
+  lines.push(code)
 
   return lines.join("\n")
 }
@@ -619,7 +669,63 @@ async function validateSnippet(
     }
   }
 
-  // For TypeScript, not yet implemented
+  // For TypeScript snippets, compile using tsc
+  if (snippet.language === "typescript") {
+    try {
+      // Prepare code with imports
+      const fullCode = prepareTypeScriptCode(snippet.code, config)
+
+      if (verbose) {
+        console.log(`[HeadlessValidator] Compiling TypeScript: ${snippet.code.substring(0, 50)}...`)
+      }
+
+      // Write code to a temp file and compile it
+      const tempFile = `/tmp/snippet_${Date.now()}.ts`
+      const writeCmd = `cat > ${tempFile} << 'TS_EOF'\n${fullCode}\nTS_EOF`
+      await session.executeCommand(writeCmd)
+
+      // Create symlink from /tmp/node_modules to global node_modules
+      // This allows tsc to find globally installed packages like "effect"
+      await session.executeCommand("ln -s /usr/local/lib/node_modules /tmp/node_modules 2>/dev/null || true")
+
+      // Compile with tsc --noEmit (type-check only, no output files)
+      // Using bundler module resolution and skipLibCheck for compatibility
+      const compileCmd = `tsc --noEmit --target ES2022 --moduleResolution bundler --skipLibCheck ${tempFile} 2>&1`
+      const output = await session.executeCommand(compileCmd, COMMAND_TIMEOUT_MS)
+
+      // Clean up temp file and symlink
+      await session.executeCommand(`rm -f ${tempFile} /tmp/node_modules`)
+
+      // Check for compilation errors
+      const errorMsg = detectTypeError(output)
+      if (errorMsg) {
+        return {
+          snippet,
+          status: "fail",
+          output,
+          error: errorMsg,
+          durationMs: Date.now() - startTime,
+        }
+      }
+
+      return {
+        snippet,
+        status: "pass",
+        output: "Type check passed",
+        durationMs: Date.now() - startTime,
+      }
+    } catch (err: unknown) {
+      return {
+        snippet,
+        status: "fail",
+        output: "",
+        error: err instanceof Error ? err.message : String(err),
+        durationMs: Date.now() - startTime,
+      }
+    }
+  }
+
+  // Unsupported language
   return {
     snippet,
     status: "skipped",

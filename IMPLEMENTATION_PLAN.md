@@ -209,15 +209,15 @@ Build a headless snippet validation system that extracts code from MDX, executes
 
 ### P2.2: TypeScript Environment (effect-zio)
 
-- [ ] **Create Dockerfile for TypeScript** — `packages/sandbox-api/docker/environments/typescript/Dockerfile` with Node 22 + tsx + typescript
-- [ ] **Pre-install effect package** — Add effect to node_modules in Docker image
-- [ ] **Create entrypoint.sh for TypeScript** — Standard entrypoint matching other environments
-- [ ] **Register typescript environment** — Update `packages/sandbox-api/src/environments/builtin.ts`
-- [ ] **Update docker-build-all.sh** — Add typescript environment to build script
-- [ ] **Extend snippet-extractor for CrossLanguageBlock** — Extract `zioCode`, `effectCode` props
-- [ ] **Implement TypeScript validation logic** — Write snippet to file, run `tsc --noEmit`, check exit code
-- [ ] **Add effect-zio config.yml validation section** — Imports prelude for Effect, secondary section for Scala
-- [ ] **Test effect-zio validation** — Run full validation, fix any issues
+- [x] **Create Dockerfile for TypeScript** — `packages/sandbox-api/docker/environments/typescript/Dockerfile` with Node 22 + tsx + typescript
+- [x] **Pre-install effect package** — Add effect to node_modules in Docker image
+- [x] **Create entrypoint.sh for TypeScript** — Standard entrypoint matching other environments
+- [x] **Register typescript environment** — Update `packages/sandbox-api/src/environments/builtin.ts`
+- [x] **Update docker-build-all.sh** — Add typescript environment to build script
+- [x] **Extend snippet-extractor for CrossLanguageBlock** — Extract `zioCode`, `effectCode` props (already implemented)
+- [x] **Implement TypeScript validation logic** — Write snippet to file, run `tsc --noEmit`, check exit code
+- [x] **Add effect-zio config.yml validation section** — Imports prelude for Effect, secondary section for Scala
+- [x] **Test effect-zio validation** — TypeScript validation working. Scala validation blocked by scala-cli bloop bug (same as zio-cats).
 
 ### P2.3: Component Props Support
 
@@ -363,8 +363,8 @@ _(Updated during implementation)_
 
 **P0**: 38/38 tasks complete (100%) — jj-git snippet validation fully working
 **P1**: 7/14 tasks complete (50%) — Step-level caching fully implemented
-**P2**: 8/25 tasks complete (32%) — Scala validation fully implemented (Dockerfile, entrypoint, registration, build script, config, validation logic)
-**Total**: 53/77 tasks complete (69%)
+**P2**: 17/25 tasks complete (68%) — Scala and TypeScript validation fully implemented
+**Total**: 62/77 tasks complete (81%)
 
 **Learned (2026-01-27):**
 - Scala Dockerfile needs architecture detection for scala-cli download (aarch64 vs x86_64)
