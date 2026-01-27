@@ -208,16 +208,49 @@ const SCALA_DEPENDENCY_MAP: Record<string, string> = {
   "import ciris": '//> using dep "is.cir::ciris:3.6.0"',
 }
 
+// ZIO imports (used for zioCode snippets)
+const ZIO_IMPORTS = [
+  "import zio._",
+  "import zio.Console._",
+  "import zio.stream._",
+  "import zio.stm._",
+]
+
+// Cats Effect imports (used for catsEffectCode snippets)
+const CE_IMPORTS = [
+  "import cats.effect._",
+  "import cats.effect.std._",
+  "import cats.effect.unsafe.implicits.global",
+  "import fs2._",
+]
+
 /**
  * Prepare Scala code for compilation by wrapping with imports and wrapper.
  * Adds scala-cli dependency directives based on detected imports.
+ * Uses different imports for ZIO vs Cats Effect code to avoid ambiguity.
  */
-function prepareScalaCode(code: string, config: ResolvedValidationConfig): string {
+function prepareScalaCode(
+  code: string,
+  config: ResolvedValidationConfig,
+  prop?: string,
+): string {
   const lines: string[] = []
+
+  // Select imports based on snippet type (zioCode vs catsEffectCode)
+  // If prop is not specified, use all imports from config (legacy behavior)
+  let imports: readonly string[]
+  if (prop === "zioCode") {
+    imports = ZIO_IMPORTS
+  } else if (prop === "catsEffectCode") {
+    imports = CE_IMPORTS
+  } else {
+    // Fallback: use config imports (for non-ScalaComparisonBlock snippets)
+    imports = config.imports
+  }
 
   // Determine which dependencies are needed based on imports
   const neededDeps = new Set<string>()
-  const allCode = `${code}\n${config.imports.join("\n")}`
+  const allCode = `${code}\n${imports.join("\n")}`
 
   for (const [pattern, dep] of Object.entries(SCALA_DEPENDENCY_MAP)) {
     if (allCode.includes(pattern)) {
@@ -235,7 +268,7 @@ function prepareScalaCode(code: string, config: ResolvedValidationConfig): strin
   }
 
   // Add imports
-  for (const imp of config.imports) {
+  for (const imp of imports) {
     lines.push(imp)
   }
 
@@ -450,7 +483,7 @@ async function validateSnippetInContainer(
 
     if (isScala) {
       // For Scala, prepare code with imports and wrapper, then compile
-      const fullCode = prepareScalaCode(snippet.code, config)
+      const fullCode = prepareScalaCode(snippet.code, config, snippet.prop)
 
       if (verbose) {
         console.log("[Docker] Compiling Scala snippet")

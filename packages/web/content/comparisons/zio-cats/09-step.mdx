@@ -12,9 +12,7 @@ Both libraries provide application templates for running complete programs.
 
 ## Main Entry Point
 
-{/* Entry point patterns with object extends - can't compile in wrapper */}
 <ScalaComparisonBlock
-  validate={false}
   catsEffectCode={`
     |import cats.effect._
     |
@@ -60,9 +58,8 @@ Both libraries provide application templates for running complete programs.
 
 ## Exit Codes
 
-{/* Entry point patterns with object extends - can't compile in wrapper */}
+
 <ScalaComparisonBlock
-  validate={false}
   catsEffectCode={`
     |import cats.effect._
     |
@@ -96,7 +93,7 @@ Both libraries provide application templates for running complete programs.
 
 ## Bootstrap Configuration
 
-{/* Uses external libraries (ciris, zio-config-magnolia) not in sandbox */}
+{/* External libraries: zio-config-magnolia, ciris - not in sandbox */}
 <ScalaComparisonBlock
   validate={false}
   catsEffectCode={`
@@ -155,9 +152,8 @@ Both libraries provide application templates for running complete programs.
 
 ## Structured Logging
 
-{/* Entry point patterns with object extends - can't compile in wrapper */}
+
 <ScalaComparisonBlock
-  validate={false}
   catsEffectCode={`
     |import cats.effect._
     |// Using log4cats (external library)
@@ -201,9 +197,8 @@ Both libraries provide application templates for running complete programs.
 
 ## Resource Lifecycle in Apps
 
-{/* Entry point patterns with object extends - can't compile in wrapper */}
+
 <ScalaComparisonBlock
-  validate={false}
   catsEffectCode={`
     |import cats.effect._
     |
@@ -227,7 +222,7 @@ Both libraries provide application templates for running complete programs.
     |    for {
     |      db <- ZIO.acquireRelease(
     |        Console.printLine("Opening DB").as("db-connection")
-    |      )(_ => Console.printLine("Closing DB"))
+    |      )(_ => Console.printLine("Closing DB").orDie)
     |      _ <- Console.printLine(s"Using $db")
     |    } yield ()
     |  }
@@ -239,9 +234,8 @@ Both libraries provide application templates for running complete programs.
 
 ## Service Access Patterns
 
-{/* Entry point patterns with object extends - can't compile in wrapper */}
+
 <ScalaComparisonBlock
-  validate={false}
   catsEffectCode={`
     |import cats.effect._
     |
@@ -299,7 +293,7 @@ Both libraries provide application templates for running complete programs.
     |      result <- cached.fold(
     |        ZIO.serviceWithZIO[Database](_.query)
     |      )(ZIO.succeed(_))
-    |      _ <- Console.printLine(s"Result: $result")
+    |      _ <- Console.printLine(s"Result: $result").orDie
     |    } yield ()
     |
     |    program.provide(dbLayer, cacheLayer)
@@ -319,48 +313,38 @@ Both libraries provide application templates for running complete programs.
 
 ## Bootstrap Layer Composition
 
-{/* Entry point patterns with object extends - can't compile in wrapper */}
+
 <ScalaComparisonBlock
-  validate={false}
   catsEffectCode={`
     |import cats.effect._
-    |import cats.effect.unsafe.implicits.global
     |
     |// Resource composition happens at runtime
     |object MainResources extends IOApp.Simple {
-    |  def run: IO[Unit] = for {
-    |    // Each resource must be manually composed
-    |    db <- Resource.make(IO.pure("db"))(_ => IO.unit).use
-    |    cache <- Resource.make(IO.pure("cache"))(_ => IO.unit).use
-    |    _ <- IO.println("Using resources")
-    |  } yield ()
+    |  def run: IO[Unit] = {
+    |    // Each resource must be manually composed with nested use
+    |    Resource.make(IO.pure("db"))(_ => IO.unit).use { db =>
+    |      Resource.make(IO.pure("cache"))(_ => IO.unit).use { cache =>
+    |        IO.println(s"Using $db and $cache")
+    |      }
+    |    }
+    |  }
     |}
   `}
   zioCode={`
     |import zio._
     |
     |object MainBootstrap extends ZIOAppDefault {
-    |  // Bootstrap: Compose global runtime layers
+    |  // Bootstrap: Configure runtime before app starts
     |  override val bootstrap: ZLayer[ZIOAppArgs, Any, Any] =
     |    Runtime.setConfigProvider(
-    |      ConfigProvider.fromEnvProvider
+    |      ConfigProvider.envProvider
     |    ) ++
-    |      Runtime.removeDefaultLoggers ++
-    |      MyCustomService.live
+    |      Runtime.removeDefaultLoggers
     |
-    |  def run: ZIO[Any, Any, Any] =
-    |    ZIO.serviceWithZIO[MyCustomService](_.doWork)
-    |}
-    |
-    |trait MyCustomService {
-    |  def doWork: UIO[Unit]
-    |}
-    |object MyCustomService {
-    |  val live: ULayer[MyCustomService] = ZLayer.succeed(
-    |    new MyCustomService {
-    |      def doWork = ZIO.logInfo("Working")
-    |    }
-    |  )
+    |  def run: ZIO[Any, Any, Any] = for {
+    |    _ <- ZIO.logInfo("App starting with custom bootstrap")
+    |    _ <- ZIO.logDebug("Debug logging enabled")
+    |  } yield ()
     |}
   `}
   catsEffectComment="Manual resource composition at runtime"
