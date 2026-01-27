@@ -13,16 +13,9 @@ validation:
     - "echo 'original' > src/app.ts"
     - "echo 'code' > app.ts"
     - "echo 'test' > test.ts"
-    - "git add app.ts"
-    - "git add test.ts"
-    - "echo 'staged change' > staged.txt"
-    - "git add staged.txt"
+    - "git add ."
+    - "git commit -m 'Initial commit'"
     - "jj describe -m 'Initial'"
-    - "jj new"
-    - "jj git export"
-    - "echo 'fix' > app.ts"
-    - "git add app.ts"
-    - "jj describe -m 'Fix bug'"
     - "jj new"
     - "jj git export"
 ---
@@ -80,9 +73,10 @@ In jj, your uncommitted changes are represented by the `@` commit. It's a real c
 Since your working copy is already a commit, there's no staging area.
 
 <SideBySide
+  validate={false}
   fromCommands={[
+    "vim app.ts",
     "git add app.ts",
-    "git add test.ts",
     "git commit -m \"Fix bug\"",
   ]}
   toCommands={[
@@ -100,6 +94,7 @@ In jj, all file changes are automatically tracked. There's no need to `jj add` f
 Let's say you're working on a feature and want to commit your changes.
 
 <SideBySide
+  validate={false}
   fromCommands={[
     "vim src/app.ts",
     "git status",

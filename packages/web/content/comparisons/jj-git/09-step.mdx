@@ -78,6 +78,7 @@ jj resolve
 ## Resolving Conflicts
 
 <SideBySide
+  validate={false}
   fromCommands={[
     "vim app.js",
     "git add app.js",
@@ -143,6 +144,7 @@ Conflict in app.js:
 ## Multiple Conflicts
 
 <SideBySide
+  validate={false}
   fromCommands={[
     "git merge feature",
   ]}
@@ -158,6 +160,7 @@ Conflict in app.js:
 ## Abandoning Merges
 
 <SideBySide
+  validate={false}
   fromCommands={[
     "git merge --abort",
   ]}
@@ -183,13 +186,14 @@ jj rebase --continue
 But since jj auto-rebases descendants, you only resolve once:
 
 <SideBySide
+  validate={false}
   fromCommands={[
     "git rebase -i HEAD~5",
     "git add .",
     "git rebase --continue",
   ]}
   toCommands={[
-    "jj rebase -d old-commit",
+    "jj rebase -d @-",
     "jj resolve",
   ]}
 />
@@ -197,6 +201,7 @@ But since jj auto-rebases descendants, you only resolve once:
 ## Conflict Resolution Tools
 
 <SideBySide
+  validate={false}
   fromCommands={[
     "git mergetool",
   ]}

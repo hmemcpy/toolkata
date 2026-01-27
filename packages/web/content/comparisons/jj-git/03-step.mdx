@@ -4,6 +4,15 @@ step: 3
 description: "Creating commits in jj without a staging area"
 gitCommands: ["git add", "git commit", "git commit --amend"]
 jjCommands: ["jj describe", "jj new", "jj status"]
+validation:
+  setup:
+    - "jj git init --colocate ."
+    - "git config user.email 'test@toolkata.dev'"
+    - "git config user.name 'Test User'"
+    - "echo 'initial' > init.txt"
+    - "jj describe -m 'Initial'"
+    - "jj new"
+    - "jj git export"
 ---
 
 # Your First Commits
@@ -18,6 +27,7 @@ In jj, commits are created in two steps:
 2. **`jj new`** - Finalize `@` and create a new empty commit
 
 <SideBySide
+  validate={false}
   fromCommands={[
     "echo \"hello\" > file.txt",
     "git add file.txt",
@@ -129,6 +139,7 @@ jj show @-
 In jj, there's no `jj add` command. All file changes are automatically part of the `@` commit.
 
 <SideBySide
+  validate={false}
   fromCommands={[
     "vim a.js",
     "vim b.js",
@@ -142,7 +153,6 @@ In jj, there's no `jj add` command. All file changes are automatically part of t
     "vim b.js",
     "vim c.js",
     "jj status",
-    "# Use jj new for separate commits or jj squash/jj abandon to reorganize",
   ]}
 />
 

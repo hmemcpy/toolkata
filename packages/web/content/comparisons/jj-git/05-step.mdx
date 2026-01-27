@@ -4,6 +4,21 @@ step: 5
 description: "Exploring commit history and comparing changes"
 gitCommands: ["git log", "git diff", "git show"]
 jjCommands: ["jj log", "jj diff", "jj show"]
+validation:
+  setup:
+    - "jj git init --colocate ."
+    - "git config user.email 'test@toolkata.dev'"
+    - "git config user.name 'Test User'"
+    - "echo 'initial' > file.txt"
+    - "jj describe -m 'Initial commit'"
+    - "jj new"
+    - "echo 'second' > file.txt && jj describe -m 'Second commit' && jj new"
+    - "echo 'third' > file.txt && jj describe -m 'Third commit' && jj new"
+    - "echo 'app content' > app.js && jj describe -m 'Add app' && jj new"
+    - "jj branch create branch1"
+    - "jj edit @- && echo 'modified' > app.js && jj describe -m 'Modify app' && jj new"
+    - "jj branch create branch2"
+    - "jj git export"
 ---
 
 # Viewing History and Diffs
@@ -31,8 +46,6 @@ jj provides powerful tools for exploring history and comparing changes.
   ]}
   toCommands={[
     "jj log -l 10",
-    "jj log --graph",
-    "jj log --all",
   ]}
 />
 

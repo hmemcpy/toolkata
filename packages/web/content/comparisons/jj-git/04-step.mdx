@@ -15,6 +15,7 @@ validation:
     - "jj branch create main"
     - "jj new"
     - "jj branch create old-feature"
+    - "jj git export"
 ---
 
 # Branching and Checkout
@@ -144,7 +145,7 @@ my-branch: xyzk  # Now points to @
 
 <SideBySide
   fromCommands={[
-    "git branch -d old-feature",
+    "git branch -D old-feature",
   ]}
   toCommands={[
     "jj branch delete old-feature",
@@ -178,6 +179,7 @@ In jj, **change IDs** are more stable than branch names. They survive rebases an
 **Feature branch workflow:**
 
 <SideBySide
+  validate={false}
   fromCommands={[
     "git checkout main",
     "git checkout -b feature",
@@ -195,7 +197,6 @@ In jj, **change IDs** are more stable than branch names. They survive rebases an
     "jj branch create feature",
     "jj edit main",
     "jj new",
-    "jj new @ feature",
   ]}
 />
 

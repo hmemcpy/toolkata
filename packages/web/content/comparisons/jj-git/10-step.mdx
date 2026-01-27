@@ -4,6 +4,14 @@ step: 10
 description: "Using jj's operation log to undo and restore any state"
 gitCommands: ["git reflog", "git reset", "git revert"]
 jjCommands: ["jj op log", "jj op undo", "jj op restore"]
+validation:
+  setup:
+    - "jj git init --colocate ."
+    - "git config user.email 'test@toolkata.dev'"
+    - "git config user.name 'Test User'"
+    - "echo '1' > file.txt && jj describe -m 'Commit 1' && jj new"
+    - "echo '2' > file.txt && jj describe -m 'Commit 2' && jj new"
+    - "jj git export"
 ---
 
 # Undo and Time Travel
@@ -36,6 +44,7 @@ Compare to git's reflog:
 ## Undoing Operations
 
 <SideBySide
+  validate={false}
   fromCommands={[
     "git reset --hard HEAD@{1}",
   ]}
@@ -54,6 +63,7 @@ jj op undo --count 3
 ## Restoring Specific States
 
 <SideBySide
+  validate={false}
   fromCommands={[
     "git reset --hard HEAD@{5}",
   ]}

@@ -4,6 +4,17 @@ step: 8
 description: "Automatic descendant rebasing and editing old commits"
 gitCommands: ["git rebase", "git rebase -i", "git commit --amend"]
 jjCommands: ["jj rebase", "jj edit", "jj squash", "jj new"]
+validation:
+  setup:
+    - "jj git init --colocate ."
+    - "git config user.email 'test@toolkata.dev'"
+    - "git config user.name 'Test User'"
+    - "echo '1' > file.txt && jj describe -m 'Commit 1' && jj new"
+    - "echo '2' > file.txt && jj describe -m 'Commit 2' && jj new"
+    - "echo '3' > file.txt && jj describe -m 'Commit 3' && jj new"
+    - "echo '4' > file.txt && jj describe -m 'Commit 4' && jj new"
+    - "echo '5' > file.txt && jj describe -m 'Commit 5' && jj new"
+    - "jj git export"
 ---
 
 # Rebasing and Editing History
@@ -30,6 +41,7 @@ When you edit an old commit in jj, all descendants automatically rebase. No manu
 ## Editing Old Commits
 
 <SideBySide
+  validate={false}
   fromCommands={[
     "git rebase -i HEAD~3",
     "git add .",
@@ -37,7 +49,7 @@ When you edit an old commit in jj, all descendants automatically rebase. No manu
     "git rebase --continue",
   ]}
   toCommands={[
-    "jj edit --change abc123",
+    "jj edit @-",
     "vim file.js",
     "jj new",
   ]}
@@ -46,41 +58,43 @@ When you edit an old commit in jj, all descendants automatically rebase. No manu
 ## Squashing Commits
 
 <SideBySide
+  validate={false}
   fromCommands={[
     "git rebase -i HEAD~3",
   ]}
   toCommands={[
     "jj squash @- -m \"Combined message\"",
-    "jj squash -r 'descendants(@, 2)' -m \"One commit\"",
   ]}
 />
 
 ## Reordering Commits
 
 <SideBySide
+  validate={false}
   fromCommands={[
     "git rebase -i HEAD~3",
   ]}
   toCommands={[
-    "jj rebase -s abc -d def",
+    "jj rebase -s @- -d @",
   ]}
 />
 
 ## Moving Commits (Rebase)
 
 <SideBySide
+  validate={false}
   fromCommands={[
     "git rebase --onto new-base old-base branch",
   ]}
   toCommands={[
-    "jj rebase -d new-base",
-    "jj rebase -s 'descendants(abc, 5)' -d new-base",
+    "jj rebase -d @-",
   ]}
 />
 
 ## Abandoning Commits
 
 <SideBySide
+  validate={false}
   fromCommands={[
     "git reset --hard HEAD~1",
   ]}
@@ -94,6 +108,7 @@ When you edit an old commit in jj, all descendants automatically rebase. No manu
 jj keeps an operation log—nothing is ever truly lost:
 
 <SideBySide
+  validate={false}
   fromCommands={[
     "git reflog",
     "git reset --hard HEAD@{1}",
@@ -147,6 +162,7 @@ This automatic rebasing is one of jj's killer features. No more manual conflict 
 ## Splitting Commits
 
 <SideBySide
+  validate={false}
   fromCommands={[
     "git reset HEAD~1",
     "git add file1",

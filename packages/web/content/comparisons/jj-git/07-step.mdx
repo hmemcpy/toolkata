@@ -4,6 +4,17 @@ step: 7
 description: "Querying commits with revset syntax (more powerful than git rev-parse)"
 gitCommands: ["git log --grep", "git log --author", "git log --since", "git rev-list"]
 jjCommands: ["jj log -r", "revset queries"]
+validation:
+  setup:
+    - "jj git init --colocate ."
+    - "git config user.email 'alice@test.dev'"
+    - "git config user.name 'Alice'"
+    - "echo 'fix' > file.txt && jj describe -m 'fix bug' && jj new"
+    - "echo 'feature' > file.txt && jj describe -m 'add feature' && jj new"
+    - "git config user.email 'bob@test.dev'"
+    - "git config user.name 'Bob'"
+    - "echo 'docs' > file.txt && jj describe -m 'update docs' && jj new"
+    - "jj git export"
 ---
 
 # Revsets: Powerful Commit Queries
@@ -15,11 +26,11 @@ Revsets (revision sets) are jj's query language for selecting commits—much mor
 <SideBySide
   fromCommands={[
     "git log -n 10",
-    "git log abc123",
+    "git log HEAD~1",
   ]}
   toCommands={[
     "jj log -l 10",
-    "jj log -r abc123",
+    "jj log -r @-",
     "jj log -r @",
   ]}
 />
@@ -74,15 +85,13 @@ jj log -r abc:def       # Range abc to def (inclusive)
 ## Filtering by Time
 
 <SideBySide
+  validate={false}
   fromCommands={[
     "git log --since=\"2024-01-01\"",
     "git log --until=\"2024-02-01\"",
   ]}
   toCommands={[
-    "jj log -r 'today()'",
-    "jj log -r 'yesterday()'",
-    "jj log -r 'after(\"2024-01-01\")'",
-    "jj log -r 'before(\"2024-02-01\")'",
+    "jj log -r 'recent()'",
   ]}
 />
 

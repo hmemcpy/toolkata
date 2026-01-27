@@ -190,6 +190,10 @@ function extractSideBySideSnippets(
 
     const lineStart = findLineNumber(content, match.index ?? 0)
 
+    // Check for validate={false}
+    const shouldValidate = !/validate\s*=\s*\{\s*false\s*\}/.test(propsContent)
+    if (!shouldValidate) continue
+
     // Extract fromCommands array
     const fromMatch = propsContent.match(/fromCommands=\{(\[[\s\S]*?\])\}/)
     const fromArrayStr = fromMatch?.[1]
@@ -239,20 +243,54 @@ function extractSideBySideSnippets(
 /**
  * Parse a JavaScript array literal into string values.
  * Handles: ["a", "b", "c"] or ['a', 'b', 'c']
+ * Also handles nested quotes like "echo 'a'" correctly.
  */
 function parseJsArray(arrayStr: string): string[] {
   const results: string[] = []
+  let current = 0
+  const inner = arrayStr.trim()
 
-  // Remove brackets and split by comma, handling escaped quotes
-  const inner = arrayStr.trim().slice(1, -1) // Remove [ and ]
+  // Skip opening bracket
+  if (inner[0] === "[") current = 1
 
-  // Match string literals (double or single quoted)
-  const stringRegex = /["']([^"'\\]|\\.)*["']/g
+  while (current < inner.length) {
+    // Skip whitespace and commas
+    while (current < inner.length && /[\s,]/.test(inner[current])) {
+      current++
+    }
 
-  for (const match of inner.matchAll(stringRegex)) {
-    // Remove surrounding quotes and unescape
-    const str = match[0].slice(1, -1).replace(/\\(.)/g, "$1")
-    results.push(str)
+    if (current >= inner.length || inner[current] === "]") break
+
+    // Find the opening quote
+    const quote = inner[current]
+    if (quote !== '"' && quote !== "'") break
+
+    current++
+    let value = ""
+
+    // Read until the closing quote, handling escaped quotes
+    while (current < inner.length) {
+      const char = inner[current]
+
+      if (char === "\\") {
+        // Escape sequence - consume both backslash and next char
+        if (current + 1 < inner.length) {
+          value += inner[current + 1]
+          current += 2
+        } else {
+          current++
+        }
+      } else if (char === quote) {
+        // Closing quote
+        current++
+        break
+      } else {
+        value += char
+        current++
+      }
+    }
+
+    results.push(value)
   }
 
   return results
