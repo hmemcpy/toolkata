@@ -12,7 +12,9 @@ Both libraries provide application templates for running complete programs.
 
 ## Main Entry Point
 
+{/* Entry point patterns with object extends - can't compile in wrapper */}
 <ScalaComparisonBlock
+  validate={false}
   catsEffectCode={`
     |import cats.effect._
     |
@@ -28,7 +30,7 @@ Both libraries provide application templates for running complete programs.
     |object MainArgs extends IOApp {
     |  def run(args: List[String]): IO[ExitCode] = for {
     |    name <- IO.pure(args.headOption.getOrElse("World"))
-    |    _ <- IO.println(s"Hello, \$name!")
+    |    _ <- IO.println(s"Hello, $name!")
     |  } yield ExitCode.Success
     |}
   `}
@@ -58,7 +60,9 @@ Both libraries provide application templates for running complete programs.
 
 ## Exit Codes
 
+{/* Entry point patterns with object extends - can't compile in wrapper */}
 <ScalaComparisonBlock
+  validate={false}
   catsEffectCode={`
     |import cats.effect._
     |
@@ -92,7 +96,9 @@ Both libraries provide application templates for running complete programs.
 
 ## Bootstrap Configuration
 
+{/* Uses external libraries (ciris, zio-config-magnolia) not in sandbox */}
 <ScalaComparisonBlock
+  validate={false}
   catsEffectCode={`
     |import cats.effect._
     |import ciris._
@@ -109,7 +115,7 @@ Both libraries provide application templates for running complete programs.
     |    ).parMapN(Config.apply)
     |    host <- IO.pure(config.host)
     |    port <- IO.pure(config.port)
-    |    _ <- IO.println(s"Server: \$host:\$port")
+    |    _ <- IO.println(s"Server: $host:$port")
     |  } yield ()
     |}
   `}
@@ -135,7 +141,7 @@ Both libraries provide application templates for running complete programs.
     |      config <- ZIO.config[AppConfig]
     |      host   <- ZIO.succeed(config.host)
     |      port   <- ZIO.succeed(config.port)
-    |      _      <- ZIO.logInfo(s"Server: \$host:\$port")
+    |      _      <- ZIO.logInfo(s"Server: $host:$port")
     |    } yield ()
     |}
   `}
@@ -149,7 +155,9 @@ Both libraries provide application templates for running complete programs.
 
 ## Structured Logging
 
+{/* Entry point patterns with object extends - can't compile in wrapper */}
 <ScalaComparisonBlock
+  validate={false}
   catsEffectCode={`
     |import cats.effect._
     |// Using log4cats (external library)
@@ -193,7 +201,9 @@ Both libraries provide application templates for running complete programs.
 
 ## Resource Lifecycle in Apps
 
+{/* Entry point patterns with object extends - can't compile in wrapper */}
 <ScalaComparisonBlock
+  validate={false}
   catsEffectCode={`
     |import cats.effect._
     |
@@ -204,7 +214,7 @@ Both libraries provide application templates for running complete programs.
     |    )(_ => IO.println("Closing DB"))
     |
     |    dbResource.use { db =>
-    |      IO.println(s"Using \$db")
+    |      IO.println(s"Using $db")
     |    }
     |  }
     |}
@@ -218,7 +228,7 @@ Both libraries provide application templates for running complete programs.
     |      db <- ZIO.acquireRelease(
     |        Console.printLine("Opening DB").as("db-connection")
     |      )(_ => Console.printLine("Closing DB"))
-    |      _ <- Console.printLine(s"Using \$db")
+    |      _ <- Console.printLine(s"Using $db")
     |    } yield ()
     |  }
     |}
@@ -229,7 +239,9 @@ Both libraries provide application templates for running complete programs.
 
 ## Service Access Patterns
 
+{/* Entry point patterns with object extends - can't compile in wrapper */}
 <ScalaComparisonBlock
+  validate={false}
   catsEffectCode={`
     |import cats.effect._
     |
@@ -247,7 +259,7 @@ Both libraries provide application templates for running complete programs.
     |      for {
     |        cached <- cache.get
     |        result <- cached.fold(db.query)(IO.pure)
-    |        _ <- IO.println(s"Result: \$result")
+    |        _ <- IO.println(s"Result: $result")
     |      } yield ()
     |
     |    // Create services manually
@@ -287,7 +299,7 @@ Both libraries provide application templates for running complete programs.
     |      result <- cached.fold(
     |        ZIO.serviceWithZIO[Database](_.query)
     |      )(ZIO.succeed(_))
-    |      _ <- Console.printLine(s"Result: \$result")
+    |      _ <- Console.printLine(s"Result: $result")
     |    } yield ()
     |
     |    program.provide(dbLayer, cacheLayer)
@@ -307,7 +319,9 @@ Both libraries provide application templates for running complete programs.
 
 ## Bootstrap Layer Composition
 
+{/* Entry point patterns with object extends - can't compile in wrapper */}
 <ScalaComparisonBlock
+  validate={false}
   catsEffectCode={`
     |import cats.effect._
     |import cats.effect.unsafe.implicits.global

@@ -64,15 +64,15 @@ ZIO provides three fork strategies for different concurrency needs:
     |import zio._
     |
     |// In current scope (interrupted with parent)
-    |val inScope = ZIO.println("Working").fork
+    |val inScope = Console.printLine("Working").fork
     |
     |// Daemon (outlives parent - use sparingly)
-    |val daemon = ZIO.println("Background").forkDaemon
+    |val daemon = Console.printLine("Background").forkDaemon
     |
     |// Scoped (explicit lifecycle management)
     |val scoped = ZIO.scoped {
     |  for {
-    |    fiber <- ZIO.println("Working").forkScoped
+    |    fiber <- Console.printLine("Working").forkScoped
     |    _     <- ZIO.sleep(1.second)
     |  } yield ()
     |}
@@ -276,6 +276,7 @@ check for cancellation periodically using `IO.canceled` or `ZIO.checkInterrupted
 <ScalaComparisonBlock
   catsEffectCode={`
     |import cats.effect._
+    |import scala.concurrent.duration._
     |
     |// Supervise with Resource
     |def supervised[A](io: IO[A]): Resource[IO, Fiber[IO, Throwable, A]] =

@@ -176,7 +176,7 @@ even if the program fails or is interrupted.
     |  IO.pure(42)
     |    .guaranteeCase {
     |      case Outcome.Succeeded(_) => IO.println("Success!")
-    |      case Outcome.Errored(e) => IO.println(s"Failed: \$e")
+    |      case Outcome.Errored(e) => IO.println(s"Failed: $$e")
     |      case Outcome.Canceled() => IO.println("Canceled!")
     |    }
   `}
@@ -193,7 +193,7 @@ even if the program fails or is interrupted.
     |  ZIO.succeed(42)
     |    .onExit {
     |      case Exit.Success(_) => ZIO.succeed(println("Success!"))
-    |      case Exit.Failure(cause) => ZIO.succeed(println(s"Failed: \$cause"))
+    |      case Exit.Failure(cause) => ZIO.succeed(println(s"Failed: $$cause"))
     |    }
   `}
   catsEffectComment="guarantee / guaranteeCase"
@@ -202,7 +202,9 @@ even if the program fails or is interrupted.
 
 ## Resource Allocation
 
+{/* Pattern example - references undefined dbResource/dbScoped */}
 <ScalaComparisonBlock
+  validate={false}
   catsEffectCode={`
     |import cats.effect._
     |
@@ -237,7 +239,9 @@ even if the program fails or is interrupted.
 
 ZIO 2.x uses the `Scope` interface as a composable way to manage resource lifecycles. Understanding Scope is key to working with resources in ZIO.
 
+{/* Pattern example - shows Scope interface definition and Resource usage pattern */}
 <ScalaComparisonBlock
+  validate={false}
   catsEffectCode={`
     |import cats.effect._
     |

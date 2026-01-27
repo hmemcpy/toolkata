@@ -158,7 +158,9 @@ Both libraries use connection pools for efficient database access.
 
 Both libraries support transactional operations with rollback on failure.
 
+{/* Uses external database libraries (zio-jdbc, doobie) not in sandbox */}
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio._
     |import zio.jdbc._
@@ -258,7 +260,9 @@ Transactions are automatically rolled back on failure. Both libraries handle rol
 
 Both libraries support composing queries from smaller fragments.
 
+{/* Uses external database libraries (zio-jdbc, doobie) not in sandbox */}
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio._
     |import zio.jdbc._
@@ -350,7 +354,9 @@ Both libraries support composing queries from smaller fragments.
 
 Both libraries provide detailed error information for database failures.
 
+{/* Uses external database libraries (zio-jdbc, doobie) not in sandbox */}
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio._
     |import zio.jdbc._

@@ -22,7 +22,9 @@ We need:
 
 Both libraries use pattern matching for route definitions.
 
+{/* Uses external HTTP libraries (zio-http, http4s) not in sandbox */}
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio.http._
     |import zio._
@@ -79,7 +81,9 @@ ZIO HTTP uses `HttpApp[Any]` for a complete application. http4s uses `HttpRoutes
 
 Both libraries extract path segments and query parameters with type safety.
 
+{/* Uses external HTTP libraries (zio-http, http4s) not in sandbox */}
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio.http._
     |import zio._
@@ -135,7 +139,9 @@ Both libraries extract path segments and query parameters with type safety.
 
 Handle JSON, form data, and raw request bodies.
 
+{/* Uses external HTTP libraries (zio-http, http4s) not in sandbox */}
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio.http._
     |import zio.json._
@@ -197,7 +203,9 @@ ZIO HTTP includes zio-json codecs. http4s requires separate modules: `http4s-cir
 
 Make outgoing HTTP requests to external APIs.
 
+{/* Uses external HTTP libraries (zio-http, http4s) not in sandbox */}
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio.http._
     |import zio._
@@ -239,7 +247,9 @@ Make outgoing HTTP requests to external APIs.
 
 Configure headers, timeouts, and authentication.
 
+{/* Uses external HTTP libraries (zio-http, http4s) not in sandbox */}
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio.http._
     |import zio._
@@ -297,7 +307,9 @@ Configure headers, timeouts, and authentication.
 
 Handle network failures, timeouts, and HTTP errors.
 
+{/* Uses external HTTP libraries (zio-http, http4s) not in sandbox */}
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio.http._
     |import zio._
@@ -372,7 +384,9 @@ HTTP clients can fail for many reasons: network errors, timeouts, DNS failures. 
 
 Add cross-cutting concerns: auth, logging, CORS.
 
+{/* Uses external HTTP libraries (zio-http, http4s) not in sandbox */}
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio.http._
     |import zio._
@@ -439,7 +453,9 @@ Add cross-cutting concerns: auth, logging, CORS.
 
 Handle large responses without loading into memory.
 
+{/* Uses external HTTP libraries (zio-http, http4s) not in sandbox */}
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio.http._
     |import zio._
@@ -516,7 +532,9 @@ Handle large responses without loading into memory.
 
 Configure ports, threads, and server behavior.
 
+{/* Uses external HTTP libraries (zio-http, http4s) not in sandbox */}
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio.http._
     |import zio._

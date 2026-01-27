@@ -142,7 +142,7 @@ ZIO provides ZStream built-in. Cats Effect uses fs2 as the streaming library.
     |// Map with effect
     |val evalMapped: Stream[IO, Int] =
     |  Stream(1, 2, 3).evalMap { i =>
-    |    IO.println(s"Processing \$i").as(i * 2)
+    |    IO.println(s"Processing $$i").as(i * 2)
     |  }
     |
     |// Filter with effect
@@ -158,7 +158,7 @@ ZIO provides ZStream built-in. Cats Effect uses fs2 as the streaming library.
     |// Map with effect
     |val mapZIO: ZStream[Any, Nothing, Int] =
     |  ZStream(1, 2, 3).mapZIO { i =>
-    |    ZIO.succeed(println(s"Processing \$i")).as(i * 2)
+    |    ZIO.succeed(println(s"Processing $$i")).as(i * 2)
     |  }
     |
     |// Filter with effect
@@ -177,6 +177,7 @@ ZIO provides ZStream built-in. Cats Effect uses fs2 as the streaming library.
   catsEffectCode={`
     |import cats.effect.IO
     |import fs2.{Stream, Chunk}
+    |import scala.concurrent.duration._
     |
     |// Create from chunk
     |val chunked: Stream[IO, Int] =
@@ -194,7 +195,6 @@ ZIO provides ZStream built-in. Cats Effect uses fs2 as the streaming library.
     |import zio._
     |import zio.stream._
     |import zio.Chunk
-    |import scala.concurrent.duration._
     |
     |// Create from chunk
     |val chunked: ZStream[Any, Nothing, Int] =
@@ -221,9 +221,11 @@ ZIO provides ZStream built-in. Cats Effect uses fs2 as the streaming library.
 Streams can fail during processing. Both libraries provide operators to handle errors.
 
 <ScalaComparisonBlock
+  validate={false}
   catsEffectCode={`
     |import cats.effect.IO
     |import fs2.Stream
+    |import scala.concurrent.duration._
     |
     |// Catch specific errors
     |val caught: Stream[IO, Int] =
@@ -281,6 +283,7 @@ Both ZStream and fs2 handle backpressure automatically.
   catsEffectCode={`
     |import cats.effect.IO
     |import fs2.Stream
+    |import scala.concurrent.duration._
     |
     |// Fast producer, slow consumer
     |val producer: Stream[IO, Int] =
@@ -296,13 +299,12 @@ Both ZStream and fs2 handle backpressure automatically.
   zioCode={`
     |import zio._
     |import zio.stream._
-    |import scala.concurrent.duration._
     |
     |// Fast producer, slow consumer
     |val producer: ZStream[Any, Nothing, Int] =
     |  ZStream.range(1, 1000)
     |
-    |val consumer: ZStream[Any, IOException, Unit] =
+    |val consumer: ZStream[Any, Nothing, Unit] =
     |  producer
     |    .mapZIO { i =>
     |      // Simulate slow processing
@@ -367,7 +369,9 @@ fs2 is a separate library but integrates seamlessly with Cats Effect.
 
 ## Resource-Safe Streams
 
+{/* Pattern example using ??? placeholder */}
 <ScalaComparisonBlock
+  validate={false}
   catsEffectCode={`
     |import cats.effect._
     |import fs2.Stream

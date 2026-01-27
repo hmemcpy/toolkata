@@ -58,7 +58,9 @@ Between `from.get` and the updates, another fiber could transfer funds, causing 
 
 STM solves this with `TRef` — transactional references whose operations compose:
 
+{/* Uses external library coop (cats-stm) not in sandbox */}
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio._
     |import zio.stm._
@@ -123,7 +125,9 @@ ZIO includes STM built-in. Cats Effect requires the `coop-cats` library for STM 
 
 `STM.retry` suspends the transaction until a `TRef` changes — useful for waiting on conditions:
 
+{/* Uses external library coop (cats-stm) not in sandbox */}
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio._
     |import zio.stm._
@@ -185,7 +189,9 @@ ZIO includes STM built-in. Cats Effect requires the `coop-cats` library for STM 
 
 ZIO STM includes transactional data structures: `TMap`, `TQueue`, `TSet`, `TPriorityQueue`, `TArray`:
 
+{/* Uses external library coop (cats-stm) not in sandbox */}
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio._
     |import zio.stm._
@@ -242,7 +248,9 @@ ZIO STM includes transactional data structures: `TMap`, `TQueue`, `TSet`, `TPrio
 - STM transactions may retry multiple times
 - Side effects would execute multiple times
 
+{/* Uses external library coop (cats-stm) not in sandbox */}
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio._
     |import zio.stm._
