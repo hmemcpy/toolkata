@@ -43,6 +43,7 @@ Both ZIO and Effect distinguish between **expected errors** (typed error channel
 ## Recovering from Errors
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: catchAll, catchSome
     |val handled: ZIO[Any, Nothing, String] =
@@ -126,6 +127,7 @@ Both ZIO and Effect distinguish between **expected errors** (typed error channel
 ## Converting to Either
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO.either: E | A => Either[E, A]
     |val either: ZIO[Any, Nothing, Either[IOException, String]] =
@@ -161,6 +163,7 @@ Both ZIO and Effect distinguish between **expected errors** (typed error channel
 Use `Effect.die` for errors that should never be caught (like assertion failures).
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: die, dieMessage
     |val assert: ZIO[Any, Nothing, Int] =

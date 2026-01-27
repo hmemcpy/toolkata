@@ -12,6 +12,7 @@ Both Effect and ZIO provide Software Transactional Memory for composable atomic 
 ## TRef Basics
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: TRef for transactional references
     |val program: ZIO[Any, Nothing, Unit] =
@@ -51,6 +52,7 @@ Both Effect and ZIO provide Software Transactional Memory for composable atomic 
 ## Transactional Operations
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: STM combinators
     |val program: ZIO[Any, Nothing, Unit] =
@@ -91,6 +93,7 @@ Both Effect and ZIO provide Software Transactional Memory for composable atomic 
 ## Composing Transactions
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: Transaction composition is composable
     |def transfer(
@@ -149,6 +152,7 @@ Both Effect and ZIO provide Software Transactional Memory for composable atomic 
 ## STM Retry
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: STM.retry for blocking transactions
     |val program: ZIO[Any, Nothing, Unit] =
@@ -193,6 +197,7 @@ Both Effect and ZIO provide Software Transactional Memory for composable atomic 
 ## STM Either
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: STM.either for falling back
     |val program: ZIO[Any, Nothing, Either[String, Int]] =

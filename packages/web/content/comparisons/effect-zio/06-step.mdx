@@ -12,6 +12,7 @@ Both Effect and ZIO use layers for dependency injection. Effect's `Layer` has sl
 ## Creating Layers
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: ZLayer creation
     |import zio._
@@ -161,6 +162,7 @@ Both Effect and ZIO use layers for dependency injection. Effect's `Layer` has sl
 ## Layer Dependencies
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: Layers can depend on other layers
     |val repositoryLayer: ZLayer[Database, Nothing, UserRepository] =

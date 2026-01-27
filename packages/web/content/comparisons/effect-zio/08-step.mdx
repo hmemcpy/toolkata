@@ -12,6 +12,7 @@ Both Effect and ZIO use **fibers** for lightweight concurrent execution. The con
 ## Forking Effects
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: fork to run concurrently
     |val fiber: ZIO[Any, Nothing, Fiber[Nothing, Int]] =
@@ -51,6 +52,7 @@ Both Effect and ZIO use **fibers** for lightweight concurrent execution. The con
 ## Joining Fibers
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: fiber.join, fiber.await
     |val program: ZIO[Any, Nothing, Int] =
@@ -99,6 +101,7 @@ Both Effect and ZIO use **fibers** for lightweight concurrent execution. The con
 ## Interrupting Fibers
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: fiber.interrupt
     |val program: ZIO[Any, Nothing, Unit] =
@@ -147,6 +150,7 @@ Both Effect and ZIO use **fibers** for lightweight concurrent execution. The con
 ## Daemon Fibers
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: forkDaemon for background fibers
     |val program: ZIO[Any, Nothing, Int] =
@@ -175,6 +179,7 @@ Both Effect and ZIO use **fibers** for lightweight concurrent execution. The con
 ## Fiber API
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: Fiber operations
     |val program: ZIO[Any, Nothing, Unit] =

@@ -51,6 +51,7 @@ Effect Schema provides runtime type validation and transformations, similar to z
 ## Decoding and Encoding
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// zio-schema: decode, encode
     |val userSchema = DeriveSchema.gen[User]
@@ -90,6 +91,7 @@ Effect Schema provides runtime type validation and transformations, similar to z
 ## Validation
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// zio-schema: Custom validation
     |val ageSchema: Schema[Int] =

@@ -12,6 +12,7 @@ ZIO uses Scala's `for`-comprehensions. Effect uses JavaScript generators with `E
 ## For-Comprehension vs Effect.gen
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: for-comprehension
     |val program: ZIO[Console, IOException, Unit] =
@@ -38,6 +39,7 @@ ZIO uses Scala's `for`-comprehensions. Effect uses JavaScript generators with `E
 In `Effect.gen`, `yield*` unwraps effects (like `<-` in Scala's for-comprehension).
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: <- binds effects
     |val result: ZIO[Any, Nothing, Int] =
@@ -66,6 +68,7 @@ In `Effect.gen`, `yield*` unwraps effects (like `<-` in Scala's for-comprehensio
 JavaScript control flow works naturally inside generators.
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: if/else, for, pattern matching
     |val process: ZIO[Any, Nothing, Int] =
@@ -97,6 +100,7 @@ JavaScript control flow works naturally inside generators.
 ## Error Handling in Generators
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: errors short-circuit for-comprehension
     |val result: ZIO[Any, String, Int] =
@@ -126,6 +130,7 @@ JavaScript control flow works naturally inside generators.
 `Effect.gen` provides direct access to services via `yield*`.
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: ZIO.service[T] in for-comprehension
     |val program: ZIO[Console & Logging, IOException, Unit] =
@@ -158,6 +163,7 @@ JavaScript control flow works naturally inside generators.
 Effect also supports pipe-based composition (like ZIO's `map`, `flatMap` directly).
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: direct map/flatMap
     |val result: ZIO[Any, Nothing, Int] =

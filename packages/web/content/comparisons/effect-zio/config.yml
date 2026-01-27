@@ -35,7 +35,18 @@ validation:
       imports:
         - "import zio._"
         - "import zio.Console._"
+        - "import java.io.IOException"
       wrapper: |
-        object Snippet {
-          ${code}
-        }
+        import java.io.FileNotFoundException
+
+        // Minimal stub types - only for snippets that don't define their own
+        case class Response(status: Int, body: String)
+        class HikariDataSource(url: String, user: String, pass: String)
+
+        // Stub functions for teaching examples
+        def fetchData(url: String, callback: (String, Throwable) => Unit): Unit = ()
+        def readFile: ZIO[Any, IOException, String] = ZIO.succeed("content")
+        val url: String = "http://example.com"
+        implicit class SqlInterpolator(val sc: StringContext) { def sql(args: Any*): String = sc.parts.mkString }
+
+        ${code}

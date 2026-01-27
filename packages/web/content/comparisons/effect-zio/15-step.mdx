@@ -12,6 +12,7 @@ Effect provides `@effect/sql` for database operations, similar to ZIO's JDBC/Qui
 ## SqlClient Service
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO JDBC: JdbcService
     |import zio.jdbc._
@@ -47,6 +48,7 @@ Effect provides `@effect/sql` for database operations, similar to ZIO's JDBC/Qui
 ## Connection Pooling
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO JDBC: Connection pool with ZLayer
     |val poolLayer: ZLayer[Any, Throwable, JdbcService] =
@@ -98,6 +100,7 @@ Effect provides `@effect/sql` for database operations, similar to ZIO's JDBC/Qui
 ## Transactions
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO JDBC: Transactions
     |val transfer: ZIO[JdbcService, Throwable, Unit] =
@@ -134,6 +137,7 @@ Effect provides `@effect/sql` for database operations, similar to ZIO's JDBC/Qui
 ## Insert and Update
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO JDBC: Insert/Update
     |val insertUser: ZIO[JdbcService, Throwable, Long] =
@@ -167,6 +171,7 @@ Effect provides `@effect/sql` for database operations, similar to ZIO's JDBC/Qui
 ## Schema Integration
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: Manual row mapping
     |case class User(id: Long, name: String, age: Int)

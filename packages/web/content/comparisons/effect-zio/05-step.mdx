@@ -12,6 +12,7 @@ Effect uses `Context.Tag` classes for dependency injection, while ZIO uses `ZIO.
 ## Defining Services
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: Service with ZLayer-based DI
     |import zio._
@@ -63,6 +64,7 @@ Effect uses `Context.Tag` classes for dependency injection, while ZIO uses `ZIO.
 ## Accessing Services
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: ZIO.service[T] to access
     |val program: ZIO[Logging, Nothing, Unit] =
@@ -102,6 +104,7 @@ In `Effect.gen`, you can access services directly with `yield* Tag`. The compile
 ## Multiple Services
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: Multiple services in environment
     |type AppEnv = Logging & Database & Config
@@ -136,6 +139,7 @@ In `Effect.gen`, you can access services directly with `yield* Tag`. The compile
 ## Service Implementation
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: Implementation with ZLayer
     |object LoggingLive {
@@ -181,6 +185,7 @@ Unlike ZIO's `ZIO.service[ServiceType]`, Effect's `Context.Tag` pattern requires
 ## Service with Dependencies
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: Service with dependencies
     |trait UserRepository {

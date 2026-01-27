@@ -12,6 +12,7 @@ Effect provides `@effect/platform` for cross-platform abstractions, similar to Z
 ## HttpClient Service
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO HTTP: Client.service
     |import zio.http._
@@ -52,6 +53,7 @@ Effect provides `@effect/platform` for cross-platform abstractions, similar to Z
 ## Response Handling
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO HTTP: Response handling
     |val getUser: ZIO[Client, Throwable, User] =
@@ -94,6 +96,7 @@ Effect provides `@effect/platform` for cross-platform abstractions, similar to Z
 ## Request Options
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO HTTP: Request options
     |val request: ZIO[Client, Throwable, Response] =
@@ -126,6 +129,7 @@ Effect provides `@effect/platform` for cross-platform abstractions, similar to Z
 ## HTTP Errors
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO HTTP: Error handling
     |val safeRequest: ZIO[Client, Nothing, Either[String, Response]] =

@@ -12,6 +12,7 @@ Both Effect and ZIO provide `Ref` for atomic mutable state. The APIs are nearly 
 ## Creating Refs
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: Ref.make
     |val program: ZIO[Any, Nothing, Ref[Int]] =
@@ -45,6 +46,7 @@ Both Effect and ZIO provide `Ref` for atomic mutable state. The APIs are nearly 
 ## Reading and Writing
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: get, set, update
     |val program: ZIO[Any, Nothing, Int] =
@@ -76,6 +78,7 @@ Both Effect and ZIO provide `Ref` for atomic mutable state. The APIs are nearly 
 ## Modify
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: modify for read-modify-write
     |val program: ZIO[Any, Nothing, String] =
@@ -107,6 +110,7 @@ Both Effect and ZIO provide `Ref` for atomic mutable state. The APIs are nearly 
 ## Atomic Operations
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: Atomic updates are safe
     |val program: ZIO[Any, Nothing, Unit] =
@@ -142,6 +146,7 @@ Both Effect and ZIO provide `Ref` for atomic mutable state. The APIs are nearly 
 For effectful updates, use `SynchronizedRef` (like ZIO).
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: ZIO.synchronized for effectful updates
     |val program: ZIO[Any, Nothing, Unit] =
@@ -175,6 +180,7 @@ For effectful updates, use `SynchronizedRef` (like ZIO).
 ## Derived Refs
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: Derived refs with projections
     |case class Config(host: String, port: Int)

@@ -141,10 +141,9 @@ Delay effect creation until runtime (lazy initialization).
 
 <CrossLanguageBlock
   zioCode={`
-    |// ZIO.suspend: defer effect creation
+    |// ZIO.suspendSucceed: defer effect creation
     |val lazyEffect: ZIO[Any, Nothing, Int] =
-    |  ZIO.suspend {
-    |    println("Creating effect...")
+    |  ZIO.suspendSucceed {
     |    ZIO.succeed(42)
     |  }
   `}
@@ -157,7 +156,7 @@ Delay effect creation until runtime (lazy initialization).
     |    }
     |  )
   `}
-  zioComment="ZIO.suspend for lazy effect creation"
+  zioComment="ZIO.suspendSucceed for lazy effect creation"
   effectComment="Effect.suspend for lazy effect creation"
 />
 

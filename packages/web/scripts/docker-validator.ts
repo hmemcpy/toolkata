@@ -214,6 +214,7 @@ const ZIO_IMPORTS = [
   "import zio.Console._",
   "import zio.stream._",
   "import zio.stm._",
+  "import java.io.IOException",
 ]
 
 // Cats Effect imports (used for catsEffectCode snippets)

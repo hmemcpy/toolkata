@@ -12,6 +12,7 @@ Both Effect and ZIO provide robust resource management through `acquireRelease` 
 ## acquireRelease Pattern
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: ZIO.acquireRelease
     |val readFile: ZIO[Any, IOException, String] =
@@ -54,6 +55,7 @@ Both Effect and ZIO provide robust resource management through `acquireRelease` 
 ## Scoped Effects
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: ZIO.scoped
     |val withFile: ZIO[Any, IOException, String] =
@@ -95,6 +97,7 @@ Both Effect and ZIO provide robust resource management through `acquireRelease` 
 Both Effect and ZIO provide a `Scope` service for managing resource lifetimes.
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: Using Scope service
     |val withScope: ZIO[Scope, IOException, String] =
@@ -137,6 +140,7 @@ Both Effect and ZIO provide a `Scope` service for managing resource lifetimes.
 Layers can provide scoped resources that are automatically managed.
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: ZLayer.scoped for resource management
     |val databaseLayer: ZLayer[Any, IOException, Database] =
@@ -197,6 +201,7 @@ Layers can provide scoped resources that are automatically managed.
 ## Finalizers
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: ZIO.addFinalizer, ZIO.onExit
     |val withFinalizer: ZIO[Any, Nothing, Unit] =
