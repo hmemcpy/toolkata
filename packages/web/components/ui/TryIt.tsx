@@ -42,6 +42,12 @@ export interface TryItProps {
    * @default true
    */
   readonly editable?: boolean
+
+  /**
+   * Setup commands to run before validation during build-time snippet validation.
+   * This prop is only used by the validation system, not for rendering.
+   */
+  readonly setup?: readonly string[]
 }
 
 /**
@@ -57,6 +63,8 @@ export function TryIt({
   description,
   expectedOutput,
   editable = true,
+  // setup is only used by the validation system
+  setup: _setup,
 }: TryItProps): React.JSX.Element {
   const { executeCommand } = useTerminalContext()
   const [buttonState, setButtonState] = useState<ButtonState>("idle")

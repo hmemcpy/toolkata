@@ -40,6 +40,20 @@ interface CrossLanguageBlockProps {
    * Optional comment for Effect code.
    */
   readonly effectComment?: string
+
+  /**
+   * Whether to validate this snippet during build-time snippet validation.
+   * Set to false to skip validation for pseudo-code or teaching examples.
+   * This prop is only used by the validation system, not for rendering.
+   */
+  readonly validate?: boolean
+
+  /**
+   * Additional imports to add to the validation prelude for this snippet.
+   * Merged with the pairing-level imports during validation.
+   * This prop is only used by the validation system, not for rendering.
+   */
+  readonly extraImports?: readonly string[]
 }
 
 /**
@@ -103,6 +117,9 @@ export async function CrossLanguageBlock({
   effectCode,
   zioComment,
   effectComment,
+  // validate and extraImports are only used by the validation system
+  validate: _validate,
+  extraImports: _extraImports,
 }: CrossLanguageBlockProps) {
   // Server-side syntax highlighting - no loading state needed
   const [zioHtml, effectHtml] = await Promise.all([

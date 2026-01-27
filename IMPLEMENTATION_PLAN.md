@@ -221,13 +221,13 @@ Build a headless snippet validation system that extracts code from MDX, executes
 
 ### P2.3: Component Props Support
 
-- [ ] **Add validate prop to ScalaComparisonBlock** — Boolean prop, skip validation when `validate={false}`
-- [ ] **Add validate prop to CrossLanguageBlock** — Boolean prop, skip validation when `validate={false}`
-- [ ] **Add validate prop to SideBySide** — Boolean prop, skip validation when `validate={false}`
-- [ ] **Add setup prop to TryIt** — String array prop to override prelude setup for specific command
-- [ ] **Add extraImports prop to ScalaComparisonBlock** — String array prop to extend prelude imports
-- [ ] **Add extraImports prop to CrossLanguageBlock** — String array prop to extend prelude imports
-- [ ] **Update snippet-extractor** — Parse validate and setup/extraImports props from component JSX
+- [x] **Add validate prop to ScalaComparisonBlock** — Boolean prop, skip validation when `validate={false}`
+- [x] **Add validate prop to CrossLanguageBlock** — Boolean prop, skip validation when `validate={false}`
+- [x] **Add validate prop to SideBySide** — Boolean prop, skip validation when `validate={false}`
+- [x] **Add setup prop to TryIt** — String array prop to override prelude setup for specific command
+- [x] **Add extraImports prop to ScalaComparisonBlock** — String array prop to extend prelude imports
+- [x] **Add extraImports prop to CrossLanguageBlock** — String array prop to extend prelude imports
+- [x] **Update snippet-extractor** — Parse validate and setup/extraImports props from component JSX
 
 ---
 
@@ -363,8 +363,8 @@ _(Updated during implementation)_
 
 **P0**: 38/38 tasks complete (100%) — jj-git snippet validation fully working
 **P1**: 7/14 tasks complete (50%) — Step-level caching fully implemented
-**P2**: 17/25 tasks complete (68%) — Scala and TypeScript validation fully implemented
-**Total**: 62/77 tasks complete (81%)
+**P2**: 24/25 tasks complete (96%) — Component props support fully implemented
+**Total**: 69/77 tasks complete (90%)
 
 **Learned (2026-01-27):**
 - Scala Dockerfile needs architecture detection for scala-cli download (aarch64 vs x86_64)
@@ -372,3 +372,4 @@ _(Updated during implementation)_
 - Simplified Scala Dockerfile by removing pre-cached dependencies (they download on first use)
 - Docker image for Scala built successfully on Apple Silicon (ARM64)
 - **scala-cli v1.5.0 has bloop component manager bug in Docker**: `sbt.internal.inc.InvalidComponent: Expected single file for component` - This is a scala-cli bug where bloop expects a single JAR file for the Scala 3 compiler bridge but finds multiple JARs. The `--server=false` flag doesn't actually disable bloop; it still uses it for compilation. This affects Scala snippet validation in sandbox containers.
+- **TypeScript unused variable pattern**: Use underscore prefix (`_validate`) instead of eslint-disable comments to satisfy both TypeScript and Biome linting for intentionally unused props in React components. The `eslint-disable-next-line @typescript-eslint/no-unused-vars` comment approach doesn't suppress TypeScript's TS6133 errors.

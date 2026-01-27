@@ -53,6 +53,13 @@ interface SideBySideProps {
    */
   readonly fromComments?: readonly string[]
   readonly toComments?: readonly string[]
+
+  /**
+   * Whether to validate this snippet during build-time snippet validation.
+   * Set to false to skip validation for pseudo-code or teaching examples.
+   * This prop is only used by the validation system, not for rendering.
+   */
+  readonly validate?: boolean
 }
 
 /**
@@ -67,6 +74,8 @@ export function SideBySide({
   toLabel = "jj",
   fromComments = [],
   toComments = [],
+  // validate is only used by the validation system
+  validate: _validate,
 }: SideBySideProps): JSX.Element {
   return (
     <div className="my-6 overflow-x-auto">

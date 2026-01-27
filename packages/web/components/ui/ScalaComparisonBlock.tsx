@@ -45,6 +45,20 @@ interface ScalaComparisonBlockProps {
    * Optional language for syntax highlighting (default: "scala").
    */
   readonly language?: string
+
+  /**
+   * Whether to validate this snippet during build-time snippet validation.
+   * Set to false to skip validation for pseudo-code or teaching examples.
+   * This prop is only used by the validation system, not for rendering.
+   */
+  readonly validate?: boolean
+
+  /**
+   * Additional imports to add to the validation prelude for this snippet.
+   * Merged with the pairing-level imports during validation.
+   * This prop is only used by the validation system, not for rendering.
+   */
+  readonly extraImports?: readonly string[]
 }
 
 /**
@@ -109,6 +123,9 @@ export async function ScalaComparisonBlock({
   zioComment,
   catsEffectComment,
   language = "scala",
+  // validate and extraImports are only used by the validation system
+  validate: _validate,
+  extraImports: _extraImports,
 }: ScalaComparisonBlockProps) {
   // Server-side syntax highlighting - no loading state needed
   const [ceHtml, zioHtml] = await Promise.all([

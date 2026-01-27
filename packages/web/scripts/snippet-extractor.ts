@@ -42,6 +42,8 @@ export interface ExtractedSnippet {
   readonly validate?: boolean
   /** Setup commands to override default (from setup={...} prop) */
   readonly setup?: readonly string[]
+  /** Extra imports to add to validation prelude (from extraImports={...} prop) */
+  readonly extraImports?: readonly string[]
 }
 
 /**
@@ -305,6 +307,8 @@ function parseJsArray(arrayStr: string): string[] {
  * <ScalaComparisonBlock
  *   zioCode={`...`}
  *   catsEffectCode={`...`}
+ *   validate={false}
+ *   extraImports={["import java.time._"]}
  * />
  */
 function extractScalaComparisonBlocks(
@@ -327,11 +331,15 @@ function extractScalaComparisonBlocks(
     // Check for validate={false}
     const validateFalse = /validate=\{false\}/.test(propsContent)
 
+    // Extract extraImports prop
+    const extraImportsMatch = propsContent.match(/extraImports=\{(\[[\s\S]*?\])\}/)
+    const extraImports = extraImportsMatch?.[1] ? parseJsArray(extraImportsMatch[1]) : undefined
+
     // Extract zioCode
     const zioMatch = propsContent.match(/zioCode=\{`([\s\S]*?)`\}/)
     const zioCode = zioMatch?.[1]
     if (zioCode !== undefined) {
-      const snippet: ExtractedSnippet = {
+      let snippet: ExtractedSnippet = {
         file,
         toolPair,
         step,
@@ -342,17 +350,19 @@ function extractScalaComparisonBlocks(
         prop: "zioCode",
       }
       if (validateFalse) {
-        snippets.push({ ...snippet, validate: false })
-      } else {
-        snippets.push(snippet)
+        snippet = { ...snippet, validate: false }
       }
+      if (extraImports) {
+        snippet = { ...snippet, extraImports }
+      }
+      snippets.push(snippet)
     }
 
     // Extract catsEffectCode
     const ceMatch = propsContent.match(/catsEffectCode=\{`([\s\S]*?)`\}/)
     const ceCode = ceMatch?.[1]
     if (ceCode !== undefined) {
-      const snippet: ExtractedSnippet = {
+      let snippet: ExtractedSnippet = {
         file,
         toolPair,
         step,
@@ -363,10 +373,12 @@ function extractScalaComparisonBlocks(
         prop: "catsEffectCode",
       }
       if (validateFalse) {
-        snippets.push({ ...snippet, validate: false })
-      } else {
-        snippets.push(snippet)
+        snippet = { ...snippet, validate: false }
       }
+      if (extraImports) {
+        snippet = { ...snippet, extraImports }
+      }
+      snippets.push(snippet)
     }
   }
 
@@ -380,6 +392,8 @@ function extractScalaComparisonBlocks(
  * <CrossLanguageBlock
  *   zioCode={`...`}
  *   effectCode={`...`}
+ *   validate={false}
+ *   extraImports={["import java.time._"]}
  * />
  */
 function extractCrossLanguageBlocks(
@@ -402,11 +416,15 @@ function extractCrossLanguageBlocks(
     // Check for validate={false}
     const validateFalse = /validate=\{false\}/.test(propsContent)
 
+    // Extract extraImports prop
+    const extraImportsMatch = propsContent.match(/extraImports=\{(\[[\s\S]*?\])\}/)
+    const extraImports = extraImportsMatch?.[1] ? parseJsArray(extraImportsMatch[1]) : undefined
+
     // Extract zioCode (Scala)
     const zioMatch = propsContent.match(/zioCode=\{`([\s\S]*?)`\}/)
     const zioCode = zioMatch?.[1]
     if (zioCode !== undefined) {
-      const snippet: ExtractedSnippet = {
+      let snippet: ExtractedSnippet = {
         file,
         toolPair,
         step,
@@ -417,17 +435,19 @@ function extractCrossLanguageBlocks(
         prop: "zioCode",
       }
       if (validateFalse) {
-        snippets.push({ ...snippet, validate: false })
-      } else {
-        snippets.push(snippet)
+        snippet = { ...snippet, validate: false }
       }
+      if (extraImports) {
+        snippet = { ...snippet, extraImports }
+      }
+      snippets.push(snippet)
     }
 
     // Extract effectCode (TypeScript)
     const effectMatch = propsContent.match(/effectCode=\{`([\s\S]*?)`\}/)
     const effectCode = effectMatch?.[1]
     if (effectCode !== undefined) {
-      const snippet: ExtractedSnippet = {
+      let snippet: ExtractedSnippet = {
         file,
         toolPair,
         step,
@@ -438,10 +458,12 @@ function extractCrossLanguageBlocks(
         prop: "effectCode",
       }
       if (validateFalse) {
-        snippets.push({ ...snippet, validate: false })
-      } else {
-        snippets.push(snippet)
+        snippet = { ...snippet, validate: false }
       }
+      if (extraImports) {
+        snippet = { ...snippet, extraImports }
+      }
+      snippets.push(snippet)
     }
   }
 
