@@ -681,6 +681,149 @@ validation:
 | "command not found" | Missing tool in sandbox | Check Docker image has required tools |
 | Context error (expected) | Snippet needs prior state | Add `validate={false}` — these are teaching examples |
 
+### Troubleshooting Guide
+
+#### Shell/Bash Snippets (jj-git)
+
+**Problem: "error: not a git repository"**
+```
+Solution: The config.yml prelude needs to initialize the repository before commands run.
+Check content/comparisons/jj-git/config.yml has:
+
+validation:
+  environment: bash
+  prelude:
+    setup:
+      - "jj git init --colocate ."
+      - "git config user.email 'test@test.com'"
+      - "git config user.name 'Test User'"
+```
+
+**Problem: Command with quotes truncated (e.g., `jj describe -m` without the message)**
+```
+Cause: The TryIt regex extractor had a bug where quotes inside commands were not handled.
+Fixed in snippet-extractor.ts — ensure you're using the latest version.
+```
+
+**Problem: SideBySide commands failing**
+```
+Expected behavior: SideBySide snippets are teaching examples showing git/jj equivalence.
+They're automatically skipped because each runs in isolation with no shared state.
+If you need to validate specific commands, use TryIt instead.
+```
+
+**Problem: Permission denied on config.toml**
+```
+Cause: Some jj operations (like `jj op undo`) try to modify config.toml which is read-only.
+Solution: Add `validate={false}` to these commands — they demonstrate concepts but can't
+run in the restricted sandbox environment.
+```
+
+#### Scala Snippets (zio-cats)
+
+**Problem: "value X is not a member of object ZIO"**
+```
+Cause: Missing import. Scala validation requires all imports to be present.
+Solutions:
+1. Add import to config.yml prelude (affects all steps)
+2. Add import to step frontmatter (affects one step)
+3. Use extraImports prop on the component (affects one snippet)
+
+Example:
+<ScalaComparisonBlock
+  extraImports={["import zio.stream._"]}
+  zioCode={`ZStream.fromIterable(...)`}
+/>
+```
+
+**Problem: "ambiguous reference to overloaded definition"**
+```
+Cause: Both ZIO and Cats Effect define similar types (e.g., Fiber).
+Solution: Add `validate={false}` to snippets that intentionally show both libraries
+together, or use fully qualified names.
+```
+
+**Problem: External library not found (ciris, doobie, zio-schema)**
+```
+Cause: The sandbox only includes ZIO and Cats Effect core libraries.
+Solution: Add `validate={false}` to snippets using external libraries.
+
+Libraries NOT in sandbox: ciris, doobie, zio-interop-cats, zio.config.magnolia,
+zio-schema, http4s, fs2-kafka, tapir
+```
+
+**Problem: Compilation timeout**
+```
+Cause: Bloop build server issues in Docker container.
+Solution: The validation system uses `--server=false --jvm system` flags.
+If still timing out:
+1. Rebuild the Scala Docker image: bun run docker:build:all
+2. Verify posix-libc-utils is installed (needed for JVM detection)
+3. Check JAVA_HOME is passed to docker exec
+```
+
+**Problem: "type mismatch" errors in pseudo-code**
+```
+Cause: Teaching examples often use placeholder types like `???` or type annotations
+that simplify the concept but don't compile.
+Solution: Add `validate={false}` — these are intentionally simplified for teaching.
+```
+
+#### TypeScript Snippets (effect-zio)
+
+**Problem: "Cannot find module 'effect'"**
+```
+Cause: The TypeScript sandbox needs the effect package pre-installed.
+Solution: Rebuild TypeScript Docker image: bun run docker:build:all
+The Dockerfile should have: npm install effect typescript tsx
+```
+
+**Problem: Missing java.io.IOException or other Java types**
+```
+Cause: ZIO code in CrossLanguageBlock uses Java exceptions that aren't imported.
+Solution: Add `validate={false}` to these snippets, or add the import to config.yml.
+
+Note: Some ZIO 2.x APIs have changed (foreachParN, race signature changes).
+Add `validate={false}` to snippets showing deprecated patterns.
+```
+
+#### General Troubleshooting
+
+**Problem: Validation passes locally but fails in CI**
+```
+1. Verify Docker images are built in CI workflow
+2. Check .validation-cache/ is not committed (should be in .gitignore)
+3. Ensure sandbox-api can start (check ports, Docker daemon)
+```
+
+**Problem: Cache not working (always re-validating)**
+```
+1. Check .validation-cache/ directory exists
+2. Verify SHA256 hash matches (hash includes config.yml + MDX content)
+3. Use --verbose flag to see cache hit/miss
+4. Use --clear-cache to reset if cache is corrupted
+```
+
+**Problem: Validation hangs**
+```
+1. Script has 5-minute timeout with cleanup handlers
+2. Check if sandbox-api is responding (curl http://localhost:3001/health)
+3. Check Docker container is running and responsive
+4. Individual command timeout is 30s — if hanging, the prompt detection may be failing
+```
+
+**Problem: "Cannot assign to read-only property" TypeScript errors**
+```
+Cause: This project uses exactOptionalPropertyTypes: true
+Solution: Don't assign undefined to optional properties. Use conditional object building:
+
+// Wrong
+const obj = { a: 1, b: undefined }
+
+// Right
+const obj = condition ? { a: 1, b: value } : { a: 1 }
+```
+
 ### Files
 
 | File | Purpose |
