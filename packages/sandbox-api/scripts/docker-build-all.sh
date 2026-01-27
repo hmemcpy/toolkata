@@ -7,7 +7,7 @@
 #
 # Build order:
 #   1. Base image (toolkata-sandbox-base:latest)
-#   2. Environment images (toolkata-env:bash, node, python)
+#   2. Environment images (toolkata-env:bash, node, python, scala)
 #
 # Exit codes:
 #   0 - Success
@@ -110,6 +110,18 @@ fi
 
 PYTHON_SIZE=$(docker images "$ENV_IMAGE_NAME:python" --format "{{.Size}}")
 log_info "python environment size: $PYTHON_SIZE"
+
+# Build scala environment image
+log_info "Building scala environment image: $ENV_IMAGE_NAME:scala"
+docker build -t "$ENV_IMAGE_NAME:scala" "$DOCKER_DIR/environments/scala"
+
+if [ $? -ne 0 ]; then
+    log_error "scala environment image build failed"
+    exit 1
+fi
+
+SCALA_SIZE=$(docker images "$ENV_IMAGE_NAME:scala" --format "{{.Size}}")
+log_info "scala environment size: $SCALA_SIZE"
 
 # Step 3: Run tests if enabled
 if [ "$RUN_TESTS" = true ]; then
@@ -362,6 +374,114 @@ EOF
 
     log_info "python environment tests passed!"
 
+    # Test scala environment
+    log_info "Testing scala environment..."
+
+    # Test 12: scala-cli is available
+    log_info "  Test 12: Checking scala-cli is installed..."
+    docker run --rm "$ENV_IMAGE_NAME:scala" /bin/bash -c '
+        set -e
+        scala-cli version > /dev/null
+        echo "scala-cli is available"
+    '
+    if [ $? -ne 0 ]; then
+        log_error "Test 12 failed: scala-cli not available in scala environment"
+        exit 2
+    fi
+
+    # Test 13: Scala can compile a simple snippet
+    log_info "  Test 13: Testing Scala can compile snippets..."
+    docker run --rm "$ENV_IMAGE_NAME:scala" /bin/bash -c '
+        set -e
+
+        # Create a simple Scala file
+        cat > test.scala << EOF
+//> using scala 3.5.0
+
+val x = 42
+println(s"Hello from Scala: $x")
+EOF
+
+        # Compile and run it
+        OUTPUT=$(scala-cli run test.scala)
+        echo "$OUTPUT" | grep -q "Hello from Scala: 42"
+
+        echo "Scala compilation and execution works"
+    '
+    if [ $? -ne 0 ]; then
+        log_error "Test 13 failed: Scala compilation broken"
+        exit 2
+    fi
+
+    # Test 14: ZIO is pre-cached and available
+    log_info "  Test 14: Testing ZIO library is available..."
+    docker run --rm "$ENV_IMAGE_NAME:scala" /bin/bash -c '
+        set -e
+
+        cat > test-zio.scala << EOF
+//> using dep dev.zio::zio::2.1.14
+
+import zio._
+
+val program: ZIO[Any, Nothing, Unit] =
+  Console.printLine("Hello from ZIO")
+
+override def run = program
+EOF
+
+        scala-cli run test-zio.scala 2>&1 | grep -q "Hello from ZIO"
+
+        echo "ZIO library works"
+    '
+    if [ $? -ne 0 ]; then
+        log_error "Test 14 failed: ZIO library not available"
+        exit 2
+    fi
+
+    # Test 15: Cats Effect is available
+    log_info "  Test 15: Testing Cats Effect library is available..."
+    docker run --rm "$ENV_IMAGE_NAME:scala" /bin/bash -c '
+        set -e
+
+        cat > test-ce.scala << EOF
+//> using dep org.typelevel::cats-effect::3.5.7
+
+import cats.effect._
+
+val program = IO.println("Hello from Cats Effect")
+
+program.unsafeRunSync()
+EOF
+
+        scala-cli run test-ce.scala 2>&1 | grep -q "Hello from Cats Effect"
+
+        echo "Cats Effect library works"
+    '
+    if [ $? -ne 0 ]; then
+        log_error "Test 15 failed: Cats Effect library not available"
+        exit 2
+    fi
+
+    # Test 16: Verify user is non-root in scala
+    log_info "  Test 16: Verifying non-root user in scala..."
+    docker run --rm "$ENV_IMAGE_NAME:scala" /bin/bash -c '
+        set -e
+
+        CURRENT_USER=$(whoami)
+        if [ "$CURRENT_USER" = "root" ]; then
+            echo "FAIL: Running as root"
+            exit 1
+        fi
+
+        echo "Running as non-root user: $CURRENT_USER"
+    '
+    if [ $? -ne 0 ]; then
+        log_error "Test 16 failed: Running as root in scala environment"
+        exit 2
+    fi
+
+    log_info "scala environment tests passed!"
+
     log_info "All environment tests passed!"
 fi
 
@@ -370,4 +490,5 @@ log_info "Base image:     $BASE_IMAGE_NAME:$IMAGE_TAG ($BASE_SIZE)"
 log_info "bash env:       $ENV_IMAGE_NAME:bash ($BASH_SIZE)"
 log_info "node env:       $ENV_IMAGE_NAME:node ($NODE_SIZE)"
 log_info "python env:     $ENV_IMAGE_NAME:python ($PYTHON_SIZE)"
+log_info "scala env:      $ENV_IMAGE_NAME:scala ($SCALA_SIZE)"
 log_info "Done. All images ready."

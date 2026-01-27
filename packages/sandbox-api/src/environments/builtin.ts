@@ -37,11 +37,22 @@ export const pythonEnvironment: EnvironmentConfig = {
   category: "runtime",
 } as const
 
+// Scala environment - for Scala functional programming lessons
+export const scalaEnvironment: EnvironmentConfig = {
+  name: "scala",
+  dockerImage: "toolkata-env:scala",
+  defaultTimeout: 120000, // 120 seconds (scala-cli compile can take longer)
+  defaultInitCommands: [],
+  description: "Scala 3 with scala-cli and pre-cached ZIO/Cats Effect libraries",
+  category: "runtime",
+} as const
+
 // Registry of all built-in environments
 export const builtinEnvironments: readonly EnvironmentConfig[] = [
   bashEnvironment,
   nodeEnvironment,
   pythonEnvironment,
+  scalaEnvironment,
 ] as const
 
 // Helper: Get environment by name

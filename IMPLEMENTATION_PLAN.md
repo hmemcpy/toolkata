@@ -197,11 +197,11 @@ Build a headless snippet validation system that extracts code from MDX, executes
 
 ### P2.1: Scala Environment (zio-cats)
 
-- [ ] **Create Dockerfile for Scala** — `packages/sandbox-api/docker/environments/scala/Dockerfile` with Eclipse Temurin JDK 21 + scala-cli
-- [ ] **Pre-cache dependencies** — Add ZIO and Cats Effect dependencies to Docker image
-- [ ] **Create entrypoint.sh for Scala** — Standard entrypoint matching other environments
-- [ ] **Register scala environment** — Update `packages/sandbox-api/src/environments/builtin.ts`
-- [ ] **Update docker-build-all.sh** — Add scala environment to build script
+- [x] **Create Dockerfile for Scala** — `packages/sandbox-api/docker/environments/scala/Dockerfile` with Eclipse Temurin JDK 21 + scala-cli
+- [x] **Pre-cache dependencies** — Add ZIO and Cats Effect dependencies to Docker image
+- [x] **Create entrypoint.sh for Scala** — Standard entrypoint matching other environments
+- [x] **Register scala environment** — Update `packages/sandbox-api/src/environments/builtin.ts`
+- [x] **Update docker-build-all.sh** — Add scala environment to build script
 - [ ] **Extend snippet-extractor for ScalaComparisonBlock** — Extract `zioCode`, `catsEffectCode` props
 - [ ] **Implement Scala validation logic** — Write snippet to file, run `scala-cli compile`, check exit code
 - [ ] **Add zio-cats config.yml validation section** — Imports prelude for ZIO and Cats Effect, wrapper template
@@ -355,6 +355,7 @@ _(Updated during implementation)_
 - **jj-git validation complete:** All 239 snippets pass - 36 TryIt commands validated, 203 skipped (SideBySide + pseudo-code + non-executable).
 - **Validation cache implemented:** Step-level caching in `.validation-cache/` directory with SHA256 hash of (config.yml + step MDX). Cache hit shows as gray "⊝ Cache hit" indicator. `--no-cache` flag bypasses cache, `--clear-cache` removes all cached results.
 - **exactOptionalPropertyTypes cache fix:** When reconstructing cached results, conditionally add `error` property only if defined to satisfy `exactOptionalPropertyTypes: true`.
+- **Scala environment created:** Built Docker image with Eclipse Temurin JDK 21, scala-cli v1.5.0, and pre-cached ZIO 2.1.14 and Cats Effect 3.5.7 dependencies. Uses multi-stage build for caching. Added 5 tests (scala-cli availability, basic compilation, ZIO library, Cats Effect library, non-root user).
 
 ---
 
@@ -362,5 +363,5 @@ _(Updated during implementation)_
 
 **P0**: 38/38 tasks complete (100%) — jj-git snippet validation fully working
 **P1**: 7/14 tasks complete (50%) — Step-level caching fully implemented
-**P2**: 0/25 tasks complete (0%)
-**Total**: 45/77 tasks complete (58%)
+**P2**: 5/25 tasks complete (20%) — Scala Docker environment created (Dockerfile, entrypoint, registration, build script)
+**Total**: 50/77 tasks complete (65%)
