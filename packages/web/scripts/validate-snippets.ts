@@ -11,7 +11,7 @@
  *   --strict          Fail on any error (for CI)
  *   --tool-pair X     Only validate specific tool pair (e.g., jj-git, zio-cats)
  *   --step N          Only validate specific step number
- *   --parallel        Run snippets in parallel (faster, but harder to debug)
+ *   --parallel        Run tool-pairs and snippets in parallel (faster, but harder to debug)
  *   --verbose         Show all output, not just errors
  *   --output-json X   Output JSON report to file (for CI artifact storage)
  *   --help            Show this help message
@@ -157,7 +157,7 @@ Options:
   --strict          Fail on any error (for CI)
   --tool-pair X     Only validate specific tool pair (e.g., jj-git, zio-cats)
   --step N          Only validate specific step number
-  --parallel        Run snippets in parallel (faster, but harder to debug)
+  --parallel        Run tool-pairs and snippets concurrently (faster, but harder to debug)
   --verbose         Show all output, not just errors
   --no-cache        Force re-validation ignoring cache
   --clear-cache     Clear all cached validation results
@@ -729,7 +729,7 @@ async function main(): Promise<void> {
 
   console.log(`Tool pairs: ${toolPairs.join(", ")}`)
   if (options.parallel) {
-    console.log("Mode: parallel (4 concurrent containers)")
+    console.log("Mode: parallel (tool-pairs + snippets run concurrently)")
   }
 
   const allSummaries = new Map<string, ValidationSummary>()
@@ -751,10 +751,24 @@ async function main(): Promise<void> {
     // Clear config cache to ensure fresh configs
     clearConfigCache()
 
-    // Validate each tool pair
-    for (const toolPair of toolPairs) {
-      const { summary } = await validateToolPairFull(toolPair, contentDir, scriptDir, options)
-      allSummaries.set(toolPair, summary)
+    // Validate tool pairs (in parallel if --parallel flag is set)
+    if (options.parallel && toolPairs.length > 1) {
+      // Run all tool pairs concurrently
+      const results = await Promise.all(
+        toolPairs.map(async (toolPair) => {
+          const { summary } = await validateToolPairFull(toolPair, contentDir, scriptDir, options)
+          return { toolPair, summary }
+        }),
+      )
+      for (const { toolPair, summary } of results) {
+        allSummaries.set(toolPair, summary)
+      }
+    } else {
+      // Run sequentially (default)
+      for (const toolPair of toolPairs) {
+        const { summary } = await validateToolPairFull(toolPair, contentDir, scriptDir, options)
+        allSummaries.set(toolPair, summary)
+      }
     }
 
     // Print final summary
