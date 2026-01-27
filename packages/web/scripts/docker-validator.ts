@@ -409,7 +409,8 @@ async function validateSnippetInContainer(
       }
 
       // Compile with scala-cli
-      const compileCmd = `scala-cli compile --scala 3 ${tempFile} 2>&1`
+      // --server=false disables bloop, --jvm system uses system JDK
+      const compileCmd = `scala-cli compile --scala 3 --server=false --jvm system ${tempFile} 2>&1`
       result = await execInContainer(containerName, compileCmd)
 
       // Clean up temp file

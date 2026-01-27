@@ -634,7 +634,8 @@ async function validateSnippet(
 
       // Compile with scala-cli (use longer timeout for first-run dependency downloads)
       // --server=false disables bloop server to work around component manager issue in Docker
-      const compileCmd = `scala-cli compile --scala 3 --server=false ${tempFile} 2>&1`
+      // --jvm system uses the system JDK instead of downloading its own
+      const compileCmd = `scala-cli compile --scala 3 --server=false --jvm system ${tempFile} 2>&1`
       const output = await session.executeCommand(compileCmd, SCALA_COMMAND_TIMEOUT_MS)
 
       // Clean up temp file

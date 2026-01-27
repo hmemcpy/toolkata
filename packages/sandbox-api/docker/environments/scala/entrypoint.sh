@@ -7,6 +7,10 @@ set -e
 # Set HOME explicitly for scala-cli cache
 export HOME="/home/sandbox"
 
+# Set JAVA_HOME and add to PATH for scala-cli to use system JDK
+export JAVA_HOME="/usr/lib/jvm/java-21-openjdk"
+export PATH="$JAVA_HOME/bin:$PATH"
+
 # Workaround for scala-cli bloop component manager issue in Docker
 # See: https://github.com/VirtusLab/scala-cli/issues/2039
 export SCALA_CLI_OPTS="-Dbloop.component.sharenative=true"

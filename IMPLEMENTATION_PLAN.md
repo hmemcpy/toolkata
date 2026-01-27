@@ -198,14 +198,14 @@ Build a headless snippet validation system that extracts code from MDX, executes
 ### P2.1: Scala Environment (zio-cats)
 
 - [x] **Create Dockerfile for Scala** — `packages/sandbox-api/docker/environments/scala/Dockerfile` with Eclipse Temurin JDK 21 + scala-cli
-- [x] **Pre-cache dependencies** — Add ZIO and Cats Effect dependencies to Docker image (simplified - no pre-caching, dependencies download on first use)
+- [x] **Pre-cache dependencies** — ZIO 2.1.14 and Cats Effect 3.5.7 pre-cached in Docker image using `--server=false` flag during build
 - [x] **Create entrypoint.sh for Scala** — Standard entrypoint matching other environments
 - [x] **Register scala environment** — Update `packages/sandbox-api/src/environments/builtin.ts`
 - [x] **Update docker-build-all.sh** — Add scala environment to build script
 - [x] **Extend snippet-extractor for ScalaComparisonBlock** — Extract `zioCode`, `catsEffectCode` props (already implemented)
 - [x] **Implement Scala validation logic** — Write snippet to file, run `scala-cli compile`, check exit code
 - [x] **Add zio-cats config.yml validation section** — Imports prelude for ZIO and Cats Effect, wrapper template
-- [x] **Test zio-cats validation** — **Known issue: scala-cli v1.5.0 has bloop component manager bug in Docker. Error: `sbt.internal.inc.InvalidComponent: Expected single file for component 'org.scala-lang-scala3-sbt-bridge-3.8.1-bin'`. This is a scala-cli bug, not our code. Workaround needed: either downgrade scala-cli, use scalac directly, or wait for scala-cli fix.**
+- [x] **Test zio-cats validation** — **FIXED**: Updated to scala-cli v1.11.0 with `--server=false --jvm system` flags. Both ZIO and Cats Effect compile successfully with pre-cached dependencies.
 
 ### P2.2: TypeScript Environment (effect-zio)
 
@@ -217,7 +217,7 @@ Build a headless snippet validation system that extracts code from MDX, executes
 - [x] **Extend snippet-extractor for CrossLanguageBlock** — Extract `zioCode`, `effectCode` props (already implemented)
 - [x] **Implement TypeScript validation logic** — Write snippet to file, run `tsc --noEmit`, check exit code
 - [x] **Add effect-zio config.yml validation section** — Imports prelude for Effect, secondary section for Scala
-- [x] **Test effect-zio validation** — TypeScript validation working. Scala validation blocked by scala-cli bloop bug (same as zio-cats).
+- [x] **Test effect-zio validation** — TypeScript validation working. Scala validation now also working with scala-cli v1.11.0 fix.
 
 ### P2.3: Component Props Support
 
@@ -371,6 +371,6 @@ _(Updated during implementation)_
 - scala-cli release asset name is `scala-cli-{arch}-pc-linux.gz`, not `scala-cli-{arch}-pc-linux-gnu`
 - Simplified Scala Dockerfile by removing pre-cached dependencies (they download on first use)
 - Docker image for Scala built successfully on Apple Silicon (ARM64)
-- **scala-cli v1.5.0 has bloop component manager bug in Docker**: `sbt.internal.inc.InvalidComponent: Expected single file for component` - This is a scala-cli bug where bloop expects a single JAR file for the Scala 3 compiler bridge but finds multiple JARs. The `--server=false` flag doesn't actually disable bloop; it still uses it for compilation. This affects Scala snippet validation in sandbox containers.
+- **scala-cli bloop bug FIXED**: Updated to scala-cli v1.11.0 (latest release) and use `--server=false --jvm system` flags. The `--server=false` disables bloop server, `--jvm system` uses the container's system JDK instead of downloading its own. Pre-cached ZIO 2.1.14 and Cats Effect 3.5.7 dependencies in the Docker image for instant compilation. Image size is now 755MB (includes deps).
 - **TypeScript unused variable pattern**: Use underscore prefix (`_validate`) instead of eslint-disable comments to satisfy both TypeScript and Biome linting for intentionally unused props in React components. The `eslint-disable-next-line @typescript-eslint/no-unused-vars` comment approach doesn't suppress TypeScript's TS6133 errors.
 - **Bug fixed (2026-01-27)**: prebuild hook was missing from packages/web/package.json despite P1.2 task being marked complete. Added `"prebuild": "bun run validate:snippets --strict"` to ensure validation runs before every build. This was discovered when testing the build process.
