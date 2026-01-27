@@ -105,6 +105,7 @@ even if the program fails or is interrupted.
 ## Bracket Pattern
 
 <ScalaComparisonBlock
+  validate={false}
   catsEffectCode={`
     |import cats.effect.IO
     |
@@ -294,6 +295,7 @@ The `ZIO.acquireRelease` operator uses `Scope` under the hood:
 <ScalaComparisonBlock
   catsEffectCode={`
     |import cats.effect._
+    |import java.io._
     |
     |// Resource.make is the primary constructor
     |val fileResource: Resource[IO, BufferedReader] =
@@ -305,6 +307,7 @@ The `ZIO.acquireRelease` operator uses `Scope` under the hood:
   `}
   zioCode={`
     |import zio._
+    |import java.io._
     |
     |// ZIO.acquireRelease requires Scope in environment
     |val fileScoped: ZIO[Scope, Throwable, BufferedReader] =

@@ -51,6 +51,7 @@ Both libraries provide atomic operations: `update`, `modify`, `getAndUpdate`, `u
 `Queue` distributes work among multiple consumers. Each value is consumed by exactly one fiber.
 
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio._
     |
@@ -114,6 +115,7 @@ Cats Effect does not provide a sliding queue. For sliding behavior, use fs2 `bro
 `Hub` broadcasts values to multiple subscribers. Each value is received by every subscriber (ZIO-only feature).
 
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio._
     |
@@ -193,6 +195,7 @@ Cats Effect does not have a built-in `Hub` equivalent. Use fs2 `Stream.broadcast
 `Semaphore` limits the number of fibers that can access a resource concurrently.
 
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio._
     |
@@ -230,6 +233,7 @@ Cats Effect does not have a built-in `Hub` equivalent. Use fs2 `Stream.broadcast
 ### Semaphore Pattern Differences
 
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio._
     |

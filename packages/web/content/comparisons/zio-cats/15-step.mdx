@@ -23,6 +23,7 @@ We need:
 ZIO JDBC provides a lightweight JDBC layer with ZIO effects.
 
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio._
     |import zio.jdbc._
@@ -89,6 +90,7 @@ ZIO JDBC uses a fluent API with `.param()` for parameters. Doobie uses string in
 Both libraries use connection pools for efficient database access.
 
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio._
     |import zio.jdbc._

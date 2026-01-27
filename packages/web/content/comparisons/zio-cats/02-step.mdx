@@ -221,8 +221,8 @@ Cats Effect requires errors to be `Throwable`. ZIO allows any error type via the
   zioCode={`
     |import zio._
     |
-    |// From Option (None becomes None.type error)
-    |val fromOpt: IO[None.type, Int] =
+    |// From Option (None becomes Option[Nothing] error)
+    |val fromOpt: IO[Option[Nothing], Int] =
     |  ZIO.fromOption(Some(42))
     |
     |// From Either

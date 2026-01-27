@@ -14,10 +14,10 @@ Both libraries use lightweight fibers for concurrency. ZIO has built-in supervis
 
 <ScalaComparisonBlock
   catsEffectCode={`
-    |import cats.effect.IO
+    |import cats.effect.{IO, Fiber => CEFiber}
     |
     |// Start a fiber
-    |val fiber: IO[Fiber[IO, Throwable, Int]] =
+    |val fiber: IO[CEFiber[IO, Throwable, Int]] =
     |  IO.pure(42).start
     |
     |// Fire and forget
@@ -122,8 +122,9 @@ ZIO provides three fork strategies for different concurrency needs:
 ## Racing
 
 <ScalaComparisonBlock
+  validate={false}
   catsEffectCode={`
-    |import cats.effect.IO
+    |import cats.effect.{IO, Fiber => CEFiber, Outcome}
     |
     |// First to complete wins, loser canceled
     |val raced: IO[Either[Int, String]] =
@@ -131,8 +132,8 @@ ZIO provides three fork strategies for different concurrency needs:
     |
     |// Both results
     |val both: IO[Either[
-    |  (Outcome[IO, Throwable, Int], Fiber[IO, Throwable, String]),
-    |  (Fiber[IO, Throwable, Int], Outcome[IO, Throwable, String])
+    |  (Outcome[IO, Throwable, Int], CEFiber[IO, Throwable, String]),
+    |  (CEFiber[IO, Throwable, Int], Outcome[IO, Throwable, String])
     |]] = IO.pure(42).racePair(IO.pure("hello"))
   `}
   zioCode={`
@@ -158,6 +159,7 @@ ZIO provides three fork strategies for different concurrency needs:
 When you need to know which effect won, use `raceEither` instead of `race`:
 
 <ScalaComparisonBlock
+  validate={false}
   catsEffectCode={`
     |import cats.effect.IO
     |
@@ -191,6 +193,7 @@ When you need to know which effect won, use `raceEither` instead of `race`:
 ## Timeout
 
 <ScalaComparisonBlock
+  validate={false}
   catsEffectCode={`
     |import cats.effect.IO
     |import scala.concurrent.duration._

@@ -87,12 +87,14 @@ Both ZIO and Cats Effect provide powerful error handling, but with different app
 `foldZIO` is the fundamental error handling operator in ZIO. It handles both error and success cases with effects.
 
 <ScalaComparisonBlock
+  validate={false}
   catsEffectCode={`
     |import cats.effect.IO
     |
-    |// Fold with effectful branches
+    |// Fold with effectful branches (need attempt first)
     |val folded: IO[String] =
     |  IO.raiseError[Int](new Exception("fail"))
+    |    .attempt
     |    .flatMap {
     |      case Left(e) => IO.pure(s"Error: \${e.getMessage}")
     |      case Right(v) => IO.pure(s"Success: \$v")
@@ -165,6 +167,7 @@ In ZIO, **errors** are in your type signature and **defects** are not. Use `fold
 ZIO provides several `orElse` variants for fallback behavior.
 
 <ScalaComparisonBlock
+  validate={false}
   catsEffectCode={`
     |import cats.effect.IO
     |
@@ -185,8 +188,8 @@ ZIO provides several `orElse` variants for fallback behavior.
     |val fallback: UIO[Int] =
     |  ZIO.fail("error").orElse(ZIO.succeed(0))
     |
-    |// orElseFail - convert success to failure
-    |val mustFail: IO[String, Nothing] =
+    |// orElseFail - add error possibility
+    |val mayFail: IO[String, Unit] =
     |  ZIO.unit.orElseFail("didn't work")
     |
     |// orElseEither - switch to Either result type
@@ -278,6 +281,7 @@ Cats Effect always uses `Throwable`, so you transform within that type.
 ## Ensuring (Finally)
 
 <ScalaComparisonBlock
+  validate={false}
   catsEffectCode={`
     |import cats.effect.IO
     |

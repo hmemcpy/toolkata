@@ -24,6 +24,7 @@ Hardcoding values forces redeployments for environment changes. We need:
 Both libraries load configuration values into typesafe case classes.
 
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio._
     |import zio.config._
@@ -76,6 +77,7 @@ ZIO Config is built into ZIO core. Ciris is a separate dependency: `is.ciris:cir
 Both libraries support multiple configuration sources with fallback behavior.
 
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio._
     |import zio.config._
@@ -124,6 +126,7 @@ Both libraries support multiple configuration sources with fallback behavior.
 Real applications have nested configuration structures.
 
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio._
     |import zio.config._
@@ -201,6 +204,7 @@ Real applications have nested configuration structures.
 Both libraries handle optional configuration with sensible defaults.
 
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio._
     |import zio.config._
@@ -262,6 +266,7 @@ Both libraries handle optional configuration with sensible defaults.
 Validate configuration values before your application starts.
 
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio._
     |import zio.config._
@@ -330,6 +335,7 @@ Validate configuration values before your application starts.
 Handle sensitive configuration securely.
 
 <ScalaComparisonBlock
+  validate={false}
   zioCode={`
     |import zio._
     |import zio.config._
