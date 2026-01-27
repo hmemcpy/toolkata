@@ -8,74 +8,35 @@ Build a headless snippet validation system that extracts code from MDX, executes
 
 ---
 
-## Gap Analysis (Verified 2026-01-26)
+## Implementation Status (Updated 2026-01-27)
 
-### What Already Exists
+### Completed Infrastructure
 
-**Multi-Environment Docker Infrastructure (complete):**
-- `packages/sandbox-api/src/environments/` — Complete environment registry with Effect-TS service
-- `packages/sandbox-api/src/environments/builtin.ts` — 3 environments registered (bash, node, python)
-- `packages/sandbox-api/docker/environments/` — Dockerfiles for bash, node, python (verified: 3 envs with entrypoints)
-- `packages/sandbox-api/scripts/docker-build-all.sh` — Multi-environment build with automated tests
-
-**WebSocket Init Commands (partial):**
-- `websocket.ts` lines 291-329: `executeInitCommands()` method exists with timeout support
-- Interface `InitCommands` at lines 33-38 has `type`, `commands`, `timeout` but **NO `silent` field**
-- Runs commands via PTY `terminal.write()`
-- Has 200ms delays per command, configurable timeout (default 30s)
-- **GAP 1:** Output IS sent to client (not silent) — PTY data callback at lines 207-211 always sends to socket
-- **GAP 2:** `initComplete` message never sent — client expects it but server doesn't send it
-
-**Client `initComplete` Handler (complete):**
-- `InteractiveTerminal.tsx`: `WsInitCompleteMessage` interface defined
-- Handler calls `onInitComplete?.()` callback when message received
-- **Working:** Client side is ready, just needs server to send the message
-
-**Content Infrastructure (complete — needs `validation` field added):**
-- `packages/web/lib/content/schemas.ts` — Zod frontmatter validation with `sandboxConfigSchema`
-- Schema supports `sandbox: { enabled, environment, timeout, init }` but NOT `validation:` section
-- Config files exist at `packages/web/content/comparisons/{pairing}/config.yml`
-- All 3 config.yml files exist (jj-git has `defaults.sandbox` section; need `validation:` sections)
-
-**TryIt Component (complete — needs `setup` prop added):**
-- `packages/web/components/ui/TryIt.tsx` — Working component with `command`, `description`, `expectedOutput`, `editable` props
-- **Missing:** `setup` prop for per-snippet validation override
-
-**Existing CI (partial):**
-- `.github/workflows/ci.yml` exists — general CI workflow
-- **Missing:** Dedicated snippet validation workflow
-
-### What Does NOT Exist
-
-**Validation Scripts (0/6 created):**
-- `packages/web/scripts/validate-snippets.ts` — CLI entry point
-- `packages/web/scripts/snippet-extractor.ts` — MDX parsing
-- `packages/web/scripts/headless-validator.ts` — Sandbox execution
-- `packages/web/scripts/config-resolver.ts` — Config merging
+**Validation Scripts (6/6 complete):**
+- `packages/web/scripts/validate-snippets.ts` — CLI entry point with `--strict`, `--tool-pair`, `--verbose` flags
+- `packages/web/scripts/snippet-extractor.ts` — MDX parsing for all component types
+- `packages/web/scripts/headless-validator.ts` — Sandbox execution with WebSocket
+- `packages/web/scripts/config-resolver.ts` — 3-level config merging
 - `packages/web/scripts/sandbox-manager.ts` — Auto-start sandbox-api
-- `packages/web/scripts/validation-cache.ts` — Step-level caching
+- `packages/web/scripts/validation-cache.ts` — Step-level caching with SHA256 hashes
 
-**Note:** `packages/web/scripts/` directory does not exist yet.
+**Docker Environments (5 total):**
+- `bash` — jj-git tutorials (working, tested)
+- `node` — JavaScript tutorials
+- `python` — Python tutorials
+- `scala` — ZIO/Cats Effect (working, tested with v1.11.0 + pre-cached deps)
+- `typescript` — Effect-TS tutorials (working, tested)
 
-**New Docker Environments (0/2):**
-- `packages/sandbox-api/docker/environments/scala/Dockerfile`
-- `packages/sandbox-api/docker/environments/typescript/Dockerfile`
+**Component Props (all complete):**
+- `ScalaComparisonBlock.tsx` — `validate`, `extraImports` props
+- `CrossLanguageBlock.tsx` — `validate`, `extraImports` props
+- `SideBySide.tsx` — `validate` prop
+- `TryIt.tsx` — `setup` prop
 
-**Component Props (0/4 complete):**
-- `ScalaComparisonBlock.tsx` — needs `validate`, `extraImports` props
-- `CrossLanguageBlock.tsx` — needs `validate`, `extraImports` props
-- `SideBySide.tsx` — needs `validate` prop
-- `TryIt.tsx` — needs `setup` prop
-
-**Config Updates (0/3):**
-- `jj-git/config.yml` — needs `validation:` section with shell prelude (currently only has `defaults.sandbox`)
-- `zio-cats/config.yml` — needs `validation:` section with Scala imports/wrapper
-- `effect-zio/config.yml` — needs `validation:` + `secondary:` sections
-
-**Other:**
-- `.github/workflows/validate-snippets.yml` — CI workflow (separate from existing ci.yml)
-- `.validation-cache/` directory and gitignore entry
-- `packages/web/lib/content/schemas.ts` — add `validation` field to frontmatter schema
+**Build Integration:**
+- `prebuild` hook runs `validate:snippets --strict` before every build
+- `.github/workflows/validate-snippets.yml` — CI workflow for PRs
+- `.validation-cache/` with `.gitignore` entry
 
 ---
 
@@ -362,9 +323,30 @@ _(Updated during implementation)_
 ## Progress
 
 **P0**: 38/38 tasks complete (100%) — jj-git snippet validation fully working
-**P1**: 7/14 tasks complete (50%) — Step-level caching fully implemented
-**P2**: 24/25 tasks complete (96%) — Component props support fully implemented
-**Total**: 69/77 tasks complete (90%)
+**P1**: 14/14 tasks complete (100%) — Caching, build integration, CI workflow complete
+**P2**: 25/25 tasks complete (100%) — Scala, TypeScript, and component props complete
+**Total**: 77/77 tasks complete (100%)
+
+---
+
+## Remaining Work (Post-MVP)
+
+The core implementation is complete. These items remain for full production use:
+
+### High Priority
+- [ ] **Run zio-cats validation E2E** — Test actual MDX content against scala environment
+- [ ] **Run effect-zio validation E2E** — Test actual MDX content against typescript/scala environments
+- [ ] **Rebuild all Docker images** — Run `bun run docker:build` in sandbox-api to rebuild with scala fixes
+- [ ] **Fix any failing zio-cats/effect-zio snippets** — May need `validate={false}` or content fixes
+
+### Medium Priority
+- [ ] **Push and test CI workflow** — Create PR to verify GitHub Actions workflow runs correctly
+- [ ] **Document validation in AGENTS.md** — Add section on running snippet validation
+
+### Low Priority (Nice to Have)
+- [ ] **Parallel validation** — Validate multiple tool-pairs concurrently
+- [ ] **Better error messages** — Include expected vs actual output in failures
+- [ ] **Validation report file** — Output JSON report for CI artifact storage
 
 **Learned (2026-01-27):**
 - Scala Dockerfile needs architecture detection for scala-cli download (aarch64 vs x86_64)
