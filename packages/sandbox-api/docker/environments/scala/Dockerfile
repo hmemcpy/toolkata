@@ -43,9 +43,10 @@ FROM toolkata-sandbox-base:latest
 # Switch to root for package installation
 USER root
 
-# Install JVM (required for scala)
+# Install JVM and POSIX utilities (required for scala-cli --jvm system detection)
+# posix-libc-utils provides getconf and ldd which scala-cli needs to detect system JVM
 # Remove su/sudo after install (apk may reinstall busybox symlinks)
-RUN apk add --no-cache openjdk-21-jre && \
+RUN apk add --no-cache openjdk-21-jre posix-libc-utils && \
     rm -f /bin/su /usr/bin/su /sbin/su /usr/sbin/su 2>/dev/null || true
 
 # Copy scala-cli from builder stage

@@ -174,10 +174,41 @@ function detectScalaError(output: string): string | null {
 }
 
 /**
+ * Map of import patterns to scala-cli dependency directives.
+ * These are the dependencies needed for the imports used in zio-cats lessons.
+ */
+const SCALA_DEPENDENCY_MAP: Record<string, string> = {
+  "import zio": '//> using dep "dev.zio::zio:2.1.14"',
+  "import zio.stream": '//> using dep "dev.zio::zio-streams:2.1.14"',
+  "import cats.effect": '//> using dep "org.typelevel::cats-effect:3.5.7"',
+  "import fs2": '//> using dep "co.fs2::fs2-core:3.11.0"',
+}
+
+/**
  * Prepare Scala code for compilation by wrapping with imports and wrapper.
+ * Adds scala-cli dependency directives based on detected imports.
  */
 function prepareScalaCode(code: string, config: ResolvedValidationConfig): string {
   const lines: string[] = []
+
+  // Determine which dependencies are needed based on imports
+  const neededDeps = new Set<string>()
+  const allCode = `${code}\n${config.imports.join("\n")}`
+
+  for (const [pattern, dep] of Object.entries(SCALA_DEPENDENCY_MAP)) {
+    if (allCode.includes(pattern)) {
+      neededDeps.add(dep)
+    }
+  }
+
+  // Add scala-cli dependency directives at the top
+  for (const dep of neededDeps) {
+    lines.push(dep)
+  }
+
+  if (neededDeps.size > 0) {
+    lines.push("") // Blank line after dependencies
+  }
 
   // Add imports
   for (const imp of config.imports) {
@@ -237,6 +268,8 @@ function runCommand(
 
 /**
  * Create and start a container, returning its ID.
+ * Does not override entrypoint command - let the container's entrypoint run
+ * its built-in keep-alive loop so environment variables are properly set.
  */
 async function createContainer(name: string, image: string): Promise<string | null> {
   const result = await runCommand("docker", [
@@ -249,8 +282,6 @@ async function createContainer(name: string, image: string): Promise<string | nu
     "--workdir",
     "/home/sandbox",
     image,
-    "sleep",
-    "infinity",
   ])
 
   if (result.exitCode !== 0) {
@@ -262,6 +293,8 @@ async function createContainer(name: string, image: string): Promise<string | nu
 
 /**
  * Execute a command in a container.
+ * Sets JAVA_HOME and PATH environment variables explicitly since
+ * docker exec doesn't inherit environment from the entrypoint.
  */
 async function execInContainer(
   containerName: string,
@@ -273,6 +306,12 @@ async function execInContainer(
     "sandbox",
     "--workdir",
     "/home/sandbox",
+    "-e",
+    "HOME=/home/sandbox",
+    "-e",
+    "JAVA_HOME=/usr/lib/jvm/java-21-openjdk",
+    "-e",
+    "PATH=/usr/lib/jvm/java-21-openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/sbin:/sbin:/bin",
     containerName,
     "bash",
     "-c",
