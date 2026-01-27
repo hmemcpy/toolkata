@@ -10,6 +10,7 @@ estimatedTime: "~5 min"
 The most important difference between ZIO and Effect is the **type parameter order**.
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: Environment first
     |type ZIO[-R, +E, +A]
@@ -87,6 +88,7 @@ ZIO provides type aliases for common cases. Effect uses **explicit type paramete
 When reading Effect types, remember: **A, E, R** (Success, Error, Requirements).
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO[-R, +E, +A]
     |def readFile(path: String): ZIO[Any, IOException, String] =

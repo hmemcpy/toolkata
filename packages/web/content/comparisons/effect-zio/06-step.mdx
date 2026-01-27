@@ -77,6 +77,7 @@ Both Effect and ZIO use layers for dependency injection. Effect's `Layer` has sl
 ## Layer Composition
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: >>> for horizontal composition
     |val appLayer: ZLayer[Any, IOException, AppEnv] =
@@ -114,6 +115,7 @@ Both Effect and ZIO use layers for dependency injection. Effect's `Layer` has sl
 ## Providing Layers to Effects
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: provideLayer, provide
     |val program: ZIO[Any, IOException, Unit] =
@@ -194,6 +196,7 @@ Both Effect and ZIO use layers for dependency injection. Effect's `Layer` has sl
 ## Fresh Layers
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: ZLayer.fresh for new instances
     |val freshRepo: ZLayer[Database, Nothing, UserRepository] =

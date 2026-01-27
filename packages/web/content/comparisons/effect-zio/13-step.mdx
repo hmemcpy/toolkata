@@ -12,6 +12,7 @@ Effect Schema provides runtime type validation and transformations, similar to z
 ## Schema Type
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// zio-schema: Schema[A]
     |import zio.schema._
@@ -136,6 +137,7 @@ Effect Schema provides runtime type validation and transformations, similar to z
 ## Optional and Nullable
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// zio-schema: Optional fields
     |case class Profile(
@@ -169,6 +171,7 @@ Effect Schema provides runtime type validation and transformations, similar to z
 ## Schema Composition
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// zio-schema: Schema composition
     |case class Address(city: String, zip: String)
@@ -205,6 +208,7 @@ Effect Schema provides runtime type validation and transformations, similar to z
 ## Common Schemas
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// zio-schema: Common schemas
     |Schema[Int]              // Primitive

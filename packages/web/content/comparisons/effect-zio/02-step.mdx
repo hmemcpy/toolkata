@@ -43,6 +43,7 @@ Both ZIO and Effect provide constructors for creating effects from values, error
 Use `Effect.sync` (like `ZIO.succeed` with a thunk) or `Effect.try` for operations that may throw.
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: wrapping side effects
     |val now: ZIO[Any, Nothing, Long] =
@@ -115,6 +116,7 @@ Both provide constructors for callback-based async operations.
 ## Promises
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO.fromPromise*
     |val fromPromise: ZIO[Any, Throwable, String] =

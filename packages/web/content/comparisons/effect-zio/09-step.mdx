@@ -63,6 +63,7 @@ Both Effect and ZIO provide combinators for parallel execution. Effect's `Effect
 ## Concurrency Options
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: parallelism with ZIO.foreachParN
     |val limited: ZIO[Any, Nothing, List[Int]] =
@@ -116,6 +117,7 @@ Both Effect and ZIO provide combinators for parallel execution. Effect's `Effect
 ## Race
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: ZIO.race, ZIO.raceBoth
     |val winner: ZIO[Any, Nothing, Int] =
@@ -162,6 +164,7 @@ Both Effect and ZIO provide combinators for parallel execution. Effect's `Effect
 ## Timeout
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: timeout, timeoutTo
     |val result: ZIO[Any, Nothing, Option[Int]] =

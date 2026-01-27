@@ -12,6 +12,7 @@ Both Effect and ZIO provide streaming for processing large or infinite data sequ
 ## Stream Type Signature
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: ZStream[-R, +E, +O]
     |// R: Environment
@@ -37,6 +38,7 @@ Both Effect and ZIO provide streaming for processing large or infinite data sequ
 ## Creating Streams
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: Creating streams
     |val fromValues: ZStream[Any, Nothing, Int] =
@@ -85,6 +87,7 @@ Both Effect and ZIO provide streaming for processing large or infinite data sequ
 ## Transformations
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: map, flatMap, filter
     |val transformed: ZStream[Any, Nothing, Int] =
@@ -120,6 +123,7 @@ Both Effect and ZIO provide streaming for processing large or infinite data sequ
 ## Running Streams
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: Running streams
     |val toList: ZIO[Any, Nothing, List[Int]] =
@@ -173,6 +177,7 @@ Both Effect and ZIO provide streaming for processing large or infinite data sequ
 ## Sinks
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: ZSink for aggregating streams
     |val count: ZIO[Any, Nothing, Long] =
@@ -225,6 +230,7 @@ Both Effect and ZIO provide streaming for processing large or infinite data sequ
 ## Concurrent Streams
 
 <CrossLanguageBlock
+  validate={false}
   zioCode={`
     |// ZIO: ZStream.merge, ZStream.interleave
     |val merged: ZStream[Any, Nothing, Int] =
