@@ -124,13 +124,15 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
   - **Implemented**: Full component with KataCard and KataLanding exports
   - **Note**: All SVGs have proper aria-labels/title for accessibility
 
-- [ ] **P1.2: Create /[toolPair]/kata route**
+- [x] **P1.2: Create /[toolPair]/kata route**
   - Create `app/[toolPair]/kata/page.tsx`
   - Load all Katas via content service
-  - Read progress from KataProgressContext
+  - Read progress from server-side cookie (Step 12 completion check)
   - Render KataLanding component
-  - Handle empty state when Step 12 not complete
+  - Handle empty state when tool pair has no Katas
   - Add metadata (title, description)
+  - **Implemented**: Full page with generateStaticParams, generateMetadata, back link
+  - **Note**: Uses `listKatas()` from content service, maps kataId from frontmatter.kata
 
 - [ ] **P1.3: Add Kata link to navigation**
   - Add "Kata" link in main navigation
