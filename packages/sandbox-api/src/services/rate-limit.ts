@@ -77,6 +77,13 @@ export class RateLimitError extends Data.TaggedClass("RateLimitError")<{
   readonly retryAfter?: number
 }> {}
 
+// Admin interface for rate limit management (internal use)
+export interface RateLimitAdminShape {
+  readonly getAllTracking: () => Effect.Effect<ReadonlyMap<string, IpTracking>, never>
+  readonly getTracking: (ipAddress: string) => Effect.Effect<Option.Option<IpTracking>, never>
+  readonly removeTracking: (ipAddress: string) => Effect.Effect<void, never>
+}
+
 // Service interface
 export interface RateLimitServiceShape {
   readonly checkSessionLimit: (ipAddress: string) => Effect.Effect<RateLimitResult, RateLimitError>
@@ -96,6 +103,7 @@ export interface RateLimitServiceShape {
     ipAddress: string,
     connectionId: string,
   ) => Effect.Effect<void, never> // V-007
+  readonly admin: RateLimitAdminShape
 }
 
 // Service tag
@@ -360,6 +368,36 @@ const make = Effect.gen(function* () {
       MutableHashMap.set(store.ipTracking, ipAddress, updatedTracking)
     })
 
+  // Admin interface for rate limit management
+  const admin = {
+    // Get all tracking data as a ReadonlyMap
+    getAllTracking: () =>
+      Ref.get(storeRef).pipe(
+        Effect.map((store) => {
+          // Convert MutableHashMap to ReadonlyMap
+          const map = new Map<string, IpTracking>()
+          MutableHashMap.forEach(store.ipTracking, (value, key) => {
+            map.set(key, value)
+          })
+          return map as ReadonlyMap<string, IpTracking>
+        }),
+      ),
+
+    // Get tracking data for a specific IP
+    getTracking: (ipAddress: string) =>
+      Ref.get(storeRef).pipe(
+        Effect.map((store) => MutableHashMap.get(store.ipTracking, ipAddress)),
+      ),
+
+    // Remove all tracking data for an IP
+    removeTracking: (ipAddress: string) =>
+      Ref.get(storeRef).pipe(
+        Effect.map((store) => {
+          MutableHashMap.remove(store.ipTracking, ipAddress)
+        }),
+      ),
+  }
+
   return {
     checkSessionLimit,
     recordSession,
@@ -370,6 +408,7 @@ const make = Effect.gen(function* () {
     checkWebSocketLimit,
     registerWebSocket,
     unregisterWebSocket,
+    admin,
   }
 })
 

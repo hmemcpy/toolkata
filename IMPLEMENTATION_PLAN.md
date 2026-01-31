@@ -123,12 +123,12 @@ export interface Container {
   - Followed existing Hono pattern from `sessions.ts`
   - Files: `packages/sandbox-api/src/routes/admin-*.ts`, `packages/sandbox-api/src/index.ts`
 
-- [ ] **P0.2: Create RateLimitAdminService (Effect-TS)**
+- [x] **P0.2: Create RateLimitAdminService (Effect-TS)**
   - Define `RateLimitAdminService` interface with methods: `getAllStatus`, `getStatus`, `resetLimit`, `adjustLimit`
-  - Implement using Effect.gen with proper error handling (`RateLimitAdminError` tagged class)
-  - Access existing in-memory rate limit store - need to share the Ref from RateLimitService
-  - Return `RateLimitStatus` objects with computed `remaining` and `resetAt`
-  - **Important**: Must access the same `Ref<RateLimitStore>` that RateLimitService uses
+  - Implemented using Effect.gen with proper error handling (`RateLimitAdminError` tagged class)
+  - Access existing in-memory rate limit store through RateLimitService's new `admin` interface
+  - Return `RateLimitStatus` objects with computed `hourWindowEnd`, `minuteWindowEnd`
+  - **Discovery**: Added `RateLimitAdminShape` interface to `RateLimitService` with `getAllTracking()`, `getTracking()`, `removeTracking()` methods
   - File: `packages/sandbox-api/src/services/rate-limit-admin.ts`
 
 - [ ] **P0.3: Implement GET /admin/rate-limits endpoint**
