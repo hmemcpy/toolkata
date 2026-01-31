@@ -181,12 +181,14 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
     proper accessibility (role="status", aria-live="polite"), terminal aesthetic styling
   - **Refactored**: KataSession now uses ValidationFeedback component instead of inline rendering
 
-- [ ] **P2.4: Create /[toolPair]/kata/[kataId] route**
+- [x] **P2.4: Create /[toolPair]/kata/[kataId] route**
   - Create `app/[toolPair]/kata/[kataId]/page.tsx`
   - Load specific Kata content via content service
-  - Check unlock status (redirect to landing if locked)
-  - Render KataSession component
+  - Client-side component handles unlock redirect via KataProgressContext (not server-side)
+  - Render KataSession component with MDX content
   - Handle 404 for invalid kataId
+  - **Note**: Server-side redirect not implemented since kata progress is in localStorage, not cookie
+  - **Implemented**: Full page with generateStaticParams, generateMetadata, MDX rendering
 
 ### P3: Validation System
 
