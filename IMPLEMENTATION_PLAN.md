@@ -141,13 +141,17 @@ export interface Container {
   - Updated `index.ts` to wire up `RateLimitAdminService` in layer composition
   - File: `packages/sandbox-api/src/routes/admin-rate-limits.ts`, `packages/sandbox-api/src/index.ts`
 
-- [ ] **P0.7: Install and set up NextAuth in web package**
-  - Install `next-auth` (NOT currently in deps)
-  - Create `packages/web/lib/auth.ts` with Google provider
-  - Configure `ADMIN_EMAILS` env var check (comma-separated list)
-  - Add session callback to set `isAdmin` flag
-  - Add signIn callback to restrict to allowed emails
-  - File: `packages/web/lib/auth.ts`
+- [x] **P0.7: Install and set up NextAuth in web package** ✅
+  - Installed `next-auth@beta` (v5.0.0-beta.30)
+  - Created `packages/web/lib/auth.ts` with Google provider
+  - Configured `ADMIN_EMAILS` env var check (comma-separated list)
+  - Added session callback to set `isAdmin` flag
+  - Added signIn callback to restrict to allowed emails
+  - Added jwt callback to persist isAdmin in JWT token
+  - Created `isAdminEmail()` helper function for reuse
+  - Updated `.env.example` with AUTH_GOOGLE_ID, AUTH_GOOGLE_SECRET, ADMIN_EMAILS, AUTH_SECRET
+  - **Note**: next-auth v5 uses `AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET` env vars by default (falls back to GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET)
+  - Files: `packages/web/lib/auth.ts`, `packages/web/.env.example`, `packages/web/package.json`
 
 - [ ] **P0.8: Create admin layout with auth protection**
   - Create `packages/web/app/admin/layout.tsx`
