@@ -230,11 +230,18 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
   - **Note**: Component uses `useStepProgress` hook to check if all 12 steps are complete
   - **Files**: `packages/web/components/kata/KataCTA.tsx`, `components/mdx/MDXComponents.tsx`
 
-- [ ] **P4.2: Update Overview page with Kata section**
+- [x] **P4.2: Update Overview page with Kata section**
   - Add "Kata Practice" section after Step 12 completion
   - Show "Start Kata Practice" button prominently
   - Show progress indicator (X/7 completed)
   - File: `packages/web/app/[toolPair]/page.tsx`
+  - **Implemented**: Added Kata section to OverviewPageClientWrapper with:
+    - Conditional rendering for jj-git only
+    - Shows after Step 12 completion
+    - Displays X/7 Katas completed progress
+    - "Start Kata Practice" button links to /jj-git/kata
+  - **Files**: `packages/web/components/ui/OverviewPageClientWrapper.tsx`
+  - **Note**: Also added KataProgressProvider to `components/Providers.tsx`
 
 ### P5: Content Creation
 

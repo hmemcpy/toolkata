@@ -1,6 +1,7 @@
 "use client"
 
 import { TerminalProvider } from "../contexts/TerminalContext"
+import { KataProgressProvider } from "../contexts/KataProgressContext"
 import { MobileBottomSheet } from "./ui/MobileBottomSheet"
 import { TerminalSidebar } from "./ui/TerminalSidebar"
 import { TerminalToggle } from "./ui/TerminalToggle"
@@ -31,6 +32,7 @@ export interface ProvidersProps {
  *
  * Currently provides:
  * - TerminalProvider: For terminal sidebar state and command execution
+ * - KataProgressProvider: For kata progress state and unlock tracking
  *
  * Also renders:
  * - TerminalSidebar: Desktop sidebar component (fixed overlay, lg+)
@@ -64,11 +66,13 @@ export interface ProvidersProps {
  */
 export function Providers({ toolPair, children }: ProvidersProps): ReactNode {
   return (
-    <TerminalProvider toolPair={toolPair}>
-      {children}
-      <MobileBottomSheet toolPair={toolPair} />
-      <TerminalSidebar toolPair={toolPair} />
-      <TerminalToggle />
-    </TerminalProvider>
+    <KataProgressProvider>
+      <TerminalProvider toolPair={toolPair}>
+        {children}
+        <MobileBottomSheet toolPair={toolPair} />
+        <TerminalSidebar toolPair={toolPair} />
+        <TerminalToggle />
+      </TerminalProvider>
+    </KataProgressProvider>
   )
 }
