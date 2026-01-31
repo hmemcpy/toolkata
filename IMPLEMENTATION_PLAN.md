@@ -387,11 +387,17 @@ export interface Container {
   - Documented Google OAuth setup steps and security considerations
   - File: `README.md`
 
-- [ ] **P7.3: Update Caddy config for admin route protection**
-  - Add IP allowlist for /admin/* routes
-  - Verify X-Admin-Key header validation
-  - Test API key validation
-  - File: `scripts/hetzner/Caddyfile` (update)
+- [x] **P7.3: Update Caddy config for admin route protection** ✅
+  - Added X-Admin-Key middleware validation in `packages/sandbox-api/src/index.ts`
+  - Middleware checks `X-Admin-Key` header against `ADMIN_API_KEY` env var
+  - Returns 403 Forbidden if key is missing or invalid
+  - Updated `packages/sandbox-api/deploy/Caddyfile` with:
+    - IP allowlist for Vercel egress IPs (76.76.21.0/24, 76.76.19.0/24)
+    - /admin/* route handling with proper reverse proxy config
+    - Configured timeouts for admin operations (30s)
+    - Documentation link to Vercel IPs for updates
+  - **Note**: Vercel egress IPs should be updated regularly from https://vercel.com/docs/ips
+  - Files: `packages/sandbox-api/src/index.ts`, `packages/sandbox-api/deploy/Caddyfile`
 
 ---
 

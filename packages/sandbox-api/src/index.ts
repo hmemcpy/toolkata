@@ -187,6 +187,16 @@ const createApp = (
   if (adminApiKey && adminApiKey.length > 0) {
     const adminApp = new Hono<{ Bindings: Env }>()
 
+    // Admin authentication middleware - validates X-Admin-Key header
+    // This is defense in depth - Caddy should also enforce IP allowlist
+    adminApp.use("/*", async (c, next) => {
+      const providedKey = c.req.header("X-Admin-Key")
+      if (providedKey !== adminApiKey) {
+        return c.json({ error: "Forbidden", message: "Invalid or missing admin key" }, 403)
+      }
+      return next()
+    })
+
     // Mount all admin route modules
     if (rateLimitAdminService) {
       adminApp.route("/rate-limits", createAdminRateLimitsRoutes(rateLimitAdminService))

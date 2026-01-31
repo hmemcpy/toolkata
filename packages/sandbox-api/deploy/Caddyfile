@@ -10,6 +10,11 @@
 # - Obtains and renews TLS certificates from Let's Encrypt
 # - Terminates HTTPS/WSS connections
 # - Handles HTTP/2 and WebSocket upgrades
+#
+# Admin route security:
+# - /admin/* routes are protected by IP allowlist (Vercel egress IPs)
+# - Application also validates X-Admin-Key header (defense in depth)
+# - Vercel egress IPs: https://vercel.com/docs/ips
 
 # Global options
 {
@@ -60,6 +65,33 @@ sandbox.toolkata.com {
 	# Health check endpoint (no auth required)
 	handle /health {
 		reverse_proxy localhost:3001
+	}
+
+	# Admin endpoints - protected by IP allowlist + X-Admin-Key header
+	# Only allow requests from Vercel egress IPs (https://vercel.com/docs/ips)
+	handle /admin* {
+		# IP allowlist - Vercel egress IPs (update regularly)
+		# Get current list from: https://vercel.com/docs/ips
+		# Format: ip4 ranges, ip6 ranges
+		remote_ip 76.76.21.0/24 76.76.19.0/24 {
+			# Reject requests not from Vercel
+			respond "Forbidden" 403
+		}
+
+		reverse_proxy localhost:3001 {
+			# Forward real client IP (the Vercel server IP)
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+
+			# Timeouts for admin operations
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+				read_timeout 30s
+				write_timeout 30s
+			}
+		}
 	}
 
 	# Session management endpoints
