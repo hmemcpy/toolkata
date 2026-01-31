@@ -7,7 +7,7 @@
  */
 
 import { defineContentType } from "../content-core"
-import { indexFrontmatterSchema, stepFrontmatterSchema } from "./schemas"
+import { indexFrontmatterSchema, kataFrontmatterSchema, stepFrontmatterSchema } from "./schemas"
 
 /**
  * Sandbox configuration for terminal behavior.
@@ -100,6 +100,11 @@ export function resolveSandboxConfig(
 export const CONTENT_ROOT = "./content/comparisons"
 
 /**
+ * Kata content root directory (relative to packages/web).
+ */
+export const KATA_ROOT = "./content/katas"
+
+/**
  * Step content type.
  *
  * Path pattern: {toolPair}/{step} → content/comparisons/{toolPair}/{step.padStart(2, "0")}-step.mdx
@@ -155,3 +160,44 @@ export interface StepMeta {
   readonly description: string | undefined
   readonly slug: string
 }
+
+/**
+ * Metadata for a Kata (lighter than full content).
+ *
+ * Used in Kata lists where we don't need the full MDX content.
+ */
+export interface KataMeta {
+  readonly kata: number
+  readonly title: string
+  readonly duration: string
+  readonly focus: string
+  readonly slug: string
+  readonly exerciseCount: number
+}
+
+/**
+ * Kata content type.
+ *
+ * Path pattern: {toolPair}/{kataId} → content/katas/{toolPair}/{kataId.padStart(2, "0")}-kata.mdx
+ *
+ * @example
+ * ```ts
+ * const kata = yield* service.load(KataType, "jj-git/1")
+ * // Loads: content/katas/jj-git/01-kata.mdx
+ * ```
+ */
+export const KataType = defineContentType({
+  name: "kata",
+  schema: kataFrontmatterSchema,
+  pathResolver: (slug) => {
+    const parts = slug.split("/")
+    const toolPair = parts[0]
+    const kataId = parts[1]
+    if (toolPair === undefined || kataId === undefined) {
+      throw new Error(`Invalid kata slug: ${slug}. Expected format: toolPair/kataId`)
+    }
+    const paddedKata = kataId.padStart(2, "0")
+    return `${KATA_ROOT}/${toolPair}/${paddedKata}-kata.mdx`
+  },
+  filePattern: "**/[0-9][0-9]-kata.mdx",
+})

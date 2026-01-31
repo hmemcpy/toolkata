@@ -89,7 +89,7 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
     `completeExercise`, `completeKata`, `resetKata`, `resetAll` methods
   - **Note**: Added `exerciseAttempts: Record<string, number>` to `KataStat` for per-exercise tracking
 
-- [ ] **P0.3: Create kata content loader**
+- [x] **P0.3: Create kata content loader**
   - Extend ContentService to load Kata MDX files
   - Create `loadKata(toolPair: string, kataId: string)` function
   - Create `listKatas(toolPair: string)` function to load all katas
@@ -98,6 +98,9 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
   - File: `packages/web/services/content.ts` (extend existing)
   - File: `packages/web/lib/content/types.ts` (add KataType)
   - File: `packages/web/lib/content/schemas.ts` (add kataFrontmatterSchema)
+  - **Implemented**: Added `kataFrontmatterSchema`, `exerciseSchema`, `exerciseValidationSchema`
+  - **Implemented**: Added `KataType` with path resolver to `content/types.ts`
+  - **Implemented**: Added `loadKata()` and `listKatas()` helper functions to `services/content.ts`
 
 - [x] **P0.4: Update SideBySide for git toggle**
   - Read `showGitEquivalents` from TerminalContext via hook

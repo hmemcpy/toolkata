@@ -6,12 +6,14 @@
  *
  * @example
  * ```ts
- * import { loadStep, loadIndex, listSteps } from "@/services/content"
+ * import { loadStep, loadIndex, loadKata, listSteps, listKatas } from "@/services/content"
  *
  * // In a Next.js page component
  * const step = await loadStep("jj-git", 1)
  * const index = await loadIndex("jj-git")
  * const steps = await listSteps("jj-git")
+ * const kata = await loadKata("jj-git", 1)
+ * const katas = await listKatas("jj-git")
  * ```
  */
 
@@ -19,11 +21,11 @@ import type { Content, ContentError } from "../lib/content-core"
 import { ContentService } from "../lib/content-core"
 import { Effect } from "effect"
 import { ContentLayer } from "../lib/content/layer"
-import type { IndexFrontmatter, StepFrontmatter } from "../lib/content/schemas"
-import { IndexType, StepType } from "../lib/content/types"
+import type { IndexFrontmatter, KataFrontmatter, StepFrontmatter } from "../lib/content/schemas"
+import { IndexType, KataType, StepType } from "../lib/content/types"
 
 // Re-export types for convenience
-export type { StepMeta } from "../lib/content/types"
+export type { KataMeta, StepMeta } from "../lib/content/types"
 export type { Content, ContentError }
 
 /**
@@ -35,6 +37,11 @@ export type StepContent = Content<StepFrontmatter>
  * Index content with validated frontmatter.
  */
 export type IndexContent = Content<IndexFrontmatter>
+
+/**
+ * Kata content with validated frontmatter.
+ */
+export type KataContent = Content<KataFrontmatter>
 
 /**
  * Load a step by tool pair and step number.
@@ -113,6 +120,64 @@ export async function listSteps(toolPair: string): Promise<readonly StepContent[
     }
 
     return steps
+  })
+
+  return program.pipe(Effect.provide(ContentLayer), Effect.runPromise)
+}
+
+/**
+ * Load a Kata by tool pair and Kata number.
+ *
+ * @param toolPair - The tool pairing slug (e.g., "jj-git")
+ * @param kataId - The Kata number (1-7)
+ * @returns Promise resolving to Kata content, or null if not found
+ */
+export async function loadKata(toolPair: string, kataId: number): Promise<KataContent | null> {
+  const program = Effect.gen(function* () {
+    const service = yield* ContentService
+    return yield* service.load(KataType, `${toolPair}/${kataId}`)
+  })
+
+  const result = await program.pipe(Effect.provide(ContentLayer), Effect.either, Effect.runPromise)
+
+  if (result._tag === "Left") {
+    if (result.left.cause === "NotFound") {
+      return null
+    }
+    throw new Error(result.left.message)
+  }
+
+  return result.right
+}
+
+/**
+ * List all Katas for a tool pairing.
+ *
+ * Returns full content for each Kata, sorted by Kata number.
+ * Uses incremental loading from 1 until NotFound is returned.
+ *
+ * @param toolPair - The tool pairing slug (e.g., "jj-git")
+ * @returns Promise resolving to array of Kata content
+ */
+export async function listKatas(toolPair: string): Promise<readonly KataContent[]> {
+  const program = Effect.gen(function* () {
+    const service = yield* ContentService
+    const katas: KataContent[] = []
+
+    for (let kataNum = 1; kataNum <= 10; kataNum++) {
+      const result = yield* Effect.either(service.load(KataType, `${toolPair}/${kataNum}`))
+
+      if (result._tag === "Left") {
+        if (result.left.cause === "NotFound") {
+          break
+        }
+        continue
+      }
+
+      katas.push(result.right)
+    }
+
+    return katas
   })
 
   return program.pipe(Effect.provide(ContentLayer), Effect.runPromise)

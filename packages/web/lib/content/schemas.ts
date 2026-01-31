@@ -93,11 +93,78 @@ export const indexFrontmatterSchema = z.object({
 })
 
 /**
+ * Validation criteria for a Kata exercise.
+ *
+ * Defines how to validate that a user has completed an exercise correctly.
+ * Different validation types provide different ways to check terminal state.
+ */
+export const exerciseValidationSchema = z.object({
+  /** The type of validation to perform */
+  type: z.enum(["command", "regex", "exact", "count"]),
+  /** Command to execute for validation (e.g., "jj log", "jj status") */
+  command: z.string(),
+  /** Expected regex pattern (for type: "regex") */
+  expectedPattern: z.string().optional(),
+  /** Expected exact string (for type: "exact") */
+  expectedValue: z.string().optional(),
+  /** Minimum count (for type: "count") */
+  minCount: z.number().int().positive().optional(),
+})
+
+/**
+ * Individual exercise within a Kata.
+ *
+ * Each exercise represents a task the user must complete,
+ * with validation criteria to check correctness.
+ */
+export const exerciseSchema = z.object({
+  /** Exercise ID (e.g., "1.1", "2.3") */
+  id: z.string().min(1),
+  /** Exercise title/description */
+  title: z.string().min(1),
+  /** Validation criteria for this exercise */
+  validation: exerciseValidationSchema,
+})
+
+/**
+ * MDX frontmatter schema for Kata content files.
+ *
+ * Defines the structure for Kata practice sessions.
+ * Katas are hands-on exercises that build muscle memory
+ * after completing the tutorial.
+ *
+ * @example
+ * ```yaml
+ * ---
+ * title: "The @ Commit Dojo"
+ * kata: 2
+ * duration: "10 min"
+ * focus: "@ commit navigation and auto-rebasing"
+ * exercises:
+ *   - id: "2.1"
+ *     title: "Move @ to parent"
+ *     validation:
+ *       type: "command"
+ *       command: "jj log -r @ --template 'description'"
+ *       expectedPattern: "Feature A"
+ * ---
+ * ```
+ */
+export const kataFrontmatterSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  kata: z.number().int().positive().int().min(1).max(7, "Kata must be between 1 and 7"),
+  duration: z.string().min(1, "Duration is required"),
+  focus: z.string().min(1, "Focus area is required"),
+  exercises: z.array(exerciseSchema).min(1, "At least one exercise is required"),
+})
+
+/**
  * Union type for all supported frontmatter schemas.
  */
 export const frontmatterSchema = z.discriminatedUnion("type", [
   stepFrontmatterSchema.extend({ type: z.literal("step") }),
   indexFrontmatterSchema.extend({ type: z.literal("index") }),
+  kataFrontmatterSchema.extend({ type: z.literal("kata") }),
 ])
 
 /**
@@ -105,5 +172,8 @@ export const frontmatterSchema = z.discriminatedUnion("type", [
  */
 export type StepFrontmatter = z.infer<typeof stepFrontmatterSchema>
 export type IndexFrontmatter = z.infer<typeof indexFrontmatterSchema>
+export type KataFrontmatter = z.infer<typeof kataFrontmatterSchema>
 export type Frontmatter = z.infer<typeof frontmatterSchema>
 export type ValidationConfig = z.infer<typeof validationConfigSchema>
+export type Exercise = z.infer<typeof exerciseSchema>
+export type ExerciseValidation = z.infer<typeof exerciseValidationSchema>
