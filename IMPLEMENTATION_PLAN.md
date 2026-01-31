@@ -134,11 +134,15 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
   - **Implemented**: Full page with generateStaticParams, generateMetadata, back link
   - **Note**: Uses `listKatas()` from content service, maps kataId from frontmatter.kata
 
-- [ ] **P1.3: Add Kata link to navigation**
+- [x] **P1.3: Add Kata link to navigation**
   - Add "Kata" link in main navigation
   - Only visible for jj-git tool pair
   - Show lock icon if Step 12 not complete
   - File: `packages/web/components/ui/Navigation.tsx` (or NavigationWrapper)
+  - **Implemented**: Added [Kata] link to StepProgress.tsx next to [Glossary]
+  - Uses `useStepProgress` hook to check if Step 12 is complete
+  - Shows lock icon SVG when Step 12 not complete
+  - Only renders for toolPair === "jj-git"
 
 ### P2: Kata Session Interface
 

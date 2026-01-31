@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import type { JSX } from "react"
+import { useStepProgress } from "../../hooks/useStepProgress"
 
 export interface StepProgressProps {
   readonly currentStep: number
@@ -30,6 +31,9 @@ export function StepProgress({
   isCompleted = false,
   className = "",
 }: StepProgressProps): JSX.Element {
+  const { isStepComplete } = useStepProgress(toolPair, totalSteps)
+  const step12Complete = isStepComplete(12)
+
   return (
     <header className={`border-b border-[var(--color-border)] ${className}`}>
       {/* Step indicator - centered */}
@@ -75,7 +79,7 @@ export function StepProgress({
             )}
           </div>
 
-          {/* Glossary link */}
+          {/* Glossary and Kata links */}
           <div className="flex items-center gap-2 sm:gap-4">
             <Link
               href={`/${toolPair}/glossary`}
@@ -83,6 +87,33 @@ export function StepProgress({
             >
               [Glossary]
             </Link>
+            {toolPair === "jj-git" && (
+              <Link
+                href={`/${toolPair}/kata`}
+                className="text-xs font-mono text-[var(--color-text-muted)] hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors flex items-center gap-1"
+                aria-label={step12Complete ? "Go to Kata practice" : "Kata practice - complete Step 12 to unlock"}
+              >
+                <span>[Kata]</span>
+                {!step12Complete && (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="10"
+                    height="10"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-label="Locked"
+                  >
+                    <title>Locked - Complete Step 12 to unlock</title>
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+                  </svg>
+                )}
+              </Link>
+            )}
             {editHref && (
               <a
                 href={editHref}
