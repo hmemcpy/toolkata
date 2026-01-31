@@ -192,27 +192,30 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
 
 ### P3: Validation System
 
-- [ ] **P3.1: Create validation engine**
+- [x] **P3.1: Create validation engine**
   - Create `validateExercise(exercise: Exercise, terminal: TerminalState): Promise<ValidationResult>`
   - Support validation types: command, regex, exact, count
   - Execute validation commands via sandbox API
   - Parse terminal output (strip ANSI codes)
   - Return structured result: success, hint, actual output
   - File: `packages/web/services/kata-validation.ts`
+  - **Completed**: Full validation engine with WebSocket execution, 4 validation types
 
-- [ ] **P3.2: Implement validation parsers**
+- [x] **P3.2: Implement validation parsers**
   - `parseJjLog(output: string): Commit[]` - parse commit list
   - `parseJjStatus(output: string): Status` - parse working copy state
   - `parseJjShow(output: string): CommitInfo` - parse commit details
   - `parseJjBranchList(output: string): Bookmark[]` - parse bookmarks
   - File: `packages/web/lib/kata/parsers.ts`
+  - **Completed**: All 4 parsers implemented with ANSI stripping
 
-- [ ] **P3.3: Integrate validation into KataSession**
+- [x] **P3.3: Integrate validation into KataSession**
   - Wire "Validate My Solution" button to validation engine
   - Show ValidationFeedback component with results
   - On success: mark exercise complete, enable next exercise
   - Track validation attempts in KataProgressContext
   - On final exercise completion: unlock next Kata
+  - **Completed**: Validation integrated with sessionId from TerminalContext
 
 ### P4: Graduation Integration
 

@@ -3,8 +3,10 @@
 import { useEffect, useState, type JSX } from "react"
 import { useRouter } from "next/navigation"
 import { useKataProgress } from "../../contexts/KataProgressContext"
+import { useTerminalContext } from "../../contexts/TerminalContext"
 import { useStepProgress } from "../../hooks/useStepProgress"
 import type { KataFrontmatter } from "../../lib/content/schemas"
+import { validateExercise, ValidationError } from "../../services/kata-validation"
 import {
   ValidationFeedback,
   type ValidationState,
@@ -90,6 +92,7 @@ export function KataSession({
 }: KataSessionProps): JSX.Element {
   const router = useRouter()
   const { isStepComplete } = useStepProgress(toolPair, 12)
+  const { sessionId } = useTerminalContext()
 
   // Kata progress context
   const {
@@ -164,43 +167,65 @@ export function KataSession({
       return
     }
 
+    // Check if terminal has an active session
+    if (!sessionId) {
+      setValidationState("error")
+      setValidationHint("No active terminal session. Please wait for the terminal to connect.")
+      return
+    }
+
     setValidationState("validating")
     setValidationHint(null)
 
     try {
-      // TODO: Integrate with actual validation engine (P3.1)
-      // For now, simulate validation with timeout
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Run validation against the sandbox
+      const result = await validateExercise(currentExercise, sessionId)
 
-      // Simulate success (in real implementation, this would check terminal state)
       // Record the attempt (always record before completion)
-      recordAttempt(currentExercise.id, true)
+      recordAttempt(currentExercise.id, result.success)
 
-      setValidationState("success")
+      if (result.success) {
+        setValidationState("success")
+        setValidationHint(result.hint)
 
-      // Mark exercise as completed
-      completeExercise(kataId, currentExercise.id)
+        // Mark exercise as completed
+        completeExercise(kataId, currentExercise.id)
 
-      // Check if this was the last exercise
-      const isLastExercise = currentExerciseIndex === exercises.length - 1
+        // Check if this was the last exercise
+        const isLastExercise = currentExerciseIndex === exercises.length - 1
 
-      if (isLastExercise) {
-        // Complete the Kata with final attempt count
-        const finalAttempts = totalAttempts + 1
-        setTimeout(() => {
-          completeKata(kataId, finalAttempts)
-          router.push(`/${toolPair}/kata`)
-        }, 1500)
+        if (isLastExercise) {
+          // Complete the Kata with final attempt count
+          const finalAttempts = totalAttempts + 1
+          setTimeout(() => {
+            completeKata(kataId, finalAttempts)
+            router.push(`/${toolPair}/kata`)
+          }, 1500)
+        } else {
+          // Move to next exercise after delay
+          setTimeout(() => {
+            setCurrentExerciseIndex((prev) => prev + 1)
+            setValidationState("idle")
+            setValidationHint(null)
+          }, 1500)
+        }
       } else {
-        // Move to next exercise after delay
-        setTimeout(() => {
-          setCurrentExerciseIndex((prev) => prev + 1)
-          setValidationState("idle")
-        }, 1500)
+        setValidationState("error")
+        setValidationHint(result.hint)
       }
-    } catch {
+    } catch (err: unknown) {
+      let hint = "Validation failed. Try again."
+      if (err instanceof ValidationError) {
+        if (err.cause === "SandboxUnavailable") {
+          hint = "Sandbox is temporarily unavailable. Please try again later."
+        } else if (err.cause === "TimeoutError") {
+          hint = "Validation timed out. The command took too long to execute."
+        } else if (err.cause === "NetworkError") {
+          hint = "Connection error. Please check your network and try again."
+        }
+      }
       setValidationState("error")
-      setValidationHint("Validation failed. Try again.")
+      setValidationHint(hint)
       // Record failed attempt
       if (currentExercise) {
         recordAttempt(currentExercise.id, false)
@@ -213,12 +238,12 @@ export function KataSession({
     router.push(`/${toolPair}/kata`)
   }
 
-  // Reset sandbox (placeholder - will be integrated with validation system in P3)
-  // For now, just clears validation state
+  // Reset sandbox - clears validation state
+  // Note: Full terminal reset requires accessing the terminal ref via context
+  // For now, users can reset via the terminal sidebar's Reset button
   const handleResetSandbox = () => {
     setValidationState("idle")
     setValidationHint(null)
-    // TODO: Integrate with terminal reset in P3.1
   }
 
   // Jump to specific exercise

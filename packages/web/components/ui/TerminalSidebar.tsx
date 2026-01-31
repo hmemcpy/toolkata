@@ -162,6 +162,7 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
     onTerminalStateChange,
     onTerminalErrorChange,
     onTerminalTimeChange,
+    onSessionIdChange,
     flushCommandQueue,
   } = useTerminalContext()
   const closeButtonRef = useRef<HTMLButtonElement>(null)
@@ -336,6 +337,7 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
                   onStateChange={onTerminalStateChange}
                   onErrorChange={onTerminalErrorChange}
                   onSessionTimeChange={onTerminalTimeChange}
+                  onSessionIdChange={onSessionIdChange}
                   onPtyReady={handlePtyReady}
                   onReportBug={() => setIsBugModalOpen(true)}
                 />

@@ -114,6 +114,12 @@ export interface TerminalContextValue {
   readonly sessionTimeRemaining: number | null
 
   /**
+   * Current sandbox session ID, or null if no active session.
+   * Used by kata validation to run commands against the user's terminal state.
+   */
+  readonly sessionId: string | null
+
+  /**
    * Current sandbox configuration for the active step.
    */
   readonly sandboxConfig: SandboxConfig | undefined
@@ -239,6 +245,18 @@ export interface TerminalContextValue {
    * @internal
    */
   readonly flushCommandQueue: () => void
+
+  /**
+   * Callback when session ID changes.
+   *
+   * Called by InteractiveTerminal when session is created or destroyed.
+   * Used by kata validation to access the active session.
+   *
+   * @param sessionId - The session ID (null when session is destroyed)
+   *
+   * @internal
+   */
+  readonly onSessionIdChange: (sessionId: string | null) => void
 }
 
 const TerminalContext = createContext<TerminalContextValue | null>(null)
@@ -321,6 +339,9 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
 
   // Session time remaining (managed by InteractiveTerminal via callbacks)
   const [sessionTimeRemaining, setSessionTimeRemaining] = useState<number | null>(null)
+
+  // Session ID (managed by InteractiveTerminal via callbacks)
+  const [sessionId, setSessionId] = useState<string | null>(null)
 
   // Ref to terminal for imperative operations
   const terminalRef = useRef<TerminalRef | null>(null)
@@ -605,6 +626,18 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
     }
   }, [])
 
+  /**
+   * Callback when session ID changes.
+   *
+   * Called by InteractiveTerminal when session is created or destroyed.
+   * Used by kata validation to access the active session.
+   *
+   * @internal
+   */
+  const onSessionIdChange = useCallback((id: string | null) => {
+    setSessionId(id)
+  }, [])
+
   // Memoize context value to prevent unnecessary re-renders
   const value = useMemo<TerminalContextValue>(
     () => ({
@@ -615,6 +648,7 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       sidebarWidth,
       setSidebarWidth,
       sessionTimeRemaining,
+      sessionId,
       sandboxConfig,
       setSandboxConfig,
       contextCommands,
@@ -634,6 +668,7 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       onTerminalErrorChange,
       onTerminalTimeChange,
       flushCommandQueue,
+      onSessionIdChange,
     }),
     [
       state,
@@ -642,6 +677,7 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       sidebarWidth,
       setSidebarWidth,
       sessionTimeRemaining,
+      sessionId,
       sandboxConfig,
       setSandboxConfig,
       contextCommands,
@@ -657,6 +693,7 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       toggleSidebar,
       executeCommand,
       flushCommandQueue,
+      onSessionIdChange,
       registerTerminal,
       onTerminalStateChange,
       onTerminalErrorChange,

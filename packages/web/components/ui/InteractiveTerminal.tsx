@@ -203,6 +203,16 @@ export interface InteractiveTerminalProps {
   readonly onPtyReady?: () => void
 
   /**
+   * Optional callback when session ID changes.
+   *
+   * Called when a new session is created and the session ID is available.
+   * Used by KataSession to enable validation against the sandbox state.
+   *
+   * @param sessionId - The session ID (null when session is destroyed)
+   */
+  readonly onSessionIdChange?: (sessionId: string | null) => void
+
+  /**
    * Optional callback when init commands complete.
    *
    * Called when the server sends an initComplete message,
@@ -252,6 +262,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
       onSessionTimeChange,
       onPtyReady,
       onInitComplete,
+      onSessionIdChange,
       onReportBug,
     }: InteractiveTerminalProps,
     ref,
@@ -335,7 +346,9 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
         clearTimeout(reconnectTimeoutRef.current)
         reconnectTimeoutRef.current = undefined
       }
-    }, [])
+      // Notify parent that session is no longer available
+      onSessionIdChange?.(null)
+    }, [onSessionIdChange])
 
     // Storage key for persisting session (includes environment for isolation)
     const environment = sandboxConfig?.environment ?? "bash"
@@ -423,6 +436,9 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
 
           const session = await response.json()
           sessionId = session.sessionId
+
+          // Notify parent of session ID change (for kata validation)
+          onSessionIdChange?.(sessionId)
 
           // Store session in localStorage
           localStorage.setItem(
@@ -570,7 +586,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
         setState("ERROR")
         setError(err instanceof Error ? err.message : "Failed to connect to sandbox")
       }
-    }, [onPtyReady, onInitComplete, toolPair, sandboxConfig, sessionStorageKey])
+    }, [onPtyReady, onInitComplete, onSessionIdChange, toolPair, sandboxConfig, sessionStorageKey])
 
     // Reset the terminal (creates fresh session if expired/error, otherwise reconnects)
     const reset = useCallback(() => {
