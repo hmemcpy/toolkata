@@ -49,7 +49,7 @@ Set up a new repository with base commits.
 
 <TryIt command="jj new" description="Commit" />
 
-<TryIt command="echo 'console.log(\"hello\")' > app.js" description="Create app file" />
+<TryIt command={`echo 'console.log("hello")' > app.js`} description="Create app file" />
 
 <TryIt command="jj describe -m 'Add app'" description="Name commit" />
 
@@ -71,7 +71,7 @@ Create a feature bookmark and start working on a new feature.
 
 <TryIt command="jj bookmark create feature" description="Create feature bookmark" />
 
-<TryIt command="echo 'export function hello() { return \"hi\" }' > utils.js" description="Add utility function" />
+<TryIt command={`echo 'export function hello() { return "hi" }' > utils.js`} description="Add utility function" />
 
 <TryIt command="jj describe -m 'Add hello utility'" description="Name commit" />
 
@@ -91,7 +91,7 @@ Modify earlier commits and handle any conflicts that arise.
 
 <TryIt command="jj edit @-" description="Move to parent commit" />
 
-<TryIt command="echo 'export const HOST = \"localhost\"' >> config.js" description="Add host config" />
+<TryIt command={`echo 'export const HOST = "localhost"' >> config.js`} description="Add host config" />
 
 <TryIt command="jj describe -m 'Add host config'" description="Name edited commit" />
 

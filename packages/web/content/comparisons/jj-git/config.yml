@@ -30,5 +30,5 @@ validation:
   prelude:
     setup:
       - "jj git init --colocate ."
-      - "git config user.email 'test@toolkata.dev'"
+      - "git config user.email 'test@toolkata.com'"
       - "git config user.name 'Test User'"

@@ -7,7 +7,7 @@ jjCommands: ["jj op log", "jj op undo", "jj op restore"]
 validation:
   setup:
     - "jj git init --colocate ."
-    - "git config user.email 'test@toolkata.dev'"
+    - "git config user.email 'test@toolkata.com'"
     - "git config user.name 'Test User'"
     - "echo '1' > file.txt && jj describe -m 'Commit 1' && jj new"
     - "echo '2' > file.txt && jj describe -m 'Commit 2' && jj new"
