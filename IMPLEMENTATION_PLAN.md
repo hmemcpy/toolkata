@@ -8,16 +8,75 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
 
 ---
 
+## Gap Analysis
+
+### What's Already Implemented
+
+1. **Terminal Infrastructure** (`contexts/TerminalContext.tsx`)
+   - Complete terminal state management with sidebar/bottom sheet
+   - Command execution via `executeCommand()`
+   - Session management with WebSocket
+   - localStorage persistence for sidebar state, width, info panel settings
+   - **VERIFIED**: File exists at `packages/web/contexts/TerminalContext.tsx`
+
+2. **SideBySide Component** (`components/ui/SideBySide.tsx`)
+   - Two-column command comparison (git vs jj)
+   - Responsive layout (stacks on mobile)
+   - Color-coded columns (orange for git, green for jj)
+   - **VERIFIED**: File exists, clean props interface
+   - **MISSING**: Git toggle support (no `showGitEquivalents` prop or context integration)
+
+3. **Content Loading** (`services/content.ts`)
+   - `loadStep()`, `loadIndex()`, `listSteps()` functions
+   - Effect-TS based with proper error handling
+   - Extensible content type system via `defineContentType()`
+   - Schema validation with Zod
+   - **VERIFIED**: File exists, robust architecture
+   - **MISSING**: Kata-specific loading functions
+
+4. **Progress System** (`core/ProgressStore.ts`, `hooks/useStepProgress.ts`)
+   - localStorage-based step progress tracking with schema versioning
+   - Cookie-based SSR hydration
+   - `ToolPairProgress` interface with `completedSteps`, `currentStep`, `lastVisited`
+   - **VERIFIED**: Files exist, well-structured
+   - **MISSING**: Kata progress tracking (separate from step progress)
+
+5. **Route Structure** (`app/[toolPair]/`)
+   - Dynamic routes for tool pairs
+   - Step pages with MDX rendering at `app/[toolPair]/[step]/page.tsx`
+   - Overview page at `app/[toolPair]/page.tsx`
+   - Glossary page at `app/[toolPair]/glossary/page.tsx`
+   - **VERIFIED**: Next.js App Router structure confirmed
+   - **MISSING**: Kata routes (`/kata`, `/kata/[kataId]`)
+
+6. **Content Directory Structure**
+   - `content/comparisons/jj-git/` - 12 steps exist
+   - `content/comparisons/zio-cats/` - 15 steps exist
+   - `content/comparisons/effect-zio/` - 15 steps exist
+   - **VERIFIED**: `ls packages/web/content/` shows comparisons/, glossary/, pairings.ts
+   - **MISSING**: `content/katas/` directory doesn't exist
+
+7. **Step 12 Content** (`content/comparisons/jj-git/12-step.mdx`)
+   - Has "Return to beginning" link at end
+   - **MISSING**: Kata CTA section
+
+8. **Overview Page** (`app/[toolPair]/page.tsx`)
+   - Progress tracking display
+   - Step list with sections
+   - **MISSING**: Kata section after Step 12 completion
+
+---
+
 ## Tasks
 
 ### P0: Foundation & State Management
 
-- [ ] **P0.1: Extend TerminalContext with git toggle**
+- [x] **P0.1: Extend TerminalContext with git toggle**
   - Add `showGitEquivalents: boolean` to TerminalContext state
   - Add `setShowGitEquivalents: (value: boolean) => void` action
   - Persist to localStorage key `toolkata-git-toggle`
   - Default to `false` (hidden by default per spec)
-  - File: `packages/web/components/providers/TerminalContext.tsx`
+  - File: `packages/web/contexts/TerminalContext.tsx`
 
 - [ ] **P0.2: Create KataProgressContext**
   - Create new context for Kata-specific state management
@@ -25,17 +84,20 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
   - Include: `completedKatas: string[]`, `kataStats: Record<string, KataStat>`
   - Persist to localStorage key `toolkata-kata-progress`
   - Generate UUID for anonymous user ID (future leaderboard support)
-  - File: `packages/web/components/providers/KataProgressContext.tsx`
+  - File: `packages/web/contexts/KataProgressContext.tsx`
 
 - [ ] **P0.3: Create kata content loader**
   - Extend ContentService to load Kata MDX files
   - Create `loadKata(toolPair: string, kataId: string)` function
-  - Create `loadAllKatas(toolPair: string)` function
+  - Create `listKatas(toolPair: string)` function to load all katas
+  - Define `KataType` content type with path resolver
   - Parse Kata frontmatter (title, kata number, duration, focus, exercises)
   - File: `packages/web/services/content.ts` (extend existing)
+  - File: `packages/web/lib/content/types.ts` (add KataType)
+  - File: `packages/web/lib/content/schemas.ts` (add kataFrontmatterSchema)
 
-- [ ] **P0.4: Update SideBySide for git toggle**
-  - Read `showGitEquivalents` from TerminalContext
+- [x] **P0.4: Update SideBySide for git toggle**
+  - Read `showGitEquivalents` from TerminalContext via hook
   - When `false`: render only jj column (full width)
   - When `true`: render both columns (existing behavior)
   - Respect prop override if explicitly passed
@@ -66,7 +128,7 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
   - Add "Kata" link in main navigation
   - Only visible for jj-git tool pair
   - Show lock icon if Step 12 not complete
-  - File: `packages/web/components/layout/Navigation.tsx` or similar
+  - File: `packages/web/components/ui/Navigation.tsx` (or NavigationWrapper)
 
 ### P2: Kata Session Interface
 
@@ -113,7 +175,7 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
   - Return structured result: success, hint, actual output
   - File: `packages/web/services/kata-validation.ts`
 
-- [ ] **P3.2: Implement validation methods**
+- [ ] **P3.2: Implement validation parsers**
   - `parseJjLog(output: string): Commit[]` - parse commit list
   - `parseJjStatus(output: string): Status` - parse working copy state
   - `parseJjShow(output: string): CommitInfo` - parse commit details
@@ -135,7 +197,7 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
   - Add explanatory text about Kata
   - Add "Start Your First Kata" button linking to `/jj-git/kata`
   - Only show if all 12 steps completed
-  - File: `packages/web/content/comparisons/jj-git/steps/12-*.mdx`
+  - File: `packages/web/content/comparisons/jj-git/12-step.mdx`
 
 - [ ] **P4.2: Update Overview page with Kata section**
   - Add "Kata Practice" section after Step 12 completion
@@ -210,7 +272,7 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
   - Listen for `storage` events on localStorage
   - Sync attempt count and progress across tabs
   - Best effort (don't block on sync)
-  - File: `packages/web/components/providers/KataProgressContext.tsx`
+  - File: `packages/web/contexts/KataProgressContext.tsx`
 
 - [ ] **P6.5: All Katas completed state**
   - Special message on landing when all 7 complete
@@ -266,15 +328,19 @@ packages/web/
 │   │   ├── KataSession.tsx           # P2.1
 │   │   ├── GitToggle.tsx             # P2.2
 │   │   └── ValidationFeedback.tsx    # P2.3
-│   ├── providers/
-│   │   ├── TerminalContext.tsx       # P0.1 (extend)
-│   │   └── KataProgressContext.tsx   # P0.2
 │   └── ui/
-│       └── SideBySide.tsx            # P0.4 (update)
+│       ├── SideBySide.tsx            # P0.4 (update)
+│       └── Navigation.tsx            # P1.3 (update)
+├── contexts/
+│   ├── TerminalContext.tsx           # P0.1 (extend)
+│   └── KataProgressContext.tsx       # P0.2
 ├── services/
 │   ├── content.ts                    # P0.3 (extend)
 │   └── kata-validation.ts            # P3.1
 ├── lib/
+│   ├── content/
+│   │   ├── types.ts                  # P0.3 (add KataType)
+│   │   └── schemas.ts                # P0.3 (add kata schema)
 │   └── kata/
 │       └── parsers.ts                # P3.2
 └── content/
@@ -287,6 +353,50 @@ packages/web/
             ├── 05-time-travel.mdx    # P5.5
             ├── 06-history.mdx        # P5.6
             └── 07-full-flow.mdx      # P5.7
+```
+
+---
+
+## Data Models
+
+### KataProgress Interface
+
+```typescript
+interface KataProgress {
+  completedKatas: string[]  // ["1", "2", ...]
+  currentKata?: string
+  kataStats: Record<string, KataStat>
+}
+
+interface KataStat {
+  completedAt: string  // ISO timestamp
+  attempts: number     // Validation attempts before success
+  exercisesCompleted: string[]  // ["1.1", "1.2", ...]
+}
+```
+
+### Kata Frontmatter Schema
+
+```typescript
+interface KataFrontmatter {
+  title: string
+  kata: number           // 1-7
+  duration: string       // "10 min"
+  focus: string          // Brief description of focus area
+  exercises: Exercise[]
+}
+
+interface Exercise {
+  id: string             // "2.1", "2.2", etc.
+  title: string
+  validation: {
+    type: "command" | "regex" | "exact" | "count"
+    command: string      // jj log, jj status, etc.
+    expectedPattern?: string  // For regex type
+    expectedValue?: string    // For exact type
+    minCount?: number         // For count type
+  }
+}
 ```
 
 ---
@@ -312,3 +422,32 @@ cd packages/web && bun run build && bun run typecheck && bun run lint
 - [ ] Mobile responsive design maintained (all components)
 - [ ] Accessibility requirements met (aria labels, keyboard nav)
 - [ ] Edge cases handled gracefully (P6.1-P6.5)
+
+---
+
+## Discovery Notes
+
+### Existing Infrastructure Verification
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| TerminalContext | ✅ Exists | `packages/web/contexts/TerminalContext.tsx` |
+| SideBySide | ✅ Exists | `packages/web/components/ui/SideBySide.tsx` |
+| ContentService | ✅ Exists | `packages/web/services/content.ts` |
+| ProgressStore | ✅ Exists | `packages/web/core/ProgressStore.ts` |
+| useStepProgress | ✅ Exists | `packages/web/hooks/useStepProgress.ts` |
+| Route structure | ✅ Exists | `app/[toolPair]/` pattern confirmed |
+| MDX system | ✅ Exists | `lib/content-core/` with Effect-TS |
+| Kata directory | ❌ Missing | `content/katas/` needs creation |
+
+### Key Implementation Insights
+
+1. **Content Loading**: The existing `defineContentType()` pattern makes adding KataType straightforward. Follow the same pattern as `StepType` in `lib/content/types.ts`.
+
+2. **Progress Tracking**: The existing `ProgressStore` uses a singleton pattern with localStorage + cookie sync. Kata progress should follow similar patterns but remain separate (different localStorage key).
+
+3. **TerminalContext**: Already has localStorage persistence for settings. Adding `showGitEquivalents` follows the same pattern as `sidebarWidth`, `infoPanelCollapsed`, etc.
+
+4. **SideBySide**: Clean component with clear separation between columns. Adding conditional rendering for the left column is straightforward.
+
+5. **Routes**: Next.js App Router with `[toolPair]` dynamic segment. New kata routes fit naturally as `app/[toolPair]/kata/` and `app/[toolPair]/kata/[kataId]/`.

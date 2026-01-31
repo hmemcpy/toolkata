@@ -155,6 +155,17 @@ export interface TerminalContextValue {
   readonly setInfoPanelHeight: (height: number) => void
 
   /**
+   * Whether to show git equivalent commands in SideBySide components.
+   * When false, only the jj column is shown (full width).
+   */
+  readonly showGitEquivalents: boolean
+
+  /**
+   * Set the show git equivalents state.
+   */
+  readonly setShowGitEquivalents: (show: boolean) => void
+
+  /**
    * Open the terminal sidebar (or bottom sheet on mobile).
    *
    * @param trigger - Optional element that triggered opening (for focus return).
@@ -299,6 +310,9 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
   // Info panel height percentage with localStorage persistence
   const [infoPanelHeight, setInfoPanelHeightState] = useState(DEFAULT_INFO_PANEL_HEIGHT)
 
+  // Show git equivalents toggle with localStorage persistence (default false)
+  const [showGitEquivalents, setShowGitEquivalentsState] = useState(false)
+
   // Terminal connection state (managed by InteractiveTerminal via callbacks)
   const [state, setState] = useState<TerminalState>("IDLE")
 
@@ -337,6 +351,11 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
     const storedHeight = localStorage.getItem("terminal-info-panel-height")
     if (storedHeight) {
       setInfoPanelHeightState(Number(storedHeight))
+    }
+
+    const storedShowGitEquivalents = localStorage.getItem("toolkata-git-toggle")
+    if (storedShowGitEquivalents) {
+      setShowGitEquivalentsState(storedShowGitEquivalents === "true")
     }
   }, [])
 
@@ -401,6 +420,12 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
   const setInfoPanelHeight = useCallback((height: number) => {
     setInfoPanelHeightState(height)
     localStorage.setItem("terminal-info-panel-height", String(height))
+  }, [])
+
+  // Wrapper to save show git equivalents state to localStorage
+  const setShowGitEquivalents = useCallback((show: boolean) => {
+    setShowGitEquivalentsState(show)
+    localStorage.setItem("toolkata-git-toggle", String(show))
   }, [])
 
   /**
@@ -598,6 +623,8 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       setInfoPanelCollapsed,
       infoPanelHeight,
       setInfoPanelHeight,
+      showGitEquivalents,
+      setShowGitEquivalents,
       openSidebar,
       closeSidebar,
       toggleSidebar,
@@ -623,6 +650,8 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       setInfoPanelCollapsed,
       infoPanelHeight,
       setInfoPanelHeight,
+      showGitEquivalents,
+      setShowGitEquivalents,
       openSidebar,
       closeSidebar,
       toggleSidebar,
