@@ -354,10 +354,12 @@ export interface Container {
   - Fixed FiberFailure error handling in admin routes
   - File: `packages/sandbox-api/tests/routes/admin.test.ts`
 
-- [ ] **P6.3: Add Playwright tests for admin UI**
+- [x] **P6.3: Add Playwright tests for admin UI** ✅
   - Test login flow (mock Google OAuth in test)
   - Test rate limits page loads and displays data
   - Test reset action (mock API response)
+  - Tests cover authentication redirects, route protection, layout, navigation, and accessibility
+  - Admin API mocking utilities for testing without running sandbox-api
   - File: `packages/web/tests/admin.spec.ts`
 
 - [ ] **P6.4: Manual testing checklist**
