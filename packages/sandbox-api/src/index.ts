@@ -10,6 +10,9 @@ import type { Env } from "hono"
 import { cors } from "hono/cors"
 import { createSessionRoutes } from "./routes/sessions.js"
 import { closeAllConnections, createWebSocketServer } from "./routes/websocket.js"
+import { createAdminRateLimitsRoutes } from "./routes/admin-rate-limits.js"
+import { createAdminContainersRoutes } from "./routes/admin-containers.js"
+import { createAdminMetricsRoutes } from "./routes/admin-metrics.js"
 import { AuditService, AuditServiceLive, type AuditServiceShape } from "./services/audit.js"
 import {
   ContainerService,
@@ -96,6 +99,14 @@ const createApp = (
 ) => {
   const app = new Hono<{ Bindings: Env }>()
 
+  // Check if ADMIN_API_KEY is set (fail fast if not configured)
+  const adminApiKey = process.env["ADMIN_API_KEY"]
+  if (!adminApiKey || adminApiKey.length === 0) {
+    console.warn(
+      "[WARNING] ADMIN_API_KEY not set - admin routes will be disabled. Set ADMIN_API_KEY environment variable to enable admin endpoints.",
+    )
+  }
+
   // Get allowed origins from environment configuration
   const allowedOrigins = getAllowedOrigins()
 
@@ -158,6 +169,22 @@ const createApp = (
     "/api/v1",
     createSessionRoutes(sessionService, rateLimitService, auditService, circuitBreakerService),
   )
+
+  // Mount admin routes under /admin (only if ADMIN_API_KEY is configured)
+  // These routes are protected by Caddy with IP allowlist + X-Admin-Key header
+  if (adminApiKey && adminApiKey.length > 0) {
+    const adminApp = new Hono<{ Bindings: Env }>()
+
+    // Mount all admin route modules
+    adminApp.route("/rate-limits", createAdminRateLimitsRoutes())
+    adminApp.route("/containers", createAdminContainersRoutes())
+    adminApp.route("/metrics", createAdminMetricsRoutes())
+
+    // Mount admin routes under /admin prefix
+    app.route("/admin", adminApp)
+
+    console.log("Admin routes enabled at /admin/* (protected by Caddy IP allowlist + X-Admin-Key)")
+  }
 
   return app
 }

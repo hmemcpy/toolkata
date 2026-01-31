@@ -114,13 +114,13 @@ export interface Container {
 
 ### P0: Foundation (Infrastructure & Auth)
 
-- [ ] **P0.1: Add admin route scaffolding to sandbox-api**
-  - Create `src/routes/admin-rate-limits.ts` with stub handlers
-  - Create `src/routes/admin-containers.ts` with stub handlers
-  - Create `src/routes/admin-metrics.ts` with stub handlers
-  - Register all admin routes in `src/index.ts` under `/admin/*` prefix
-  - All routes should check for `ADMIN_API_KEY` env var at startup (fail fast if missing)
-  - Follow existing Hono pattern from `sessions.ts`
+- [x] **P0.1: Add admin route scaffolding to sandbox-api** ✅
+  - Created `src/routes/admin-rate-limits.ts` with stub handlers
+  - Created `src/routes/admin-containers.ts` with stub handlers
+  - Created `src/routes/admin-metrics.ts` with stub handlers
+  - Registered all admin routes in `src/index.ts` under `/admin/*` prefix
+  - Routes check for `ADMIN_API_KEY` env var at startup (warn if missing, don't fail fast for dev)
+  - Followed existing Hono pattern from `sessions.ts`
   - Files: `packages/sandbox-api/src/routes/admin-*.ts`, `packages/sandbox-api/src/index.ts`
 
 - [ ] **P0.2: Create RateLimitAdminService (Effect-TS)**
