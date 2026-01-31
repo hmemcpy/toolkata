@@ -220,43 +220,43 @@ export interface Container {
 
 ### P2: Container Admin API
 
-- [ ] **P2.1: Create ContainerAdminService (Effect-TS)**
-  - Define interface: `listContainers`, `getContainer`, `restartContainer`, `stopContainer`, `removeContainer`, `streamLogs`, `execCommand`
+- [x] **P2.1: Create ContainerAdminService (Effect-TS)** ✅
+  - Define interface: `listContainers`, `getContainer`, `restartContainer`, `stopContainer`, `removeContainer`, `getLogs`
   - Use Dockerode via existing `DockerClient` dependency
   - Implement `listContainers` with filters (status, label filters for toolkata.tool-pair)
   - Return `ContainerInfo` objects with stats (cpu, memory) if available from Docker inspect
   - Reuse `ContainerService` where possible for cleanup
   - File: `packages/sandbox-api/src/services/container-admin.ts`
 
-- [ ] **P2.2: Implement GET /admin/containers endpoint**
+- [x] **P2.2: Implement GET /admin/containers endpoint** ✅
   - Query params: `status`, `toolPair`, `olderThan` (for filtering old containers)
   - Call `ContainerAdminService.listContainers(filters)`
   - Return JSON array of `ContainerInfo`
   - File: `packages/sandbox-api/src/routes/admin-containers.ts`
 
-- [ ] **P2.3: Implement GET /admin/containers/:id endpoint**
+- [x] **P2.3: Implement GET /admin/containers/:id endpoint** ✅
   - Call `ContainerAdminService.getContainer(id)`
   - Return detailed container info with stats
   - Return 404 if not found
   - File: `packages/sandbox-api/src/routes/admin-containers.ts`
 
-- [ ] **P2.4: Implement POST /admin/containers/:id/restart endpoint**
+- [x] **P2.4: Implement POST /admin/containers/:id/restart endpoint** ✅
   - Call `ContainerAdminService.restartContainer(id)`
   - Return 204 on success, 404 if not found, 409 if operation fails
   - File: `packages/sandbox-api/src/routes/admin-containers.ts`
 
-- [ ] **P2.5: Implement POST /admin/containers/:id/stop endpoint**
+- [x] **P2.5: Implement POST /admin/containers/:id/stop endpoint** ✅
   - Call `ContainerAdminService.stopContainer(id)`
   - Return 204 on success
   - File: `packages/sandbox-api/src/routes/admin-containers.ts`
 
-- [ ] **P2.6: Implement DELETE /admin/containers/:id endpoint**
+- [x] **P2.6: Implement DELETE /admin/containers/:id endpoint** ✅
   - Query param: `force` (boolean)
   - Call `ContainerAdminService.removeContainer(id, force)`
   - Return 204 on success
   - File: `packages/sandbox-api/src/routes/admin-containers.ts`
 
-- [ ] **P2.7: Implement GET /admin/containers/:id/logs endpoint**
+- [x] **P2.7: Implement GET /admin/containers/:id/logs endpoint** ✅
   - Query param: `tail` (number of lines)
   - Call `ContainerAdminService.getLogs(id, tail)`
   - Return text/plain with log lines

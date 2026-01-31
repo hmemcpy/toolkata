@@ -1,5 +1,12 @@
+import { Effect } from "effect"
 import { Hono } from "hono"
 import type { Env } from "hono"
+import type {
+  ContainerAdminServiceShape,
+  ContainerFilters,
+  ContainerInfo,
+} from "../services/container-admin.js"
+import { ContainerAdminError } from "../services/container-admin.js"
 
 /**
  * Admin routes for container management
@@ -15,22 +22,22 @@ import type { Env } from "hono"
  * - POST /admin/containers/:id/stop - Stop a container
  * - DELETE /admin/containers/:id - Remove a container
  * - GET /admin/containers/:id/logs - Get container logs
- * - POST /admin/containers/:id/exec - Execute command in container
  */
 
 // Response types for admin container API
 export interface ContainerInfoResponse {
   readonly id: string
   readonly name: string
-  readonly status: "running" | "stopped" | "exited" | "dead"
+  readonly status: "running" | "stopped" | "exited" | "dead" | "paused" | "restarting" | "created"
   readonly image: string
   readonly createdAt: number
-  readonly startedAt?: number
-  readonly toolPair?: string
-  readonly sessionId?: string
-  readonly cpuPercent?: number
-  readonly memoryUsage?: number
-  readonly memoryLimit?: number
+  readonly startedAt: number | undefined
+  readonly toolPair: string | undefined
+  readonly sessionId: string | undefined
+  readonly cpuPercent: number | undefined
+  readonly memoryUsage: number | undefined
+  readonly memoryLimit: number | undefined
+  readonly memoryPercent: number | undefined
 }
 
 export interface ContainersResponse {
@@ -42,103 +49,226 @@ export interface ErrorResponse {
   readonly message: string
 }
 
-// Create admin containers routes
-// Note: This is a stub implementation for P0.1
-// Full implementation will be in P2.1-P2.7 after ContainerAdminService is created
-export const createAdminContainersRoutes = () => {
+// Sanitized error messages for admin responses
+const ADMIN_ERROR_MESSAGES = {
+  NotFound: "Container not found",
+  OperationFailed: "Container operation failed",
+  InvalidRequest: "Invalid request parameters",
+  DockerUnavailable: "Docker daemon unavailable",
+} as const
+
+// Helper: Convert ContainerAdminError to HTTP response
+const adminErrorToResponse = (error: unknown): { statusCode: number; body: ErrorResponse } => {
+  if (error instanceof ContainerAdminError) {
+    const statusCode =
+      error.cause === "NotFound" ? 404 : error.cause === "InvalidRequest" ? 400 : error.cause === "OperationFailed" ? 409 : 500
+    return {
+      statusCode,
+      body: {
+        error: error.cause,
+        message: ADMIN_ERROR_MESSAGES[error.cause],
+      },
+    }
+  }
+
+  return {
+    statusCode: 500,
+    body: {
+      error: "DockerUnavailable",
+      message: ADMIN_ERROR_MESSAGES.DockerUnavailable,
+    },
+  }
+}
+
+// Helper: Convert ContainerInfo to response format
+const toResponse = (info: ContainerInfo): ContainerInfoResponse => ({
+  id: info.id,
+  name: info.name,
+  status: info.status,
+  image: info.image,
+  createdAt: info.createdAt,
+  startedAt: info.startedAt,
+  toolPair: info.toolPair,
+  sessionId: info.sessionId,
+  cpuPercent: info.cpuPercent,
+  memoryUsage: info.memoryUsage,
+  memoryLimit: info.memoryLimit,
+  memoryPercent: info.memoryPercent,
+})
+
+// Create admin containers routes with ContainerAdminService dependency
+export const createAdminContainersRoutes = (containerAdminService: ContainerAdminServiceShape) => {
   const app = new Hono<{ Bindings: Env }>()
 
   // GET /admin/containers - List all containers with filters
   app.get("/", async (c) => {
-    // Query params: status, toolPair, olderThan
-    // Stub implementation - returns empty list for now
-    // Will be implemented in P2.2 with ContainerAdminService
-    return c.json<ContainersResponse>(
-      {
-        containers: [],
-      },
-      200,
-    )
+    try {
+      // Parse query params for filters
+      const queryParams = c.req.query()
+
+      // Build filters object using conditional spreading (for exactOptionalPropertyTypes)
+      const filters: ContainerFilters = Object.freeze(
+        Object.assign(
+          {},
+          queryParams["status"] !== undefined
+            ? { status: queryParams["status"] as ContainerInfo["status"] }
+            : null,
+          queryParams["toolPair"] !== undefined ? { toolPair: queryParams["toolPair"] } : null,
+          queryParams["olderThan"] !== undefined
+            ? { olderThan: Number.parseInt(queryParams["olderThan"], 10) }
+            : null,
+        ),
+      )
+
+      const containers = await Effect.runPromise(containerAdminService.listContainers(filters))
+
+      return c.json<ContainersResponse>(
+        {
+          containers: containers.map(toResponse),
+        },
+        200,
+      )
+    } catch (error) {
+      const { statusCode, body } = adminErrorToResponse(error)
+      return c.json<ErrorResponse>(body, statusCode as 200 | 400 | 404 | 409 | 500)
+    }
   })
 
   // GET /admin/containers/:id - Get detailed container info
   app.get("/:id", async (c) => {
-    // Stub implementation - returns 501 for now
-    // Will be implemented in P2.3 with ContainerAdminService
-    return c.json<ErrorResponse>(
-      {
-        error: "NotImplemented",
-        message: "Container admin service not yet implemented",
-      },
-      501,
-    )
+    try {
+      const containerId = c.req.param("id")
+      if (!containerId) {
+        return c.json<ErrorResponse>(
+          {
+            error: "InvalidRequest",
+            message: ADMIN_ERROR_MESSAGES.InvalidRequest,
+          },
+          400,
+        )
+      }
+
+      const container = await Effect.runPromise(containerAdminService.getContainer(containerId))
+
+      return c.json<ContainerInfoResponse>(toResponse(container), 200)
+    } catch (error) {
+      const { statusCode, body } = adminErrorToResponse(error)
+      return c.json<ErrorResponse>(body, statusCode as 200 | 400 | 404 | 409 | 500)
+    }
   })
 
   // POST /admin/containers/:id/restart - Restart a container
   app.post("/:id/restart", async (c) => {
-    // Stub implementation - returns 501 for now
-    // Will be implemented in P2.4 with ContainerAdminService
-    return c.json<ErrorResponse>(
-      {
-        error: "NotImplemented",
-        message: "Container admin service not yet implemented",
-      },
-      501,
-    )
+    try {
+      const containerId = c.req.param("id")
+      if (!containerId) {
+        return c.json<ErrorResponse>(
+          {
+            error: "InvalidRequest",
+            message: ADMIN_ERROR_MESSAGES.InvalidRequest,
+          },
+          400,
+        )
+      }
+
+      await Effect.runPromise(containerAdminService.restartContainer(containerId))
+
+      return new Response(null, { status: 204 })
+    } catch (error) {
+      const { statusCode, body } = adminErrorToResponse(error)
+      return c.json<ErrorResponse>(body, statusCode as 200 | 400 | 404 | 409 | 500)
+    }
   })
 
   // POST /admin/containers/:id/stop - Stop a container
   app.post("/:id/stop", async (c) => {
-    // Stub implementation - returns 501 for now
-    // Will be implemented in P2.5 with ContainerAdminService
-    return c.json<ErrorResponse>(
-      {
-        error: "NotImplemented",
-        message: "Container admin service not yet implemented",
-      },
-      501,
-    )
+    try {
+      const containerId = c.req.param("id")
+      if (!containerId) {
+        return c.json<ErrorResponse>(
+          {
+            error: "InvalidRequest",
+            message: ADMIN_ERROR_MESSAGES.InvalidRequest,
+          },
+          400,
+        )
+      }
+
+      await Effect.runPromise(containerAdminService.stopContainer(containerId))
+
+      return new Response(null, { status: 204 })
+    } catch (error) {
+      const { statusCode, body } = adminErrorToResponse(error)
+      return c.json<ErrorResponse>(body, statusCode as 200 | 400 | 404 | 409 | 500)
+    }
   })
 
   // DELETE /admin/containers/:id - Remove a container
   app.delete("/:id", async (c) => {
-    // Query param: force (boolean)
-    // Stub implementation - returns 501 for now
-    // Will be implemented in P2.6 with ContainerAdminService
-    return c.json<ErrorResponse>(
-      {
-        error: "NotImplemented",
-        message: "Container admin service not yet implemented",
-      },
-      501,
-    )
+    try {
+      const containerId = c.req.param("id")
+      if (!containerId) {
+        return c.json<ErrorResponse>(
+          {
+            error: "InvalidRequest",
+            message: ADMIN_ERROR_MESSAGES.InvalidRequest,
+          },
+          400,
+        )
+      }
+
+      // Parse force query param
+      const queryParams = c.req.query()
+      const force = queryParams["force"] === "true"
+
+      await Effect.runPromise(containerAdminService.removeContainer(containerId, force))
+
+      return new Response(null, { status: 204 })
+    } catch (error) {
+      const { statusCode, body } = adminErrorToResponse(error)
+      return c.json<ErrorResponse>(body, statusCode as 200 | 400 | 404 | 409 | 500)
+    }
   })
 
   // GET /admin/containers/:id/logs - Get container logs
   app.get("/:id/logs", async (c) => {
-    // Query param: tail (number of lines)
-    // Stub implementation - returns 501 for now
-    // Will be implemented in P2.7 with ContainerAdminService
-    return c.json<ErrorResponse>(
-      {
-        error: "NotImplemented",
-        message: "Container admin service not yet implemented",
-      },
-      501,
-    )
-  })
+    try {
+      const containerId = c.req.param("id")
+      if (!containerId) {
+        return c.json<ErrorResponse>(
+          {
+            error: "InvalidRequest",
+            message: ADMIN_ERROR_MESSAGES.InvalidRequest,
+          },
+          400,
+        )
+      }
 
-  // POST /admin/containers/:id/exec - Execute command in container
-  app.post("/:id/exec", async (c) => {
-    // Stub implementation - returns 501 for now
-    // Will be implemented later with ContainerAdminService
-    return c.json<ErrorResponse>(
-      {
-        error: "NotImplemented",
-        message: "Container admin service not yet implemented",
-      },
-      501,
-    )
+      // Parse tail query param (default 100 lines)
+      const queryParams = c.req.query()
+      const tailParam = queryParams["tail"]
+      const tail = tailParam !== undefined ? Number.parseInt(tailParam, 10) : 100
+
+      if (Number.isNaN(tail) || tail < 0) {
+        return c.json<ErrorResponse>(
+          {
+            error: "InvalidRequest",
+            message: "tail must be a positive number",
+          },
+          400,
+        )
+      }
+
+      const logs = await Effect.runPromise(containerAdminService.getLogs(containerId, tail))
+
+      // Return logs as plain text
+      return c.text(logs, 200, {
+        "Content-Type": "text/plain; charset=utf-8",
+      })
+    } catch (error) {
+      const { statusCode, body } = adminErrorToResponse(error)
+      return c.json<ErrorResponse>(body, statusCode as 200 | 400 | 404 | 409 | 500)
+    }
   })
 
   return app
