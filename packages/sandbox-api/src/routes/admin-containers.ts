@@ -59,9 +59,56 @@ const ADMIN_ERROR_MESSAGES = {
 
 // Helper: Convert ContainerAdminError to HTTP response
 const adminErrorToResponse = (error: unknown): { statusCode: number; body: ErrorResponse } => {
+  // Handle Effect FiberFailure - the error thrown by Effect.runPromise
+  // Check by error name first
+  if (
+    error &&
+    typeof error === "object" &&
+    "name" in error &&
+    (error as any).name === "(FiberFailure) Error"
+  ) {
+    try {
+      const json = JSON.stringify(error)
+      const parsed = JSON.parse(json)
+      if (parsed._id === "FiberFailure" && parsed.cause?.failure) {
+        const failure = parsed.cause.failure as { cause: string; message: string; _tag?: string }
+        // Check if this is a ContainerAdminError by _tag
+        if (
+          failure._tag === "ContainerAdminError" ||
+          ("cause" in failure && "message" in failure)
+        ) {
+          const statusCode =
+            failure.cause === "NotFound"
+              ? 404
+              : failure.cause === "InvalidRequest"
+                ? 400
+                : failure.cause === "OperationFailed"
+                  ? 409
+                  : 500
+          return {
+            statusCode,
+            body: {
+              error: failure.cause,
+              message: ADMIN_ERROR_MESSAGES[failure.cause as keyof typeof ADMIN_ERROR_MESSAGES],
+            },
+          }
+        }
+      }
+    } catch {
+      // If parsing fails, fall through to default error
+    }
+  }
+
+  // Direct instanceof check for non-FiberFailure errors
   if (error instanceof ContainerAdminError) {
     const statusCode =
-      error.cause === "NotFound" ? 404 : error.cause === "InvalidRequest" ? 400 : error.cause === "OperationFailed" ? 409 : 500
+      error.cause === "NotFound"
+        ? 404
+        : error.cause === "InvalidRequest"
+          ? 400
+          : error.cause === "OperationFailed"
+            ? 409
+            : 500
     return {
       statusCode,
       body: {

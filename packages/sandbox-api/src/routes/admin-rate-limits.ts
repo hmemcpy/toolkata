@@ -1,7 +1,10 @@
 import { Effect } from "effect"
 import { Hono } from "hono"
 import type { Env } from "hono"
-import type { RateLimitAdminServiceShape, AdjustRateLimitRequest } from "../services/rate-limit-admin.js"
+import type {
+  AdjustRateLimitRequest,
+  RateLimitAdminServiceShape,
+} from "../services/rate-limit-admin.js"
 import { RateLimitAdminError } from "../services/rate-limit-admin.js"
 
 /**
@@ -53,8 +56,44 @@ const ADMIN_ERROR_MESSAGES = {
 
 // Helper: Convert RateLimitAdminError to HTTP response
 const adminErrorToResponse = (error: unknown): { statusCode: number; body: ErrorResponse } => {
+  // Handle Effect FiberFailure - the error thrown by Effect.runPromise
+  // Check by error name first
+  if (
+    error &&
+    typeof error === "object" &&
+    "name" in error &&
+    (error as any).name === "(FiberFailure) Error"
+  ) {
+    try {
+      const json = JSON.stringify(error)
+      const parsed = JSON.parse(json)
+      if (parsed._id === "FiberFailure" && parsed.cause?.failure) {
+        const failure = parsed.cause.failure as { cause: string; message: string; _tag?: string }
+        // Check if this is a RateLimitAdminError by _tag or by checking properties
+        if (
+          failure._tag === "RateLimitAdminError" ||
+          ("cause" in failure && "message" in failure)
+        ) {
+          const statusCode =
+            failure.cause === "NotFound" ? 404 : failure.cause === "InvalidRequest" ? 400 : 500
+          return {
+            statusCode,
+            body: {
+              error: failure.cause,
+              message: ADMIN_ERROR_MESSAGES[failure.cause as keyof typeof ADMIN_ERROR_MESSAGES],
+            },
+          }
+        }
+      }
+    } catch {
+      // If parsing fails, fall through to default error
+    }
+  }
+
+  // Direct instanceof check for non-FiberFailure errors
   if (error instanceof RateLimitAdminError) {
-    const statusCode = error.cause === "NotFound" ? 404 : error.cause === "InvalidRequest" ? 400 : 500
+    const statusCode =
+      error.cause === "NotFound" ? 404 : error.cause === "InvalidRequest" ? 400 : 500
     return {
       statusCode,
       body: {
@@ -74,7 +113,9 @@ const adminErrorToResponse = (error: unknown): { statusCode: number; body: Error
 }
 
 // Helper: Convert RateLimitStatus to response format
-const toResponse = (status: import("../services/rate-limit-admin.js").RateLimitStatus): RateLimitStatusResponse => ({
+const toResponse = (
+  status: import("../services/rate-limit-admin.js").RateLimitStatus,
+): RateLimitStatusResponse => ({
   clientId: status.clientId,
   sessionCount: status.sessionCount,
   sessionsPerHour: status.sessionsPerHour,

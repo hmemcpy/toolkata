@@ -347,10 +347,11 @@ export interface Container {
   - 14 tests covering all methods and error cases
   - Uses Bun's built-in test runner with Effect
 
-- [ ] **P6.2: Write integration tests for admin endpoints**
+- [x] **P6.2: Write integration tests for admin endpoints** ✅
   - Test all rate limit endpoints with real HTTP calls
   - Test auth (missing API key, invalid API key)
-  - Test error cases (invalid client ID)
+  - Test error cases (invalid client ID, invalid parameters)
+  - Fixed FiberFailure error handling in admin routes
   - File: `packages/sandbox-api/tests/routes/admin.test.ts`
 
 - [ ] **P6.3: Add Playwright tests for admin UI**
