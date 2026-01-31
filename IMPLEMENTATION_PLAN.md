@@ -318,11 +318,15 @@ export interface Container {
 
 ### P5: Metrics UI
 
-- [ ] **P5.1: Create /admin/metrics page**
+- [x] **P5.1: Create /admin/metrics page** ✅
   - Three sections: System, Sandbox, Rate Limits
   - Auto-refresh every 30 seconds
   - Last updated timestamp
-  - File: `packages/web/app/admin/metrics/page.tsx`
+  - Server component fetches data from admin API
+  - Client component handles auto-refresh with useEffect
+  - Color-coded thresholds (CPU/memory/disk: 90%+ red, 80%+ yellow, 60%+ orange)
+  - Top clients table for rate limits
+  - File: `packages/web/app/admin/metrics/page.tsx`, `packages/web/app/admin/metrics/MetricsClient.tsx`, `packages/web/app/admin/metrics/MetricsTypes.tsx`
 
 - [ ] **P5.2: Create MetricsPanel component**
   - Props: `title`, `metrics: Record<string, number | string>`
