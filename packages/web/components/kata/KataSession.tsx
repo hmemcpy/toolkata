@@ -219,15 +219,15 @@ export function KataSession({
         if (err.cause === "SandboxUnavailable") {
           hint = "Sandbox is temporarily unavailable. Please try again later."
         } else if (err.cause === "TimeoutError") {
-          hint = "Validation timed out. The command took too long to execute."
+          hint = "Validation timed out. The command took too long to execute. Try again."
         } else if (err.cause === "NetworkError") {
           hint = "Connection error. Please check your network and try again."
         }
       }
       setValidationState("error")
       setValidationHint(hint)
-      // Record failed attempt
-      if (currentExercise) {
+      // Record failed attempt, but NOT for timeouts (per spec P6.2)
+      if (currentExercise && !(err instanceof ValidationError && err.cause === "TimeoutError")) {
         recordAttempt(currentExercise.id, false)
       }
     }

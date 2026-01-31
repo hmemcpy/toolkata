@@ -304,11 +304,15 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
   - **Implemented**: Added `?locked=true` query param on redirect, flash message in KataLanding
     with accessible alert (role="alert", aria-live="polite")
 
-- [ ] **P6.2: Add validation timeout handling**
+- [x] **P6.2: Add validation timeout handling**
   - 5-second timeout on validation commands
   - Show "Try again" message on timeout
   - Allow retry without counting as attempt
   - File: `packages/web/services/kata-validation.ts`
+  - **Completed**: Timeout handling already existed in executeCommand (5-second timeout)
+  - **Implemented**: Modified KataSession catch block to NOT record attempt for TimeoutError
+  - File: `packages/web/components/kata/KataSession.tsx:233`
+  - Note: Changed hint to "Validation timed out. The command took too long to execute. Try again."
 
 - [ ] **P6.3: Handle terminal reset during exercise**
   - Preserve exercise progress in KataProgressContext
