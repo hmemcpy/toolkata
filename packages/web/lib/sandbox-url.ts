@@ -17,6 +17,12 @@ export const SANDBOX_API_URL = process.env["NEXT_PUBLIC_SANDBOX_API_URL"] ?? "ws
 export const SANDBOX_API_KEY = process.env["NEXT_PUBLIC_SANDBOX_API_KEY"] ?? ""
 
 /**
+ * Admin API key for admin endpoints.
+ * Required for accessing /admin/* routes on the sandbox API.
+ */
+export const ADMIN_API_KEY = process.env["NEXT_PUBLIC_ADMIN_API_KEY"] ?? ""
+
+/**
  * Convert a WebSocket URL to an HTTP URL.
  *
  * - ws:// becomes http://

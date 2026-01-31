@@ -153,23 +153,27 @@ export interface Container {
   - **Note**: next-auth v5 uses `AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET` env vars by default (falls back to GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET)
   - Files: `packages/web/lib/auth.ts`, `packages/web/.env.example`, `packages/web/package.json`
 
-- [ ] **P0.8: Create admin layout with auth protection**
-  - Create `packages/web/app/admin/layout.tsx`
-  - Use `getServerSession` from NextAuth to check auth
-  - Redirect to `/` if not authenticated or not admin
-  - Include navigation sidebar: Dashboard, Rate Limits, Containers, Metrics
-  - Apply terminal aesthetic (dark bg #0a0a0a, monospace, green accent #22c55e)
-  - Follow existing layout pattern from `app/layout.tsx`
-  - File: `packages/web/app/admin/layout.tsx`
+- [x] **P0.8: Create admin layout with auth protection** ✅
+  - Created `packages/web/app/admin/layout.tsx`
+  - Used `auth()` from NextAuth to check auth and isAdmin flag
+  - Redirects to `/admin/login` if not authenticated
+  - Redirects to `/` if authenticated but not admin
+  - Includes `AdminSidebar` component with navigation: Dashboard, Rate Limits, Containers, Metrics
+  - Includes `AdminMobileNav` for mobile responsiveness
+  - Applied terminal aesthetic (dark bg, monospace, green accent)
+  - Also created `/admin/login` and `/admin/auth-error` pages
+  - Files: `packages/web/app/admin/layout.tsx`, `packages/web/app/admin/login/page.tsx`, `packages/web/app/admin/auth-error/page.tsx`, `packages/web/components/admin/AdminSidebar.tsx`
 
-- [ ] **P0.9: Create admin client service (Effect-TS)**
-  - Create `packages/web/services/admin-client.ts`
-  - Define `AdminClient` service with methods: `getRateLimits`, `getRateLimit`, `resetRateLimit`, `adjustRateLimit`
-  - Use `fetch` wrapped in Effect.tryPromise
-  - Add `X-Admin-Key` header from env var `ADMIN_API_KEY`
-  - Handle HTTP errors with proper Effect error types
-  - Follow existing pattern from `sandbox-client.ts`
-  - File: `packages/web/services/admin-client.ts`
+- [x] **P0.9: Create admin client service (Effect-TS)** ✅
+  - Created `packages/web/services/admin-client.ts`
+  - Defined `AdminClient` service with all admin API methods
+  - Methods include: `getRateLimits`, `getRateLimit`, `resetRateLimit`, `adjustRateLimit`, `listContainers`, `getContainer`, `restartContainer`, `stopContainer`, `removeContainer`, `getContainerLogs`, `getSystemMetrics`, `getSandboxMetrics`, `getRateLimitMetrics`
+  - Used `fetch` wrapped in Effect.tryPromise
+  - Added `X-Admin-Key` header from `NEXT_PUBLIC_ADMIN_API_KEY` env var
+  - Defined `AdminClientError` with Data.TaggedClass for proper error handling
+  - Added `ADMIN_API_KEY` export to `lib/sandbox-url.ts`
+  - Followed existing pattern from `sandbox-client.ts`
+  - File: `packages/web/services/admin-client.ts`, `packages/web/lib/sandbox-url.ts`
 
 ### P1: Rate Limit Admin UI
 
