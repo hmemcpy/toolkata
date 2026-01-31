@@ -39,6 +39,7 @@ import {
   makeCircuitBreakerService,
   logCircuitBreakerConfig,
 } from "./services/circuit-breaker.js"
+import { MetricsService, MetricsServiceLive, type MetricsServiceShape } from "./services/metrics.js"
 import { SessionService, SessionServiceLive, type SessionServiceShape } from "./services/session.js"
 import { WebSocketService, WebSocketServiceLive } from "./services/websocket.js"
 import { EnvironmentServiceLive, EnvironmentService } from "./environments/index.js"
@@ -106,6 +107,7 @@ const createApp = (
   circuitBreakerService: CircuitBreakerServiceShape,
   rateLimitAdminService?: import("./services/rate-limit-admin.js").RateLimitAdminServiceShape,
   containerAdminService?: import("./services/container-admin.js").ContainerAdminServiceShape,
+  metricsService?: MetricsServiceShape,
 ) => {
   const app = new Hono<{ Bindings: Env }>()
 
@@ -192,7 +194,9 @@ const createApp = (
     if (containerAdminService) {
       adminApp.route("/containers", createAdminContainersRoutes(containerAdminService))
     }
-    adminApp.route("/metrics", createAdminMetricsRoutes())
+    if (metricsService) {
+      adminApp.route("/metrics", createAdminMetricsRoutes(metricsService))
+    }
 
     // Mount admin routes under /admin prefix
     app.route("/admin", adminApp)
@@ -212,6 +216,7 @@ const make = Effect.gen(function* () {
   const auditService = yield* AuditService
   const rateLimitAdminService = yield* RateLimitAdminService
   const containerAdminService = yield* ContainerAdminService
+  const metricsService = yield* MetricsService
 
   // Create circuit breaker (depends on session service for container count)
   const circuitBreakerService = makeCircuitBreakerService(sessionService)
@@ -225,6 +230,7 @@ const make = Effect.gen(function* () {
     circuitBreakerService,
     rateLimitAdminService,
     containerAdminService,
+    metricsService,
   )
 
   const start = Effect.sync(() => {
@@ -414,6 +420,7 @@ if (import.meta.main) {
     ContainerAdminServiceLive,
     AuditServiceLive,
     EnvironmentServiceLive,
+    MetricsServiceLive,
   )
 
   // Container service depends on DockerClient and EnvironmentService

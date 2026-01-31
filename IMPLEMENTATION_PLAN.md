@@ -293,7 +293,7 @@ export interface Container {
 
 ### P4: Metrics API
 
-- [ ] **P4.1: Create MetricsService (Effect-TS)**
+- [x] **P4.1: Create MetricsService (Effect-TS)** ✅
   - Interface: `getSystemMetrics`, `getSandboxMetrics`, `getRateLimitMetrics`
   - System metrics: use `os` module for CPU, memory, disk (via `df` command on Linux)
   - Sandbox metrics: query `SessionService` for active sessions, query Docker for container count
@@ -301,17 +301,17 @@ export interface Container {
   - Store time-series in memory (optional, can be single values for MVP)
   - File: `packages/sandbox-api/src/services/metrics.ts`
 
-- [ ] **P4.2: Implement GET /admin/metrics/system endpoint**
+- [x] **P4.2: Implement GET /admin/metrics/system endpoint** ✅
   - Call `MetricsService.getSystemMetrics()`
   - Return `SystemMetrics` JSON with cpu, memory, disk, network
   - File: `packages/sandbox-api/src/routes/admin-metrics.ts`
 
-- [ ] **P4.3: Implement GET /admin/metrics/sandbox endpoint**
+- [x] **P4.3: Implement GET /admin/metrics/sandbox endpoint** ✅
   - Call `MetricsService.getSandboxMetrics()`
   - Return sandbox stats JSON: total sessions, running sessions, containers, errors
   - File: `packages/sandbox-api/src/routes/admin-metrics.ts`
 
-- [ ] **P4.4: Implement GET /admin/metrics/rate-limits endpoint**
+- [x] **P4.4: Implement GET /admin/metrics/rate-limits endpoint** ✅
   - Call `MetricsService.getRateLimitMetrics()`
   - Return violations, blocked requests, top clients
   - File: `packages/sandbox-api/src/routes/admin-metrics.ts`

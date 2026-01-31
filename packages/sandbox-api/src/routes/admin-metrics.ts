@@ -1,5 +1,13 @@
+import { Effect } from "effect"
 import { Hono } from "hono"
 import type { Env } from "hono"
+import type {
+  RateLimitMetrics,
+  SandboxMetrics,
+  SystemMetrics,
+} from "../services/metrics.js"
+import { MetricsError } from "../services/metrics.js"
+import type { MetricsServiceShape } from "../services/metrics.js"
 
 /**
  * Admin routes for system and sandbox metrics
@@ -20,16 +28,19 @@ export interface SystemMetricsResponse {
   readonly cpu: {
     readonly percent: number
     readonly loadAvg: readonly number[]
+    readonly cpuCount: number
   }
   readonly memory: {
     readonly used: number
     readonly total: number
     readonly percent: number
+    readonly free: number
   }
   readonly disk: {
     readonly used: number
     readonly total: number
     readonly percent: number
+    readonly free: number
   }
   readonly network: {
     readonly rxBytes: number
@@ -47,11 +58,14 @@ export interface SandboxMetricsResponse {
 
 export interface RateLimitMetricsResponse {
   readonly timestamp: number
+  readonly totalClients: number
+  readonly activeClients: number
   readonly violations: number
-  readonly blockedRequests: number
   readonly topClients: readonly {
     readonly clientId: string
-    readonly violations: number
+    readonly sessionCount: number
+    readonly commandCount: number
+    readonly activeSessions: number
   }[]
 }
 
@@ -60,71 +74,128 @@ export interface ErrorResponse {
   readonly message: string
 }
 
-// Create admin metrics routes
-// Note: This is a stub implementation for P0.1
-// Full implementation will be in P4.1-P4.4 after MetricsService is created
-export const createAdminMetricsRoutes = () => {
+// Sanitized error messages for admin responses
+const ADMIN_ERROR_MESSAGES = {
+  CommandFailed: "Failed to execute system command",
+  DockerUnavailable: "Docker service unavailable",
+  DataUnavailable: "Metrics data unavailable",
+} as const
+
+/**
+ * Convert MetricsError to HTTP response
+ */
+const metricsErrorToResponse = (error: unknown): { statusCode: number; body: ErrorResponse } => {
+  if (error instanceof MetricsError) {
+    const statusCode =
+      error.cause === "DockerUnavailable" ? 503 : error.cause === "DataUnavailable" ? 503 : 500
+    return {
+      statusCode,
+      body: {
+        error: error.cause,
+        message: ADMIN_ERROR_MESSAGES[error.cause],
+      },
+    }
+  }
+
+  return {
+    statusCode: 500,
+    body: {
+      error: "InternalError",
+      message: ADMIN_ERROR_MESSAGES.CommandFailed,
+    },
+  }
+}
+
+/**
+ * Convert SystemMetrics to response format
+ */
+const systemMetricsToResponse = (metrics: SystemMetrics): SystemMetricsResponse => ({
+  timestamp: metrics.timestamp,
+  cpu: {
+    percent: metrics.cpu.percent,
+    loadAvg: metrics.cpu.loadAvg,
+    cpuCount: metrics.cpu.cpuCount,
+  },
+  memory: {
+    used: metrics.memory.used,
+    total: metrics.memory.total,
+    percent: metrics.memory.percent,
+    free: metrics.memory.free,
+  },
+  disk: {
+    used: metrics.disk.used,
+    total: metrics.disk.total,
+    percent: metrics.disk.percent,
+    free: metrics.disk.free,
+  },
+  network: {
+    rxBytes: metrics.network.rxBytes,
+    txBytes: metrics.network.txBytes,
+  },
+})
+
+/**
+ * Convert SandboxMetrics to response format
+ */
+const sandboxMetricsToResponse = (metrics: SandboxMetrics): SandboxMetricsResponse => ({
+  timestamp: metrics.timestamp,
+  totalSessions: metrics.totalSessions,
+  runningSessions: metrics.runningSessions,
+  containers: metrics.containers,
+  errors: metrics.errors,
+})
+
+/**
+ * Convert RateLimitMetrics to response format
+ */
+const rateLimitMetricsToResponse = (metrics: RateLimitMetrics): RateLimitMetricsResponse => ({
+  timestamp: metrics.timestamp,
+  totalClients: metrics.totalClients,
+  activeClients: metrics.activeClients,
+  violations: metrics.violations,
+  topClients: metrics.topClients,
+})
+
+/**
+ * Create admin metrics routes with MetricsService
+ */
+export const createAdminMetricsRoutes = (metricsService: MetricsServiceShape) => {
   const app = new Hono<{ Bindings: Env }>()
+
+  // Valid status codes for admin responses
+  type AdminStatusCode = 200 | 500 | 503
 
   // GET /admin/metrics/system - System metrics
   app.get("/system", async (c) => {
-    // Stub implementation - returns basic system info for now
-    // Will be implemented in P4.2 with MetricsService
-    return c.json<SystemMetricsResponse>(
-      {
-        timestamp: Date.now(),
-        cpu: {
-          percent: 0,
-          loadAvg: [0, 0, 0],
-        },
-        memory: {
-          used: 0,
-          total: 0,
-          percent: 0,
-        },
-        disk: {
-          used: 0,
-          total: 0,
-          percent: 0,
-        },
-        network: {
-          rxBytes: 0,
-          txBytes: 0,
-        },
-      },
-      200,
-    )
+    try {
+      const metrics = await Effect.runPromise(metricsService.getSystemMetrics)
+      return c.json<SystemMetricsResponse>(systemMetricsToResponse(metrics), 200)
+    } catch (error) {
+      const { statusCode, body } = metricsErrorToResponse(error)
+      return c.json<ErrorResponse>(body, statusCode as AdminStatusCode)
+    }
   })
 
   // GET /admin/metrics/sandbox - Sandbox metrics
   app.get("/sandbox", async (c) => {
-    // Stub implementation - returns zeros for now
-    // Will be implemented in P4.3 with MetricsService
-    return c.json<SandboxMetricsResponse>(
-      {
-        timestamp: Date.now(),
-        totalSessions: 0,
-        runningSessions: 0,
-        containers: 0,
-        errors: 0,
-      },
-      200,
-    )
+    try {
+      const metrics = await Effect.runPromise(metricsService.getSandboxMetrics)
+      return c.json<SandboxMetricsResponse>(sandboxMetricsToResponse(metrics), 200)
+    } catch (error) {
+      const { statusCode, body } = metricsErrorToResponse(error)
+      return c.json<ErrorResponse>(body, statusCode as AdminStatusCode)
+    }
   })
 
   // GET /admin/metrics/rate-limits - Rate limit metrics
   app.get("/rate-limits", async (c) => {
-    // Stub implementation - returns zeros for now
-    // Will be implemented in P4.4 with MetricsService
-    return c.json<RateLimitMetricsResponse>(
-      {
-        timestamp: Date.now(),
-        violations: 0,
-        blockedRequests: 0,
-        topClients: [],
-      },
-      200,
-    )
+    try {
+      const metrics = await Effect.runPromise(metricsService.getRateLimitMetrics)
+      return c.json<RateLimitMetricsResponse>(rateLimitMetricsToResponse(metrics), 200)
+    } catch (error) {
+      const { statusCode, body } = metricsErrorToResponse(error)
+      return c.json<ErrorResponse>(body, statusCode as AdminStatusCode)
+    }
   })
 
   return app
