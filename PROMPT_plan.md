@@ -9,11 +9,12 @@ Read all files in `specs/` directory using parallel subagents.
 
 ### 0b. Study existing implementation
 Use parallel subagents to analyze relevant source directories:
-- `packages/web/components/providers/` - Context/state management
-- `packages/web/components/ui/` - UI components (SideBySide, TryIt)
-- `packages/web/services/` - Content loading, sandbox client
-- `packages/web/app/[toolPair]/` - Route structure
-- `packages/web/content/` - MDX content structure
+- packages/sandbox-api/src/services/
+- packages/sandbox-api/src/routes/
+- packages/sandbox-api/src/lib/
+- packages/web/services/
+- packages/web/app/
+- packages/web/components/
 
 ### 0c. Study the current plan
 Read `IMPLEMENTATION_PLAN.md` if it exists.
@@ -26,6 +27,12 @@ Compare specs against implementation:
 - What's partially done?
 
 **CRITICAL**: Don't assume something isn't implemented. Search the codebase first.
+
+Key areas to check:
+1. Does `RateLimitService` exist in sandbox-api? What methods does it have?
+2. Is there already an admin route structure?
+3. Does the web package have NextAuth configured?
+4. Are there any existing admin components?
 
 ## Phase 2: Generate Plan
 

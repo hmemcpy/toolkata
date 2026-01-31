@@ -1,462 +1,444 @@
-# Implementation Plan: JJ Kata Feature
+# Implementation Plan: Admin Dashboard
 
-> **Scope**: Extension of existing tutorial | **Risk**: Balanced | **Validation**: Existing test suite
+> **Scope**: Full stack | **Risk**: Balanced | **Validation**: All of the above | **Priority**: Rate limit admin
 
 ## Summary
 
-Extend the toolkata platform with a JJ Kata practice system that activates after Step 12 completion. Build a progressive unlock system with 7 scenario-based exercises, auto-validation, accuracy tracking, and git equivalent toggle. Reuse existing terminal infrastructure and MDX content system.
+Build a complete admin dashboard for toolkata with Effect-TS admin endpoints in sandbox-api (rate limits, containers, metrics) and a Next.js admin UI with Google OAuth. Protected by API key + IP allowlist via Caddy. Starting with rate limit management as the highest priority feature.
 
 ---
 
-## Gap Analysis
+## Gap Analysis (Completed)
 
-### What's Already Implemented
+### Already Implemented (Foundation exists)
 
-1. **Terminal Infrastructure** (`contexts/TerminalContext.tsx`)
-   - Complete terminal state management with sidebar/bottom sheet
-   - Command execution via `executeCommand()`
-   - Session management with WebSocket
-   - localStorage persistence for sidebar state, width, info panel settings
-   - **VERIFIED**: File exists at `packages/web/contexts/TerminalContext.tsx`
+1. **RateLimitService** exists in `sandbox-api/src/services/rate-limit.ts`
+   - Enforces rate limits using in-memory `Ref<MutableHashMap>`
+   - Methods: `checkSessionLimit`, `recordSession`, `removeSession`, `checkCommandLimit`, `recordCommand`, `getActiveSessionCount`, `checkWebSocketLimit`, `registerWebSocket`, `unregisterWebSocket`
+   - **NOT Redis** - Rate limits are stored in-memory (ephemeral, lost on restart)
 
-2. **SideBySide Component** (`components/ui/SideBySide.tsx`)
-   - Two-column command comparison (git vs jj)
-   - Responsive layout (stacks on mobile)
-   - Color-coded columns (orange for git, green for jj)
-   - **VERIFIED**: File exists, clean props interface
-   - **MISSING**: Git toggle support (no `showGitEquivalents` prop or context integration)
+2. **ContainerService** exists in `sandbox-api/src/services/container.ts`
+   - Basic CRUD: `create`, `destroy`, `get`, `cleanupOrphaned`
+   - Uses Dockerode via Docker socket
+   - Lacks admin operations (list, restart, logs, stats)
 
-3. **Content Loading** (`services/content.ts`)
-   - `loadStep()`, `loadIndex()`, `listSteps()` functions
-   - Effect-TS based with proper error handling
-   - Extensible content type system via `defineContentType()`
-   - Schema validation with Zod
-   - **VERIFIED**: File exists, robust architecture
-   - **MISSING**: Kata-specific loading functions
+3. **Effect-TS patterns** are well-established throughout
+   - Service interfaces, Context.Tag, Layer.effect
+   - Error handling with `Data.TaggedClass`
+   - Proper dependency injection
 
-4. **Progress System** (`core/ProgressStore.ts`, `hooks/useStepProgress.ts`)
-   - localStorage-based step progress tracking with schema versioning
-   - Cookie-based SSR hydration
-   - `ToolPairProgress` interface with `completedSteps`, `currentStep`, `lastVisited`
-   - **VERIFIED**: Files exist, well-structured
-   - **MISSING**: Kata progress tracking (separate from step progress)
+4. **Hono routing** pattern exists in `sandbox-api/src/routes/`
+   - File: `sessions.ts` shows the pattern for REST routes
+   - API key validation via `validateApiKey` from `config.ts`
+   - Error handling with `errorToResponse` helper
 
-5. **Route Structure** (`app/[toolPair]/`)
-   - Dynamic routes for tool pairs
-   - Step pages with MDX rendering at `app/[toolPair]/[step]/page.tsx`
-   - Overview page at `app/[toolPair]/page.tsx`
-   - Glossary page at `app/[toolPair]/glossary/page.tsx`
-   - **VERIFIED**: Next.js App Router structure confirmed
-   - **MISSING**: Kata routes (`/kata`, `/kata/[kataId]`)
+5. **AuditService** exists in `sandbox-api/src/services/audit.ts`
+   - Structured logging for security events
+   - Methods: `log`, `logAuthFailure`, `logRateLimitHit`, etc.
 
-6. **Content Directory Structure**
-   - `content/comparisons/jj-git/` - 12 steps exist
-   - `content/comparisons/zio-cats/` - 15 steps exist
-   - `content/comparisons/effect-zio/` - 15 steps exist
-   - **VERIFIED**: `ls packages/web/content/` shows comparisons/, glossary/, pairings.ts
-   - **MISSING**: `content/katas/` directory doesn't exist
+6. **SandboxClient** in web package provides pattern for Effect-TS service clients
+   - File: `packages/web/services/sandbox-client.ts`
+   - WebSocket + REST client pattern
 
-7. **Step 12 Content** (`content/comparisons/jj-git/12-step.mdx`)
-   - Has "Return to beginning" link at end
-   - **MISSING**: Kata CTA section
+7. **DockerClient** exists with proper Layer setup
+   - File: `sandbox-api/src/services/container.ts` exports `DockerClientLive`
+   - Can be reused for admin operations
 
-8. **Overview Page** (`app/[toolPair]/page.tsx`)
-   - Progress tracking display
-   - Step list with sections
-   - **MISSING**: Kata section after Step 12 completion
+### Missing (Needs to be built)
+
+1. **No RateLimitAdminService** - Need to create for viewing/managing rate limits
+   - Must read from the same in-memory store as `RateLimitService`
+   - Methods: `getAllStatus`, `getStatus`, `resetLimit`, `adjustLimit`
+
+2. **No admin routes** - No `/admin/*` endpoints exist
+   - Need: `admin-rate-limits.ts`, `admin-containers.ts`, `admin-metrics.ts`
+   - Registration in `src/index.ts`
+
+3. **No NextAuth** - No authentication system in web package
+   - `next-auth` is NOT in `packages/web/package.json` dependencies
+   - Need: Google OAuth setup, admin email allowlist
+
+4. **No admin UI** - No `/admin` pages or components
+   - Need: Layout, rate limits page, containers page, metrics page
+
+5. **No admin client** - No service to call admin API from web
+   - Need: Effect-TS client with `X-Admin-Key` header
+
+6. **No ContainerAdminService** - Need admin container operations
+   - Methods: `listContainers`, `getContainer`, `restartContainer`, `stopContainer`, `removeContainer`, `streamLogs`, `execCommand`
+
+7. **No MetricsService** - Need metrics collection
+   - System metrics (CPU, memory, disk)
+   - Sandbox metrics (active sessions, container count)
+   - Rate limit metrics (violations, top clients)
+
+8. **No middleware.ts** - Need Next.js middleware for admin route protection
+   - Check session for admin flag
+   - Redirect non-admins to home
+
+### Key Discovery: In-Memory Storage (Not Redis)
+
+The `admin-dashboard.md` spec assumes Redis for rate limit storage, but the actual implementation uses in-memory `Ref<MutableHashMap>`. This means:
+- Rate limit data is **ephemeral** (lost on API restart)
+- Admin service must access the same `RateLimitService` dependency
+- No Redis connection needed for rate limit admin
+- Simpler implementation but less durable
+
+### Existing Type Patterns
+
+From `rate-limit.ts`:
+```typescript
+export interface IpTracking {
+  readonly sessionCount: number
+  readonly hourWindowStart: number
+  readonly activeSessions: readonly string[]
+  readonly commandCount: number
+  readonly minuteWindowStart: number
+  readonly activeWebSocketIds: readonly string[]
+}
+```
+
+From `container.ts`:
+```typescript
+export interface Container {
+  readonly id: string
+  readonly name: string
+  readonly toolPair: string
+  readonly createdAt: Date
+}
+```
 
 ---
 
 ## Tasks
 
-### P0: Foundation & State Management
+### P0: Foundation (Infrastructure & Auth)
 
-- [x] **P0.1: Extend TerminalContext with git toggle**
-  - Add `showGitEquivalents: boolean` to TerminalContext state
-  - Add `setShowGitEquivalents: (value: boolean) => void` action
-  - Persist to localStorage key `toolkata-git-toggle`
-  - Default to `false` (hidden by default per spec)
-  - File: `packages/web/contexts/TerminalContext.tsx`
+- [ ] **P0.1: Add admin route scaffolding to sandbox-api**
+  - Create `src/routes/admin-rate-limits.ts` with stub handlers
+  - Create `src/routes/admin-containers.ts` with stub handlers
+  - Create `src/routes/admin-metrics.ts` with stub handlers
+  - Register all admin routes in `src/index.ts` under `/admin/*` prefix
+  - All routes should check for `ADMIN_API_KEY` env var at startup (fail fast if missing)
+  - Follow existing Hono pattern from `sessions.ts`
+  - Files: `packages/sandbox-api/src/routes/admin-*.ts`, `packages/sandbox-api/src/index.ts`
 
-- [x] **P0.2: Create KataProgressContext**
-  - Create new context for Kata-specific state management
-  - Define `KataProgress` interface matching spec R6/R7
-  - Include: `completedKatas: string[]`, `kataStats: Record<string, KataStat>`
-  - Persist to localStorage key `toolkata-kata-progress`
-  - Generate UUID for anonymous user ID (future leaderboard support)
-  - File: `packages/web/contexts/KataProgressContext.tsx`
-  - **Implemented**: Full context with `isKataUnlocked`, `startKata`, `recordAttempt`,
-    `completeExercise`, `completeKata`, `resetKata`, `resetAll` methods
-  - **Note**: Added `exerciseAttempts: Record<string, number>` to `KataStat` for per-exercise tracking
+- [ ] **P0.2: Create RateLimitAdminService (Effect-TS)**
+  - Define `RateLimitAdminService` interface with methods: `getAllStatus`, `getStatus`, `resetLimit`, `adjustLimit`
+  - Implement using Effect.gen with proper error handling (`RateLimitAdminError` tagged class)
+  - Access existing in-memory rate limit store - need to share the Ref from RateLimitService
+  - Return `RateLimitStatus` objects with computed `remaining` and `resetAt`
+  - **Important**: Must access the same `Ref<RateLimitStore>` that RateLimitService uses
+  - File: `packages/sandbox-api/src/services/rate-limit-admin.ts`
 
-- [x] **P0.3: Create kata content loader**
-  - Extend ContentService to load Kata MDX files
-  - Create `loadKata(toolPair: string, kataId: string)` function
-  - Create `listKatas(toolPair: string)` function to load all katas
-  - Define `KataType` content type with path resolver
-  - Parse Kata frontmatter (title, kata number, duration, focus, exercises)
-  - File: `packages/web/services/content.ts` (extend existing)
-  - File: `packages/web/lib/content/types.ts` (add KataType)
-  - File: `packages/web/lib/content/schemas.ts` (add kataFrontmatterSchema)
-  - **Implemented**: Added `kataFrontmatterSchema`, `exerciseSchema`, `exerciseValidationSchema`
-  - **Implemented**: Added `KataType` with path resolver to `content/types.ts`
-  - **Implemented**: Added `loadKata()` and `listKatas()` helper functions to `services/content.ts`
+- [ ] **P0.3: Implement GET /admin/rate-limits endpoint**
+  - Use Hono router (existing pattern in sandbox-api)
+  - Call `RateLimitAdminService.getAllStatus()`
+  - Return JSON array of `RateLimitStatus`
+  - Handle errors with proper HTTP status codes (500 for internal errors)
+  - Validate `X-Admin-Key` header (or use Caddy validation)
+  - File: `packages/sandbox-api/src/routes/admin-rate-limits.ts`
 
-- [x] **P0.4: Update SideBySide for git toggle**
-  - Read `showGitEquivalents` from TerminalContext via hook
-  - When `false`: render only jj column (full width)
-  - When `true`: render both columns (existing behavior)
-  - Respect prop override if explicitly passed
-  - File: `packages/web/components/ui/SideBySide.tsx`
+- [ ] **P0.4: Implement GET /admin/rate-limits/:clientId endpoint**
+  - Extract clientId from path params
+  - Call `RateLimitAdminService.getStatus(clientId)`
+  - Return 404 if client not found, 200 with `RateLimitStatus` if found
+  - File: `packages/sandbox-api/src/routes/admin-rate-limits.ts`
 
-### P1: Kata Landing Page
+- [ ] **P0.5: Implement POST /admin/rate-limits/:clientId/reset endpoint**
+  - Call `RateLimitAdminService.resetLimit(clientId)`
+  - Clear the IP tracking entry from the in-memory store
+  - Return 204 on success, 404 if client not found
+  - File: `packages/sandbox-api/src/routes/admin-rate-limits.ts`
 
-- [x] **P1.1: Create KataLanding component**
-  - Display "X/7 Katas completed" progress indicator at top
-  - Render 7 Kata cards in vertical list
-  - Each card: number, title, description, status icon
-  - Status: locked (gray lock), unlocked (green play), completed (checkmark)
-  - Completed cards show attempts count and completion date
-  - Locked cards show "Complete previous Kata to unlock" message
-  - Unlocked cards have prominent "Start" button linking to session
-  - Empty state for users who haven't completed Step 12
-  - File: `packages/web/components/kata/KataLanding.tsx`
-  - **Implemented**: Full component with KataCard and KataLanding exports
-  - **Note**: All SVGs have proper aria-labels/title for accessibility
+- [ ] **P0.6: Implement POST /admin/rate-limits/:clientId/adjust endpoint**
+  - Parse body: `{ windowDuration?: number, maxRequests?: number }`
+  - Validate inputs (positive integers)
+  - Call `RateLimitAdminService.adjustLimit(clientId, params)`
+  - Update the in-memory tracking with new values
+  - Return 200 with updated `RateLimitStatus`
+  - File: `packages/sandbox-api/src/routes/admin-rate-limits.ts`
 
-- [x] **P1.2: Create /[toolPair]/kata route**
-  - Create `app/[toolPair]/kata/page.tsx`
-  - Load all Katas via content service
-  - Read progress from server-side cookie (Step 12 completion check)
-  - Render KataLanding component
-  - Handle empty state when tool pair has no Katas
-  - Add metadata (title, description)
-  - **Implemented**: Full page with generateStaticParams, generateMetadata, back link
-  - **Note**: Uses `listKatas()` from content service, maps kataId from frontmatter.kata
+- [ ] **P0.7: Install and set up NextAuth in web package**
+  - Install `next-auth` (NOT currently in deps)
+  - Create `packages/web/lib/auth.ts` with Google provider
+  - Configure `ADMIN_EMAILS` env var check (comma-separated list)
+  - Add session callback to set `isAdmin` flag
+  - Add signIn callback to restrict to allowed emails
+  - File: `packages/web/lib/auth.ts`
 
-- [x] **P1.3: Add Kata link to navigation**
-  - Add "Kata" link in main navigation
-  - Only visible for jj-git tool pair
-  - Show lock icon if Step 12 not complete
-  - File: `packages/web/components/ui/Navigation.tsx` (or NavigationWrapper)
-  - **Implemented**: Added [Kata] link to StepProgress.tsx next to [Glossary]
-  - Uses `useStepProgress` hook to check if Step 12 is complete
-  - Shows lock icon SVG when Step 12 not complete
-  - Only renders for toolPair === "jj-git"
+- [ ] **P0.8: Create admin layout with auth protection**
+  - Create `packages/web/app/admin/layout.tsx`
+  - Use `getServerSession` from NextAuth to check auth
+  - Redirect to `/` if not authenticated or not admin
+  - Include navigation sidebar: Dashboard, Rate Limits, Containers, Metrics
+  - Apply terminal aesthetic (dark bg #0a0a0a, monospace, green accent #22c55e)
+  - Follow existing layout pattern from `app/layout.tsx`
+  - File: `packages/web/app/admin/layout.tsx`
 
-### P2: Kata Session Interface
+- [ ] **P0.9: Create admin client service (Effect-TS)**
+  - Create `packages/web/services/admin-client.ts`
+  - Define `AdminClient` service with methods: `getRateLimits`, `getRateLimit`, `resetRateLimit`, `adjustRateLimit`
+  - Use `fetch` wrapped in Effect.tryPromise
+  - Add `X-Admin-Key` header from env var `ADMIN_API_KEY`
+  - Handle HTTP errors with proper Effect error types
+  - Follow existing pattern from `sandbox-client.ts`
+  - File: `packages/web/services/admin-client.ts`
 
-- [x] **P2.1: Create KataSession component**
-  - Header: Kata number, title, timer, attempt counter
-  - Progress bar showing exercise completion within Kata
-  - Scenario section at top (collapsible)
-  - Exercise list with current exercise highlighted
-  - Render MDX content for current exercise
-  - "Validate My Solution" button
-  - "Reset Sandbox" button
-  - Exit button (returns to landing)
-  - Keyboard shortcut: `Esc` to exit
-  - File: `packages/web/components/kata/KataSession.tsx`
-  - **Implemented**: Full component with validation state, progress tracking, timer,
-    exercise navigation, locked state handling, and session management
-  - **Note**: Reset Sandbox button has placeholder TODO (will integrate with
-    validation system in P3.1)
+### P1: Rate Limit Admin UI
 
-- [x] **P2.2: Create GitToggle component**
-  - Button with git-branch icon
-  - Label: "Show git equivalent" / "Hide git equivalent"
-  - Toggle state via TerminalContext
-  - Clear visual indication of current state
-  - File: `packages/web/components/kata/GitToggle.tsx`
-  - **Implemented**: Full component with git-branch SVG icon, ON/OFF indicator,
-    aria-pressed for accessibility, proper focus ring styling
+- [ ] **P1.1: Create /admin/rate-limits page**
+  - Server component that fetches rate limits via `AdminClient`
+  - Render `RateLimitTable` component with data
+  - Handle empty state (no rate limits yet)
+  - Add refresh button (revalidatePath)
+  - File: `packages/web/app/admin/rate-limits/page.tsx`
 
-- [x] **P2.3: Create ValidationFeedback component**
-  - Success state: Green checkmark, "Exercise complete" message
-  - Failure state: Red X, helpful hint text
-  - Loading state: Spinner during validation
-  - Accessible (aria-live region for screen readers)
-  - File: `packages/web/components/kata/ValidationFeedback.tsx`
-  - **Implemented**: Full component with ValidationState type export, customizable messages,
-    proper accessibility (role="status", aria-live="polite"), terminal aesthetic styling
-  - **Refactored**: KataSession now uses ValidationFeedback component instead of inline rendering
+- [ ] **P1.2: Create RateLimitTable component**
+  - Props: `rateLimits: RateLimitStatus[]`, `onReset: (clientId) => void`, `onAdjust: (clientId, params) => void`
+  - Table columns: Client ID, Sessions, Commands, WebSockets, Hour Window Start, Minute Window Start, Actions
+  - Actions: Reset button (with confirmation), Adjust button (opens modal)
+  - Sortable by any column
+  - Search/filter by client ID
+  - Terminal aesthetic styling (#0a0a0a bg, #22c55e accent)
+  - File: `packages/web/components/admin/RateLimitTable.tsx`
 
-- [x] **P2.4: Create /[toolPair]/kata/[kataId] route**
-  - Create `app/[toolPair]/kata/[kataId]/page.tsx`
-  - Load specific Kata content via content service
-  - Client-side component handles unlock redirect via KataProgressContext (not server-side)
-  - Render KataSession component with MDX content
-  - Handle 404 for invalid kataId
-  - **Note**: Server-side redirect not implemented since kata progress is in localStorage, not cookie
-  - **Implemented**: Full page with generateStaticParams, generateMetadata, MDX rendering
+- [ ] **P1.3: Create AdjustRateLimitModal component**
+  - Props: `isOpen`, `onClose`, `onSubmit`, `initialValues`
+  - Form fields: Window Duration (seconds), Max Requests (for display only - actual limits are global)
+  - Note: Adjust is mostly for resetting counters since limits are global
+  - Submit calls `onSubmit` with values
+  - Cancel closes modal
+  - File: `packages/web/components/admin/AdjustRateLimitModal.tsx`
 
-### P3: Validation System
+- [ ] **P1.4: Add rate limit reset/adjust actions**
+  - Wire up Reset button to call `AdminClient.resetRateLimit()`
+  - Show confirmation dialog before reset
+  - On success, refresh table data
+  - Show toast/notification on success/error
+  - File: `packages/web/app/admin/rate-limits/page.tsx` (update)
 
-- [x] **P3.1: Create validation engine**
-  - Create `validateExercise(exercise: Exercise, terminal: TerminalState): Promise<ValidationResult>`
-  - Support validation types: command, regex, exact, count
-  - Execute validation commands via sandbox API
-  - Parse terminal output (strip ANSI codes)
-  - Return structured result: success, hint, actual output
-  - File: `packages/web/services/kata-validation.ts`
-  - **Completed**: Full validation engine with WebSocket execution, 4 validation types
+- [ ] **P1.5: Add loading and error states**
+  - Skeleton loader for table while fetching
+  - Error boundary for admin routes
+  - Retry button on error
+  - File: `packages/web/components/admin/RateLimitTable.tsx` (update)
 
-- [x] **P3.2: Implement validation parsers**
-  - `parseJjLog(output: string): Commit[]` - parse commit list
-  - `parseJjStatus(output: string): Status` - parse working copy state
-  - `parseJjShow(output: string): CommitInfo` - parse commit details
-  - `parseJjBranchList(output: string): Bookmark[]` - parse bookmarks
-  - File: `packages/web/lib/kata/parsers.ts`
-  - **Completed**: All 4 parsers implemented with ANSI stripping
+### P2: Container Admin API
 
-- [x] **P3.3: Integrate validation into KataSession**
-  - Wire "Validate My Solution" button to validation engine
-  - Show ValidationFeedback component with results
-  - On success: mark exercise complete, enable next exercise
-  - Track validation attempts in KataProgressContext
-  - On final exercise completion: unlock next Kata
-  - **Completed**: Validation integrated with sessionId from TerminalContext
+- [ ] **P2.1: Create ContainerAdminService (Effect-TS)**
+  - Define interface: `listContainers`, `getContainer`, `restartContainer`, `stopContainer`, `removeContainer`, `streamLogs`, `execCommand`
+  - Use Dockerode via existing `DockerClient` dependency
+  - Implement `listContainers` with filters (status, label filters for toolkata.tool-pair)
+  - Return `ContainerInfo` objects with stats (cpu, memory) if available from Docker inspect
+  - Reuse `ContainerService` where possible for cleanup
+  - File: `packages/sandbox-api/src/services/container-admin.ts`
 
-### P4: Graduation Integration
+- [ ] **P2.2: Implement GET /admin/containers endpoint**
+  - Query params: `status`, `toolPair`, `olderThan` (for filtering old containers)
+  - Call `ContainerAdminService.listContainers(filters)`
+  - Return JSON array of `ContainerInfo`
+  - File: `packages/sandbox-api/src/routes/admin-containers.ts`
 
-- [x] **P4.1: Update Step 12 with Kata CTA**
-  - Replace "Return to beginning" link with Kata CTA section
-  - Add heading "Tutorial Complete"
-  - Add explanatory text about Kata
-  - Add "Start Your First Kata" button linking to `/jj-git/kata`
-  - Only show if all 12 steps completed
-  - File: `packages/web/content/comparisons/jj-git/12-step.mdx`
-  - **Implemented**: Created `KataCTA` component with conditional rendering based on step completion
-  - **Note**: Component uses `useStepProgress` hook to check if all 12 steps are complete
-  - **Files**: `packages/web/components/kata/KataCTA.tsx`, `components/mdx/MDXComponents.tsx`
+- [ ] **P2.3: Implement GET /admin/containers/:id endpoint**
+  - Call `ContainerAdminService.getContainer(id)`
+  - Return detailed container info with stats
+  - Return 404 if not found
+  - File: `packages/sandbox-api/src/routes/admin-containers.ts`
 
-- [x] **P4.2: Update Overview page with Kata section**
-  - Add "Kata Practice" section after Step 12 completion
-  - Show "Start Kata Practice" button prominently
-  - Show progress indicator (X/7 completed)
-  - File: `packages/web/app/[toolPair]/page.tsx`
-  - **Implemented**: Added Kata section to OverviewPageClientWrapper with:
-    - Conditional rendering for jj-git only
-    - Shows after Step 12 completion
-    - Displays X/7 Katas completed progress
-    - "Start Kata Practice" button links to /jj-git/kata
-  - **Files**: `packages/web/components/ui/OverviewPageClientWrapper.tsx`
-  - **Note**: Also added KataProgressProvider to `components/Providers.tsx`
+- [ ] **P2.4: Implement POST /admin/containers/:id/restart endpoint**
+  - Call `ContainerAdminService.restartContainer(id)`
+  - Return 204 on success, 404 if not found, 409 if operation fails
+  - File: `packages/sandbox-api/src/routes/admin-containers.ts`
 
-### P5: Content Creation
+- [ ] **P2.5: Implement POST /admin/containers/:id/stop endpoint**
+  - Call `ContainerAdminService.stopContainer(id)`
+  - Return 204 on success
+  - File: `packages/sandbox-api/src/routes/admin-containers.ts`
 
-- [x] **P5.1: Create Kata 1 - The Basics**
-  - File: `packages/web/content/katas/jj-git/01-basics.mdx`
-  - 3-4 exercises covering: status, log, describe, new
-  - Duration: 5-7 min
-  - Include validation frontmatter for each exercise
-  - **Completed**: 4 exercises with command, regex, and count validation types
+- [ ] **P2.6: Implement DELETE /admin/containers/:id endpoint**
+  - Query param: `force` (boolean)
+  - Call `ContainerAdminService.removeContainer(id, force)`
+  - Return 204 on success
+  - File: `packages/sandbox-api/src/routes/admin-containers.ts`
 
-- [x] **P5.2: Create Kata 2 - The @ Commit Dojo**
-  - File: `packages/web/content/katas/jj-git/02-at-commit.mdx`
-  - 4-5 exercises covering: @ navigation, auto-rebasing, edit
-  - Duration: 10 min
-  - Include validation frontmatter
-  - **Completed**: 4 exercises covering show, edit, describe, new
+- [ ] **P2.7: Implement GET /admin/containers/:id/logs endpoint**
+  - Query param: `tail` (number of lines)
+  - Call `ContainerAdminService.getLogs(id, tail)`
+  - Return text/plain with log lines
+  - File: `packages/sandbox-api/src/routes/admin-containers.ts`
 
-- [x] **P5.3: Create Kata 3 - Bookmarks Mastery**
-  - File: `packages/web/content/katas/jj-git/03-bookmarks.mdx`
-  - 4-5 exercises covering: bookmark create/set/delete
-  - Duration: 12 min
-  - Include validation frontmatter
-  - **Completed**: 5 exercises covering create, set, rename, forget, list
+### P3: Container Admin UI
 
-- [x] **P5.4: Create Kata 4 - Conflict Dojo**
-  - File: `packages/web/content/katas/jj-git/04-conflicts.mdx`
-  - 4-5 exercises covering: first-class conflicts, resolve, rebase conflicts
-  - Duration: 15 min
-  - Include validation frontmatter
-  - **Completed**: 4 exercises covering creating, viewing, resolving conflicts
+- [ ] **P3.1: Create /admin/containers page**
+  - Server component fetching containers via `AdminClient`
+  - Filter controls: status dropdown, toolPair dropdown, "Show old only" checkbox
+  - Render `ContainerGrid` component
+  - File: `packages/web/app/admin/containers/page.tsx`
 
-- [x] **P5.5: Create Kata 5 - Time Travel Master**
-  - File: `packages/web/content/katas/jj-git/05-time-travel.mdx`
-  - 3-4 exercises covering: operation log, op undo, op restore
-  - Duration: 10 min
-  - Include validation frontmatter
-  - **Completed**: 4 exercises covering operation log, undo, restore
+- [ ] **P3.2: Create ContainerGrid component**
+  - Props: `containers: ContainerInfo[]`, action handlers
+  - Card layout: ID (truncated), Name, Status (color-coded), Image, Created, CPU%, Memory
+  - Actions per card: Restart, Stop, Remove (with confirmation), View Logs
+  - Terminal aesthetic with status colors (running=green, stopped=red, dead=orange)
+  - File: `packages/web/components/admin/ContainerGrid.tsx`
 
-- [x] **P5.6: Create Kata 6 - History Sculpting**
-  - File: `packages/web/content/katas/jj-git/06-history.mdx`
-  - 4-5 exercises covering: squash, split, diffedit, rebase
-  - Duration: 15 min
-  - Include validation frontmatter
-  - **Completed**: 4 exercises covering squash, split, inline edit, rebase
+- [ ] **P3.3: Create LogViewer component**
+  - Props: `containerId`, `isOpen`, `onClose`
+  - Fetch logs via admin API
+  - Scrollable log output with ANSI color support
+  - Auto-refresh option for streaming logs
+  - Download logs button
+  - File: `packages/web/components/admin/LogViewer.tsx`
 
-- [x] **P5.7: Create Kata 7 - The Full Flow Challenge**
-  - File: `packages/web/content/katas/jj-git/07-full-flow.mdx`
-  - Open-ended scenario requiring multiple techniques
-  - Duration: 20 min
-  - Include validation frontmatter
-  - **Completed**: 4 exercises covering complete workflow from init to rebase
+### P4: Metrics API
 
-### P6: Polish & Edge Cases
+- [ ] **P4.1: Create MetricsService (Effect-TS)**
+  - Interface: `getSystemMetrics`, `getSandboxMetrics`, `getRateLimitMetrics`
+  - System metrics: use `os` module for CPU, memory, disk (via `df` command on Linux)
+  - Sandbox metrics: query `SessionService` for active sessions, query Docker for container count
+  - Rate limit metrics: query in-memory store for violations, top clients
+  - Store time-series in memory (optional, can be single values for MVP)
+  - File: `packages/sandbox-api/src/services/metrics.ts`
 
-- [x] **P6.1: Handle locked Kata direct access**
-  - Middleware or page-level check for Kata access
-  - Redirect to landing with toast/flash message
-  - Message: "Complete previous Kata to unlock"
-  - File: `packages/web/app/[toolPair]/kata/[kataId]/page.tsx`
-  - **Implemented**: Added `?locked=true` query param on redirect, flash message in KataLanding
-    with accessible alert (role="alert", aria-live="polite")
+- [ ] **P4.2: Implement GET /admin/metrics/system endpoint**
+  - Call `MetricsService.getSystemMetrics()`
+  - Return `SystemMetrics` JSON with cpu, memory, disk, network
+  - File: `packages/sandbox-api/src/routes/admin-metrics.ts`
 
-- [x] **P6.2: Add validation timeout handling**
-  - 5-second timeout on validation commands
-  - Show "Try again" message on timeout
-  - Allow retry without counting as attempt
-  - File: `packages/web/services/kata-validation.ts`
-  - **Completed**: Timeout handling already existed in executeCommand (5-second timeout)
-  - **Implemented**: Modified KataSession catch block to NOT record attempt for TimeoutError
-  - File: `packages/web/components/kata/KataSession.tsx:233`
-  - Note: Changed hint to "Validation timed out. The command took too long to execute. Try again."
+- [ ] **P4.3: Implement GET /admin/metrics/sandbox endpoint**
+  - Call `MetricsService.getSandboxMetrics()`
+  - Return sandbox stats JSON: total sessions, running sessions, containers, errors
+  - File: `packages/sandbox-api/src/routes/admin-metrics.ts`
 
-- [x] **P6.3: Handle terminal reset during exercise**
-  - Preserve exercise progress in KataProgressContext
-  - Allow re-validation after reset
-  - Don't reset attempt counter on terminal reset
-  - **Implemented**: Added `resetTerminal()` method to TerminalContext that calls the
-    terminal ref's `reset()` method
-  - **Implemented**: Updated KataSession to call `resetTerminal()` in handleResetSandbox
-  - **Note**: Exercise progress (completed exercises, attempt counts) is stored in
-    KataProgressContext and persists across terminal resets
+- [ ] **P4.4: Implement GET /admin/metrics/rate-limits endpoint**
+  - Call `MetricsService.getRateLimitMetrics()`
+  - Return violations, blocked requests, top clients
+  - File: `packages/sandbox-api/src/routes/admin-metrics.ts`
 
-- [x] **P6.4: Sync across multiple tabs**
-  - Listen for `storage` events on localStorage
-  - Sync attempt count and progress across tabs
-  - Best effort (don't block on sync)
-  - File: `packages/web/contexts/KataProgressContext.tsx`
-  - **Implemented**: Added `window.addEventListener("storage", ...)` handler
-    that reloads progress data when other tabs modify localStorage
+### P5: Metrics UI
 
-- [x] **P6.5: All Katas completed state**
-  - Special message on landing when all 7 complete
-  - Encourage real-world jj usage
-  - Show final stats (total attempts, total time)
-  - File: `packages/web/components/kata/KataLanding.tsx`
-  - **Implemented**: Enhanced completion message with total attempts, exercises completed,
-    and final Kata completion date
+- [ ] **P5.1: Create /admin/metrics page**
+  - Three sections: System, Sandbox, Rate Limits
+  - Auto-refresh every 30 seconds
+  - Last updated timestamp
+  - File: `packages/web/app/admin/metrics/page.tsx`
+
+- [ ] **P5.2: Create MetricsPanel component**
+  - Props: `title`, `metrics: Record<string, number | string>`
+  - Grid layout of metric cards
+  - Color coding for thresholds (e.g., red if CPU > 80%)
+  - Terminal aesthetic styling
+  - File: `packages/web/components/admin/MetricsPanel.tsx`
+
+### P6: Testing & Validation
+
+- [ ] **P6.1: Write unit tests for RateLimitAdminService**
+  - Mock rate limit store
+  - Test getAllStatus, getStatus, resetLimit, adjustLimit
+  - Test error cases (client not found)
+  - File: `packages/sandbox-api/tests/services/rate-limit-admin.test.ts`
+
+- [ ] **P6.2: Write integration tests for admin endpoints**
+  - Test all rate limit endpoints with real HTTP calls
+  - Test auth (missing API key, invalid API key)
+  - Test error cases (invalid client ID)
+  - File: `packages/sandbox-api/tests/routes/admin.test.ts`
+
+- [ ] **P6.3: Add Playwright tests for admin UI**
+  - Test login flow (mock Google OAuth in test)
+  - Test rate limits page loads and displays data
+  - Test reset action (mock API response)
+  - File: `packages/web/tests/admin.spec.ts`
+
+- [ ] **P6.4: Manual testing checklist**
+  - [ ] Rate limits page loads and shows data
+  - [ ] Reset button works and refreshes data
+  - [ ] Adjust modal opens and saves changes
+  - [ ] Containers page lists containers
+  - [ ] Container restart/stop/remove work
+  - [ ] Logs viewer displays logs
+  - [ ] Metrics page shows system/sandbox/rate-limit stats
+  - [ ] Non-admin users cannot access /admin routes
+  - [ ] Invalid API key returns 403
+
+### P7: Deployment
+
+- [ ] **P7.1: Add ADMIN_API_KEY to sandbox-api environment**
+  - Add ADMIN_API_KEY to .env validation
+  - Fail fast if not set in production
+  - File: `packages/sandbox-api/src/config.ts`
+
+- [ ] **P7.2: Add Vercel environment variables**
+  - Document required env vars in README
+  - Add to Vercel dashboard: ADMIN_API_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, ADMIN_EMAILS
+  - File: `README.md` (update)
+
+- [ ] **P7.3: Update Caddy config for admin route protection**
+  - Add IP allowlist for /admin/* routes
+  - Verify X-Admin-Key header validation
+  - Test API key validation
+  - File: `scripts/hetzner/Caddyfile` (update)
 
 ---
 
 ## Dependencies
 
 ```
-P0.1 (TerminalContext) ────────────────────┐
-                                           │
-P0.2 (KataProgressContext) ─────────────────┼──► P1.1 (KataLanding) ──► P1.2 (Route)
-                                           │         │
-P0.3 (Content Loader) ─────────────────────┤         │
-                                           │         ▼
-P0.4 (SideBySide) ─────────────────────────┘    P2.1 (KataSession) ──► P2.4 (Route)
-                                                        │
-P2.2 (GitToggle) ◄──────────────────────────────────────┤
-                                                        │
-P2.3 (ValidationFeedback) ◄─────────────────────────────┤
-                                                        │
-P3.1 (Validation Engine) ◄──────────────────────────────┤
-     │                                                  │
-     ▼                                                  ▼
-P3.2 (Parsers) ───────────────────────────────────► P3.3 (Integration)
-                                                           │
-P4.1 (Step 12 CTA) ◄───────────────────────────────────────┤
-                                                           │
-P4.2 (Overview CTA) ◄──────────────────────────────────────┤
-                                                           │
-P5.1-P5.7 (Content) ◄──────────────────────────────────────┘
+P0.1 (Route scaffolding) ──────────────────────┐
+                                                │
+P0.2 (RateLimitAdminService) ───────────────────┼──► P0.3-P0.6 (Rate limit endpoints)
+       │                                        │         │
+P0.7 (NextAuth) ────────────────────────────────┤         │
+       │                                        │         ▼
+P0.8 (Admin layout) ◄───────────────────────────┤    P1.1-P1.5 (Rate limit UI)
+       │                                        │
+P0.9 (Admin client) ◄───────────────────────────┘
+       │
+       ├──► P2.1-P2.7 (Container API) ──► P3.1-P3.3 (Container UI)
+       │
+       └──► P4.1-P4.4 (Metrics API) ────► P5.1-P5.2 (Metrics UI)
 ```
 
 ---
 
-## File Structure
+## File Structure (Final)
 
 ```
-packages/web/
-├── app/
-│   └── [toolPair]/
-│       ├── kata/
-│       │   ├── page.tsx              # P1.2: Landing page
-│       │   └── [kataId]/
-│       │       └── page.tsx          # P2.4: Session page
-│       └── page.tsx                  # P4.2: Overview (update)
-├── components/
-│   ├── kata/
-│   │   ├── KataLanding.tsx           # P1.1
-│   │   ├── KataSession.tsx           # P2.1
-│   │   ├── GitToggle.tsx             # P2.2
-│   │   └── ValidationFeedback.tsx    # P2.3
-│   └── ui/
-│       ├── SideBySide.tsx            # P0.4 (update)
-│       └── Navigation.tsx            # P1.3 (update)
-├── contexts/
-│   ├── TerminalContext.tsx           # P0.1 (extend)
-│   └── KataProgressContext.tsx       # P0.2
+packages/sandbox-api/src/
 ├── services/
-│   ├── content.ts                    # P0.3 (extend)
-│   └── kata-validation.ts            # P3.1
+│   ├── rate-limit-admin.ts     # P0.2
+│   ├── container-admin.ts      # P2.1
+│   └── metrics.ts              # P4.1
+├── routes/
+│   ├── admin-rate-limits.ts    # P0.3-P0.6
+│   ├── admin-containers.ts     # P2.2-P2.7
+│   └── admin-metrics.ts        # P4.2-P4.4
+└── config.ts                   # P7.1 - Add ADMIN_API_KEY validation
+
+packages/web/
+├── app/admin/
+│   ├── layout.tsx              # P0.8
+│   ├── page.tsx                # (dashboard home - optional)
+│   ├── rate-limits/
+│   │   └── page.tsx            # P1.1
+│   ├── containers/
+│   │   └── page.tsx            # P3.1
+│   └── metrics/
+│       └── page.tsx            # P5.1
+├── components/admin/
+│   ├── RateLimitTable.tsx      # P1.2
+│   ├── AdjustRateLimitModal.tsx # P1.3
+│   ├── ContainerGrid.tsx       # P3.2
+│   ├── LogViewer.tsx           # P3.3
+│   └── MetricsPanel.tsx        # P5.2
+├── services/
+│   └── admin-client.ts         # P0.9
 ├── lib/
-│   ├── content/
-│   │   ├── types.ts                  # P0.3 (add KataType)
-│   │   └── schemas.ts                # P0.3 (add kata schema)
-│   └── kata/
-│       └── parsers.ts                # P3.2
-└── content/
-    └── katas/
-        └── jj-git/
-            ├── 01-basics.mdx         # P5.1
-            ├── 02-at-commit.mdx      # P5.2
-            ├── 03-bookmarks.mdx      # P5.3
-            ├── 04-conflicts.mdx      # P5.4
-            ├── 05-time-travel.mdx    # P5.5
-            ├── 06-history.mdx        # P5.6
-            └── 07-full-flow.mdx      # P5.7
-```
-
----
-
-## Data Models
-
-### KataProgress Interface
-
-```typescript
-interface KataProgress {
-  completedKatas: string[]  // ["1", "2", ...]
-  currentKata?: string
-  kataStats: Record<string, KataStat>
-}
-
-interface KataStat {
-  completedAt: string  // ISO timestamp
-  attempts: number     // Validation attempts before success
-  exercisesCompleted: string[]  // ["1.1", "1.2", ...]
-}
-```
-
-### Kata Frontmatter Schema
-
-```typescript
-interface KataFrontmatter {
-  title: string
-  kata: number           // 1-7
-  duration: string       // "10 min"
-  focus: string          // Brief description of focus area
-  exercises: Exercise[]
-}
-
-interface Exercise {
-  id: string             // "2.1", "2.2", etc.
-  title: string
-  validation: {
-    type: "command" | "regex" | "exact" | "count"
-    command: string      // jj log, jj status, etc.
-    expectedPattern?: string  // For regex type
-    expectedValue?: string    // For exact type
-    minCount?: number         // For count type
-  }
-}
+│   └── auth.ts                 # P0.7
+├── middleware.ts               # P0.8 - Add auth check
+└── tests/
+    └── admin.spec.ts           # P6.3
 ```
 
 ---
@@ -464,50 +446,33 @@ interface Exercise {
 ## Validation Command
 
 ```bash
-cd packages/web && bun run build && bun run typecheck && bun run lint
+# Type check and lint both packages
+cd packages/sandbox-api && bun run typecheck && bun run lint
+cd packages/web && bun run typecheck && bun run lint
+
+# Run tests
+cd packages/sandbox-api && bun test
+cd packages/web && bun run test
+
+# Build verification
+cd packages/sandbox-api && bun run build
+cd packages/web && bun run build
 ```
 
 ---
 
-## Acceptance Criteria Summary
+## Acceptance Criteria
 
-- [ ] Step 12 shows Kata CTA after completion (P4.1)
-- [ ] Kata landing page shows 7 Katas with correct lock states (P1.1, P1.2)
-- [ ] Katas unlock progressively (strict order) (P0.2, P6.1)
-- [ ] Git equivalents toggle works globally (hidden by default) (P0.1, P0.4, P2.2)
-- [ ] Validation system checks terminal state correctly (P3.1, P3.2, P3.3)
-- [ ] Attempt count tracked and displayed (P0.2, P2.1)
-- [ ] All 7 Kata content files created (P5.1-P5.7)
-- [ ] Accuracy data structure ready for future leaderboard (P0.2)
-- [ ] Mobile responsive design maintained (all components)
-- [ ] Accessibility requirements met (aria labels, keyboard nav)
-- [ ] Edge cases handled gracefully (P6.1-P6.5)
-
----
-
-## Discovery Notes
-
-### Existing Infrastructure Verification
-
-| Component | Status | Location |
-|-----------|--------|----------|
-| TerminalContext | ✅ Exists | `packages/web/contexts/TerminalContext.tsx` |
-| SideBySide | ✅ Exists | `packages/web/components/ui/SideBySide.tsx` |
-| ContentService | ✅ Exists | `packages/web/services/content.ts` |
-| ProgressStore | ✅ Exists | `packages/web/core/ProgressStore.ts` |
-| useStepProgress | ✅ Exists | `packages/web/hooks/useStepProgress.ts` |
-| Route structure | ✅ Exists | `app/[toolPair]/` pattern confirmed |
-| MDX system | ✅ Exists | `lib/content-core/` with Effect-TS |
-| Kata directory | ❌ Missing | `content/katas/` needs creation |
-
-### Key Implementation Insights
-
-1. **Content Loading**: The existing `defineContentType()` pattern makes adding KataType straightforward. Follow the same pattern as `StepType` in `lib/content/types.ts`.
-
-2. **Progress Tracking**: The existing `ProgressStore` uses a singleton pattern with localStorage + cookie sync. Kata progress should follow similar patterns but remain separate (different localStorage key).
-
-3. **TerminalContext**: Already has localStorage persistence for settings. Adding `showGitEquivalents` follows the same pattern as `sidebarWidth`, `infoPanelCollapsed`, etc.
-
-4. **SideBySide**: Clean component with clear separation between columns. Adding conditional rendering for the left column is straightforward.
-
-5. **Routes**: Next.js App Router with `[toolPair]` dynamic segment. New kata routes fit naturally as `app/[toolPair]/kata/` and `app/[toolPair]/kata/[kataId]/`.
+- [ ] Admin UI accessible only to authorized Google accounts
+- [ ] Rate limits page shows all clients with current usage
+- [ ] Reset rate limit button clears client's rate limit
+- [ ] Adjust rate limit changes window/max requests
+- [ ] Containers page lists all sandbox containers
+- [ ] Container restart/stop/remove actions work
+- [ ] Logs viewer displays container logs
+- [ ] Metrics page shows system, sandbox, and rate-limit stats
+- [ ] All endpoints protected by API key + IP allowlist
+- [ ] Unit tests pass for RateLimitAdminService
+- [ ] Integration tests pass for admin endpoints
+- [ ] Playwright tests pass for admin UI
+- [ ] Manual testing checklist complete

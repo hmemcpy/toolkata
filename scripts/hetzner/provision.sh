@@ -1,5 +1,5 @@
 #!/bin/bash
-# provision.sh - Provisions Hetzner Cloud infrastructure for toolkata sandbox
+# provision.sh - Provisions Hetzner Cloud infrastructure for toolkata sandbox + admin
 #
 # Prerequisites:
 #   1. Hetzner Cloud account
@@ -288,30 +288,31 @@ echo "=== Configuring ufw firewall ==="
 # Install ufw if not present
 apt-get install -y ufw
 
-# Reset any existing rules to known state
-ufw --force reset
+# Check if already configured (avoid destructive reset)
+if ufw status | grep -q "Status: active"; then
+    echo "UFW already active, skipping initial setup"
+else
+    # Set default policies: deny incoming, allow outgoing
+    ufw default deny incoming
+    ufw default allow outgoing
 
-# Set default policies: deny incoming, allow outgoing
-ufw default deny incoming
-ufw default allow outgoing
+    # Allow SSH (port 22) - rate limited to prevent brute force
+    ufw limit 22/tcp comment 'SSH'
 
-# Allow SSH (port 22) - rate limited to prevent brute force
-# Note: fail2ban provides additional protection
-ufw limit 22/tcp
+    # Allow HTTP and HTTPS
+    ufw allow 80/tcp comment 'HTTP'
+    ufw allow 443/tcp comment 'HTTPS'
 
-# Allow HTTP and HTTPS
-ufw allow 80/tcp comment 'HTTP'
-ufw allow 443/tcp comment 'HTTPS'
+    # Allow Docker bridge network traffic (for container networking)
+    ufw allow from 172.16.0.0/12 comment 'Docker networks'
+    ufw allow from 192.168.0.0/16 comment 'Docker networks'
 
-# Allow Docker bridge network traffic (for container networking)
-ufw allow from 172.16.0.0/12
-ufw allow from 192.168.0.0/16
+    # Allow localhost
+    ufw allow from 127.0.0.1 comment 'localhost'
 
-# Allow localhost
-ufw allow from 127.0.0.1
-
-# Enable firewall (non-interactive)
-ufw --force enable
+    # Enable firewall (non-interactive)
+    ufw --force enable
+fi
 
 echo "=== ufw configured and enabled ==="
 echo "=== Active rules ==="
@@ -360,10 +361,27 @@ echo "=== logrotate configured ==="
 echo "=== Testing gVisor ==="
 docker run --runtime=runsc --rm hello-world
 
+echo "=== Installing Redis for admin features ==="
+if docker ps | grep -q redis; then
+    echo "Redis already running"
+elif docker ps -a | grep -q redis; then
+    echo "Starting existing Redis container..."
+    docker start redis
+else
+    echo "Creating Redis container..."
+    docker run -d \
+        --name redis \
+        --restart unless-stopped \
+        -p 127.0.0.1:6379:6379 \
+        -v redis-data:/data \
+        redis:7-alpine \
+        redis-server --appendonly yes
+fi
+
 echo "=== Setup complete ==="
 SETUP
 
-success "Software installed"
+success "Software installed (including Redis for admin)"
 
 # ============================================================
 # 5. SAVE CONFIGURATION
@@ -402,5 +420,6 @@ echo "  ssh root@$SERVER_IP"
 echo ""
 echo "Next steps:"
 echo "  1. Add DNS A record: sandbox.toolkata.com → $SERVER_IP"
-echo "  2. Deploy: ./scripts/hetzner/deploy.sh"
+echo "  2. Set environment: export SANDBOX_API_KEY=<generate-with-openssl>"
+echo "  3. Deploy: ./scripts/hetzner/deploy.sh"
 echo "============================================================"
