@@ -5,21 +5,18 @@ You are in PLANNING mode. Analyze specifications against existing code and gener
 ## Phase 0: Orient
 
 ### 0a. Study specifications
-Read all files in `specs/` directory using parallel subagents, focusing on `specs/snippet-validation.md`.
+Read all files in `specs/` directory using parallel subagents.
 
 ### 0b. Study existing implementation
 Use parallel subagents to analyze relevant source directories:
-- `packages/sandbox-api/src/services/` — WebSocket, session, container services
-- `packages/web/scripts/` — Existing validation scripts
-- `packages/web/components/ui/` — TryIt, InteractiveTerminal, comparison blocks
-- `packages/web/services/` — SandboxClient
-- `packages/web/content/comparisons/` — MDX structure and config.yml files
+- `packages/web/components/providers/` - Context/state management
+- `packages/web/components/ui/` - UI components (SideBySide, TryIt)
+- `packages/web/services/` - Content loading, sandbox client
+- `packages/web/app/[toolPair]/` - Route structure
+- `packages/web/content/` - MDX content structure
 
 ### 0c. Study the current plan
 Read `IMPLEMENTATION_PLAN.md` if it exists.
-
-### 0d. Study the detailed spec
-Read `SNIPPET-VALIDATION.md` for the full system design.
 
 ## Phase 1: Gap Analysis
 
