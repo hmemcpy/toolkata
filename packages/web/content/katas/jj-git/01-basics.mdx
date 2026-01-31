@@ -1,0 +1,99 @@
+---
+title: "The Basics"
+kata: 1
+duration: "5 min"
+focus: "status, log, describe, new commands"
+exercises:
+  - id: "1.1"
+    title: "Check repository status"
+    validation:
+      type: "command"
+      command: "jj status"
+  - id: "1.2"
+    title: "View commit history"
+    validation:
+      type: "count"
+      command: "jj log"
+      minCount: 2
+  - id: "1.3"
+    title: "Name the working copy commit"
+    validation:
+      type: "regex"
+      command: "jj show @"
+      expectedPattern: "Initial commit"
+  - id: "1.4"
+    title: "Create a new commit"
+    validation:
+      type: "count"
+      command: "jj log"
+      minCount: 3
+---
+
+# The Basics
+
+Practice the fundamental jj commands: status, log, describe, and new.
+
+## Scenario
+
+You're working on a new project and need to commit your initial changes. The repository has been initialized with one commit.
+
+## Exercise 1: Check repository status
+
+Check the current state of your working copy.
+
+<TryIt command="jj status" description="Check the repository status" />
+
+The output shows:
+- The parent commit of your working copy
+- Any uncommitted changes (currently none)
+- The working copy commit ID
+
+## Exercise 2: View commit history
+
+View all commits in the repository.
+
+<TryIt command="jj log" description="View all commits" />
+
+The output shows:
+- Each commit with its change ID
+- The commit message
+- The timestamp
+- The `@` symbol marks your working copy commit
+
+## Exercise 3: Name the working copy commit
+
+Your working copy currently has the default message. Change it to something descriptive.
+
+<TryIt command="jj describe -m 'Initial commit'" description="Name the @ commit" />
+
+<TryIt command="jj show @" description="Verify the description" />
+
+The `jj show @` command displays the current working copy commit with its new description.
+
+## Exercise 4: Create a new commit
+
+Create a file and commit it.
+
+<TryIt command="echo 'hello world' > README.md" description="Create a README file" />
+
+<TryIt command="jj status" description="Check the status (shows file change)" />
+
+<TryIt command="jj describe -m 'Add README'" description="Name the commit" />
+
+<TryIt command="jj new" description="Finalize and create new @" />
+
+After `jj new`, your previous working copy becomes a permanent commit, and a new empty working copy is created as `@`.
+
+## Key Points
+
+- `jj status` shows working copy state and parent commit
+- `jj log` displays all commits in the repository
+- `jj describe -m "message"` names the `@` commit
+- `jj new` finalizes `@` and creates a new empty working copy
+
+## Completion Checklist
+
+- [ ] Ran `jj status` to check repository state
+- [ ] Ran `jj log` to view commit history (at least 2 commits)
+- [ ] Used `jj describe` to name the working copy commit
+- [ ] Created a new commit with `jj new` (at least 3 commits total)

@@ -1,0 +1,98 @@
+---
+title: "Time Travel Master"
+kata: 5
+duration: "10 min"
+focus: "operation log, op undo, and op restore"
+exercises:
+  - id: "5.1"
+    title: "View the operation log"
+    validation:
+      type: "command"
+      command: "jj operation log"
+  - id: "5.2"
+    title: "Undo the last operation"
+    validation:
+      type: "count"
+      command: "jj log"
+      minCount: 4
+  - id: "5.3"
+    title: "Restore an undone operation"
+    validation:
+      type: "count"
+      command: "jj log"
+      minCount: 5
+  - id: "5.4"
+    title: "View operation at specific time"
+    validation:
+      type: "command"
+      command: "jj operation log --limit 5"
+---
+
+# Time Travel Master
+
+Practice jj's operation log for undoing and restoring operations—like git reflog but more powerful.
+
+## Scenario
+
+You're working on a feature and make a mistake. Instead of guessing what happened, you can use jj's operation log to undo and restore operations.
+
+## Exercise 1: View the operation log
+
+Show all operations that have been performed on the repository.
+
+<TryIt command="jj operation log" description="View full operation log" />
+
+The operation log shows:
+- Unique operation ID
+- Operation type (new, edit, commit, etc.)
+- Timestamp
+- Commit message
+
+This is like `git reflog` but more detailed and queryable.
+
+## Exercise 2: Undo the last operation
+
+Revert the most recent operation.
+
+<TryIt command="jj operation undo" description="Undo the last operation" />
+
+<TryIt command="jj log" description="Verify the undo" />
+
+<TryIt command="jj operation log" description="See new undo operation in log" />
+
+`jj operation undo` reverses the last operation. The undo itself is recorded as a new operation, so you can always undo the undo.
+
+## Exercise 3: Restore an undone operation
+
+Restore a previously undone operation by its ID.
+
+<TryIt command="jj op restore" description="Restore the previous operation" />
+
+<TryIt command="jj log" description="Verify the restore" />
+
+`jj op restore` reapplies an operation that was previously undone. You can specify an operation ID with `--op` to restore any past operation.
+
+## Exercise 4: View operation at specific time
+
+Query the operation log with filters.
+
+<TryIt command="jj operation log --limit 5" description="Show last 5 operations" />
+
+<TryIt command="jj operation log --no-pager" description="Show without pagination" />
+
+You can filter by time, user, or operation type. This makes it easy to find when something changed.
+
+## Key Points
+
+- `jj operation log` shows all repository operations
+- `jj op undo` reverses the last operation
+- `jj op restore` reapplies an undone operation
+- Operations are immutable and queryable
+- Every undo/restore creates a new operation
+
+## Completion Checklist
+
+- [ ] Viewed operation log with `jj operation log`
+- [ ] Undid last operation and verified (4 commits)
+- [ ] Restored operation and verified (5 commits)
+- [ ] Queried operation log with `--limit` flag

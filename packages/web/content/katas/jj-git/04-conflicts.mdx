@@ -1,0 +1,110 @@
+---
+title: "Conflict Dojo"
+kata: 4
+duration: "15 min"
+focus: "first-class conflicts, resolve, and rebase conflicts"
+exercises:
+  - id: "4.1"
+    title: "Create a conflict in a file"
+    validation:
+      type: "regex"
+      command: "jj status"
+      expectedPattern: "conflict"
+  - id: "4.2"
+    title: "View conflict markers in the file"
+    validation:
+      type: "regex"
+      command: "cat config.txt"
+      expectedPattern: "%%%%%%%"
+  - id: "4.3"
+    title: "Resolve the conflict"
+    validation:
+      type: "regex"
+      command: "jj status"
+      expectedPattern: "Working copy clean"
+  - id: "4.4"
+    title: "List and abandon a conflict"
+    validation:
+      type: "count"
+      command: "jj log"
+      minCount: 6
+---
+
+# Conflict Dojo
+
+Practice working with jj's first-class conflicts—conflicts that live in the repository, not in your files.
+
+## Scenario
+
+You're working on a feature branch and encounter a merge conflict. In jj, conflicts are represented as commits in the repository, making them easier to track and resolve.
+
+## Exercise 1: Create a conflict in a file
+
+Simulate a merge conflict by editing the same file in two different commits.
+
+<TryIt command="echo 'option1=value1' > config.txt" description="Create initial config" />
+
+<TryIt command="jj describe -m 'Add config v1'" description="Name the commit" />
+
+<TryIt command="jj new" description="Commit the change" />
+
+<TryIt command="echo 'option2=value2' >> config.txt" description="Add another option" />
+
+<TryIt command="jj describe -m 'Add config v2'" description="Name second commit" />
+
+<TryIt command="jj new" description="Commit second change" />
+
+<TryIt command="jj edit @-" description="Move @ to parent" />
+
+<TryIt command="echo 'option1=different' > config.txt" description="Change the same file differently" />
+
+<TryIt command="jj describe -m 'Conflict version'" description="Name conflicting commit" />
+
+<TryIt command="jj new" description="Create conflict" />
+
+<TryIt command="jj status" description="Check for conflict status" />
+
+## Exercise 2: View conflict markers in the file
+
+Examine the conflicted file to see jj's conflict markers.
+
+<TryIt command="cat config.txt" description="View conflicted file" />
+
+jj uses `%%%%%%%` markers to separate conflict sides. The format shows both versions and any remaining content.
+
+## Exercise 3: Resolve the conflict
+
+Edit the file to resolve the conflict and finalize.
+
+<TryIt command="echo 'option1=resolved' > config.txt" description="Resolve with single value" />
+
+<TryIt command="jj describe -m 'Resolve conflict'" description="Name the resolution" />
+
+<TryIt command="jj new" description="Finalize resolution" />
+
+<TryIt command="jj status" description="Verify clean state" />
+
+## Exercise 4: List and abandon a conflict
+
+View conflict commits and learn how to abandon them.
+
+<TryIt command="jj log" description="View all commits including conflicts" />
+
+<TryIt command="jj operation log" description="Show operation log" />
+
+Conflicts in jj are commits with multiple parents. You can abandon them with `jj abandon` if needed.
+
+## Key Points
+
+- Conflicts are commits with multiple parents
+- `%%%%%%%` markers separate conflict sides in files
+- Resolve by editing files and running `jj new`
+- `jj status` shows conflict state
+- `jj operation log` shows all operations for undo
+
+## Completion Checklist
+
+- [ ] Created a conflict by editing same file in two commits
+- [ ] Viewed conflict markers in the file (`%%%%%%%`)
+- [ ] Resolved the conflict and verified clean state
+- [ ] Reviewed operation log (at least 6 commits)

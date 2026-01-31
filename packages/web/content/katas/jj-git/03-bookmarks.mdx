@@ -1,0 +1,110 @@
+---
+title: "Bookmarks Mastery"
+kata: 3
+duration: "12 min"
+focus: "bookmark create, set, and delete operations"
+exercises:
+  - id: "3.1"
+    title: "Create a new bookmark"
+    validation:
+      type: "regex"
+      command: "jj bookmark list"
+      expectedPattern: "my-feature"
+  - id: "3.2"
+    title: "Set bookmark to a specific commit"
+    validation:
+      type: "regex"
+      command: "jj show my-feature"
+      expectedPattern: "Initial commit"
+  - id: "3.3"
+    title: "Rename a bookmark"
+    validation:
+      type: "command"
+      command: "jj bookmark list"
+  - id: "3.4"
+    title: "Delete a bookmark"
+    validation:
+      type: "regex"
+      command: "jj bookmark list"
+      expectedPattern: "my-feature-renamed"
+  - id: "3.5"
+    title: "List all bookmarks"
+    validation:
+      type: "count"
+      command: "jj bookmark list"
+      minCount: 2
+---
+
+# Bookmarks Mastery
+
+Practice creating and managing bookmarks—jj's equivalent to git branches.
+
+## Scenario
+
+You're working on a feature and need to create bookmarks to track different points in your commit history. Bookmarks in jj move automatically as you commit, unlike git branches which stay fixed.
+
+## Exercise 1: Create a new bookmark
+
+Create a bookmark pointing to the current `@` commit.
+
+<TryIt command="jj bookmark create my-feature" description="Create a bookmark named my-feature" />
+
+<TryIt command="jj bookmark list" description="List all bookmarks" />
+
+Bookmarks are named references to commits. Unlike git branches, bookmarks in jj move automatically when you create new commits.
+
+## Exercise 2: Set bookmark to a specific commit
+
+Move a bookmark to point to a different commit.
+
+<TryIt command="jj bookmark set my-feature --revision=rsvkpznx" description="Set bookmark to specific commit" />
+
+<TryIt command="jj show my-feature" description="Verify bookmark location" />
+
+<TryIt command="jj log" description="See commit graph with bookmarks" />
+
+The `--revision` flag lets you point a bookmark to any commit in history, not just the current `@`.
+
+## Exercise 3: Rename a bookmark
+
+Rename an existing bookmark to a new name.
+
+<TryIt command="jj bookmark rename my-feature my-feature-renamed" description="Rename the bookmark" />
+
+<TryIt command="jj bookmark list" description="Verify the rename" />
+
+Renaming bookmarks is a common operation when refactoring branch names or updating naming conventions.
+
+## Exercise 4: Delete a bookmark
+
+Remove a bookmark that's no longer needed.
+
+<TryIt command="jj bookmark forget my-feature-renamed" description="Delete the bookmark" />
+
+<TryIt command="jj bookmark list" description="Verify it's gone" />
+
+The `forget` subcommand removes the bookmark but doesn't delete any commits.
+
+## Exercise 5: List all bookmarks
+
+Show all bookmarks with their locations.
+
+<TryIt command="jj bookmark list" description="List all bookmarks" />
+
+The output shows each bookmark name and the commit it points to. You can use `-r` for a raw format or `--all` to show all bookmarks including remote-tracking ones.
+
+## Key Points
+
+- `jj bookmark create <name>` creates a bookmark at `@`
+- `jj bookmark set <name> -r <commit>` moves bookmark to specific commit
+- `jj bookmark rename <old> <new>` renames a bookmark
+- `jj bookmark forget <name>` deletes a bookmark
+- `jj bookmark list` shows all bookmarks
+
+## Completion Checklist
+
+- [ ] Created bookmark "my-feature"
+- [ ] Set bookmark to specific commit
+- [ ] Renamed bookmark to "my-feature-renamed"
+- [ ] Deleted bookmark with `jj bookmark forget`
+- [ ] Listed all bookmarks (at least 2 remaining)

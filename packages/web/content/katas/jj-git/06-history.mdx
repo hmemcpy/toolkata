@@ -1,0 +1,130 @@
+---
+title: "History Sculpting"
+kata: 6
+duration: "15 min"
+focus: "squash, split, diffedit, and rebase"
+exercises:
+  - id: "6.1"
+    title: "Squash multiple commits"
+    validation:
+      type: "count"
+      command: "jj log"
+      minCount: 3
+  - id: "6.2"
+    title: "Split a commit into two"
+    validation:
+      type: "count"
+      command: "jj log"
+      minCount: 4
+  - id: "6.3"
+    title: "Edit commit contents inline"
+    validation:
+      type: "command"
+      command: "jj show @"
+  - id: "6.4"
+    title: "Rebase commits onto another branch"
+    validation:
+      type: "count"
+      command: "jj log"
+      minCount: 5
+---
+
+# History Sculpting
+
+Practice advanced history editing operations—squashing, splitting, inline editing, and rebasing.
+
+## Scenario
+
+You have a feature branch with several commits that need to be cleaned up before merging. You'll squash related commits, split a large commit, edit file contents inline, and rebase onto main.
+
+## Exercise 1: Squash multiple commits
+
+Combine several related commits into one.
+
+<TryIt command="echo 'file1' > a.txt" description="Create first file" />
+
+<TryIt command="jj describe -m 'Add a'" description="Name commit" />
+
+<TryIt command="jj new" description="Commit" />
+
+<TryIt command="echo 'file2' > b.txt" description="Create second file" />
+
+<TryIt command="jj describe -m 'Add b'" description="Name commit" />
+
+<TryIt command="jj new" description="Commit" />
+
+<TryIt command="echo 'file3' > c.txt" description="Create third file" />
+
+<TryIt command="jj describe -m 'Add c'" description="Name commit" />
+
+<TryIt command="jj squash" description="Squash into parent" />
+
+<TryIt command="jj describe -m 'Add all files'" description="Name squashed commit" />
+
+<TryIt command="jj log" description="Verify squash reduced commits" />
+
+## Exercise 2: Split a commit into two
+
+Divide a commit with multiple changes into separate commits.
+
+<TryIt command="echo 'line1' > split.txt" description="Create file with first content" />
+
+<TryIt command="echo 'line2' >> split.txt" description="Add second line" />
+
+<TryIt command="jj describe -m 'Add split file'" description="Name commit" />
+
+<TryIt command="jj new" description="Commit" />
+
+<TryIt command="jj split" description="Split the commit" />
+
+<TryIt command="echo 'line1' > split.txt" description="Keep only first line" />
+
+<TryIt command="jj describe -m 'Add first line'" description="Name first part" />
+
+<TryIt command="jj new" description="Commit first part" />
+
+<TryIt command="jj log" description="Verify split created 2 commits" />
+
+## Exercise 3: Edit commit contents inline
+
+Modify files in an existing commit without checking it out.
+
+<TryIt command="jj describe -m 'Fix typo in file'" description="Name the edit" />
+
+<TryIt command="jj split" description="Start inline edit" />
+
+<TryIt command="echo 'line1 corrected' > split.txt" description="Edit file inline" />
+
+<TryIt command="jj describe -m 'Fix typo in file'" description="Name corrected commit" />
+
+<TryIt command="jj new" description="Complete the edit" />
+
+<TryIt command="jj show @" description="Verify the change" />
+
+## Exercise 4: Rebase commits onto another branch
+
+Move a sequence of commits to a new base.
+
+<TryIt command="jj bookmark create main" description="Create main bookmark" />
+
+<TryIt command="jj bookmark create feature" description="Create feature bookmark" />
+
+<TryIt command="jj rebase -d main --source feature-" description="Rebase feature onto main" />
+
+<TryIt command="jj log" description="Verify rebase" />
+
+## Key Points
+
+- `jj squash` combines a commit into its parent
+- `jj split` divides a commit into multiple parts
+- `jj split` creates a mutable working copy you can edit
+- `jj rebase -d <dest>` moves commits to new parent
+- All operations auto-rebase descendants
+
+## Completion Checklist
+
+- [ ] Squashed commits with `jj squash`
+- [ ] Split a commit with `jj split`
+- [ ] Edited commit contents inline
+- [ ] Rebased commits onto main branch
+- [ ] Verified final history (at least 5 commits)

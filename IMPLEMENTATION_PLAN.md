@@ -245,47 +245,54 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
 
 ### P5: Content Creation
 
-- [ ] **P5.1: Create Kata 1 - The Basics**
+- [x] **P5.1: Create Kata 1 - The Basics**
   - File: `packages/web/content/katas/jj-git/01-basics.mdx`
   - 3-4 exercises covering: status, log, describe, new
   - Duration: 5-7 min
   - Include validation frontmatter for each exercise
+  - **Completed**: 4 exercises with command, regex, and count validation types
 
-- [ ] **P5.2: Create Kata 2 - The @ Commit Dojo**
+- [x] **P5.2: Create Kata 2 - The @ Commit Dojo**
   - File: `packages/web/content/katas/jj-git/02-at-commit.mdx`
   - 4-5 exercises covering: @ navigation, auto-rebasing, edit
   - Duration: 10 min
   - Include validation frontmatter
+  - **Completed**: 4 exercises covering show, edit, describe, new
 
-- [ ] **P5.3: Create Kata 3 - Bookmarks Mastery**
+- [x] **P5.3: Create Kata 3 - Bookmarks Mastery**
   - File: `packages/web/content/katas/jj-git/03-bookmarks.mdx`
   - 4-5 exercises covering: bookmark create/set/delete
   - Duration: 12 min
   - Include validation frontmatter
+  - **Completed**: 5 exercises covering create, set, rename, forget, list
 
-- [ ] **P5.4: Create Kata 4 - Conflict Dojo**
+- [x] **P5.4: Create Kata 4 - Conflict Dojo**
   - File: `packages/web/content/katas/jj-git/04-conflicts.mdx`
   - 4-5 exercises covering: first-class conflicts, resolve, rebase conflicts
   - Duration: 15 min
   - Include validation frontmatter
+  - **Completed**: 4 exercises covering creating, viewing, resolving conflicts
 
-- [ ] **P5.5: Create Kata 5 - Time Travel Master**
+- [x] **P5.5: Create Kata 5 - Time Travel Master**
   - File: `packages/web/content/katas/jj-git/05-time-travel.mdx`
   - 3-4 exercises covering: operation log, op undo, op restore
   - Duration: 10 min
   - Include validation frontmatter
+  - **Completed**: 4 exercises covering operation log, undo, restore
 
-- [ ] **P5.6: Create Kata 6 - History Sculpting**
+- [x] **P5.6: Create Kata 6 - History Sculpting**
   - File: `packages/web/content/katas/jj-git/06-history.mdx`
   - 4-5 exercises covering: squash, split, diffedit, rebase
   - Duration: 15 min
   - Include validation frontmatter
+  - **Completed**: 4 exercises covering squash, split, inline edit, rebase
 
-- [ ] **P5.7: Create Kata 7 - The Full Flow Challenge**
+- [x] **P5.7: Create Kata 7 - The Full Flow Challenge**
   - File: `packages/web/content/katas/jj-git/07-full-flow.mdx`
   - Open-ended scenario requiring multiple techniques
   - Duration: 20 min
   - Include validation frontmatter
+  - **Completed**: 4 exercises covering complete workflow from init to rebase
 
 ### P6: Polish & Edge Cases
 
