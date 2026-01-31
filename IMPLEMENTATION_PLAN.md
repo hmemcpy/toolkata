@@ -146,7 +146,7 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
 
 ### P2: Kata Session Interface
 
-- [ ] **P2.1: Create KataSession component**
+- [x] **P2.1: Create KataSession component**
   - Header: Kata number, title, timer, attempt counter
   - Progress bar showing exercise completion within Kata
   - Scenario section at top (collapsible)
@@ -157,6 +157,10 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
   - Exit button (returns to landing)
   - Keyboard shortcut: `Esc` to exit
   - File: `packages/web/components/kata/KataSession.tsx`
+  - **Implemented**: Full component with validation state, progress tracking, timer,
+    exercise navigation, locked state handling, and session management
+  - **Note**: Reset Sandbox button has placeholder TODO (will integrate with
+    validation system in P3.1)
 
 - [ ] **P2.2: Create GitToggle component**
   - Button with git-branch icon
