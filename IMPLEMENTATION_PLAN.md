@@ -177,7 +177,12 @@ export interface Container {
 
 ### P1: Rate Limit Admin UI
 
-- [ ] **P1.1: Create /admin/rate-limits page**
+- [x] **P1.1: Create /admin/rate-limits page**
+  - Server component that fetches rate limits via `AdminClient`
+  - Render `RateLimitTable` component with data
+  - Handle empty state (no rate limits yet)
+  - Add refresh button (revalidatePath)
+  - File: `packages/web/app/admin/rate-limits/page.tsx`
   - Server component that fetches rate limits via `AdminClient`
   - Render `RateLimitTable` component with data
   - Handle empty state (no rate limits yet)
