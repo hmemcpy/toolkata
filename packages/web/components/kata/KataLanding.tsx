@@ -215,6 +215,12 @@ export interface KataLandingProps {
    * Controls access to Kata 1.
    */
   readonly step12Completed: boolean
+
+  /**
+   * Whether user was redirected from attempting to access a locked Kata.
+   * Shows a flash message when true.
+   */
+  readonly lockedRedirect: boolean
 }
 
 /**
@@ -228,6 +234,7 @@ export interface KataLandingProps {
  * - Lock/unlock/completed states
  * - Empty state for users who haven't completed Step 12
  * - Completion stats for finished Katas
+ * - Flash message when redirected from locked Kata access
  *
  * @example
  * ```tsx
@@ -238,17 +245,19 @@ export interface KataLandingProps {
  *   const { completedKatas, kataStats, isKataUnlocked } = useKataProgress()
  *
  *   const step12Completed = isStep12Complete()
+ *   const lockedRedirect = searchParams.locked === "true"
  *
  *   return (
  *     <KataLanding
  *       katas={katas}
  *       step12Completed={step12Completed}
+ *       lockedRedirect={lockedRedirect}
  *     />
  *   )
  * }
  * ```
  */
-export function KataLanding({ katas, step12Completed }: KataLandingProps): JSX.Element {
+export function KataLanding({ katas, step12Completed, lockedRedirect }: KataLandingProps): JSX.Element {
   const { completedKatas, kataStats, isKataUnlocked } = useKataProgress()
 
   // Get status for each Kata
@@ -325,6 +334,35 @@ export function KataLanding({ katas, step12Completed }: KataLandingProps): JSX.E
 
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
+      {/* Flash message for locked Kata redirect */}
+      {lockedRedirect && (
+        <div className="mb-6 bg-[var(--color-surface)] border border-[var(--color-warning)] border-opacity-40 p-4" role="alert" aria-live="polite">
+          <div className="flex items-start gap-3">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="text-[var(--color-warning)] flex-shrink-0 mt-0.5"
+              aria-hidden="true"
+            >
+              <title>Locked</title>
+              <path
+                d="M4.5 7V5.5a3.5 3.5 0 1 1 7 0V7M4.5 7h7M4.5 7v4.5a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V7"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <p className="text-sm text-[var(--color-text-muted)] font-mono">
+              Complete previous Kata to unlock
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header with progress */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold font-mono text-[var(--color-text-primary)] mb-2">

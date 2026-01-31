@@ -296,11 +296,13 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
 
 ### P6: Polish & Edge Cases
 
-- [ ] **P6.1: Handle locked Kata direct access**
+- [x] **P6.1: Handle locked Kata direct access**
   - Middleware or page-level check for Kata access
   - Redirect to landing with toast/flash message
   - Message: "Complete previous Kata to unlock"
   - File: `packages/web/app/[toolPair]/kata/[kataId]/page.tsx`
+  - **Implemented**: Added `?locked=true` query param on redirect, flash message in KataLanding
+    with accessible alert (role="alert", aria-live="polite")
 
 - [ ] **P6.2: Add validation timeout handling**
   - 5-second timeout on validation commands

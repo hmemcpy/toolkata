@@ -45,6 +45,7 @@ export async function generateMetadata(props: {
  * - Progress indicator (X/7 completed)
  * - Empty state for users who haven't completed Step 12
  * - Lock/unlock/completed states for each Kata
+ * - Flash message when redirected from locked Kata access
  *
  * Access control:
  * - Kata 1 is unlocked after completing Step 12
@@ -55,8 +56,10 @@ export async function generateMetadata(props: {
  */
 export default async function KataLandingPage(props: {
   readonly params: Promise<{ readonly toolPair: string }>
+  readonly searchParams: Promise<{ readonly locked?: string }>
 }) {
   const params = await props.params
+  const searchParams = await props.searchParams
   const { toolPair } = params
 
   // Validate the tool pair slug
@@ -84,6 +87,9 @@ export default async function KataLandingPage(props: {
   const serverProgress = await getServerProgressForPairAsync(toolPair)
   const step12Completed = serverProgress?.completedSteps.includes(12) ?? false
 
+  // Check if user was redirected from a locked Kata
+  const locked = searchParams.locked === "true"
+
   // For jj-git, we have 7 Katas
   // For other pairings, Katas may not exist yet - show empty state
   const hasKatas = katasWithIds.length > 0
@@ -105,7 +111,7 @@ export default async function KataLandingPage(props: {
 
         {/* Kata landing component or empty state */}
         {hasKatas ? (
-          <KataLanding katas={katasWithIds} step12Completed={step12Completed} />
+          <KataLanding katas={katasWithIds} step12Completed={step12Completed} lockedRedirect={locked} />
         ) : (
           <div className="max-w-2xl mx-auto py-12 px-4 text-center">
             <h1 className="text-2xl font-bold font-mono text-[var(--color-text-primary)] mb-3">

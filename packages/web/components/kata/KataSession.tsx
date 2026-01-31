@@ -130,7 +130,7 @@ export function KataSession({
   // Redirect to landing if Kata is locked
   useEffect(() => {
     if (!isUnlocked) {
-      router.push(`/${toolPair}/kata`)
+      router.push(`/${toolPair}/kata?locked=true`)
     }
   }, [isUnlocked, toolPair, router])
 
