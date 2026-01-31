@@ -313,11 +313,13 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
   - Allow re-validation after reset
   - Don't reset attempt counter on terminal reset
 
-- [ ] **P6.4: Sync across multiple tabs**
+- [x] **P6.4: Sync across multiple tabs**
   - Listen for `storage` events on localStorage
   - Sync attempt count and progress across tabs
   - Best effort (don't block on sync)
   - File: `packages/web/contexts/KataProgressContext.tsx`
+  - **Implemented**: Added `window.addEventListener("storage", ...)` handler
+    that reloads progress data when other tabs modify localStorage
 
 - [ ] **P6.5: All Katas completed state**
   - Special message on landing when all 7 complete

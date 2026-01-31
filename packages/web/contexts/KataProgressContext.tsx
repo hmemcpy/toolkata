@@ -324,6 +324,32 @@ export function KataProgressProvider({ children }: KataProgressProviderProps) {
     }
   }, [data])
 
+  // Listen for storage events from other tabs/windows
+  // This keeps progress in sync when multiple tabs are open
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      // Only process changes to our storage key
+      if (event.key !== STORAGE_KEY || event.newValue === null) {
+        return
+      }
+
+      try {
+        const newData = parseKataProgressData(event.newValue, userId)
+        setData(newData)
+      } catch {
+        // If we can't parse the new data, keep current state
+        // This prevents corrupt data from breaking the app
+      }
+    }
+
+    // Add event listener for storage changes
+    window.addEventListener("storage", handleStorageChange)
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+    }
+  }, [userId])
+
   /**
    * Check if a specific Kata is unlocked.
    * - Kata 1 is unlocked after completing Step 12.
