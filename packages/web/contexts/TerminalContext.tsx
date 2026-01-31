@@ -201,6 +201,17 @@ export interface TerminalContextValue {
   readonly executeCommand: (command: string) => void
 
   /**
+   * Reset the terminal session.
+   *
+   * Closes the WebSocket connection, clears the terminal display,
+   * and starts a new session.
+   *
+   * Useful in kata exercises when the user needs to start fresh
+   * while preserving exercise progress.
+   */
+  readonly resetTerminal: () => void
+
+  /**
    * Register a terminal ref for imperative operations.
    *
    * Called by InteractiveTerminal to expose its ref to the context.
@@ -573,6 +584,21 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
   )
 
   /**
+   * Reset the terminal session.
+   *
+   * Closes the WebSocket connection, clears the terminal display,
+   * and starts a new session.
+   *
+   * Useful in kata exercises when the user needs to start fresh
+   * while preserving exercise progress.
+   */
+  const resetTerminal = useCallback(() => {
+    if (terminalRef.current) {
+      terminalRef.current.reset()
+    }
+  }, [])
+
+  /**
    * Callback when terminal state changes.
    *
    * Called by InteractiveTerminal to notify the context of state changes.
@@ -663,6 +689,7 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       closeSidebar,
       toggleSidebar,
       executeCommand,
+      resetTerminal,
       registerTerminal,
       onTerminalStateChange,
       onTerminalErrorChange,
@@ -692,6 +719,7 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       closeSidebar,
       toggleSidebar,
       executeCommand,
+      resetTerminal,
       flushCommandQueue,
       onSessionIdChange,
       registerTerminal,

@@ -56,7 +56,7 @@ function formatTime(seconds: number): string {
  * - Exercise list with current exercise highlighted
  * - MDX content for current exercise
  * - "Validate My Solution" button
- * - "Reset Sandbox" button
+ * - "Reset Sandbox" button (resets terminal while preserving exercise progress)
  * - Exit button (returns to landing)
  * - Keyboard shortcut: Esc to exit
  *
@@ -92,7 +92,7 @@ export function KataSession({
 }: KataSessionProps): JSX.Element {
   const router = useRouter()
   const { isStepComplete } = useStepProgress(toolPair, 12)
-  const { sessionId } = useTerminalContext()
+  const { sessionId, resetTerminal } = useTerminalContext()
 
   // Kata progress context
   const {
@@ -238,10 +238,10 @@ export function KataSession({
     router.push(`/${toolPair}/kata`)
   }
 
-  // Reset sandbox - clears validation state
-  // Note: Full terminal reset requires accessing the terminal ref via context
-  // For now, users can reset via the terminal sidebar's Reset button
+  // Reset sandbox - resets terminal session while preserving exercise progress
+  // Exercise completion state and attempt counts are maintained in KataProgressContext
   const handleResetSandbox = () => {
+    resetTerminal()
     setValidationState("idle")
     setValidationHint(null)
   }

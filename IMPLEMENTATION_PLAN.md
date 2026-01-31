@@ -314,10 +314,15 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
   - File: `packages/web/components/kata/KataSession.tsx:233`
   - Note: Changed hint to "Validation timed out. The command took too long to execute. Try again."
 
-- [ ] **P6.3: Handle terminal reset during exercise**
+- [x] **P6.3: Handle terminal reset during exercise**
   - Preserve exercise progress in KataProgressContext
   - Allow re-validation after reset
   - Don't reset attempt counter on terminal reset
+  - **Implemented**: Added `resetTerminal()` method to TerminalContext that calls the
+    terminal ref's `reset()` method
+  - **Implemented**: Updated KataSession to call `resetTerminal()` in handleResetSandbox
+  - **Note**: Exercise progress (completed exercises, attempt counts) is stored in
+    KataProgressContext and persists across terminal resets
 
 - [x] **P6.4: Sync across multiple tabs**
   - Listen for `storage` events on localStorage
