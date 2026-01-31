@@ -27,6 +27,10 @@ import {
   logRateLimitConfig,
 } from "./services/rate-limit.js"
 import {
+  RateLimitAdminService,
+  RateLimitAdminServiceLive,
+} from "./services/rate-limit-admin.js"
+import {
   type CircuitBreakerServiceShape,
   makeCircuitBreakerService,
   logCircuitBreakerConfig,
@@ -96,6 +100,7 @@ const createApp = (
   rateLimitService: RateLimitServiceShape,
   auditService: AuditServiceShape,
   circuitBreakerService: CircuitBreakerServiceShape,
+  rateLimitAdminService?: import("./services/rate-limit-admin.js").RateLimitAdminServiceShape,
 ) => {
   const app = new Hono<{ Bindings: Env }>()
 
@@ -176,7 +181,9 @@ const createApp = (
     const adminApp = new Hono<{ Bindings: Env }>()
 
     // Mount all admin route modules
-    adminApp.route("/rate-limits", createAdminRateLimitsRoutes())
+    if (rateLimitAdminService) {
+      adminApp.route("/rate-limits", createAdminRateLimitsRoutes(rateLimitAdminService))
+    }
     adminApp.route("/containers", createAdminContainersRoutes())
     adminApp.route("/metrics", createAdminMetricsRoutes())
 
@@ -196,6 +203,7 @@ const make = Effect.gen(function* () {
   const rateLimitService = yield* RateLimitService
   const webSocketService = yield* WebSocketService
   const auditService = yield* AuditService
+  const rateLimitAdminService = yield* RateLimitAdminService
 
   // Create circuit breaker (depends on session service for container count)
   const circuitBreakerService = makeCircuitBreakerService(sessionService)
@@ -207,6 +215,7 @@ const make = Effect.gen(function* () {
     rateLimitService,
     auditService,
     circuitBreakerService,
+    rateLimitAdminService,
   )
 
   const start = Effect.sync(() => {
@@ -306,6 +315,7 @@ export const HttpServerLive = Layer.effect(HttpServer, make)
 export const ServerLayer = Layer.mergeAll(
   DockerClientLive,
   RateLimitServiceLive,
+  RateLimitAdminServiceLive,
   AuditServiceLive,
   EnvironmentServiceLive,
   ContainerServiceLive,
@@ -390,6 +400,7 @@ if (import.meta.main) {
     ServerConfigLive,
     DockerClientLive,
     RateLimitServiceLive,
+    RateLimitAdminServiceLive,
     AuditServiceLive,
     EnvironmentServiceLive,
   )
@@ -407,13 +418,14 @@ if (import.meta.main) {
     Layer.provide(Layer.merge(containerLayer, DockerClientLive)),
   )
 
-  // HTTP server depends on ServerConfig, SessionService, RateLimitService, WebSocketService, AuditService
+  // HTTP server depends on ServerConfig, SessionService, RateLimitService, RateLimitAdminService, WebSocketService, AuditService
   const httpLayer = HttpServerLive.pipe(
     Layer.provide(
       Layer.mergeAll(
         ServerConfigLive,
         sessionLayer,
         RateLimitServiceLive,
+        RateLimitAdminServiceLive,
         wsLayer,
         AuditServiceLive,
       ),
