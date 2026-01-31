@@ -111,7 +111,7 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
 
 ### P1: Kata Landing Page
 
-- [ ] **P1.1: Create KataLanding component**
+- [x] **P1.1: Create KataLanding component**
   - Display "X/7 Katas completed" progress indicator at top
   - Render 7 Kata cards in vertical list
   - Each card: number, title, description, status icon
@@ -121,6 +121,8 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
   - Unlocked cards have prominent "Start" button linking to session
   - Empty state for users who haven't completed Step 12
   - File: `packages/web/components/kata/KataLanding.tsx`
+  - **Implemented**: Full component with KataCard and KataLanding exports
+  - **Note**: All SVGs have proper aria-labels/title for accessibility
 
 - [ ] **P1.2: Create /[toolPair]/kata route**
   - Create `app/[toolPair]/kata/page.tsx`
