@@ -4,6 +4,14 @@ import type { RateLimitInfo, AdjustRateLimitRequest } from "../../../components/
 import { RateLimitsClient } from "./RateLimitsClient"
 
 /**
+ * Rate limits fetch result.
+ */
+interface RateLimitsResult {
+  readonly rateLimits: readonly RateLimitInfo[]
+  readonly error: string | null
+}
+
+/**
  * Rate limits admin page.
  *
  * Displays all current rate limit statuses for clients using the sandbox API.
@@ -14,11 +22,12 @@ import { RateLimitsClient } from "./RateLimitsClient"
  * - Refresh button to revalidate and fetch fresh data
  * - Reset and adjust actions for rate limits
  * - Empty state when no rate limits exist
+ * - Error state with retry button
  * - Terminal aesthetic styling
  */
 export default async function RateLimitsPage() {
   // Fetch rate limits from admin API
-  const rateLimits = await fetchRateLimits()
+  const result = await fetchRateLimits()
 
   // Server action to refresh rate limit data
   async function refreshRateLimits() {
@@ -79,7 +88,8 @@ export default async function RateLimitsPage() {
 
   return (
     <RateLimitsClient
-      rateLimits={rateLimits}
+      rateLimits={result.rateLimits}
+      error={result.error}
       refreshRateLimits={refreshRateLimits}
       resetRateLimit={resetRateLimit}
       adjustRateLimit={adjustRateLimit}
@@ -89,8 +99,10 @@ export default async function RateLimitsPage() {
 
 /**
  * Fetch rate limits from admin API.
+ *
+ * Returns both the data and any error that occurred.
  */
-async function fetchRateLimits(): Promise<readonly RateLimitInfo[]> {
+async function fetchRateLimits(): Promise<RateLimitsResult> {
   try {
     const apiUrl = getSandboxHttpUrl()
     const headers: Record<string, string> = {
@@ -108,14 +120,22 @@ async function fetchRateLimits(): Promise<readonly RateLimitInfo[]> {
     })
 
     if (!response.ok) {
-      console.error(`Failed to fetch rate limits: ${response.status}`)
-      return []
+      const statusText = response.statusText || "Unknown error"
+      console.error(`Failed to fetch rate limits: ${response.status} ${statusText}`)
+      return {
+        rateLimits: [],
+        error: `Failed to fetch rate limits: ${response.status} ${statusText}`,
+      }
     }
 
     const data = (await response.json()) as { readonly rateLimits: readonly RateLimitInfo[] }
-    return data.rateLimits
+    return { rateLimits: data.rateLimits, error: null }
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error"
     console.error("Error fetching rate limits:", error)
-    return []
+    return {
+      rateLimits: [],
+      error: `Failed to connect to admin API: ${message}`,
+    }
   }
 }

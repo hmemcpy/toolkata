@@ -210,11 +210,13 @@ export interface Container {
   - Loading state with `useTransition` hook
   - File: `packages/web/app/admin/rate-limits/page.tsx`, `packages/web/app/admin/rate-limits/RateLimitsClient.tsx`
 
-- [ ] **P1.5: Add loading and error states**
-  - Skeleton loader for table while fetching
-  - Error boundary for admin routes
-  - Retry button on error
-  - File: `packages/web/components/admin/RateLimitTable.tsx` (update)
+- [x] **P1.5: Add loading and error states** ✅
+  - Created `RateLimitTableSkeleton` component with shimmering placeholder rows
+  - Error boundary for admin routes at `app/admin/error.tsx`
+  - Fetch errors now return structured result with error message
+  - Client component shows error state with retry button
+  - Skeleton displays during initial data fetch
+  - Files: `packages/web/components/admin/RateLimitTable.tsx`, `packages/web/app/admin/rate-limits/page.tsx`, `packages/web/app/admin/rate-limits/RateLimitsClient.tsx`, `packages/web/app/admin/error.tsx`
 
 ### P2: Container Admin API
 
