@@ -351,15 +351,85 @@ export function KataLanding({ katas, step12Completed }: KataLandingProps): JSX.E
 
       {/* All Katas completed message */}
       {completedCount === 7 && (
-        <div className="mb-6 bg-[var(--color-surface)] border border-[var(--color-accent)] border-opacity-30 p-4">
-          <p className="text-sm font-mono text-[var(--color-text-primary)]">
-            <span className="text-[var(--color-accent)]">✓</span>
-            <span className="ml-2">All Katas completed</span>
-          </p>
-          <p className="text-xs text-[var(--color-text-muted)] mt-2">
-            You're ready to use jj in real projects. Keep practicing to maintain muscle
-            memory.
-          </p>
+        <div className="mb-6 bg-[var(--color-surface)] border border-[var(--color-accent)] border-opacity-30 p-5">
+          <div className="flex items-start gap-3 mb-4">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="text-[var(--color-accent)] flex-shrink-0 mt-0.5"
+              aria-hidden="true"
+            >
+              <title>Completed</title>
+              <path
+                d="M16.25 5.5L7.75 14L3.75 10"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <div>
+              <h2 className="text-sm font-bold font-mono text-[var(--color-text-primary)] mb-1">
+                All Katas completed
+              </h2>
+              <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+                You're ready to use jj in real projects. Keep practicing to maintain
+                muscle memory.
+              </p>
+            </div>
+          </div>
+
+          {/* Final stats */}
+          <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-[var(--color-border)]">
+            <div>
+              <div className="text-[10px] font-mono text-[var(--color-text-dim)] uppercase tracking-wider mb-1">
+                Total Attempts
+              </div>
+              <div className="text-lg font-mono text-[var(--color-accent)]">
+                {Object.values(kataStats).reduce((sum, stat) => sum + stat.attempts, 0)}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] font-mono text-[var(--color-text-dim)] uppercase tracking-wider mb-1">
+                Exercises Completed
+              </div>
+              <div className="text-lg font-mono text-[var(--color-accent)]">
+                {Object.values(kataStats).reduce(
+                  (sum, stat) => sum + stat.exercisesCompleted.length,
+                  0,
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Completion date */}
+          {Object.values(kataStats).length > 0 && (
+            <div className="mt-4 pt-4 border-t border-[var(--color-border)]">
+              <div className="text-[10px] font-mono text-[var(--color-text-dim)] uppercase tracking-wider mb-1">
+                Final Kata Completed
+              </div>
+              <div className="text-xs font-mono text-[var(--color-text-muted)]">
+                {(() => {
+                  const lastKataStat = Object.values(kataStats)
+                    .filter((stat) => stat.completedAt)
+                    .sort(
+                      (a, b) =>
+                        new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
+                    )[0]
+                  return lastKataStat
+                    ? new Date(lastKataStat.completedAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })
+                    : "N/A"
+                })()}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

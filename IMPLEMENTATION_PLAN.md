@@ -321,11 +321,13 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
   - **Implemented**: Added `window.addEventListener("storage", ...)` handler
     that reloads progress data when other tabs modify localStorage
 
-- [ ] **P6.5: All Katas completed state**
+- [x] **P6.5: All Katas completed state**
   - Special message on landing when all 7 complete
   - Encourage real-world jj usage
   - Show final stats (total attempts, total time)
   - File: `packages/web/components/kata/KataLanding.tsx`
+  - **Implemented**: Enhanced completion message with total attempts, exercises completed,
+    and final Kata completion date
 
 ---
 
