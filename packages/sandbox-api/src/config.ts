@@ -21,6 +21,11 @@ import { Data, Effect } from "effect"
  *   - Defaults to empty string (no auth required in development)
  *   - Set `SANDBOX_API_KEY` in production to require authentication
  *   - Frontend must send `X-API-Key` header with this value
+ * - `adminApiKey`: Shared secret for admin API authentication
+ *   - Defaults to empty string (admin routes disabled)
+ *   - Set `ADMIN_API_KEY` in production to enable admin endpoints
+ *   - Admin client must send `X-Admin-Key` header with this value
+ *   - This is separate from the main API key for defense-in-depth
  * - `maxWebSocketMessageSize`: Maximum size in bytes for WebSocket messages
  *   - Defaults to `1024` (1KB)
  *   - Prevents DoS via large message payloads
@@ -39,6 +44,9 @@ import { Data, Effect } from "effect"
  *
  * # Set API key for production
  * SANDBOX_API_KEY=your-secret-key-here
+ *
+ * # Set admin API key for admin routes
+ * ADMIN_API_KEY=your-admin-secret-key-here
  *
  * # Increase max WebSocket message size (not recommended)
  * SANDBOX_MAX_WS_MESSAGE_SIZE=2048
@@ -62,6 +70,12 @@ export const SandboxConfig = {
    * @default "" (no authentication required)
    */
   apiKey: (process.env["SANDBOX_API_KEY"] ?? "") as string,
+
+  /**
+   * Admin API key for admin endpoint authentication
+   * @default "" (admin routes disabled)
+   */
+  adminApiKey: (process.env["ADMIN_API_KEY"] ?? "") as string,
 
   /**
    * Maximum WebSocket message size in bytes
@@ -192,6 +206,7 @@ export const validateGvisorConfig = (): {
  * @remarks
  * - In production mode, authentication must be enabled
  * - In production mode, allowed origins must be explicitly configured
+ * - In production mode, admin API key must be set to enable admin routes
  */
 export const validateSecurityConfig = (): {
   readonly valid: boolean
@@ -207,6 +222,14 @@ export const validateSecurityConfig = (): {
       valid: false,
       message:
         "SANDBOX_API_KEY is required in production mode. Set a strong API key in the environment.",
+    }
+  }
+
+  if (SandboxConfig.adminApiKey === "") {
+    return {
+      valid: false,
+      message:
+        "ADMIN_API_KEY is required in production mode. Set a strong admin API key in the environment to enable admin endpoints.",
     }
   }
 

@@ -328,12 +328,14 @@ export interface Container {
   - Top clients table for rate limits
   - File: `packages/web/app/admin/metrics/page.tsx`, `packages/web/app/admin/metrics/MetricsClient.tsx`, `packages/web/app/admin/metrics/MetricsTypes.tsx`
 
-- [ ] **P5.2: Create MetricsPanel component**
-  - Props: `title`, `metrics: Record<string, number | string>`
-  - Grid layout of metric cards
-  - Color coding for thresholds (e.g., red if CPU > 80%)
+- [x] **P5.2: Create MetricsPanel component** ✅
+  - **Note**: Implemented as inline components (SystemPanel, SandboxPanel, RateLimitPanel) in MetricsClient.tsx
+  - This approach provides better type safety than a generic `Record<string, number | string>` approach
+  - Each panel knows the exact shape of its metrics
+  - Grid layout of metric cards via MetricCard component
+  - Color coding for thresholds (red 90%+, yellow 80%+, orange 60%+)
   - Terminal aesthetic styling
-  - File: `packages/web/components/admin/MetricsPanel.tsx`
+  - File: `packages/web/app/admin/metrics/MetricsClient.tsx`
 
 ### P6: Testing & Validation
 
@@ -368,10 +370,11 @@ export interface Container {
 
 ### P7: Deployment
 
-- [ ] **P7.1: Add ADMIN_API_KEY to sandbox-api environment**
-  - Add ADMIN_API_KEY to .env validation
-  - Fail fast if not set in production
-  - File: `packages/sandbox-api/src/config.ts`
+- [x] **P7.1: Add ADMIN_API_KEY to sandbox-api environment** ✅
+  - Added `adminApiKey` to `SandboxConfig` object
+  - Added production validation in `validateSecurityConfig()` - fails fast if ADMIN_API_KEY not set in production
+  - Updated `index.ts` to use `SandboxConfig.adminApiKey` instead of direct process.env read
+  - File: `packages/sandbox-api/src/config.ts`, `packages/sandbox-api/src/index.ts`
 
 - [ ] **P7.2: Add Vercel environment variables**
   - Document required env vars in README

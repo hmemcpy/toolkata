@@ -112,7 +112,7 @@ const createApp = (
   const app = new Hono<{ Bindings: Env }>()
 
   // Check if ADMIN_API_KEY is set (fail fast if not configured)
-  const adminApiKey = process.env["ADMIN_API_KEY"]
+  const adminApiKey = SandboxConfig.adminApiKey
   if (!adminApiKey || adminApiKey.length === 0) {
     console.warn(
       "[WARNING] ADMIN_API_KEY not set - admin routes will be disabled. Set ADMIN_API_KEY environment variable to enable admin endpoints.",
