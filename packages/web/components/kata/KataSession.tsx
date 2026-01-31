@@ -5,11 +5,10 @@ import { useRouter } from "next/navigation"
 import { useKataProgress } from "../../contexts/KataProgressContext"
 import { useStepProgress } from "../../hooks/useStepProgress"
 import type { KataFrontmatter } from "../../lib/content/schemas"
-
-/**
- * Validation state for the current exercise.
- */
-type ValidationState = "idle" | "validating" | "success" | "error"
+import {
+  ValidationFeedback,
+  type ValidationState,
+} from "./ValidationFeedback"
 
 /**
  * Props for the KataSession component.
@@ -405,75 +404,11 @@ export function KataSession({
           {/* Right: Content + Actions */}
           <div className="lg:col-span-3">
             {/* Validation Feedback */}
-            {validationState !== "idle" && (
-              <div
-                className={`
-                  mb-4 p-3 rounded border text-sm
-                  ${validationState === "success"
-                    ? "bg-[var(--color-accent)] bg-opacity-10 border-[var(--color-accent)] text-[var(--color-accent)]"
-                    : validationState === "error"
-                      ? "bg-red-500 bg-opacity-10 border-red-500 text-red-400"
-                      : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-muted)]"
-                  }
-                `}
-                role="status"
-                aria-live="polite"
-              >
-                {validationState === "validating" && (
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
-                    <span>Validating solution...</span>
-                  </div>
-                )}
-                {validationState === "success" && (
-                  <div className="flex items-center gap-2">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      aria-hidden="true"
-                    >
-                      <title>Success</title>
-                      <path
-                        d="M3.5 8l3 3 6-6"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    <span>
-                      {completedExercises.length === exercises.length
-                        ? "Kata complete! Returning to landing..."
-                        : "Exercise complete! Moving to next exercise..."}
-                    </span>
-                  </div>
-                )}
-                {validationState === "error" && validationHint && (
-                  <div className="flex items-start gap-2">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      aria-hidden="true"
-                    >
-                      <title>Error</title>
-                      <path
-                        d="M8 3v6M8 13v.01M3 8a5 5 0 1 1 10 0 5 5 0 0 1-10 0z"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    <span>{validationHint}</span>
-                  </div>
-                )}
-              </div>
-            )}
+            <ValidationFeedback
+              state={validationState}
+              hint={validationHint}
+              isKataComplete={completedExercises.length === exercises.length}
+            />
 
             {/* Exercise content */}
             <div className="mb-6">
