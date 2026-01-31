@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { AdjustRateLimitModal, type AdjustRateLimitParams } from "./AdjustRateLimitModal"
 
 /**
  * Rate limit info from the admin API.
@@ -22,10 +23,21 @@ export interface RateLimitInfo {
 }
 
 /**
+ * Adjust rate limit parameters.
+ */
+export interface AdjustRateLimitRequest {
+  readonly windowDuration?: number
+  readonly maxRequests?: number
+}
+
+/**
  * RateLimitTable props.
  */
 interface RateLimitTableProps {
   readonly rateLimits: readonly RateLimitInfo[]
+  readonly onReset?: (clientId: string) => void
+  readonly onAdjust?: (clientId: string, params: AdjustRateLimitRequest) => void
+  readonly isActionPending?: boolean
 }
 
 /**
@@ -52,14 +64,52 @@ type SortDirection = "asc" | "desc"
  * - Search/filter by client ID
  * - Terminal aesthetic styling
  * - Responsive table with horizontal scroll on small screens
- *
- * Note: Reset and Adjust actions are placeholders for P1.4 implementation.
+ * - Reset and Adjust actions with confirmation modal
  */
 export function RateLimitTable(props: RateLimitTableProps) {
-  const { rateLimits } = props
+  const { rateLimits, onReset, onAdjust, isActionPending } = props
   const [sortColumn, setSortColumn] = useState<SortColumn>("clientId")
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
   const [searchQuery, setSearchQuery] = useState("")
+  const [showAdjustModal, setShowAdjustModal] = useState(false)
+  const [selectedClientId, setSelectedClientId] = useState("")
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
+
+  // Open adjust modal for a client
+  function handleOpenAdjust(clientId: string) {
+    setSelectedClientId(clientId)
+    setShowAdjustModal(true)
+  }
+
+  // Handle adjust modal submit
+  function handleAdjustSubmit(params: AdjustRateLimitParams) {
+    if (onAdjust && selectedClientId) {
+      onAdjust(selectedClientId, params)
+    }
+    setShowAdjustModal(false)
+    setSelectedClientId("")
+  }
+
+  // Handle reset button click (with confirmation)
+  function handleResetClick(clientId: string) {
+    setSelectedClientId(clientId)
+    setShowResetConfirm(true)
+  }
+
+  // Confirm reset
+  function handleConfirmReset() {
+    if (onReset && selectedClientId) {
+      onReset(selectedClientId)
+    }
+    setShowResetConfirm(false)
+    setSelectedClientId("")
+  }
+
+  // Cancel reset
+  function handleCancelReset() {
+    setShowResetConfirm(false)
+    setSelectedClientId("")
+  }
 
   // Filter by search query
   const filteredRateLimits = rateLimits.filter((limit) =>
@@ -196,13 +246,49 @@ export function RateLimitTable(props: RateLimitTableProps) {
                 </td>
               </tr>
             ) : (
-              sortedRateLimits.map((limit) => (
-                <RateLimitRow
-                  key={limit.clientId}
-                  rateLimit={limit}
-                  formatRelativeTime={formatRelativeTime}
-                />
-              ))
+              sortedRateLimits.map((limit) => {
+                // Use conditional object building for exactOptionalPropertyTypes compatibility
+                const commonProps = {
+                  rateLimit: limit,
+                  formatRelativeTime,
+                }
+
+                if (onReset && onAdjust) {
+                  return (
+                    <RateLimitRow
+                      key={limit.clientId}
+                      {...commonProps}
+                      onReset={handleResetClick}
+                      onAdjust={handleOpenAdjust}
+                      {...(isActionPending !== undefined && { isActionPending })}
+                    />
+                  )
+                }
+
+                if (onReset) {
+                  return (
+                    <RateLimitRow
+                      key={limit.clientId}
+                      {...commonProps}
+                      onReset={handleResetClick}
+                      {...(isActionPending !== undefined && { isActionPending })}
+                    />
+                  )
+                }
+
+                if (onAdjust) {
+                  return (
+                    <RateLimitRow
+                      key={limit.clientId}
+                      {...commonProps}
+                      onAdjust={handleOpenAdjust}
+                      {...(isActionPending !== undefined && { isActionPending })}
+                    />
+                  )
+                }
+
+                return <RateLimitRow key={limit.clientId} {...commonProps} />
+              })
             )}
           </tbody>
         </table>
@@ -212,6 +298,70 @@ export function RateLimitTable(props: RateLimitTableProps) {
       <div className="text-xs font-mono text-[var(--color-text-dim)]">
         Showing {sortedRateLimits.length} of {rateLimits.length} rate limits
       </div>
+
+      {/* Adjust Modal */}
+      {onAdjust && (
+        <AdjustRateLimitModal
+          isOpen={showAdjustModal}
+          clientId={selectedClientId}
+          onClose={() => setShowAdjustModal(false)}
+          onSubmit={handleAdjustSubmit}
+          {...(isActionPending !== undefined && { isLoading: isActionPending })}
+        />
+      )}
+
+      {/* Reset Confirmation Modal */}
+      {showResetConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={handleCancelReset}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              handleCancelReset()
+            }
+          }}
+          role="presentation"
+          style={{ cursor: "pointer" }}
+        >
+          <div
+            className="w-full max-w-sm bg-[var(--color-surface)] border border-[var(--color-border)] rounded shadow-lg"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reset-confirm-title"
+          >
+            <div className="px-6 py-4">
+              <h3 id="reset-confirm-title" className="text-lg font-semibold font-mono text-[var(--color-text)] mb-2">
+                Reset Rate Limit?
+              </h3>
+              <p className="text-sm text-[var(--color-text-muted)] mb-4">
+                Are you sure you want to reset the rate limit for client{" "}
+                <code className="px-2 py-1 bg-[var(--color-bg)] border border-[var(--color-border)] rounded text-xs font-mono text-[var(--color-accent)]">
+                  {selectedClientId}
+                </code>
+                ? This will clear their current usage counters.
+              </p>
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={handleCancelReset}
+                  disabled={isActionPending}
+                  className="px-4 py-2 text-sm font-mono border border-[var(--color-border)] rounded text-[var(--color-text)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmReset}
+                  disabled={isActionPending}
+                  className="px-4 py-2 text-sm font-mono bg-[var(--color-error)] text-white rounded hover:bg-red-600 transition-colors focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isActionPending ? "Resetting..." : "Reset"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -222,10 +372,13 @@ export function RateLimitTable(props: RateLimitTableProps) {
 interface RateLimitRowProps {
   readonly rateLimit: RateLimitInfo
   readonly formatRelativeTime: (timestamp: number) => string
+  readonly onReset?: (clientId: string) => void
+  readonly onAdjust?: (clientId: string) => void
+  readonly isActionPending?: boolean
 }
 
 function RateLimitRow(props: RateLimitRowProps) {
-  const { rateLimit, formatRelativeTime } = props
+  const { rateLimit, formatRelativeTime, onReset, onAdjust, isActionPending } = props
 
   // Calculate session usage percentage
   const sessionUsage = rateLimit.maxConcurrentSessions > 0
@@ -303,21 +456,21 @@ function RateLimitRow(props: RateLimitRowProps) {
       </td>
       <td className="px-4 py-3 text-right">
         <div className="flex items-center justify-end gap-2">
-          {/* Reset button - to be implemented in P1.4 */}
           <button
             type="button"
-            disabled
-            className="px-2 py-1 text-xs font-mono border border-[var(--color-border)] rounded text-[var(--color-text-muted)] cursor-not-allowed opacity-50"
-            title="Reset rate limit (to be implemented)"
+            onClick={() => onReset?.(rateLimit.clientId)}
+            disabled={!onReset || isActionPending}
+            className="px-2 py-1 text-xs font-mono border border-[var(--color-border)] rounded text-[var(--color-text)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] disabled:opacity-50 disabled:cursor-not-allowed disabled:text-[var(--color-text-muted)]"
+            title="Reset rate limit"
           >
             [↻]
           </button>
-          {/* Adjust button - to be implemented in P1.3/P1.4 */}
           <button
             type="button"
-            disabled
-            className="px-2 py-1 text-xs font-mono border border-[var(--color-border)] rounded text-[var(--color-text-muted)] cursor-not-allowed opacity-50"
-            title="Adjust rate limit (to be implemented)"
+            onClick={() => onAdjust?.(rateLimit.clientId)}
+            disabled={!onAdjust || isActionPending}
+            className="px-2 py-1 text-xs font-mono border border-[var(--color-border)] rounded text-[var(--color-text)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] disabled:opacity-50 disabled:cursor-not-allowed disabled:text-[var(--color-text-muted)]"
+            title="Adjust rate limit"
           >
             [⚙]
           </button>

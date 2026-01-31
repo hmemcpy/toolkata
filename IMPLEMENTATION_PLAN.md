@@ -177,19 +177,15 @@ export interface Container {
 
 ### P1: Rate Limit Admin UI
 
-- [x] **P1.1: Create /admin/rate-limits page**
-  - Server component that fetches rate limits via `AdminClient`
+- [x] **P1.1: Create /admin/rate-limits page** ✅
+  - Server component that fetches rate limits via direct API call
   - Render `RateLimitTable` component with data
   - Handle empty state (no rate limits yet)
   - Add refresh button (revalidatePath)
-  - File: `packages/web/app/admin/rate-limits/page.tsx`
-  - Server component that fetches rate limits via `AdminClient`
-  - Render `RateLimitTable` component with data
-  - Handle empty state (no rate limits yet)
-  - Add refresh button (revalidatePath)
-  - File: `packages/web/app/admin/rate-limits/page.tsx`
+  - Refactored to use server actions for reset/adjust
+  - File: `packages/web/app/admin/rate-limits/page.tsx`, `packages/web/app/admin/rate-limits/RateLimitsClient.tsx`
 
-- [ ] **P1.2: Create RateLimitTable component**
+- [x] **P1.2: Create RateLimitTable component** ✅
   - Props: `rateLimits: RateLimitStatus[]`, `onReset: (clientId) => void`, `onAdjust: (clientId, params) => void`
   - Table columns: Client ID, Sessions, Commands, WebSockets, Hour Window Start, Minute Window Start, Actions
   - Actions: Reset button (with confirmation), Adjust button (opens modal)
@@ -198,20 +194,21 @@ export interface Container {
   - Terminal aesthetic styling (#0a0a0a bg, #22c55e accent)
   - File: `packages/web/components/admin/RateLimitTable.tsx`
 
-- [ ] **P1.3: Create AdjustRateLimitModal component**
-  - Props: `isOpen`, `onClose`, `onSubmit`, `initialValues`
+- [x] **P1.3: Create AdjustRateLimitModal component** ✅
+  - Props: `isOpen`, `onClose`, `onSubmit`, `initialValues`, `clientId`, `isLoading`
   - Form fields: Window Duration (seconds), Max Requests (for display only - actual limits are global)
   - Note: Adjust is mostly for resetting counters since limits are global
   - Submit calls `onSubmit` with values
   - Cancel closes modal
+  - Keyboard support (Escape to close, focus trap)
   - File: `packages/web/components/admin/AdjustRateLimitModal.tsx`
 
-- [ ] **P1.4: Add rate limit reset/adjust actions**
-  - Wire up Reset button to call `AdminClient.resetRateLimit()`
-  - Show confirmation dialog before reset
-  - On success, refresh table data
-  - Show toast/notification on success/error
-  - File: `packages/web/app/admin/rate-limits/page.tsx` (update)
+- [x] **P1.4: Add rate limit reset/adjust actions** ✅
+  - Wire up Reset button to call server action `resetRateLimit()`
+  - Show confirmation dialog before reset (built into RateLimitTable)
+  - On success, refresh table data using `router.refresh()`
+  - Loading state with `useTransition` hook
+  - File: `packages/web/app/admin/rate-limits/page.tsx`, `packages/web/app/admin/rate-limits/RateLimitsClient.tsx`
 
 - [ ] **P1.5: Add loading and error states**
   - Skeleton loader for table while fetching
