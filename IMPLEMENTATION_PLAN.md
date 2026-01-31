@@ -162,12 +162,14 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
   - **Note**: Reset Sandbox button has placeholder TODO (will integrate with
     validation system in P3.1)
 
-- [ ] **P2.2: Create GitToggle component**
+- [x] **P2.2: Create GitToggle component**
   - Button with git-branch icon
   - Label: "Show git equivalent" / "Hide git equivalent"
   - Toggle state via TerminalContext
   - Clear visual indication of current state
   - File: `packages/web/components/kata/GitToggle.tsx`
+  - **Implemented**: Full component with git-branch SVG icon, ON/OFF indicator,
+    aria-pressed for accessibility, proper focus ring styling
 
 - [ ] **P2.3: Create ValidationFeedback component**
   - Success state: Green checkmark, "Exercise complete" message
