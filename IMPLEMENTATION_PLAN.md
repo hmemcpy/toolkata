@@ -264,26 +264,32 @@ export interface Container {
 
 ### P3: Container Admin UI
 
-- [ ] **P3.1: Create /admin/containers page**
-  - Server component fetching containers via `AdminClient`
-  - Filter controls: status dropdown, toolPair dropdown, "Show old only" checkbox
-  - Render `ContainerGrid` component
-  - File: `packages/web/app/admin/containers/page.tsx`
+- [x] **P3.1: Create /admin/containers page** ✅
+  - Server component fetching containers via direct API call
+  - Filter controls: status dropdown, toolPair dropdown
+  - Server actions for refresh, restart, stop, remove, logs
+  - Renders `ContainersClient` component
+  - File: `packages/web/app/admin/containers/page.tsx`, `packages/web/app/admin/containers/ContainersClient.tsx`
 
-- [ ] **P3.2: Create ContainerGrid component**
+- [x] **P3.2: Create ContainerGrid component** ✅
   - Props: `containers: ContainerInfo[]`, action handlers
-  - Card layout: ID (truncated), Name, Status (color-coded), Image, Created, CPU%, Memory
-  - Actions per card: Restart, Stop, Remove (with confirmation), View Logs
+  - Table layout (not card): ID (truncated), Name, Status (color-coded), Tool Pair, Session ID, Created, CPU%, Memory
+  - Sortable columns: Name, Status, Tool Pair, Created, CPU, Memory
+  - Search by name or ID
+  - Filter by status, toolPair
+  - Actions per row: Restart (non-running), Stop (running), Remove (with force option), View Logs
   - Terminal aesthetic with status colors (running=green, stopped=red, dead=orange)
+  - Includes skeleton loader component
+  - Log viewer modal integrated into ContainersClient (not separate component)
   - File: `packages/web/components/admin/ContainerGrid.tsx`
 
-- [ ] **P3.3: Create LogViewer component**
-  - Props: `containerId`, `isOpen`, `onClose`
-  - Fetch logs via admin API
-  - Scrollable log output with ANSI color support
-  - Auto-refresh option for streaming logs
-  - Download logs button
-  - File: `packages/web/components/admin/LogViewer.tsx`
+- [x] **P3.3: Create LogViewer component** ✅ (Integrated into ContainersClient)
+  - Modal-based log viewer with container name in title
+  - Fetch logs via server action from admin API
+  - Scrollable log output (monospace, no ANSI support for MVP)
+  - Refresh button to reload logs
+  - Byte count display in footer
+  - Integrated into ContainersClient modal instead of separate component
 
 ### P4: Metrics API
 
