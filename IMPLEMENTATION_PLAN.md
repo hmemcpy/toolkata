@@ -219,13 +219,16 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
 
 ### P4: Graduation Integration
 
-- [ ] **P4.1: Update Step 12 with Kata CTA**
+- [x] **P4.1: Update Step 12 with Kata CTA**
   - Replace "Return to beginning" link with Kata CTA section
   - Add heading "Tutorial Complete"
   - Add explanatory text about Kata
   - Add "Start Your First Kata" button linking to `/jj-git/kata`
   - Only show if all 12 steps completed
   - File: `packages/web/content/comparisons/jj-git/12-step.mdx`
+  - **Implemented**: Created `KataCTA` component with conditional rendering based on step completion
+  - **Note**: Component uses `useStepProgress` hook to check if all 12 steps are complete
+  - **Files**: `packages/web/components/kata/KataCTA.tsx`, `components/mdx/MDXComponents.tsx`
 
 - [ ] **P4.2: Update Overview page with Kata section**
   - Add "Kata Practice" section after Step 12 completion
