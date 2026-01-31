@@ -376,10 +376,11 @@ export interface Container {
   - Updated `index.ts` to use `SandboxConfig.adminApiKey` instead of direct process.env read
   - File: `packages/sandbox-api/src/config.ts`, `packages/sandbox-api/src/index.ts`
 
-- [ ] **P7.2: Add Vercel environment variables**
+- [x] **P7.2: Add Vercel environment variables** ✅
   - Document required env vars in README
-  - Add to Vercel dashboard: ADMIN_API_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, ADMIN_EMAILS
-  - File: `README.md` (update)
+  - Added admin dashboard section with environment variables for both frontend and sandbox-api
+  - Documented Google OAuth setup steps and security considerations
+  - File: `README.md`
 
 - [ ] **P7.3: Update Caddy config for admin route protection**
   - Add IP allowlist for /admin/* routes
