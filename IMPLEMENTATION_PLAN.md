@@ -78,13 +78,16 @@ Extend the toolkata platform with a JJ Kata practice system that activates after
   - Default to `false` (hidden by default per spec)
   - File: `packages/web/contexts/TerminalContext.tsx`
 
-- [ ] **P0.2: Create KataProgressContext**
+- [x] **P0.2: Create KataProgressContext**
   - Create new context for Kata-specific state management
   - Define `KataProgress` interface matching spec R6/R7
   - Include: `completedKatas: string[]`, `kataStats: Record<string, KataStat>`
   - Persist to localStorage key `toolkata-kata-progress`
   - Generate UUID for anonymous user ID (future leaderboard support)
   - File: `packages/web/contexts/KataProgressContext.tsx`
+  - **Implemented**: Full context with `isKataUnlocked`, `startKata`, `recordAttempt`,
+    `completeExercise`, `completeKata`, `resetKata`, `resetAll` methods
+  - **Note**: Added `exerciseAttempts: Record<string, number>` to `KataStat` for per-exercise tracking
 
 - [ ] **P0.3: Create kata content loader**
   - Extend ContentService to load Kata MDX files
