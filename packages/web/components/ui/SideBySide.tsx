@@ -109,7 +109,9 @@ export function SideBySide({
           {/* Right column only (to tool - green) */}
           <div className="overflow-hidden rounded border border-[var(--color-border)] bg-[rgba(57,217,108,0.08)]">
             <div className="border-b border-[var(--color-border)] px-4 py-2">
-              <span className="text-xs font-semibold text-[var(--color-text-muted)]">{toLabel}</span>
+              <span className="text-xs font-semibold text-[var(--color-text-muted)]">
+                {toLabel}
+              </span>
             </div>
             <div className="p-4">
               {toCommands.map((cmd, i) => (
@@ -176,7 +178,9 @@ export function SideBySide({
           {/* Right column (to tool - green) */}
           <div className="overflow-hidden rounded border border-[var(--color-border)] bg-[rgba(57,217,108,0.08)]">
             <div className="border-b border-[var(--color-border)] px-4 py-2">
-              <span className="text-xs font-semibold text-[var(--color-text-muted)]">{toLabel}</span>
+              <span className="text-xs font-semibold text-[var(--color-text-muted)]">
+                {toLabel}
+              </span>
             </div>
             <div className="p-4">
               {toCommands.map((cmd, i) => (
@@ -204,8 +208,7 @@ export function SideBySide({
           summary={`Side-by-side comparison of ${fromLabel} and ${toLabel} commands`}
         >
           <caption>
-            Command comparison: {fromLabel} commands on the left, {toLabel} commands on the
-            right
+            Command comparison: {fromLabel} commands on the left, {toLabel} commands on the right
           </caption>
           <thead>
             <tr>

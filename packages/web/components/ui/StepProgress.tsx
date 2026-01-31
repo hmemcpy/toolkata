@@ -91,7 +91,11 @@ export function StepProgress({
               <Link
                 href={`/${toolPair}/kata`}
                 className="text-xs font-mono text-[var(--color-text-muted)] hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors flex items-center gap-1"
-                aria-label={step12Complete ? "Go to Kata practice" : "Kata practice - complete Step 12 to unlock"}
+                aria-label={
+                  step12Complete
+                    ? "Go to Kata practice"
+                    : "Kata practice - complete Step 12 to unlock"
+                }
               >
                 <span>[Kata]</span>
                 {!step12Complete && (

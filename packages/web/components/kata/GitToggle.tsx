@@ -30,7 +30,9 @@ export function GitToggle() {
         color: "var(--color-text-muted, #a1a1a1)",
       }}
       aria-pressed={showGitEquivalents}
-      aria-label={showGitEquivalents ? "Hide git equivalent commands" : "Show git equivalent commands"}
+      aria-label={
+        showGitEquivalents ? "Hide git equivalent commands" : "Show git equivalent commands"
+      }
     >
       {/* Git branch icon */}
       <svg
@@ -58,9 +60,7 @@ export function GitToggle() {
         />
       </svg>
 
-      <span>
-        {showGitEquivalents ? "Hide git equivalent" : "Show git equivalent"}
-      </span>
+      <span>{showGitEquivalents ? "Hide git equivalent" : "Show git equivalent"}</span>
 
       {/* Toggle indicator */}
       <span

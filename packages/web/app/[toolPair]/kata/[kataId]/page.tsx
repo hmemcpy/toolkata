@@ -1,9 +1,12 @@
 import { MDXRemote } from "next-mdx-remote/rsc"
 import { notFound } from "next/navigation"
 import remarkGfm from "remark-gfm"
+import type { SandboxConfig } from "../../../../components/ui/InteractiveTerminal"
 import { KataSession } from "../../../../components/kata/KataSession"
 import { getPairing, isValidPairingSlug } from "../../../../content/pairings"
 import { mdxComponents } from "../../../../components/mdx/MDXComponents"
+import { loadToolConfig } from "../../../../lib/content-core"
+import { resolveSandboxConfig } from "../../../../lib/content/types"
 import { loadKata } from "../../../../services/content"
 
 /**
@@ -88,6 +91,21 @@ export default async function KataSessionPage(props: {
     notFound()
   }
 
+  // Load tool-pair config and resolve sandbox configuration
+  const toolConfigResult = await loadToolConfig(toolPair, "content/comparisons").pipe(
+    (await import("effect")).Effect.either,
+    (await import("effect")).Effect.runPromise,
+  )
+
+  const toolConfig =
+    toolConfigResult._tag === "Right"
+      ? toolConfigResult.right
+      : ({
+          sandbox: { enabled: true, environment: "bash" as const, timeout: 60, init: [] as const },
+        } as const)
+
+  const sandboxConfig: SandboxConfig = resolveSandboxConfig(undefined, toolConfig)
+
   // Validate kata number (1-7 for jj-git, will expand for other pairings)
   if (Number.isNaN(kataNum) || kataNum < 1 || kataNum > 7) {
     notFound()
@@ -107,6 +125,7 @@ export default async function KataSessionPage(props: {
       toolPair={toolPair}
       kataId={kataIdParam}
       frontmatter={frontmatter}
+      sandboxConfig={sandboxConfig}
     >
       <MDXRemote
         source={content}

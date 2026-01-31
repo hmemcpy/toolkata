@@ -1,9 +1,12 @@
 "use client"
 
 import Link from "next/link"
+import { useEffect } from "react"
 import { useStepProgress } from "../../hooks/useStepProgress"
 import { useKataProgress } from "../../contexts/KataProgressContext"
+import { useTerminalContext } from "../../contexts/TerminalContext"
 import type { StepMeta } from "../../services/content"
+import type { SandboxConfig } from "./InteractiveTerminal"
 import { StepList } from "./StepList"
 
 /**
@@ -40,6 +43,11 @@ export interface OverviewPageClientWrapperProps {
         readonly currentStep: number
       }
     | undefined
+
+  /**
+   * Sandbox configuration for the terminal.
+   */
+  readonly sandboxConfig?: SandboxConfig
 }
 
 /**
@@ -67,11 +75,18 @@ export function OverviewPageClientWrapper({
   steps,
   estimatedTimes,
   initialProgress,
+  sandboxConfig,
 }: OverviewPageClientWrapperProps) {
   const { currentStep, isStepComplete, isLoading } = useStepProgress(toolPair, totalSteps, {
     initialProgress,
   })
   const { completedKatas } = useKataProgress()
+  const { setSandboxConfig } = useTerminalContext()
+
+  // Register sandbox config in context on mount
+  useEffect(() => {
+    setSandboxConfig(sandboxConfig)
+  }, [sandboxConfig, setSandboxConfig])
 
   // Create Set of completed steps for StepList
   const completedSteps = new Set<number>(
@@ -80,7 +95,7 @@ export function OverviewPageClientWrapper({
 
   // Check if Step 12 is complete (for Kata section display)
   const step12Completed = isStepComplete(12)
-  const kataProgressFraction = `${completedKatas.length}/7`
+  const kataProgressText = `${completedKatas.length} completed`
 
   return (
     <>
@@ -109,14 +124,12 @@ export function OverviewPageClientWrapper({
           <div className="border border-[#3f3f46] rounded-lg p-6 bg-[#0a0a0a]">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h2 className="text-xl font-bold font-mono text-white mb-2">
-                  Kata Practice
-                </h2>
+                <h2 className="text-xl font-bold font-mono text-white mb-2">Kata Practice</h2>
                 <p className="text-sm text-[#d1d5dc] mb-1">
                   Practice your jj skills with hands-on exercises
                 </p>
                 <p className="text-sm text-[var(--color-accent)] font-mono">
-                  {kataProgressFraction} Katas completed
+                  {kataProgressText} Katas completed
                 </p>
               </div>
               <Link

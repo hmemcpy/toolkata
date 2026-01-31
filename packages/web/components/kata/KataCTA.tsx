@@ -53,13 +53,12 @@ export function KataCTA({ toolPair, totalSteps }: KataCTAProps) {
         Tutorial Complete
       </h2>
       <p className="mb-4 text-base text-[var(--color-text-secondary)]">
-        You've completed all {totalSteps} steps of the {toolPair === "jj-git" ? "jj" : toolPair} tutorial.
-        Ready to test your knowledge with hands-on practice?
+        You've completed all {totalSteps} steps of the {toolPair === "jj-git" ? "jj" : toolPair}{" "}
+        tutorial. Ready to test your knowledge with hands-on practice?
       </p>
       <p className="mb-6 text-sm text-[var(--color-text-secondary)]">
-        The Kata system offers scenario-based exercises where you'll solve realistic
-        problems using the tools you've learned. Each Kata includes automatic validation
-        to verify your solutions.
+        The Kata system offers scenario-based exercises where you'll solve realistic problems using
+        the tools you've learned. Each Kata includes automatic validation to verify your solutions.
       </p>
       <Link
         href={`/${toolPair}/kata`}

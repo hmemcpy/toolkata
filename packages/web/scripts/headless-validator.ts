@@ -538,7 +538,6 @@ function isNonExecutableCommand(code: string): boolean {
   return false
 }
 
-
 /**
  * Validate a single snippet.
  * Assumes setup has already been run for the step.
@@ -689,7 +688,9 @@ async function validateSnippet(
 
       // Create symlink from /tmp/node_modules to global node_modules
       // This allows tsc to find globally installed packages like "effect"
-      await session.executeCommand("ln -s /usr/local/lib/node_modules /tmp/node_modules 2>/dev/null || true")
+      await session.executeCommand(
+        "ln -s /usr/local/lib/node_modules /tmp/node_modules 2>/dev/null || true",
+      )
 
       // Compile with tsc --noEmit (type-check only, no output files)
       // Using bundler module resolution and skipLibCheck for compatibility

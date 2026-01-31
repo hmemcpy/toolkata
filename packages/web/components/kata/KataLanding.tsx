@@ -1,9 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import type { JSX } from "react"
+import { useEffect, type JSX } from "react"
 import { useKataProgress } from "../../contexts/KataProgressContext"
+import { useTerminalContext } from "../../contexts/TerminalContext"
 import type { KataFrontmatter } from "../../lib/content/schemas"
+import type { SandboxConfig } from "../ui/InteractiveTerminal"
 
 /**
  * Status of a Kata for display purposes.
@@ -14,13 +16,16 @@ type KataStatus = "locked" | "unlocked" | "completed"
  * Props for individual Kata card display.
  */
 export interface KataCardProps {
+  readonly toolPair: string
   readonly frontmatter: KataFrontmatter
   readonly kataId: string
   readonly status: KataStatus
-  readonly stats?: {
-    readonly attempts: number
-    readonly completedAt: string
-  } | undefined
+  readonly stats?:
+    | {
+        readonly attempts: number
+        readonly completedAt: string
+      }
+    | undefined
 }
 
 /**
@@ -33,7 +38,13 @@ export interface KataCardProps {
  * - Start button (for unlocked) or lock message (for locked)
  * - Completion stats (for completed Katas)
  */
-export function KataCard({ frontmatter, kataId, status, stats }: KataCardProps): JSX.Element {
+export function KataCard({
+  toolPair,
+  frontmatter,
+  kataId,
+  status,
+  stats,
+}: KataCardProps): JSX.Element {
   const kataNum = Number.parseInt(kataId, 10)
 
   // Status icon rendering
@@ -149,7 +160,14 @@ export function KataCard({ frontmatter, kataId, status, stats }: KataCardProps):
 
       {/* Duration */}
       <div className="flex items-center gap-2 text-xs text-[var(--color-text-dim)] font-mono mb-4">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 16 16"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
           <title>Duration</title>
           <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5" />
           <path d="M8 5v3.5l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -181,14 +199,27 @@ export function KataCard({ frontmatter, kataId, status, stats }: KataCardProps):
       ) : (
         <div className="pt-3 border-t border-[var(--color-border)]">
           <Link
-            href={`/jj-git/kata/${kataId}`}
+            href={`/${toolPair}/kata/${kataId}`}
             className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-accent)] text-[var(--color-bg)] font-mono text-sm hover:bg-[var(--color-accent-hover)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
             aria-label={`Start ${frontmatter.title}`}
           >
             <span>Start</span>
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
               <title>Arrow right</title>
-              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M3 8h10M9 4l4 4-4 4"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </Link>
         </div>
@@ -202,8 +233,13 @@ export function KataCard({ frontmatter, kataId, status, stats }: KataCardProps):
  */
 export interface KataLandingProps {
   /**
-   * Array of Kata frontmatter data for all 7 Katas.
-   * Ordered by kata number (1-7).
+   * The tool pairing slug (e.g., "jj-git").
+   */
+  readonly toolPair: string
+
+  /**
+   * Array of Kata frontmatter data.
+   * Ordered by kata number.
    */
   readonly katas: readonly {
     readonly frontmatter: KataFrontmatter
@@ -211,26 +247,25 @@ export interface KataLandingProps {
   }[]
 
   /**
-   * Whether Step 12 of the tutorial is completed.
-   * Controls access to Kata 1.
-   */
-  readonly step12Completed: boolean
-
-  /**
    * Whether user was redirected from attempting to access a locked Kata.
    * Shows a flash message when true.
    */
   readonly lockedRedirect: boolean
+
+  /**
+   * Sandbox configuration for the terminal.
+   */
+  readonly sandboxConfig?: SandboxConfig
 }
 
 /**
  * Kata Landing Page Component
  *
- * Displays all 7 JJ Katas with their unlock status and progress.
+ * Displays all Katas with their unlock status and progress.
  *
  * Features:
- * - Progress indicator at top (X/7 completed)
- * - Vertical list of 7 Kata cards
+ * - Progress indicator at top (X/N completed)
+ * - Vertical list of Kata cards
  * - Lock/unlock/completed states
  * - Empty state for users who haven't completed Step 12
  * - Completion stats for finished Katas
@@ -243,91 +278,41 @@ export interface KataLandingProps {
  * export function KataPage() {
  *   const katas = await loadAllKatas("jj-git")
  *   const { completedKatas, kataStats, isKataUnlocked } = useKataProgress()
- *
- *   const step12Completed = isStep12Complete()
  *   const lockedRedirect = searchParams.locked === "true"
  *
  *   return (
  *     <KataLanding
+ *       toolPair="jj-git"
  *       katas={katas}
- *       step12Completed={step12Completed}
  *       lockedRedirect={lockedRedirect}
  *     />
  *   )
  * }
  * ```
  */
-export function KataLanding({ katas, step12Completed, lockedRedirect }: KataLandingProps): JSX.Element {
+export function KataLanding({
+  toolPair,
+  katas,
+  lockedRedirect,
+  sandboxConfig,
+}: KataLandingProps): JSX.Element {
   const { completedKatas, kataStats, isKataUnlocked } = useKataProgress()
+  const { setSandboxConfig } = useTerminalContext()
+
+  // Register sandbox config in context on mount
+  useEffect(() => {
+    setSandboxConfig(sandboxConfig)
+  }, [sandboxConfig, setSandboxConfig])
 
   // Get status for each Kata
   const getKataStatus = (kataId: string): KataStatus => {
     if (completedKatas.includes(kataId)) {
       return "completed"
     }
-    if (isKataUnlocked(kataId, step12Completed)) {
+    if (isKataUnlocked(kataId)) {
       return "unlocked"
     }
     return "locked"
-  }
-
-  // Empty state for users who haven't completed Step 12
-  if (!step12Completed) {
-    return (
-      <div className="max-w-2xl mx-auto py-12 px-4">
-        <div className="text-center">
-          <div className="mb-6">
-            <div className="w-16 h-16 mx-auto rounded-full bg-[var(--color-border)] flex items-center justify-center mb-4">
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="text-[var(--color-text-dim)]"
-              >
-                <title>Kata locked</title>
-                <path
-                  d="M4.5 7V5.5a3.5 3.5 0 1 1 7 0V7M4.5 7h7M4.5 7v4.5a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V7"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold font-mono text-[var(--color-text-primary)] mb-3">
-              JJ Kata
-            </h1>
-            <p className="text-base text-[var(--color-text-muted)] leading-relaxed max-w-md mx-auto">
-              Practice jj until it becomes muscle memory. 7 hands-on scenarios with
-              auto-validation.
-            </p>
-          </div>
-
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-6 text-left max-w-md mx-auto">
-            <p className="text-sm text-[var(--color-text-muted)] mb-4 font-mono">
-              <span className="text-[var(--color-warning)]"># </span>
-              Complete the 12-step tutorial first
-            </p>
-            <p className="text-sm text-[var(--color-text-dim)] mb-4">
-              Kata builds on concepts from the tutorial. Finish all 12 steps to unlock
-              hands-on practice.
-            </p>
-            <Link
-              href="/jj-git"
-              className="inline-flex items-center gap-2 text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] font-mono transition-colors"
-            >
-              <span>Return to tutorial</span>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <title>Arrow right</title>
-                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </Link>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   const completedCount = completedKatas.length
@@ -336,7 +321,11 @@ export function KataLanding({ katas, step12Completed, lockedRedirect }: KataLand
     <div className="max-w-3xl mx-auto py-8 px-4">
       {/* Flash message for locked Kata redirect */}
       {lockedRedirect && (
-        <div className="mb-6 bg-[var(--color-surface)] border border-[var(--color-warning)] border-opacity-40 p-4" role="alert" aria-live="polite">
+        <div
+          className="mb-6 bg-[var(--color-surface)] border border-[var(--color-warning)] border-opacity-40 p-4"
+          role="alert"
+          aria-live="polite"
+        >
           <div className="flex items-start gap-3">
             <svg
               width="16"
@@ -366,29 +355,29 @@ export function KataLanding({ katas, step12Completed, lockedRedirect }: KataLand
       {/* Header with progress */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold font-mono text-[var(--color-text-primary)] mb-2">
-          JJ Kata
+          Kata Practice
         </h1>
         <p className="text-sm text-[var(--color-text-muted)] mb-6">
-          Practice jj until it becomes muscle memory. Auto-validated scenarios.
+          Hands-on scenarios with auto-validation. Complete each kata to unlock the next.
         </p>
 
         {/* Progress bar */}
         <div className="flex items-center gap-4 mb-2">
           <div className="font-mono text-sm">
             <span className="text-[var(--color-accent)]">{completedCount}</span>
-            <span className="text-[var(--color-text-dim)]">/7 Katas completed</span>
+            <span className="text-[var(--color-text-dim)]">/{katas.length} Katas completed</span>
           </div>
         </div>
         <div className="w-full h-1 bg-[var(--color-border)] rounded overflow-hidden">
           <div
             className="h-full bg-[var(--color-accent)] transition-all duration-300"
-            style={{ width: `${(completedCount / 7) * 100}%` }}
+            style={{ width: `${katas.length > 0 ? (completedCount / katas.length) * 100 : 0}%` }}
           />
         </div>
       </div>
 
       {/* All Katas completed message */}
-      {completedCount === 7 && (
+      {completedCount === katas.length && (
         <div className="mb-6 bg-[var(--color-surface)] border border-[var(--color-accent)] border-opacity-30 p-5">
           <div className="flex items-start gap-3 mb-4">
             <svg
@@ -414,8 +403,7 @@ export function KataLanding({ katas, step12Completed, lockedRedirect }: KataLand
                 All Katas completed
               </h2>
               <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-                You're ready to use jj in real projects. Keep practicing to maintain
-                muscle memory.
+                You're ready to use jj in real projects. Keep practicing to maintain muscle memory.
               </p>
             </div>
           </div>
@@ -480,6 +468,7 @@ export function KataLanding({ katas, step12Completed, lockedRedirect }: KataLand
           return (
             <KataCard
               key={kataId}
+              toolPair={toolPair}
               frontmatter={frontmatter}
               kataId={kataId}
               status={status}

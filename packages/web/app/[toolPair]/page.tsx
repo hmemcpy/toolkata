@@ -2,10 +2,14 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Footer } from "../../components/ui/Footer"
 import { Header } from "../../components/ui/Header"
+import type { SandboxConfig } from "../../components/ui/InteractiveTerminal"
 import { OverviewPageClientWrapper } from "../../components/ui/OverviewPageClientWrapper"
 import { ProgressCard } from "../../components/ui/ProgressCard"
+import { ShrinkingLayout } from "../../components/ui/ShrinkingLayout"
 import { getPairing, isValidPairingSlug } from "../../content/pairings"
 import { getServerProgressForPairAsync } from "../../core/progress-server"
+import { loadToolConfig } from "../../lib/content-core"
+import { resolveSandboxConfig } from "../../lib/content/types"
 import type { StepMeta } from "../../services/content"
 
 /**
@@ -76,6 +80,24 @@ export default async function ComparisonOverviewPage(props: {
   if (!pairing) {
     notFound()
   }
+
+  // Load tool-pair config and resolve sandbox configuration
+  const toolConfigResult = await loadToolConfig(toolPair, "content/comparisons").pipe(
+    (await import("effect")).Effect.either,
+    (await import("effect")).Effect.runPromise,
+  )
+
+  const toolConfig =
+    toolConfigResult._tag === "Right"
+      ? toolConfigResult.right
+      : ({
+          sandbox: { enabled: true, environment: "bash" as const, timeout: 60, init: [] as const },
+        } as const)
+
+  const sandboxConfig: SandboxConfig = resolveSandboxConfig(
+    undefined, // Overview page has no step-specific sandbox config
+    toolConfig,
+  )
 
   // Read progress from cookie for flicker-free SSR
   const serverProgress = await getServerProgressForPairAsync(toolPair)
@@ -316,169 +338,174 @@ export default async function ComparisonOverviewPage(props: {
     <div className="min-h-screen bg-[var(--color-bg)]">
       <Header />
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Breadcrumb / Back link and Quick Links */}
-        <div className="mb-8 flex items-center justify-between">
-          <Link
-            href="/"
-            className="inline-flex items-center text-sm text-[#d1d5dc] hover:text-white focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
-          >
-            ← Home
-          </Link>
-          <Link
-            href={`/${toolPair}/glossary`}
-            className="inline-flex items-center text-sm font-mono text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
-          >
-            [Glossary →]
-          </Link>
-        </div>
-
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold font-mono text-white sm:text-4xl">
-            {pairing.to.name} ← {pairing.from.name}
-          </h1>
-          {pairing.toUrl && (
-            <a
-              href={pairing.toUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block mt-2 text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
+      <ShrinkingLayout>
+        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          {/* Breadcrumb / Back link and Quick Links */}
+          <div className="mb-8 flex items-center justify-between">
+            <Link
+              href="/"
+              className="inline-flex items-center text-sm text-[#d1d5dc] hover:text-white focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
             >
-              [{pairing.to.name} documentation →]
-            </a>
-          )}
-        </div>
-
-        {/* Main content with progress sidebar */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left column: Introduction */}
-          <div className="lg:col-span-2">
-            {/* Why {tool}? Section */}
-            <section>
-              <h2 className="mb-4 text-2xl font-bold font-mono text-white">
-                Why {pairing.to.name}?
-              </h2>
-              <div className="prose prose-invert max-w-none">
-                {toolPair === "zio-cats" ? (
-                  <>
-                    <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
-                      ZIO 2 is a powerful effect system with built-in dependency injection and typed
-                      errors. If you know Cats Effect, you&apos;ll find the core concepts familiar
-                      but with a different API philosophy.
-                    </p>
-                    <ul className="space-y-2 text-sm text-[#d1d5dc]">
-                      <li className="flex items-start gap-2">
-                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                        <span>R/E/A type signature with environment parameter</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                        <span>ZLayer for type-safe dependency injection</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                        <span>Typed error channel with error accumulation</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                        <span>ZStream for high-performance streaming</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                        <span>Interop libraries available for gradual migration</span>
-                      </li>
-                    </ul>
-                  </>
-                ) : toolPair === "effect-zio" ? (
-                  <>
-                    <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
-                      Effect is a modern functional effect system with TypeScript-first design and
-                      cross-platform support. If you know ZIO, you&apos;ll find the concepts
-                      familiar but with cleaner syntax and better type inference.
-                    </p>
-                    <ul className="space-y-2 text-sm text-[#d1d5dc]">
-                      <li className="flex items-start gap-2">
-                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                        <span>Effect&lt;A, E, R&gt; type order (result before requirements)</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                        <span>Effect.gen for clean composition (no for-comprehension nesting)</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                        <span>Context.Tag for type-safe dependency injection</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                        <span>Built-in Schema for validation and encoding</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                        <span>Cross-platform (Node, Browser, Deno, Bun)</span>
-                      </li>
-                    </ul>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
-                      {pairing.to.name} ({pairing.to.description}) rethinks version control from
-                      first principles. Built for developers who want a safer, more intuitive
-                      workflow.
-                    </p>
-                    <ul className="space-y-2 text-sm text-[#d1d5dc]">
-                      <li className="flex items-start gap-2">
-                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                        <span>Working copy IS a commit (no staging area complexity)</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                        <span>Change IDs survive rebases (stable identifiers)</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                        <span>Conflicts are first-class (stored in commits, not blocking)</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                        <span>Automatic descendant rebasing (no more --update-refs)</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                        <span>
-                          Compatible with existing {pairing.from.name} repos (use both tools
-                          together)
-                        </span>
-                      </li>
-                    </ul>
-                  </>
-                )}
-              </div>
-            </section>
+              ← Home
+            </Link>
+            <Link
+              href={`/${toolPair}/glossary`}
+              className="inline-flex items-center text-sm font-mono text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
+            >
+              [Glossary →]
+            </Link>
           </div>
 
-          {/* Right column: Progress card */}
-          <aside className="lg:col-span-1">
-            <ProgressCard
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold font-mono text-white sm:text-4xl">
+              {pairing.to.name} ← {pairing.from.name}
+            </h1>
+            {pairing.toUrl && (
+              <a
+                href={pairing.toUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block mt-2 text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
+              >
+                [{pairing.to.name} documentation →]
+              </a>
+            )}
+          </div>
+
+          {/* Main content with progress sidebar */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left column: Introduction */}
+            <div className="lg:col-span-2">
+              {/* Why {tool}? Section */}
+              <section>
+                <h2 className="mb-4 text-2xl font-bold font-mono text-white">
+                  Why {pairing.to.name}?
+                </h2>
+                <div className="prose prose-invert max-w-none">
+                  {toolPair === "zio-cats" ? (
+                    <>
+                      <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
+                        ZIO 2 is a powerful effect system with built-in dependency injection and
+                        typed errors. If you know Cats Effect, you&apos;ll find the core concepts
+                        familiar but with a different API philosophy.
+                      </p>
+                      <ul className="space-y-2 text-sm text-[#d1d5dc]">
+                        <li className="flex items-start gap-2">
+                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                          <span>R/E/A type signature with environment parameter</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                          <span>ZLayer for type-safe dependency injection</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                          <span>Typed error channel with error accumulation</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                          <span>ZStream for high-performance streaming</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                          <span>Interop libraries available for gradual migration</span>
+                        </li>
+                      </ul>
+                    </>
+                  ) : toolPair === "effect-zio" ? (
+                    <>
+                      <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
+                        Effect is a modern functional effect system with TypeScript-first design and
+                        cross-platform support. If you know ZIO, you&apos;ll find the concepts
+                        familiar but with cleaner syntax and better type inference.
+                      </p>
+                      <ul className="space-y-2 text-sm text-[#d1d5dc]">
+                        <li className="flex items-start gap-2">
+                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                          <span>Effect&lt;A, E, R&gt; type order (result before requirements)</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                          <span>
+                            Effect.gen for clean composition (no for-comprehension nesting)
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                          <span>Context.Tag for type-safe dependency injection</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                          <span>Built-in Schema for validation and encoding</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                          <span>Cross-platform (Node, Browser, Deno, Bun)</span>
+                        </li>
+                      </ul>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
+                        {pairing.to.name} ({pairing.to.description}) rethinks version control from
+                        first principles. Built for developers who want a safer, more intuitive
+                        workflow.
+                      </p>
+                      <ul className="space-y-2 text-sm text-[#d1d5dc]">
+                        <li className="flex items-start gap-2">
+                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                          <span>Working copy IS a commit (no staging area complexity)</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                          <span>Change IDs survive rebases (stable identifiers)</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                          <span>Conflicts are first-class (stored in commits, not blocking)</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                          <span>Automatic descendant rebasing (no more --update-refs)</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                          <span>
+                            Compatible with existing {pairing.from.name} repos (use both tools
+                            together)
+                          </span>
+                        </li>
+                      </ul>
+                    </>
+                  )}
+                </div>
+              </section>
+            </div>
+
+            {/* Right column: Progress card */}
+            <aside className="lg:col-span-1">
+              <ProgressCard
+                toolPair={toolPair}
+                totalSteps={pairing.steps}
+                initialProgress={initialProgress}
+              />
+            </aside>
+
+            {/* Full width: Steps list */}
+            <OverviewPageClientWrapper
               toolPair={toolPair}
               totalSteps={pairing.steps}
+              steps={steps}
+              estimatedTimes={estimatedTimes}
               initialProgress={initialProgress}
+              sandboxConfig={sandboxConfig}
             />
-          </aside>
+          </div>
+        </main>
 
-          {/* Full width: Steps list */}
-          <OverviewPageClientWrapper
-            toolPair={toolPair}
-            totalSteps={pairing.steps}
-            steps={steps}
-            estimatedTimes={estimatedTimes}
-            initialProgress={initialProgress}
-          />
-        </div>
-      </main>
-
-      <Footer />
+        <Footer />
+      </ShrinkingLayout>
     </div>
   )
 }

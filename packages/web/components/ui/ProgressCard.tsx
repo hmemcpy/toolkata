@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useKataProgress } from "../../contexts/KataProgressContext"
 import { useStepProgress } from "../../hooks/useStepProgress"
 
 /**
@@ -49,6 +50,9 @@ export function ProgressCard({ toolPair, totalSteps, initialProgress }: Progress
     totalSteps,
     { initialProgress },
   )
+  const { completedKatas } = useKataProgress()
+
+  const kataProgressText = `${completedKatas.length} completed`
 
   // Calculate time remaining (average 3 min per step)
   const remainingSteps = totalSteps - completedCount
@@ -103,6 +107,18 @@ export function ProgressCard({ toolPair, totalSteps, initialProgress }: Progress
             Start Learning →
           </Link>
         ))}
+
+      {/* Kata Practice button - always shown for jj-git */}
+      {toolPair === "jj-git" && (
+        <div className="mt-3">
+          <Link
+            href={`/${toolPair}/kata`}
+            className="block w-full text-center px-4 py-3 text-sm font-mono text-[var(--color-accent)] bg-[var(--color-surface)] border border-[var(--color-accent)] rounded-md hover:bg-[var(--color-accent)] hover:text-[var(--color-bg)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-all duration-[var(--transition-fast)]"
+          >
+            Kata Practice ({kataProgressText}) →
+          </Link>
+        </div>
+      )}
 
       {/* Divider */}
       <div className="my-6 border-t border-[var(--color-border)]" />

@@ -121,10 +121,7 @@ export async function loadCacheEntry(
 /**
  * Save validation result for a step.
  */
-export async function saveCacheEntry(
-  scriptsDir: string,
-  entry: StepCacheEntry,
-): Promise<void> {
+export async function saveCacheEntry(scriptsDir: string, entry: StepCacheEntry): Promise<void> {
   const cacheDir = getCacheDir(scriptsDir)
   await ensureCacheDir(scriptsDir)
 

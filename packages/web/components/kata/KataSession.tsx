@@ -4,13 +4,11 @@ import { useEffect, useState, type JSX } from "react"
 import { useRouter } from "next/navigation"
 import { useKataProgress } from "../../contexts/KataProgressContext"
 import { useTerminalContext } from "../../contexts/TerminalContext"
-import { useStepProgress } from "../../hooks/useStepProgress"
 import type { KataFrontmatter } from "../../lib/content/schemas"
 import { validateExercise, ValidationError } from "../../services/kata-validation"
-import {
-  ValidationFeedback,
-  type ValidationState,
-} from "./ValidationFeedback"
+import { ShrinkingLayout } from "../ui/ShrinkingLayout"
+import type { SandboxConfig } from "../ui/InteractiveTerminal"
+import { ValidationFeedback, type ValidationState } from "./ValidationFeedback"
 
 /**
  * Props for the KataSession component.
@@ -35,6 +33,11 @@ export interface KataSessionProps {
    * MDX content for the Kata (scenario and exercises).
    */
   readonly children: JSX.Element
+
+  /**
+   * Sandbox configuration for the terminal.
+   */
+  readonly sandboxConfig?: SandboxConfig
 }
 
 /**
@@ -89,20 +92,19 @@ export function KataSession({
   kataId,
   frontmatter,
   children,
+  sandboxConfig,
 }: KataSessionProps): JSX.Element {
   const router = useRouter()
-  const { isStepComplete } = useStepProgress(toolPair, 12)
-  const { sessionId, resetTerminal } = useTerminalContext()
+  const { sessionId, resetTerminal, setSandboxConfig } = useTerminalContext()
+
+  // Register sandbox config in context on mount
+  useEffect(() => {
+    setSandboxConfig(sandboxConfig)
+  }, [sandboxConfig, setSandboxConfig])
 
   // Kata progress context
-  const {
-    isKataUnlocked,
-    kataStats,
-    startKata,
-    recordAttempt,
-    completeExercise,
-    completeKata,
-  } = useKataProgress()
+  const { isKataUnlocked, kataStats, startKata, recordAttempt, completeExercise, completeKata } =
+    useKataProgress()
 
   // Session state
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0)
@@ -113,8 +115,7 @@ export function KataSession({
   // Derived state
   const exercises = frontmatter.exercises
   const currentExercise = exercises[currentExerciseIndex] ?? null
-  const step12Completed = isStepComplete(12)
-  const isUnlocked = isKataUnlocked(kataId, step12Completed)
+  const isUnlocked = isKataUnlocked(kataId)
 
   // Attempt tracking
   const kataStatsData = kataStats[kataId]
@@ -288,15 +289,9 @@ export function KataSession({
               </button>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-sm text-[var(--color-accent)]">
-                    {kataNum}
-                  </span>
-                  <span className="text-sm font-mono text-[var(--color-text-muted)]">
-                    /
-                  </span>
-                  <span className="text-sm font-mono text-[var(--color-text-muted)]">
-                    7
-                  </span>
+                  <span className="font-mono text-sm text-[var(--color-accent)]">{kataNum}</span>
+                  <span className="text-sm font-mono text-[var(--color-text-muted)]">/</span>
+                  <span className="text-sm font-mono text-[var(--color-text-muted)]">7</span>
                   <span className="text-sm text-[var(--color-text-primary)] font-semibold truncate">
                     {frontmatter.title}
                   </span>
@@ -310,11 +305,7 @@ export function KataSession({
                 {formatTime(sessionSeconds)}
               </div>
               <div className="text-xs font-mono text-[var(--color-text-dim)]">
-                {totalAttempts > 0 && (
-                  <span>
-                    Attempt {totalAttempts + 1}
-                  </span>
-                )}
+                {totalAttempts > 0 && <span>Attempt {totalAttempts + 1}</span>}
               </div>
             </div>
           </div>
@@ -340,161 +331,166 @@ export function KataSession({
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Left: Exercise list */}
-          <aside className="lg:col-span-1">
-            <div className="sticky top-24">
-              <h2 className="text-xs font-mono text-[var(--color-text-dim)] uppercase tracking-wider mb-3">
-                Exercises
-              </h2>
-              <ol className="space-y-1">
-                {exercises.map((exercise, index) => {
-                  const isCompleted = completedExercises.includes(exercise.id)
-                  const isCurrent = index === currentExerciseIndex
-                  const isLocked = index > currentExerciseIndex
+      <ShrinkingLayout>
+        <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Left: Exercise list */}
+            <aside className="lg:col-span-1">
+              <div className="sticky top-24">
+                <h2 className="text-xs font-mono text-[var(--color-text-dim)] uppercase tracking-wider mb-3">
+                  Exercises
+                </h2>
+                <ol className="space-y-1">
+                  {exercises.map((exercise, index) => {
+                    const isCompleted = completedExercises.includes(exercise.id)
+                    const isCurrent = index === currentExerciseIndex
+                    const isLocked = index > currentExerciseIndex
 
-                  return (
-                    <li key={exercise.id}>
-                      <button
-                        type="button"
-                        onClick={() => handleJumpToExercise(index)}
-                        disabled={isLocked || isCurrent}
-                        className={`
+                    return (
+                      <li key={exercise.id}>
+                        <button
+                          type="button"
+                          onClick={() => handleJumpToExercise(index)}
+                          disabled={isLocked || isCurrent}
+                          className={`
                           w-full text-left px-3 py-2 rounded text-xs font-mono
                           transition-colors focus-visible:outline-none focus-visible:ring-[var(--focus-ring)]
-                          ${isCurrent
-                            ? "bg-[var(--color-surface)] border border-[var(--color-accent)] text-[var(--color-text-primary)]"
-                            : isCompleted
-                              ? "text-[var(--color-accent)] hover:bg-[var(--color-surface)]"
-                              : isLocked
-                                ? "text-[var(--color-text-dim)] cursor-not-allowed opacity-50"
-                                : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface)]"
+                          ${
+                            isCurrent
+                              ? "bg-[var(--color-surface)] border border-[var(--color-accent)] text-[var(--color-text-primary)]"
+                              : isCompleted
+                                ? "text-[var(--color-accent)] hover:bg-[var(--color-surface)]"
+                                : isLocked
+                                  ? "text-[var(--color-text-dim)] cursor-not-allowed opacity-50"
+                                  : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface)]"
                           }
                         `}
-                        aria-current={isCurrent ? "step" : undefined}
-                        aria-disabled={isLocked}
-                      >
-                        <div className="flex items-center gap-2">
-                          {isCompleted ? (
-                            <svg
-                              width="12"
-                              height="12"
-                              viewBox="0 0 16 16"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                              aria-hidden="true"
-                            >
-                              <title>Completed</title>
-                              <path
-                                d="M3.5 8l3 3 6-6"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          ) : isLocked ? (
-                            <svg
-                              width="12"
-                              height="12"
-                              viewBox="0 0 16 16"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="text-[var(--color-text-dim)]"
-                              aria-hidden="true"
-                            >
-                              <title>Locked</title>
-                              <path
-                                d="M4.5 7V5.5a3.5 3.5 0 1 1 7 0V7M4.5 7h7M4.5 7v4.5a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V7"
-                                stroke="currentColor"
-                                strokeWidth="1.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          ) : (
-                            <span className="text-[var(--color-text-dim)]">{index + 1}.</span>
-                          )}
-                          <span className="truncate">{exercise.title}</span>
-                        </div>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ol>
-            </div>
-          </aside>
+                          aria-current={isCurrent ? "step" : undefined}
+                          aria-disabled={isLocked}
+                        >
+                          <div className="flex items-center gap-2">
+                            {isCompleted ? (
+                              <svg
+                                width="12"
+                                height="12"
+                                viewBox="0 0 16 16"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                                aria-hidden="true"
+                              >
+                                <title>Completed</title>
+                                <path
+                                  d="M3.5 8l3 3 6-6"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            ) : isLocked ? (
+                              <svg
+                                width="12"
+                                height="12"
+                                viewBox="0 0 16 16"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="text-[var(--color-text-dim)]"
+                                aria-hidden="true"
+                              >
+                                <title>Locked</title>
+                                <path
+                                  d="M4.5 7V5.5a3.5 3.5 0 1 1 7 0V7M4.5 7h7M4.5 7v4.5a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1V7"
+                                  stroke="currentColor"
+                                  strokeWidth="1.5"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            ) : (
+                              <span className="text-[var(--color-text-dim)]">{index + 1}.</span>
+                            )}
+                            <span className="truncate">{exercise.title}</span>
+                          </div>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ol>
+              </div>
+            </aside>
 
-          {/* Right: Content + Actions */}
-          <div className="lg:col-span-3">
-            {/* Validation Feedback */}
-            <ValidationFeedback
-              state={validationState}
-              hint={validationHint}
-              isKataComplete={completedExercises.length === exercises.length}
-            />
+            {/* Right: Content + Actions */}
+            <div className="lg:col-span-3">
+              {/* Validation Feedback */}
+              <ValidationFeedback
+                state={validationState}
+                hint={validationHint}
+                isKataComplete={completedExercises.length === exercises.length}
+              />
 
-            {/* Exercise content */}
-            <div className="mb-6">
-              <h3 className="text-sm font-bold font-mono text-[var(--color-text-primary)] mb-2">
-                {currentExercise ? (
-                  <>Exercise {currentExerciseIndex + 1}: {currentExercise.title}</>
-                ) : (
-                  <>Exercise {currentExerciseIndex + 1}</>
-                )}
-              </h3>
-              <div className="text-xs text-[var(--color-text-dim)] font-mono mb-4">
-                {exerciseAttempts > 0 && (
-                  <span>Previous attempts: {exerciseAttempts}</span>
-                )}
+              {/* Exercise content */}
+              <div className="mb-6">
+                <h3 className="text-sm font-bold font-mono text-[var(--color-text-primary)] mb-2">
+                  {currentExercise ? (
+                    <>
+                      Exercise {currentExerciseIndex + 1}: {currentExercise.title}
+                    </>
+                  ) : (
+                    <>Exercise {currentExerciseIndex + 1}</>
+                  )}
+                </h3>
+                <div className="text-xs text-[var(--color-text-dim)] font-mono mb-4">
+                  {exerciseAttempts > 0 && <span>Previous attempts: {exerciseAttempts}</span>}
+                </div>
+
+                {/* MDX content (scenario + exercise instructions) */}
+                <article className="prose prose-invert max-w-none">{children}</article>
               </div>
 
-              {/* MDX content (scenario + exercise instructions) */}
-              <article className="prose prose-invert max-w-none">
-                {children}
-              </article>
-            </div>
-
-            {/* Action buttons */}
-            <div className="flex items-center gap-3 border-t border-[var(--color-border)] pt-4">
-              <button
-                type="button"
-                onClick={handleValidate}
-                disabled={validationState === "validating" || validationState === "success"}
-                className="
+              {/* Action buttons */}
+              <div className="flex items-center gap-3 border-t border-[var(--color-border)] pt-4">
+                <button
+                  type="button"
+                  onClick={handleValidate}
+                  disabled={validationState === "validating" || validationState === "success"}
+                  className="
                   px-4 py-2 bg-[var(--color-accent)] text-[var(--color-bg)]
                   font-mono text-sm hover:bg-[var(--color-accent-hover)]
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]
                   disabled:opacity-50 disabled:cursor-not-allowed transition-colors
                 "
-              >
-                {validationState === "validating" ? "Validating..." : "Validate My Solution"}
-              </button>
+                >
+                  {validationState === "validating" ? "Validating..." : "Validate My Solution"}
+                </button>
 
-              <button
-                type="button"
-                onClick={handleResetSandbox}
-                className="
+                <button
+                  type="button"
+                  onClick={handleResetSandbox}
+                  className="
                   px-4 py-2 bg-[var(--color-surface)] border border-[var(--color-border)]
                   text-[var(--color-text-primary)] font-mono text-sm
                   hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]
                   transition-colors
                 "
-              >
-                Reset Sandbox
-              </button>
+                >
+                  Reset Sandbox
+                </button>
 
-              <div className="flex-1" />
+                <div className="flex-1" />
 
-              <div className="text-xs text-[var(--color-text-dim)] font-mono hidden sm:block">
-                Press <kbd className="px-1.5 py-0.5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded">Esc</kbd> to exit
+                <div className="text-xs text-[var(--color-text-dim)] font-mono hidden sm:block">
+                  Press{" "}
+                  <kbd className="px-1.5 py-0.5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded">
+                    Esc
+                  </kbd>{" "}
+                  to exit
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </ShrinkingLayout>
     </div>
   )
 }

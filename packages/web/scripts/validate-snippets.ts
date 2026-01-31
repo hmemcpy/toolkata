@@ -241,7 +241,10 @@ function printStepResult(result: StepValidationResult, verbose: boolean): void {
 
       // Show the command/code that was executed (truncated if too long)
       const codePreview = snippetResult.snippet.code.split("\n")[0]?.substring(0, 80) ?? ""
-      const codeSuffix = snippetResult.snippet.code.length > 80 || snippetResult.snippet.code.includes("\n") ? "..." : ""
+      const codeSuffix =
+        snippetResult.snippet.code.length > 80 || snippetResult.snippet.code.includes("\n")
+          ? "..."
+          : ""
       console.log(`      Code: ${codePreview}${codeSuffix}`)
 
       // Show the error
@@ -260,7 +263,9 @@ function printStepResult(result: StepValidationResult, verbose: boolean): void {
             console.log(`        ${outputLines[i]}`)
           }
           if (!verbose && outputLines.length > 10) {
-            console.log(`        ... (${outputLines.length - 10} more lines, use --verbose to see all)`)
+            console.log(
+              `        ... (${outputLines.length - 10} more lines, use --verbose to see all)`,
+            )
           }
         }
       }
@@ -304,7 +309,8 @@ function printSummary(summaries: Map<string, ValidationSummary>): void {
 
   if (totalFailed > 0) {
     // Collect all failures across tool pairs for a consolidated report
-    const allFailures: Array<{ toolPair: string; failure: ValidationSummary["failures"][number] }> = []
+    const allFailures: Array<{ toolPair: string; failure: ValidationSummary["failures"][number] }> =
+      []
     for (const [toolPair, summary] of summaries) {
       for (const failure of summary.failures) {
         allFailures.push({ toolPair, failure })
@@ -314,7 +320,9 @@ function printSummary(summaries: Map<string, ValidationSummary>): void {
     console.log(`\n\x1b[31m=== ${totalFailed} Failure(s) ===\x1b[0m\n`)
     for (const { toolPair, failure } of allFailures) {
       const propSuffix = failure.prop ? `.${failure.prop}` : ""
-      console.log(`\x1b[31m✗\x1b[0m ${failure.file}:${failure.lineStart} (${failure.source}${propSuffix})`)
+      console.log(
+        `\x1b[31m✗\x1b[0m ${failure.file}:${failure.lineStart} (${failure.source}${propSuffix})`,
+      )
       console.log(`  Tool pair: ${toolPair}`)
 
       // Show the code (first line + indicator if multiline)
@@ -540,7 +548,9 @@ async function validateToolPairFull(
         const failCount = result.results.filter((r) => r.status === "fail").length
         const skipCount = result.results.filter((r) => r.status === "skipped").length
 
-        console.log(`  \x1b[90m⊝ Cache hit\x1b[0m Step ${step}: ${passCount} passed, ${failCount} failed, ${skipCount} skipped`)
+        console.log(
+          `  \x1b[90m⊝ Cache hit\x1b[0m Step ${step}: ${passCount} passed, ${failCount} failed, ${skipCount} skipped`,
+        )
         stepResults.push(result)
         continue
       }
@@ -607,7 +617,9 @@ async function validateToolPairFull(
  * Check if Docker is available and the image exists.
  * Checks both bash and scala images.
  */
-async function checkDockerPrerequisites(toolPairs: string[]): Promise<{ ok: boolean; missing: string[] }> {
+async function checkDockerPrerequisites(
+  toolPairs: string[],
+): Promise<{ ok: boolean; missing: string[] }> {
   const { spawn } = await import("node:child_process")
 
   const images = new Set<string>(["toolkata-env:bash"])

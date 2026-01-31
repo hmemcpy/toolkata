@@ -1,10 +1,14 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import type { SandboxConfig } from "../../../components/ui/InteractiveTerminal"
 import { Footer } from "../../../components/ui/Footer"
 import { Header } from "../../../components/ui/Header"
 import { KataLanding } from "../../../components/kata/KataLanding"
+import { ShrinkingLayout } from "../../../components/ui/ShrinkingLayout"
 import { getPairing, isValidPairingSlug } from "../../../content/pairings"
-import { getServerProgressForPairAsync } from "../../../core/progress-server"
+// import { getServerProgressForPairAsync } from "../../../core/progress-server"
+import { loadToolConfig } from "../../../lib/content-core"
+import { resolveSandboxConfig } from "../../../lib/content/types"
 import { listKatas } from "../../../services/content"
 
 /**
@@ -41,16 +45,14 @@ export async function generateMetadata(props: {
  * Kata landing page.
  *
  * Shows:
- * - All 7 Katas with their unlock status
- * - Progress indicator (X/7 completed)
- * - Empty state for users who haven't completed Step 12
+ * - All Katas with their unlock status
+ * - Progress indicator
  * - Lock/unlock/completed states for each Kata
  * - Flash message when redirected from locked Kata access
  *
  * Access control:
- * - Kata 1 is unlocked after completing Step 12
+ * - Kata 1 is always unlocked
  * - Kata N+1 is unlocked after completing Kata N
- * - Shows empty state with prompt to complete tutorial if Step 12 not done
  *
  * @param props - Props containing the dynamic route params.
  */
@@ -72,6 +74,21 @@ export default async function KataLandingPage(props: {
     notFound()
   }
 
+  // Load tool-pair config and resolve sandbox configuration
+  const toolConfigResult = await loadToolConfig(toolPair, "content/comparisons").pipe(
+    (await import("effect")).Effect.either,
+    (await import("effect")).Effect.runPromise,
+  )
+
+  const toolConfig =
+    toolConfigResult._tag === "Right"
+      ? toolConfigResult.right
+      : ({
+          sandbox: { enabled: true, environment: "bash" as const, timeout: 60, init: [] as const },
+        } as const)
+
+  const sandboxConfig: SandboxConfig = resolveSandboxConfig(undefined, toolConfig)
+
   // Load all Katas for this tool pairing
   const katas = await listKatas(toolPair)
 
@@ -81,11 +98,6 @@ export default async function KataLandingPage(props: {
     frontmatter: kata.frontmatter,
     kataId: kata.frontmatter.kata.toString(),
   }))
-
-  // Read progress from cookie to determine Step 12 completion
-  // This prevents hydration flicker and ensures consistent SSR/CSR
-  const serverProgress = await getServerProgressForPairAsync(toolPair)
-  const step12Completed = serverProgress?.completedSteps.includes(12) ?? false
 
   // Check if user was redirected from a locked Kata
   const locked = searchParams.locked === "true"
@@ -98,44 +110,64 @@ export default async function KataLandingPage(props: {
     <div className="min-h-screen bg-[var(--color-bg)]">
       <Header />
 
-      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Breadcrumb / Back link */}
-        <div className="mb-8">
-          <Link
-            href={`/${toolPair}`}
-            className="inline-flex items-center text-sm text-[#d1d5dc] hover:text-white focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
-          >
-            ← Back to overview
-          </Link>
-        </div>
-
-        {/* Kata landing component or empty state */}
-        {hasKatas ? (
-          <KataLanding katas={katasWithIds} step12Completed={step12Completed} lockedRedirect={locked} />
-        ) : (
-          <div className="max-w-2xl mx-auto py-12 px-4 text-center">
-            <h1 className="text-2xl font-bold font-mono text-[var(--color-text-primary)] mb-3">
-              Kata Practice
-            </h1>
-            <p className="text-base text-[var(--color-text-muted)] leading-relaxed max-w-md mx-auto mb-6">
-              Hands-on scenarios coming soon. Practice {pairing.to.name} until it becomes muscle
-              memory.
-            </p>
+      <ShrinkingLayout>
+        <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+          {/* Breadcrumb / Back link */}
+          <div className="mb-8">
             <Link
               href={`/${toolPair}`}
-              className="inline-flex items-center gap-2 text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] font-mono transition-colors"
+              className="inline-flex items-center text-sm text-[#d1d5dc] hover:text-white focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
             >
-              <span>Return to tutorial</span>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <title>Arrow right</title>
-                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              ← Back to overview
             </Link>
           </div>
-        )}
-      </main>
 
-      <Footer />
+          {/* Kata landing component or empty state */}
+          {hasKatas ? (
+            <KataLanding
+              toolPair={toolPair}
+              katas={katasWithIds}
+              lockedRedirect={locked}
+              sandboxConfig={sandboxConfig}
+            />
+          ) : (
+            <div className="max-w-2xl mx-auto py-12 px-4 text-center">
+              <h1 className="text-2xl font-bold font-mono text-[var(--color-text-primary)] mb-3">
+                Kata Practice
+              </h1>
+              <p className="text-base text-[var(--color-text-muted)] leading-relaxed max-w-md mx-auto mb-6">
+                Hands-on scenarios coming soon. Practice {pairing.to.name} until it becomes muscle
+                memory.
+              </p>
+              <Link
+                href={`/${toolPair}`}
+                className="inline-flex items-center gap-2 text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] font-mono transition-colors"
+              >
+                <span>Return to tutorial</span>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <title>Arrow right</title>
+                  <path
+                    d="M3 8h10M9 4l4 4-4 4"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </Link>
+            </div>
+          )}
+        </main>
+
+        <Footer />
+      </ShrinkingLayout>
     </div>
   )
 }

@@ -58,11 +58,7 @@ export class ValidationError extends Error {
   readonly cause: "NetworkError" | "TimeoutError" | "ParseError" | "SandboxUnavailable"
   readonly command: string | undefined
 
-  constructor(
-    cause: ValidationError["cause"],
-    message: string,
-    command?: string,
-  ) {
+  constructor(cause: ValidationError["cause"], message: string, command?: string) {
     super(message)
     this.name = "ValidationError"
     this.cause = cause
@@ -112,11 +108,7 @@ function stripAnsiCodes(input: string): string {
  * @param timeoutMs - Timeout in milliseconds (default 5000)
  * @returns The command output (stripped of ANSI codes)
  */
-async function executeCommand(
-  wsUrl: string,
-  command: string,
-  timeoutMs = 5000,
-): Promise<string> {
+async function executeCommand(wsUrl: string, command: string, timeoutMs = 5000): Promise<string> {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(wsUrl)
 
@@ -126,13 +118,7 @@ async function executeCommand(
     // Timeout handler
     const timeout = setTimeout(() => {
       ws.close()
-      reject(
-        new ValidationError(
-          "TimeoutError",
-          `Command timed out after ${timeoutMs}ms`,
-          command,
-        ),
-      )
+      reject(new ValidationError("TimeoutError", `Command timed out after ${timeoutMs}ms`, command))
     }, timeoutMs)
 
     // Track last output time for prompt detection
@@ -192,9 +178,7 @@ async function executeCommand(
 
         if (msg.type === "error") {
           cleanup()
-          reject(
-            new ValidationError("NetworkError", msg.message, command),
-          )
+          reject(new ValidationError("NetworkError", msg.message, command))
           return
         }
       } catch {
@@ -208,13 +192,7 @@ async function executeCommand(
 
     ws.onerror = (event: Event) => {
       cleanup()
-      reject(
-        new ValidationError(
-          "NetworkError",
-          `WebSocket error: ${event.type}`,
-          command,
-        ),
-      )
+      reject(new ValidationError("NetworkError", `WebSocket error: ${event.type}`, command))
     }
 
     ws.onclose = () => {
@@ -228,9 +206,7 @@ async function executeCommand(
         const output = outputLines.join("\n").trim()
         resolve(output)
       } else {
-        reject(
-          new ValidationError("NetworkError", "WebSocket closed unexpectedly", command),
-        )
+        reject(new ValidationError("NetworkError", "WebSocket closed unexpectedly", command))
       }
     }
   })
@@ -258,7 +234,12 @@ async function validateByCommand(output: string, command: string): Promise<Valid
   if (errorMsg) {
     return {
       success: false,
-      hint: `Command failed: ${output.split("\n").find((line) => errorMsg.test(line))?.trim() ?? "Unknown error"}`,
+      hint: `Command failed: ${
+        output
+          .split("\n")
+          .find((line) => errorMsg.test(line))
+          ?.trim() ?? "Unknown error"
+      }`,
       actualOutput: output,
       command,
     }
@@ -302,11 +283,7 @@ async function validateByRegex(
       command,
     }
   } catch (_err: unknown) {
-    throw new ValidationError(
-      "ParseError",
-      `Invalid regex pattern: ${expectedPattern}`,
-      command,
-    )
+    throw new ValidationError("ParseError", `Invalid regex pattern: ${expectedPattern}`, command)
   }
 }
 

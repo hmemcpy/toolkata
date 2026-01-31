@@ -96,8 +96,10 @@ export function ValidationFeedback({
 
   // Determine styling based on state
   const wrapperClasses = {
-    validating: "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-muted)]",
-    success: "bg-[var(--color-accent)] bg-opacity-10 border-[var(--color-accent)] text-[var(--color-accent)]",
+    validating:
+      "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-muted)]",
+    success:
+      "bg-[var(--color-accent)] bg-opacity-10 border-[var(--color-accent)] text-[var(--color-accent)]",
     error: "bg-red-500 bg-opacity-10 border-red-500 text-red-400",
   }[state]
 

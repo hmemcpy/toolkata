@@ -91,7 +91,11 @@ function isNonExecutableCommand(code: string, _source: string): boolean {
   if (/^https?:\/\/[^\s]+$/.test(trimmed)) return true
 
   // File path only (common in documentation)
-  if (/^\/?[\w\/\.-]+\.(ts|js|tsx|jsx|py|rb|go|rs|java|cpp|c|h|css|html|json|yml|yaml|md|txt|sh|bash)$/.test(trimmed)) {
+  if (
+    /^\/?[\w\/\.-]+\.(ts|js|tsx|jsx|py|rb|go|rs|java|cpp|c|h|css|html|json|yml|yaml|md|txt|sh|bash)$/.test(
+      trimmed,
+    )
+  ) {
     return true
   }
 
@@ -230,11 +234,7 @@ const CE_IMPORTS = [
  * Adds scala-cli dependency directives based on detected imports.
  * Uses different imports for ZIO vs Cats Effect code to avoid ambiguity.
  */
-function prepareScalaCode(
-  code: string,
-  config: ResolvedValidationConfig,
-  prop?: string,
-): string {
+function prepareScalaCode(code: string, config: ResolvedValidationConfig, prop?: string): string {
   const lines: string[] = []
 
   // Select imports based on snippet type (zioCode vs catsEffectCode)
@@ -445,7 +445,9 @@ async function validateSnippetInContainer(
   try {
     if (verbose) {
       const preview = snippet.code.substring(0, 40)
-      console.log(`[Docker] Starting ${snippet.language} container ${containerName} for: ${preview}...`)
+      console.log(
+        `[Docker] Starting ${snippet.language} container ${containerName} for: ${preview}...`,
+      )
     }
 
     // Start container with appropriate image

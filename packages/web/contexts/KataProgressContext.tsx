@@ -76,17 +76,17 @@ export interface KataProgressContextValue {
 
   /**
    * Check if a specific Kata is unlocked.
-   * Kata 1 is unlocked after completing Step 12.
+   * Kata 1 is always unlocked.
    * Kata N+1 is unlocked after completing Kata N.
    */
-  readonly isKataUnlocked: (kataId: string, step12Completed: boolean) => boolean
+  readonly isKataUnlocked: (kataId: string) => boolean
 
   /**
    * Get the next unlocked Kata ID.
-   * Returns "1" if Step 12 is complete but no Katas started.
-   * Returns null if Step 12 is not complete.
+   * Returns "1" if no Katas started.
+   * Returns null if all katas completed.
    */
-  readonly getNextUnlockedKata: (step12Completed: boolean) => string | null
+  readonly getNextUnlockedKata: () => string | null
 
   /**
    * Start a Kata session.
@@ -352,20 +352,20 @@ export function KataProgressProvider({ children }: KataProgressProviderProps) {
 
   /**
    * Check if a specific Kata is unlocked.
-   * - Kata 1 is unlocked after completing Step 12.
-   * - Kata N+1 is unlocked after completing Kata N.
+   * Kata 1 is always unlocked.
+   * Kata N+1 is unlocked after completing Kata N.
    */
   const isKataUnlocked = useCallback(
-    (kataId: string, step12Completed: boolean): boolean => {
+    (kataId: string): boolean => {
       const kataNum = Number.parseInt(kataId, 10)
 
-      if (Number.isNaN(kataNum) || kataNum < 1 || kataNum > 7) {
+      if (Number.isNaN(kataNum) || kataNum < 1) {
         return false
       }
 
-      // Kata 1: unlocked after Step 12
+      // Kata 1: always unlocked
       if (kataNum === 1) {
-        return step12Completed
+        return true
       }
 
       // Kata N+1: unlocked after completing Kata N
@@ -378,25 +378,18 @@ export function KataProgressProvider({ children }: KataProgressProviderProps) {
   /**
    * Get the next unlocked Kata ID.
    */
-  const getNextUnlockedKata = useCallback(
-    (step12Completed: boolean): string | null => {
-      if (!step12Completed) {
-        return null
+  const getNextUnlockedKata = useCallback((): string | null => {
+    // Find first not-yet-completed Kata that is also unlocked
+    for (let i = 1; i <= 7; i++) {
+      const kataId = String(i)
+      if (isKataUnlocked(kataId) && !data.completedKatas.includes(kataId)) {
+        return kataId
       }
+    }
 
-      // Find first not-yet-completed Kata
-      for (let i = 1; i <= 7; i++) {
-        const kataId = String(i)
-        if (!data.completedKatas.includes(kataId)) {
-          return kataId
-        }
-      }
-
-      // All Katas completed
-      return null
-    },
-    [data.completedKatas],
-  )
+    // All Katas completed
+    return null
+  }, [data.completedKatas, isKataUnlocked])
 
   /**
    * Start a Kata session.
