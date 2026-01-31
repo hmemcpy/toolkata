@@ -339,11 +339,13 @@ export interface Container {
 
 ### P6: Testing & Validation
 
-- [ ] **P6.1: Write unit tests for RateLimitAdminService**
+- [x] **P6.1: Write unit tests for RateLimitAdminService** ✅
   - Mock rate limit store
   - Test getAllStatus, getStatus, resetLimit, adjustLimit
   - Test error cases (client not found)
   - File: `packages/sandbox-api/tests/services/rate-limit-admin.test.ts`
+  - 14 tests covering all methods and error cases
+  - Uses Bun's built-in test runner with Effect
 
 - [ ] **P6.2: Write integration tests for admin endpoints**
   - Test all rate limit endpoints with real HTTP calls

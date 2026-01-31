@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "NODE_ENV=development bun run src/index.ts",
     "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
     "docker:build": "./scripts/docker-build.sh",
     "docker:build:no-test": "./scripts/docker-build.sh --no-test",
     "docker:build:all": "./scripts/docker-build-all.sh",
