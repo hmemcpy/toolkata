@@ -183,7 +183,7 @@ GitHub-native content management system. See `specs/content-cms.md` for full spe
 
 **Frontend (web) - Services**
 
-- [ ] **Create CMS API client (Effect-TS)**
+- [x] **Create CMS API client (Effect-TS)**
   - Client for all CMS API endpoints
   - File operations, branch management, validation
   - Error handling matching backend error types
@@ -367,5 +367,5 @@ cd packages/web && bun run validate:snippets
 | P0 | 0 | 0 |
 | P1 | 0 | 6 |
 | P2 | 3 | 0 |
-| P3 | 15 | 6 |
-| **Total** | **18** | **12** |
+| P3 | 14 | 7 |
+| **Total** | **17** | **13** |
