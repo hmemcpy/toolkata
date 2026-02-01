@@ -267,10 +267,11 @@ GitHub-native content management system. See `specs/content-cms.md` for full spe
 
 **Frontend (web) - Integration**
 
-- [ ] **Create CMS admin page**
+- [x] **Create CMS admin page**
   - Main CMS interface combining FileBrowser, FileEditor, MDXPreview
   - Three-column layout (browser | editor | preview)
-  - Responsive: collapse preview on smaller screens
+  - Responsive: collapse preview on smaller screens (lg: breakpoint)
+  - BranchSelector, ValidationSummary, and PR creation button in header
   - File: `packages/web/app/admin/(dashboard)/cms/page.tsx`
 
 - [ ] **Create CMS layout with branch selector**
@@ -385,5 +386,5 @@ cd packages/web && bun run validate:snippets
 | P0 | 0 | 0 |
 | P1 | 0 | 6 |
 | P2 | 3 | 0 |
-| P3 | 5 | 15 |
-| **Total** | **8** | **21** |
+| P3 | 4 | 16 |
+| **Total** | **7** | **22** |
