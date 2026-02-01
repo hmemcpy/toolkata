@@ -88,8 +88,10 @@ export const authConfig: NextAuthConfig = {
     async jwt({ token, user }) {
       if (user) {
         // First call, user is available. Persist email and isAdmin in token.
-        token.email = user.email
-        token.isAdmin = isAdminEmail(user.email ?? "")
+        if (user.email) {
+          token.email = user.email
+        }
+        token["isAdmin"] = isAdminEmail(user.email ?? "")
       }
       return token
     },

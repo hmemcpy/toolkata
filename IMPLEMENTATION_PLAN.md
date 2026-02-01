@@ -37,7 +37,7 @@ This plan tracks implementation of features specified in `specs/` against the cu
 
 | Feature | Spec | Status | Missing |
 |---------|------|--------|---------|
-| **Bidirectional Comparison** | bidirectional-comparison.md | Glossary done, GitToggle exists | Direction toggle to swap columns, PreferencesStore |
+| **Bidirectional Comparison** | bidirectional-comparison.md | Glossary done, GitToggle exists, PreferencesStore done | Direction toggle to swap columns, useDirection hook, DirectionToggle component |
 
 ### Not Implemented
 
@@ -61,12 +61,12 @@ Glossary page exists. GitToggle component exists (shows/hides git column in kata
 
 **Why:** bidirectional-comparison.md describes a global direction toggle `[git ↔ jj]` that swaps which column appears on the left vs right in SideBySide components and glossary tables. This is distinct from GitToggle which only shows/hides the git column entirely.
 
-- [ ] **Create PreferencesStore for direction preference**
+- [x] **Create PreferencesStore for direction preference**
   - localStorage-backed store for direction preference
-  - Pattern: similar to ProgressStore in `packages/web/core/progress.ts`
-  - Key: `toolkata:direction:{toolPair}`
+  - Pattern: similar to ProgressStore in `packages/web/core/ProgressStore.ts`
+  - Key: `toolkata_preferences`
   - Values: `"default"` | `"reversed"`
-  - File: `packages/web/core/preferences.ts`
+  - File: `packages/web/core/PreferencesStore.ts`
 
 - [ ] **Create useDirection hook**
   - Hook to read/write direction preference
@@ -350,6 +350,8 @@ cd packages/web && bun run validate:snippets
 
 6. **Admin dashboard is fully functional** - Rate limits, containers, metrics pages work. NextAuth with Google OAuth is configured.
 
+7. **sandbox-api has pre-existing type errors** - `bun run typecheck` in sandbox-api fails with Effect-TS type mismatches in `environments/index.ts`, `routes/sessions.ts`, and `services/container.ts`. These are `exactOptionalPropertyTypes` issues with Effect return types (`Effect<undefined, ...>` vs `Effect<void, ...>`) and index signature access patterns.
+
 ---
 
 ## Task Count
@@ -357,7 +359,7 @@ cd packages/web && bun run validate:snippets
 | Priority | Pending | Completed |
 |----------|---------|-----------|
 | P0 | 0 | 0 |
-| P1 | 6 | 0 |
+| P1 | 5 | 1 |
 | P2 | 3 | 0 |
 | P3 | 21 | 0 |
-| **Total** | **30** | **0** |
+| **Total** | **29** | **1** |
