@@ -567,7 +567,7 @@ export default function CMSPage() {
   // CMS not available state
   if (!state.cmsAvailable && !state.filesLoading && !state.branchesLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-8rem)]">
+      <div className="flex flex-col items-center justify-center h-full">
         <span className="text-4xl mb-4">!</span>
         <h1 className="text-lg font-mono font-semibold text-[var(--color-text)] mb-2">
           CMS Not Available
@@ -583,7 +583,7 @@ export default function CMSPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
+    <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
         <h1 className="text-sm font-mono font-semibold text-[var(--color-text)]">

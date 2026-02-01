@@ -274,9 +274,10 @@ GitHub-native content management system. See `specs/content-cms.md` for full spe
   - BranchSelector, ValidationSummary, and PR creation button in header
   - File: `packages/web/app/admin/(dashboard)/cms/page.tsx`
 
-- [ ] **Create CMS layout with branch selector**
-  - Layout with BranchSelector in header
-  - ValidationPanel in bottom area
+- [x] **Create CMS layout with branch selector**
+  - Layout provides navigation wrapper and full-width container
+  - Back navigation to admin dashboard with breadcrumb
+  - Child pages (main CMS, history) handle their own state and branch selection
   - File: `packages/web/app/admin/(dashboard)/cms/layout.tsx`
 
 - [ ] **Create CMS history page**
@@ -386,5 +387,5 @@ cd packages/web && bun run validate:snippets
 | P0 | 0 | 0 |
 | P1 | 0 | 6 |
 | P2 | 3 | 0 |
-| P3 | 4 | 16 |
-| **Total** | **7** | **22** |
+| P3 | 3 | 17 |
+| **Total** | **6** | **23** |
