@@ -312,8 +312,8 @@ export const createAdminCMSRoutes = (
   // GET /file/:path - Read a file from content repository
   app.get("/file/*", async (c) => {
     try {
-      // Get path from wildcard - everything after /file/
-      const filePath = c.req.path.replace(/^\/file\//, "")
+      // Get path from wildcard parameter
+      const filePath = c.req.param("*")
       if (!filePath) {
         return c.json<ErrorResponse>(
           { error: "BadRequest", message: "Missing file path" },
@@ -353,7 +353,7 @@ export const createAdminCMSRoutes = (
   app.put("/file/*", async (c) => {
     try {
       // Get path from wildcard
-      const filePath = c.req.path.replace(/^\/file\//, "")
+      const filePath = c.req.param("*")
       if (!filePath) {
         return c.json<ErrorResponse>(
           { error: "BadRequest", message: "Missing file path" },
@@ -452,7 +452,7 @@ export const createAdminCMSRoutes = (
   app.delete("/file/*", async (c) => {
     try {
       // Get path from wildcard
-      const filePath = c.req.path.replace(/^\/file\//, "")
+      const filePath = c.req.param("*")
       if (!filePath) {
         return c.json<ErrorResponse>(
           { error: "BadRequest", message: "Missing file path" },
@@ -519,7 +519,7 @@ export const createAdminCMSRoutes = (
   app.patch("/file/*", async (c) => {
     try {
       // Get path from wildcard
-      const filePath = c.req.path.replace(/^\/file\//, "")
+      const filePath = c.req.param("*")
       if (!filePath) {
         return c.json<ErrorResponse>(
           { error: "BadRequest", message: "Missing file path" },
