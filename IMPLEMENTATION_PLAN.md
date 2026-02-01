@@ -161,14 +161,17 @@ GitHub-native content management system. See `specs/content-cms.md` for full spe
   - Returns structured validation results
   - File: `packages/sandbox-api/src/services/content-validation.ts`
 
-- [ ] **Create CMS API routes**
+- [x] **Create CMS API routes**
   - File operations: GET/PUT/DELETE `/admin/cms/file/:path`
   - File listing: GET `/admin/cms/files` (tree view)
   - Validation: POST `/admin/cms/validate`
-  - Branch operations: GET/POST `/admin/cms/branches`
-  - Commit operations: GET `/admin/cms/commits`
-  - PR operations: POST `/admin/cms/pr`
+  - Branch operations: GET/POST/DELETE `/admin/cms/branches`
+  - Commit operations: GET/POST `/admin/cms/commits`
+  - PR operations: GET/POST `/admin/cms/pr`
+  - Status endpoint: GET `/admin/cms/status`
+  - Validation status: GET `/admin/cms/validate/status`
   - File: `packages/sandbox-api/src/routes/admin-cms.ts`
+  - Wired up in `packages/sandbox-api/src/index.ts` with GitHubService and ContentValidationService
 
 **Frontend (web) - Dependencies**
 
@@ -364,5 +367,5 @@ cd packages/web && bun run validate:snippets
 | P0 | 0 | 0 |
 | P1 | 0 | 6 |
 | P2 | 3 | 0 |
-| P3 | 17 | 4 |
-| **Total** | **20** | **10** |
+| P3 | 16 | 5 |
+| **Total** | **19** | **11** |

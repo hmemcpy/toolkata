@@ -13,6 +13,7 @@ import { closeAllConnections, createWebSocketServer } from "./routes/websocket.j
 import { createAdminRateLimitsRoutes } from "./routes/admin-rate-limits.js"
 import { createAdminContainersRoutes } from "./routes/admin-containers.js"
 import { createAdminMetricsRoutes } from "./routes/admin-metrics.js"
+import { createAdminCMSRoutes } from "./routes/admin-cms.js"
 import { AuditService, AuditServiceLive, type AuditServiceShape } from "./services/audit.js"
 import {
   ContainerService,
@@ -42,6 +43,17 @@ import {
 import { MetricsService, MetricsServiceLive, type MetricsServiceShape } from "./services/metrics.js"
 import { SessionService, SessionServiceLive, type SessionServiceShape } from "./services/session.js"
 import { WebSocketService, WebSocketServiceLive } from "./services/websocket.js"
+import {
+  GitHubService,
+  GitHubServiceLive,
+  type GitHubServiceShape,
+} from "./services/github.js"
+import {
+  ContentValidationService,
+  ContentValidationServiceLive,
+  type ContentValidationServiceShape,
+} from "./services/content-validation.js"
+import { isGitHubConfigured } from "./config/github.js"
 import { EnvironmentServiceLive, EnvironmentService } from "./environments/index.js"
 import {
   getAllowedOrigins,
@@ -108,6 +120,8 @@ const createApp = (
   rateLimitAdminService?: import("./services/rate-limit-admin.js").RateLimitAdminServiceShape,
   containerAdminService?: import("./services/container-admin.js").ContainerAdminServiceShape,
   metricsService?: MetricsServiceShape,
+  githubService?: GitHubServiceShape,
+  contentValidationService?: ContentValidationServiceShape,
 ) => {
   const app = new Hono<{ Bindings: Env }>()
 
@@ -207,6 +221,11 @@ const createApp = (
     if (metricsService) {
       adminApp.route("/metrics", createAdminMetricsRoutes(metricsService))
     }
+    // Mount CMS routes (only if GitHub is configured)
+    if (githubService && isGitHubConfigured()) {
+      adminApp.route("/cms", createAdminCMSRoutes(githubService, contentValidationService))
+      console.log("CMS routes enabled at /admin/cms/*")
+    }
 
     // Mount admin routes under /admin prefix
     app.route("/admin", adminApp)
@@ -227,6 +246,8 @@ const make = Effect.gen(function* () {
   const rateLimitAdminService = yield* RateLimitAdminService
   const containerAdminService = yield* ContainerAdminService
   const metricsService = yield* MetricsService
+  const githubService = yield* GitHubService
+  const contentValidationService = yield* ContentValidationService
 
   // Create circuit breaker (depends on session service for container count)
   const circuitBreakerService = makeCircuitBreakerService(sessionService)
@@ -241,6 +262,8 @@ const make = Effect.gen(function* () {
     rateLimitAdminService,
     containerAdminService,
     metricsService,
+    githubService,
+    contentValidationService,
   )
 
   const start = Effect.sync(() => {
@@ -387,6 +410,9 @@ const RateLimitAdminServiceLiveWithDeps = RateLimitAdminServiceLive.pipe(
   Layer.provide(RateLimitServiceLive),
 )
 
+// GitHubService has no dependencies (uses config directly)
+// ContentValidationService has no dependencies (uses Docker directly)
+
 // Main server layer composition - all services needed for the API
 // Only include base layers that have NO unmet dependencies.
 // ContainerServiceLiveWithDeps already includes DockerClientLive and EnvironmentServiceLive,
@@ -402,6 +428,8 @@ export const ServerLayer = Layer.mergeAll(
   RateLimitServiceLive,
   RateLimitAdminServiceLiveWithDeps,
   MetricsServiceLiveWithDeps,
+  GitHubServiceLive,
+  ContentValidationServiceLive,
 )
 
 // Main function for Bun runtime
