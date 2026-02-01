@@ -94,6 +94,7 @@ rsync -avz --delete \
   --exclude 'node_modules' \
   --exclude '.git' \
   --exclude '*.log' \
+  --exclude '.env' \
   "$PROJECT_ROOT/packages/sandbox-api/" \
   "$SSH_USER@$SERVER_IP:/opt/sandbox-api/"
 
