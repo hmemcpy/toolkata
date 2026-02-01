@@ -44,3 +44,7 @@ jobs:
 
       - name: Build web
         run: bun run --cwd packages/web build
+        env:
+          CONTENT_SOURCE: github
+          GITHUB_OWNER: hmemcpy
+          GITHUB_REPO: toolkata-content
