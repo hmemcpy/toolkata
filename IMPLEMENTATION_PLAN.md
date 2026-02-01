@@ -82,11 +82,12 @@ Glossary page exists. GitToggle component exists (shows/hides git column in kata
   - Updates preference in localStorage via hook
   - File: `packages/web/components/ui/DirectionToggle.tsx`
 
-- [ ] **Update SideBySide to support reversed direction**
-  - Accept `isReversed` prop (from context via hook)
-  - Swap left/right columns when reversed
-  - Swap labels ("git" ↔ "jj")
-  - File: `packages/web/components/ui/SideBySide.tsx` (update)
+- [x] **Update SideBySide to support reversed direction**
+  - Uses `useDirection` hook to get `isReversed` state
+  - Swaps left/right columns (commands, labels, comments) when reversed
+  - Colors remain semantic (left=orange, right=green)
+  - Accessible table also reflects swapped order
+  - File: `packages/web/components/ui/SideBySide.tsx` (updated)
 
 - [ ] **Update GlossaryClient to support reversed direction**
   - Use direction hook
@@ -362,7 +363,7 @@ cd packages/web && bun run validate:snippets
 | Priority | Pending | Completed |
 |----------|---------|-----------|
 | P0 | 0 | 0 |
-| P1 | 3 | 3 |
+| P1 | 2 | 4 |
 | P2 | 3 | 0 |
 | P3 | 21 | 0 |
-| **Total** | **27** | **3** |
+| **Total** | **26** | **4** |

@@ -11,6 +11,7 @@
  * - Mobile: stacks vertically with arrow indicator
  * - Semantic table for accessibility
  * - Respects TerminalContext showGitEquivalents setting (hides git column by default)
+ * - Supports direction reversal via useDirection hook (swaps columns)
  *
  * @example
  * ```tsx
@@ -23,8 +24,11 @@
  * ```
  */
 
+"use client"
+
 import type { JSX } from "react"
 import { useTerminalContext } from "../../contexts/TerminalContext"
+import { useDirection } from "@/hooks/useDirection"
 
 interface SideBySideProps {
   /**
@@ -76,6 +80,7 @@ interface SideBySideProps {
  *
  * Shows "from" tool on the left (orange) and "to" tool on the right (green).
  * Respects TerminalContext.showGitEquivalents to optionally hide the git column.
+ * Supports direction reversal via useDirection hook to swap which tool appears on which side.
  */
 export function SideBySide({
   fromCommands,
@@ -101,12 +106,24 @@ export function SideBySide({
   // Prop override takes precedence over context
   const showGit = showGitProp ?? contextShowGit
 
+  // Get direction preference for column ordering
+  const { isReversed } = useDirection()
+
+  // When reversed, swap which commands/labels appear on left vs right
+  // Colors follow semantic meaning: left column = orange, right column = green
+  const leftCommands = isReversed ? toCommands : fromCommands
+  const rightCommands = isReversed ? fromCommands : toCommands
+  const leftLabel = isReversed ? toLabel : fromLabel
+  const rightLabel = isReversed ? fromLabel : toLabel
+  const leftComments = isReversed ? toComments : fromComments
+  const rightComments = isReversed ? fromComments : toComments
+
   return (
     <div className="my-6 overflow-x-auto">
-      {/* When showGit is false: single column (full width) */}
+      {/* When showGit is false: single column (full width) showing the "to" tool */}
       {!showGit ? (
         <div className="grid grid-cols-1">
-          {/* Right column only (to tool - green) */}
+          {/* Single column (to tool - green) */}
           <div className="overflow-hidden rounded border border-[var(--color-border)] bg-[rgba(57,217,108,0.08)]">
             <div className="border-b border-[var(--color-border)] px-4 py-2">
               <span className="text-xs font-semibold text-[var(--color-text-muted)]">
@@ -132,24 +149,25 @@ export function SideBySide({
         </div>
       ) : (
         // Desktop: side-by-side, Mobile: stacked
+        // Uses swapped variables based on direction preference
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* Left column (from tool - orange) */}
+          {/* Left column (orange) - content swaps based on isReversed */}
           <div className="overflow-hidden rounded border border-[var(--color-border)] bg-[rgba(255,176,0,0.08)]">
             <div className="border-b border-[var(--color-border)] px-4 py-2">
               <span className="text-xs font-semibold text-[var(--color-text-muted)]">
-                {fromLabel}
+                {leftLabel}
               </span>
             </div>
             <div className="p-4">
-              {fromCommands.map((cmd, i) => (
+              {leftCommands.map((cmd, i) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: Commands are static and order won't change
                 <div key={i} className="mb-3 last:mb-0">
                   <code className="block text-sm text-[var(--color-text)] !bg-transparent !p-0">
                     {cmd}
                   </code>
-                  {fromComments[i] && (
+                  {leftComments[i] && (
                     <span className="mt-1 block text-xs text-[var(--color-text-muted)]">
-                      {fromComments[i]}
+                      {leftComments[i]}
                     </span>
                   )}
                 </div>
@@ -175,23 +193,23 @@ export function SideBySide({
             </svg>
           </div>
 
-          {/* Right column (to tool - green) */}
+          {/* Right column (green) - content swaps based on isReversed */}
           <div className="overflow-hidden rounded border border-[var(--color-border)] bg-[rgba(57,217,108,0.08)]">
             <div className="border-b border-[var(--color-border)] px-4 py-2">
               <span className="text-xs font-semibold text-[var(--color-text-muted)]">
-                {toLabel}
+                {rightLabel}
               </span>
             </div>
             <div className="p-4">
-              {toCommands.map((cmd, i) => (
+              {rightCommands.map((cmd, i) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: Commands are static and order won't change
                 <div key={i} className="mb-3 last:mb-0">
                   <code className="block text-sm text-[var(--color-text)] !bg-transparent !p-0">
                     {cmd}
                   </code>
-                  {toComments[i] && (
+                  {rightComments[i] && (
                     <span className="mt-1 block text-xs text-[var(--color-text-muted)]">
-                      {toComments[i]}
+                      {rightComments[i]}
                     </span>
                   )}
                 </div>
@@ -202,26 +220,27 @@ export function SideBySide({
       )}
 
       {/* Accessible table for screen readers (visually hidden) */}
+      {/* Uses swapped labels/commands to match visual order */}
       <div className="sr-only">
         <table
-          aria-label={`Command comparison: ${fromLabel} vs ${toLabel}`}
-          summary={`Side-by-side comparison of ${fromLabel} and ${toLabel} commands`}
+          aria-label={`Command comparison: ${leftLabel} vs ${rightLabel}`}
+          summary={`Side-by-side comparison of ${leftLabel} and ${rightLabel} commands`}
         >
           <caption>
-            Command comparison: {fromLabel} commands on the left, {toLabel} commands on the right
+            Command comparison: {leftLabel} commands on the left, {rightLabel} commands on the right
           </caption>
           <thead>
             <tr>
-              <th scope="col">{fromLabel}</th>
-              <th scope="col">{toLabel}</th>
+              <th scope="col">{leftLabel}</th>
+              <th scope="col">{rightLabel}</th>
             </tr>
           </thead>
           <tbody>
-            {fromCommands.map((cmd, i) => (
+            {leftCommands.map((cmd, i) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: Commands are static and order won't change
               <tr key={i}>
                 <td>{cmd}</td>
-                <td>{toCommands[i] ?? ""}</td>
+                <td>{rightCommands[i] ?? ""}</td>
               </tr>
             ))}
           </tbody>
