@@ -40,7 +40,7 @@ PROMPT_FILE="PROMPT_${MODE}.md"
 
 if [[ ! -f "$PROMPT_FILE" ]]; then
   echo -e "${RED}Error: $PROMPT_FILE not found${NC}"
-  echo "Run the ralph-claude skill first to generate the required files."
+  echo "Run the ralph skill first to generate the required files."
   exit 1
 fi
 
@@ -91,8 +91,8 @@ countdown() {
 }
 
 is_usage_limit_error() {
-  local output="$1"
-  local exit_code="$2"
+  local output=$1
+  local exit_code=$2
 
   # Only check for usage limits if there was an error
   [[ "$exit_code" -eq 0 ]] && return 1
@@ -120,7 +120,7 @@ is_usage_limit_error() {
 }
 
 get_sleep_duration() {
-  local output="$1"
+  local output=$1
 
   if [[ "$output" =~ "try again in "([0-9]+)" minute" ]]; then
     echo $(( ${BASH_REMATCH[1]} * 60 + 60 ))
@@ -162,12 +162,14 @@ get_sleep_duration() {
     return
   fi
 
+  # Default: wait until next hour
   local wait_time=$(seconds_until_next_hour)
-  echo $((wait_time + 60))
+  [[ $wait_time -lt 300 ]] && wait_time=300
+  echo $wait_time
 }
 
 handle_usage_limit() {
-  local output="$1"
+  local output=$1
   local sleep_duration=$(get_sleep_duration "$output")
 
   echo ""
@@ -286,7 +288,7 @@ while true; do
     continue
   fi
 
-  if [[ "$RESULT_MSG" =~ "RALPH_COMPLETE" ]] || [[ "$OUTPUT" =~ "RALPH_COMPLETE" ]]; then
+  if [[ "$RESULT_MSG" =~ RALPH_COMPLETE ]]; then
     echo ""
     echo -e "${GREEN}=== Ralph Complete ===${NC}"
     echo -e "${GREEN}All tasks finished.${NC}"
