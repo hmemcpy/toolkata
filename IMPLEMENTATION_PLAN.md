@@ -175,7 +175,7 @@ GitHub-native content management system. See `specs/content-cms.md` for full spe
 
 **Frontend (web) - Dependencies**
 
-- [ ] **Install Monaco and diff viewer dependencies**
+- [x] **Install Monaco and diff viewer dependencies**
   - Add `@monaco-editor/react` for code editing
   - Add `react-diff-viewer-continued` for commit diffs
   - Add `use-debounce` for auto-save
@@ -367,5 +367,5 @@ cd packages/web && bun run validate:snippets
 | P0 | 0 | 0 |
 | P1 | 0 | 6 |
 | P2 | 3 | 0 |
-| P3 | 16 | 5 |
-| **Total** | **19** | **11** |
+| P3 | 15 | 6 |
+| **Total** | **18** | **12** |
