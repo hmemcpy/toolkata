@@ -246,10 +246,14 @@ GitHub-native content management system. See `specs/content-cms.md` for full spe
   - Escape key handling, backdrop click to close
   - File: `packages/web/components/cms/PRDialog.tsx`
 
-- [ ] **Create HistoryPanel component**
+- [x] **Create HistoryPanel component**
   - Commit list with author, date, message
-  - Diff viewer for selected commit
-  - File-level change list
+  - Diff viewer for selected commit (using react-diff-viewer-continued)
+  - File-level change list with expandable diffs
+  - Copy SHA button with feedback
+  - Revert button (optional)
+  - Loading and skeleton states
+  - Defines GitDiff and FileChange types
   - File: `packages/web/components/cms/HistoryPanel.tsx`
 
 - [ ] **Create CreateFileDialog component**
@@ -379,5 +383,5 @@ cd packages/web && bun run validate:snippets
 | P0 | 0 | 0 |
 | P1 | 0 | 6 |
 | P2 | 3 | 0 |
-| P3 | 7 | 13 |
-| **Total** | **10** | **19** |
+| P3 | 6 | 14 |
+| **Total** | **9** | **20** |

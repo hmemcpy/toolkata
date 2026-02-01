@@ -17,3 +17,14 @@ export type { FileEntry, FileBrowserFilters } from "./FileBrowser"
 
 export { FileEditor, FileEditorSkeleton } from "./FileEditor"
 export type { EditorFile } from "./FileEditor"
+
+export { MDXPreview } from "./MDXPreview"
+
+export { ValidationPanel, ValidationSummary } from "./ValidationPanel"
+
+export { BranchSelector, BranchIndicator } from "./BranchSelector"
+
+export { PRDialog } from "./PRDialog"
+
+export { HistoryPanel, HistoryPanelSkeleton } from "./HistoryPanel"
+export type { GitDiff, FileChange } from "./HistoryPanel"
