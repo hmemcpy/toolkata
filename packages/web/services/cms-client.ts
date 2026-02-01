@@ -280,6 +280,15 @@ export interface DeleteFileRequest {
 }
 
 /**
+ * Request to rename a file.
+ */
+export interface RenameFileRequest {
+  readonly newPath: string
+  readonly message: string
+  readonly branch: string
+}
+
+/**
  * Request to create a branch.
  */
 export interface CreateBranchRequest {
@@ -340,6 +349,11 @@ export interface CMSClientShape {
   readonly deleteFile: (
     path: string,
     request: DeleteFileRequest,
+  ) => Effect.Effect<FileCommitResponse, CMSClientError>
+
+  readonly renameFile: (
+    oldPath: string,
+    request: RenameFileRequest,
   ) => Effect.Effect<FileCommitResponse, CMSClientError>
 
   // Branch operations
@@ -642,6 +656,26 @@ const make = Effect.succeed<CMSClientShape>({
           : new CMSClientError({
               cause: "NetworkError",
               message: error instanceof Error ? error.message : "Failed to delete file",
+              originalError: error,
+            }),
+    }),
+
+  renameFile: (oldPath, request) =>
+    Effect.tryPromise({
+      try: async () => {
+        const apiUrl = getSandboxHttpUrl()
+        const encodedPath = encodeURIComponent(oldPath)
+        return fetchCMS<FileCommitResponse>(`${apiUrl}/admin/cms/file/${encodedPath}`, {
+          method: "PATCH",
+          body: JSON.stringify(request),
+        })
+      },
+      catch: (error) =>
+        error instanceof CMSClientError
+          ? error
+          : new CMSClientError({
+              cause: "NetworkError",
+              message: error instanceof Error ? error.message : "Failed to rename file",
               originalError: error,
             }),
     }),

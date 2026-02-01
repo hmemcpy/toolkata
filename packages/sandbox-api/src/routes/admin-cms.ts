@@ -22,6 +22,7 @@ import {
   type SnippetValidationResult,
   type ValidationRequest,
 } from "../services/content-validation.js"
+import type { AuditServiceShape } from "../services/audit.js"
 
 /**
  * Admin CMS routes for Content Management System
@@ -107,6 +108,12 @@ export interface UpdateFileRequest {
 export interface DeleteFileRequest {
   readonly message: string
   readonly sha: string
+  readonly branch: string
+}
+
+export interface RenameFileRequest {
+  readonly newPath: string
+  readonly message: string
   readonly branch: string
 }
 
@@ -239,9 +246,25 @@ const errorToResponse = (error: unknown): { statusCode: number; body: ErrorRespo
  * @param githubService - GitHub service for repository operations
  * @param validationService - Content validation service (optional)
  */
+/**
+ * Get client IP from request for audit logging.
+ */
+function getClientIp(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for")
+  if (forwarded) {
+    return forwarded.split(",")[0]?.trim() ?? "unknown"
+  }
+  const realIp = request.headers.get("x-real-ip")
+  if (realIp) {
+    return realIp
+  }
+  return "unknown"
+}
+
 export const createAdminCMSRoutes = (
   githubService: GitHubServiceShape,
   validationService?: ContentValidationServiceShape,
+  auditService?: AuditServiceShape,
 ) => {
   const app = new Hono<{ Bindings: Env }>()
 
@@ -298,11 +321,18 @@ export const createAdminCMSRoutes = (
         )
       }
 
-      const branch = c.req.query("branch")
+      const branch = c.req.query("branch") ?? GitHubConfig.defaultBranch
+      const decodedPath = decodeURIComponent(filePath)
 
       const fileContent = await Effect.runPromise(
-        githubService.getFile(decodeURIComponent(filePath), branch ?? undefined),
+        githubService.getFile(decodedPath, branch ?? undefined),
       )
+
+      // Audit log file read
+      if (auditService) {
+        const clientIp = getClientIp(c.req.raw)
+        await Effect.runPromise(auditService.logCMSFileRead(decodedPath, branch, clientIp))
+      }
 
       return c.json<FileResponse>(
         {
@@ -370,6 +400,14 @@ export const createAdminCMSRoutes = (
           ),
         )
 
+        // Audit log file update
+        if (auditService) {
+          const clientIp = getClientIp(c.req.raw)
+          await Effect.runPromise(
+            auditService.logCMSFileUpdated(decodedPath, updateBody.branch, clientIp, commit.sha),
+          )
+        }
+
         return c.json<FileCommitResponse>(
           {
             success: true,
@@ -387,6 +425,14 @@ export const createAdminCMSRoutes = (
       const commit = await Effect.runPromise(
         githubService.createFile(decodedPath, createBody.content, createBody.message, branch),
       )
+
+      // Audit log file creation
+      if (auditService) {
+        const clientIp = getClientIp(c.req.raw)
+        await Effect.runPromise(
+          auditService.logCMSFileCreated(decodedPath, branch, clientIp, commit.sha),
+        )
+      }
 
       return c.json<FileCommitResponse>(
         {
@@ -437,14 +483,106 @@ export const createAdminCMSRoutes = (
         )
       }
 
+      const decodedPath = decodeURIComponent(filePath)
       const commit = await Effect.runPromise(
         githubService.deleteFile(
-          decodeURIComponent(filePath),
+          decodedPath,
           body.message,
           body.sha,
           body.branch,
         ),
       )
+
+      // Audit log file deletion
+      if (auditService) {
+        const clientIp = getClientIp(c.req.raw)
+        await Effect.runPromise(
+          auditService.logCMSFileDeleted(decodedPath, body.branch, clientIp, commit.sha),
+        )
+      }
+
+      return c.json<FileCommitResponse>(
+        {
+          success: true,
+          commit,
+          branch: body.branch,
+        },
+        200,
+      )
+    } catch (error) {
+      const { statusCode, body } = errorToResponse(error)
+      return c.json<ErrorResponse>(body, toStatusCode(statusCode))
+    }
+  })
+
+  // PATCH /file/:path - Rename a file
+  app.patch("/file/*", async (c) => {
+    try {
+      // Get path from wildcard
+      const filePath = c.req.path.replace(/^\/file\//, "")
+      if (!filePath) {
+        return c.json<ErrorResponse>(
+          { error: "BadRequest", message: "Missing file path" },
+          400,
+        )
+      }
+
+      const body = (await c.req.json()) as RenameFileRequest
+
+      if (!body.newPath || typeof body.newPath !== "string") {
+        return c.json<ErrorResponse>(
+          { error: "BadRequest", message: "Missing or invalid newPath" },
+          400,
+        )
+      }
+
+      if (!body.message || typeof body.message !== "string") {
+        return c.json<ErrorResponse>(
+          { error: "BadRequest", message: "Missing or invalid commit message" },
+          400,
+        )
+      }
+
+      if (!body.branch || typeof body.branch !== "string") {
+        return c.json<ErrorResponse>(
+          { error: "BadRequest", message: "Missing or invalid branch" },
+          400,
+        )
+      }
+
+      const decodedOldPath = decodeURIComponent(filePath)
+      const decodedNewPath = decodeURIComponent(body.newPath)
+
+      // Don't allow renaming to the same path
+      if (decodedOldPath === decodedNewPath) {
+        return c.json<ErrorResponse>(
+          { error: "BadRequest", message: "New path must be different from old path" },
+          400,
+        )
+      }
+
+      const commit = await Effect.runPromise(
+        githubService.renameFile(
+          decodedOldPath,
+          decodedNewPath,
+          body.message,
+          body.branch,
+        ),
+      )
+
+      // Audit log file rename
+      if (auditService) {
+        const clientIp = getClientIp(c.req.raw)
+        await Effect.runPromise(
+          auditService.logCMSFileRenamed(
+            decodedOldPath,
+            decodedNewPath,
+            body.branch,
+            clientIp,
+            commit.sha,
+          ),
+        )
+      }
 
       return c.json<FileCommitResponse>(
         {
@@ -488,9 +626,18 @@ export const createAdminCMSRoutes = (
         )
       }
 
+      const fromRef = body.from ?? GitHubConfig.defaultBranch
       const branch = await Effect.runPromise(
-        githubService.createBranch(body.name, body.from ?? undefined),
+        githubService.createBranch(body.name, fromRef),
       )
+
+      // Audit log branch creation
+      if (auditService) {
+        const clientIp = getClientIp(c.req.raw)
+        await Effect.runPromise(
+          auditService.logCMSBranchCreated(body.name, fromRef, clientIp),
+        )
+      }
 
       return c.json<BranchResponse>({ branch, success: true }, 201)
     } catch (error) {
@@ -511,6 +658,12 @@ export const createAdminCMSRoutes = (
       }
 
       await Effect.runPromise(githubService.deleteBranch(name))
+
+      // Audit log branch deletion
+      if (auditService) {
+        const clientIp = getClientIp(c.req.raw)
+        await Effect.runPromise(auditService.logCMSBranchDeleted(name, clientIp))
+      }
 
       return c.json({ success: true }, 200)
     } catch (error) {
@@ -637,6 +790,14 @@ export const createAdminCMSRoutes = (
         ),
       )
 
+      // Audit log commit creation
+      if (auditService) {
+        const clientIp = getClientIp(c.req.raw)
+        await Effect.runPromise(
+          auditService.logCMSCommitCreated(body.branch, body.files.length, clientIp, commit.sha),
+        )
+      }
+
       return c.json<FileCommitResponse>(
         {
           success: true,
@@ -679,6 +840,14 @@ export const createAdminCMSRoutes = (
       const pr = await Effect.runPromise(
         githubService.createPR(body.head, base, body.title, body.body ?? undefined),
       )
+
+      // Audit log PR creation
+      if (auditService) {
+        const clientIp = getClientIp(c.req.raw)
+        await Effect.runPromise(
+          auditService.logCMSPRCreated(pr.number, body.head, base, clientIp),
+        )
+      }
 
       return c.json<PRResponse>({ pr, success: true }, 201)
     } catch (error) {
@@ -760,7 +929,18 @@ export const createAdminCMSRoutes = (
         }
       }
 
+      const startTime = Date.now()
       const results = await Effect.runPromise(validationService.validateBatch(body.files))
+      const duration = Date.now() - startTime
+
+      // Audit log validation run
+      if (auditService) {
+        const clientIp = getClientIp(c.req.raw)
+        const hasErrors = results.some((r) => !r.valid)
+        await Effect.runPromise(
+          auditService.logCMSValidationRun(body.files.length, clientIp, hasErrors, duration),
+        )
+      }
 
       return c.json<ValidationResponse>({ results }, 200)
     } catch (error) {

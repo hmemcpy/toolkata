@@ -168,6 +168,26 @@ export default function CMSPage() {
     search: "",
   })
 
+  // Scroll sync state
+  const [editorScrollPercent, setEditorScrollPercent] = useState<number | undefined>(undefined)
+  const [previewScrollPercent, setPreviewScrollPercent] = useState<number | undefined>(undefined)
+
+  // Handle editor scroll for sync
+  const handleEditorScroll = useCallback((scrollTop: number, scrollHeight: number) => {
+    if (scrollHeight > 0) {
+      const percent = scrollTop / scrollHeight
+      setPreviewScrollPercent(percent)
+    }
+  }, [])
+
+  // Handle preview scroll for sync
+  const handlePreviewScroll = useCallback((scrollTop: number, scrollHeight: number) => {
+    if (scrollHeight > 0) {
+      const percent = scrollTop / scrollHeight
+      setEditorScrollPercent(percent)
+    }
+  }, [])
+
   // Check if there are unsaved changes
   const hasUnsavedChanges = useMemo(
     () => state.openFiles.some((f) => f.dirty),
@@ -388,6 +408,67 @@ export default function CMSPage() {
       selectedFilePath: prev.openFiles[index]?.path ?? null,
     }))
   }, [])
+
+  // Handle file rename
+  const handleFileRename = useCallback(
+    async (oldPath: string, newPath: string) => {
+      if (!state.currentBranch || state.currentBranch === "") {
+        setState((prev) => ({
+          ...prev,
+          filesError: "Please select a branch before renaming files",
+        }))
+        return
+      }
+
+      setState((prev) => ({ ...prev, fileLoading: true }))
+
+      try {
+        const client = await runCMSEffect(CMSClient)
+        await runCMSEffect(
+          client.renameFile(oldPath, {
+            newPath,
+            message: `Rename ${oldPath.split("/").pop()} to ${newPath.split("/").pop()}`,
+            branch: state.currentBranch,
+          }),
+        )
+
+        // Update open files if the renamed file is open
+        setState((prev) => {
+          const openFiles = prev.openFiles.map((f) => {
+            if (f.path === oldPath) {
+              return {
+                ...f,
+                path: newPath,
+              }
+            }
+            return f
+          })
+
+          // Update selected file path if it was the renamed file
+          const selectedFilePath =
+            prev.selectedFilePath === oldPath ? newPath : prev.selectedFilePath
+
+          return {
+            ...prev,
+            openFiles,
+            selectedFilePath,
+            fileLoading: false,
+          }
+        })
+
+        // Reload files to get updated list
+        await loadFiles(state.currentBranch)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to rename file"
+        setState((prev) => ({
+          ...prev,
+          fileLoading: false,
+          filesError: message,
+        }))
+      }
+    },
+    [state.currentBranch, loadFiles],
+  )
 
   // Handle save
   const handleSave = useCallback(async () => {
@@ -646,6 +727,7 @@ export default function CMSPage() {
               files={fileEntries}
               selectedFile={state.selectedFilePath}
               onFileSelect={handleFileSelect}
+              onFileRename={handleFileRename}
               filters={filters}
               onFilterChange={setFilters}
               isLoading={state.fileLoading}
@@ -669,6 +751,8 @@ export default function CMSPage() {
               onSave={handleSave}
               onValidate={handleValidate}
               isSaving={state.fileSaving}
+              onScroll={handleEditorScroll}
+              {...(editorScrollPercent !== undefined ? { scrollPercent: editorScrollPercent } : {})}
               {...(state.validationResults[0] !== undefined ? { validationStatus: state.validationResults[0] } : {})}
             />
           )}
@@ -690,6 +774,8 @@ export default function CMSPage() {
           <MDXPreview
             content={activeFileContent}
             debounceDelay={500}
+            onScroll={handlePreviewScroll}
+            {...(previewScrollPercent !== undefined ? { scrollPosition: previewScrollPercent } : {})}
           />
         </div>
       </div>

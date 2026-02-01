@@ -162,6 +162,13 @@ export interface GitHubServiceShape {
     branch: string,
   ) => Effect.Effect<GitHubCommit, GitHubError | GitHubConfigError>
 
+  readonly renameFile: (
+    oldPath: string,
+    newPath: string,
+    message: string,
+    branch: string,
+  ) => Effect.Effect<GitHubCommit, GitHubError | GitHubConfigError>
+
   // Branch operations
   readonly listBranches: () => Effect.Effect<
     readonly GitHubBranch[],
@@ -553,6 +560,145 @@ const make = Effect.gen(function* () {
         commitInfo.parents = commitData.parents
       }
       return parseCommit(commitInfo)
+    })
+
+  const renameFile = (
+    oldPath: string,
+    newPath: string,
+    message: string,
+    branch: string,
+  ): Effect.Effect<GitHubCommit, GitHubError | GitHubConfigError> =>
+    Effect.gen(function* () {
+      yield* requireGitHubConfig()
+
+      // First, get the file content from the old path
+      const fileContent = yield* Effect.tryPromise({
+        try: () =>
+          octokit.repos.getContent({
+            owner,
+            repo,
+            path: oldPath,
+            ref: branch,
+          }),
+        catch: mapOctokitError,
+      })
+
+      // Ensure it's a file, not a directory
+      if (Array.isArray(fileContent.data) || fileContent.data.type !== "file") {
+        return yield* Effect.fail(
+          new GitHubError({
+            cause: "ValidationFailed",
+            message: "Cannot rename: path is not a file",
+            status: 422,
+          }),
+        )
+      }
+
+      const content = fileContent.data.content
+        ? Buffer.from(fileContent.data.content, "base64").toString("utf-8")
+        : ""
+
+      // Get the current commit SHA for the branch
+      const refResponse = yield* Effect.tryPromise({
+        try: () =>
+          octokit.git.getRef({
+            owner,
+            repo,
+            ref: `heads/${branch}`,
+          }),
+        catch: mapOctokitError,
+      })
+
+      const currentCommitSha = refResponse.data.object.sha
+
+      // Get the current tree
+      const commitResponse = yield* Effect.tryPromise({
+        try: () =>
+          octokit.git.getCommit({
+            owner,
+            repo,
+            commit_sha: currentCommitSha,
+          }),
+        catch: mapOctokitError,
+      })
+
+      const currentTreeSha = commitResponse.data.tree.sha
+
+      // Create a blob for the new file
+      const blobResponse = yield* Effect.tryPromise({
+        try: () =>
+          octokit.git.createBlob({
+            owner,
+            repo,
+            content: Buffer.from(content).toString("base64"),
+            encoding: "base64",
+          }),
+        catch: mapOctokitError,
+      })
+
+      // Create a new tree that:
+      // 1. Adds the file at the new path
+      // 2. Deletes the file at the old path (sha: null)
+      const treeResponse = yield* Effect.tryPromise({
+        try: () =>
+          octokit.git.createTree({
+            owner,
+            repo,
+            base_tree: currentTreeSha,
+            tree: [
+              // Add file at new path
+              {
+                path: newPath,
+                mode: "100644",
+                type: "blob",
+                sha: blobResponse.data.sha,
+              },
+              // Delete file at old path
+              {
+                path: oldPath,
+                mode: "100644",
+                type: "blob",
+                sha: null as unknown as string, // GitHub API accepts null to delete
+              },
+            ],
+          }),
+        catch: mapOctokitError,
+      })
+
+      // Create the commit
+      const newCommitResponse = yield* Effect.tryPromise({
+        try: () =>
+          octokit.git.createCommit({
+            owner,
+            repo,
+            message,
+            tree: treeResponse.data.sha,
+            parents: [currentCommitSha],
+          }),
+        catch: mapOctokitError,
+      })
+
+      // Update the branch reference
+      yield* Effect.tryPromise({
+        try: () =>
+          octokit.git.updateRef({
+            owner,
+            repo,
+            ref: `heads/${branch}`,
+            sha: newCommitResponse.data.sha,
+          }),
+        catch: mapOctokitError,
+      })
+
+      return parseCommit({
+        sha: newCommitResponse.data.sha,
+        commit: {
+          message: newCommitResponse.data.message,
+          author: newCommitResponse.data.author,
+          committer: newCommitResponse.data.committer,
+        },
+        parents: newCommitResponse.data.parents,
+      })
     })
 
   // --------------------------------------------------------------------------
@@ -979,6 +1125,7 @@ const make = Effect.gen(function* () {
     createFile,
     updateFile,
     deleteFile,
+    renameFile,
     listBranches,
     createBranch,
     deleteBranch,

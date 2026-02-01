@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useRef, useEffect } from "react"
 
 /**
  * File entry from the CMS API.
@@ -32,6 +32,8 @@ interface FileBrowserProps {
   readonly selectedFile: string | null
   /** Callback when a file is selected */
   readonly onFileSelect: (path: string) => void
+  /** Callback when a file is renamed (oldPath, newPath) */
+  readonly onFileRename?: (oldPath: string, newPath: string) => void
   /** Current filter settings */
   readonly filters: FileBrowserFilters
   /** Callback when filters change */
@@ -189,25 +191,66 @@ function TreeNodeItem(props: {
   expandedDirs: Set<string>
   onToggleExpand: (path: string) => void
   onFileSelect: (path: string) => void
+  onFileRename?: (oldPath: string, newPath: string) => void
+  renamingPath: string | null
+  onStartRename: (path: string) => void
+  onCancelRename: () => void
 }) {
-  const { node, selectedFile, expandedDirs, onToggleExpand, onFileSelect } = props
+  const {
+    node,
+    selectedFile,
+    expandedDirs,
+    onToggleExpand,
+    onFileSelect,
+    onFileRename,
+    renamingPath,
+    onStartRename,
+    onCancelRename,
+  } = props
   const isExpanded = expandedDirs.has(node.path)
   const isSelected = selectedFile === node.path
   const isDir = node.type === "dir"
+  const isRenaming = renamingPath === node.path
+
+  // Rename input state
+  const [renameValue, setRenameValue] = useState(node.name)
+  const renameInputRef = useRef<HTMLInputElement>(null)
+
+  // Focus input when entering rename mode
+  useEffect(() => {
+    if (isRenaming && renameInputRef.current) {
+      renameInputRef.current.focus()
+      // Select the filename without extension
+      const dotIndex = node.name.lastIndexOf(".")
+      const selectEnd = dotIndex > 0 ? dotIndex : node.name.length
+      renameInputRef.current.setSelectionRange(0, selectEnd)
+    }
+  }, [isRenaming, node.name])
+
+  // Reset rename value when path changes
+  useEffect(() => {
+    setRenameValue(node.name)
+  }, [node.name])
 
   const handleClick = useCallback(() => {
+    if (isRenaming) return
     if (isDir) {
       onToggleExpand(node.path)
     } else {
       onFileSelect(node.path)
     }
-  }, [isDir, node.path, onToggleExpand, onFileSelect])
+  }, [isDir, isRenaming, node.path, onToggleExpand, onFileSelect])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      if (isRenaming) return
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault()
         handleClick()
+      }
+      if (e.key === "F2" && !isDir && onFileRename) {
+        e.preventDefault()
+        onStartRename(node.path)
       }
       if (isDir && e.key === "ArrowRight" && !isExpanded) {
         e.preventDefault()
@@ -218,37 +261,109 @@ function TreeNodeItem(props: {
         onToggleExpand(node.path)
       }
     },
-    [handleClick, isDir, isExpanded, node.path, onToggleExpand],
+    [handleClick, isDir, isExpanded, isRenaming, node.path, onFileRename, onStartRename, onToggleExpand],
+  )
+
+  const handleRenameSubmit = useCallback(() => {
+    const trimmedValue = renameValue.trim()
+    if (!trimmedValue || trimmedValue === node.name) {
+      onCancelRename()
+      return
+    }
+
+    // Build new path with the new name
+    const pathParts = node.path.split("/")
+    pathParts[pathParts.length - 1] = trimmedValue
+    const newPath = pathParts.join("/")
+
+    onFileRename?.(node.path, newPath)
+    onCancelRename()
+  }, [renameValue, node.name, node.path, onFileRename, onCancelRename])
+
+  const handleRenameKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        e.preventDefault()
+        handleRenameSubmit()
+      }
+      if (e.key === "Escape") {
+        e.preventDefault()
+        setRenameValue(node.name)
+        onCancelRename()
+      }
+    },
+    [handleRenameSubmit, node.name, onCancelRename],
+  )
+
+  const handleRenameBlur = useCallback(() => {
+    handleRenameSubmit()
+  }, [handleRenameSubmit])
+
+  const handleRenameButtonClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation()
+      onStartRename(node.path)
+    },
+    [node.path, onStartRename],
   )
 
   return (
     <div role="treeitem" aria-expanded={isDir ? isExpanded : undefined} aria-selected={isSelected}>
-      <button
-        type="button"
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}
-        className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm font-mono text-left transition-colors rounded focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] ${
+      <div
+        className={`group w-full flex items-center gap-2 px-2 py-1.5 text-sm font-mono text-left transition-colors rounded ${
           isSelected
             ? "bg-[var(--color-accent-bg)] text-[var(--color-accent)]"
             : "text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]"
         }`}
         style={{ paddingLeft: `${node.depth * 16 + 8}px` }}
-        tabIndex={0}
       >
-        {isDir && (
-          <span className="text-xs text-[var(--color-text-muted)] w-3">
-            {isExpanded ? "▼" : "▶"}
-          </span>
+        <button
+          type="button"
+          onClick={handleClick}
+          onKeyDown={handleKeyDown}
+          className="flex items-center gap-2 flex-1 min-w-0 focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] rounded"
+          tabIndex={0}
+        >
+          {isDir && (
+            <span className="text-xs text-[var(--color-text-muted)] w-3 flex-shrink-0">
+              {isExpanded ? "▼" : "▶"}
+            </span>
+          )}
+          {!isDir && <span className="w-3 flex-shrink-0" />}
+          <span className="text-sm flex-shrink-0">{getFileIcon(node.name, node.type)}</span>
+          {isRenaming ? (
+            <input
+              ref={renameInputRef}
+              type="text"
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onKeyDown={handleRenameKeyDown}
+              onBlur={handleRenameBlur}
+              onClick={(e) => e.stopPropagation()}
+              className="flex-1 min-w-0 px-1 py-0 text-sm font-mono bg-[var(--color-bg)] border border-[var(--color-accent)] rounded text-[var(--color-text)] focus-visible:outline-none"
+              aria-label="New file name"
+            />
+          ) : (
+            <span className="flex-1 truncate">{node.name}</span>
+          )}
+        </button>
+        {!isDir && !isRenaming && onFileRename && (
+          <button
+            type="button"
+            onClick={handleRenameButtonClick}
+            className="opacity-0 group-hover:opacity-100 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-opacity focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] rounded px-1"
+            title="Rename (F2)"
+            aria-label="Rename file"
+          >
+            ✎
+          </button>
         )}
-        {!isDir && <span className="w-3" />}
-        <span className="text-sm">{getFileIcon(node.name, node.type)}</span>
-        <span className="flex-1 truncate">{node.name}</span>
-        {!isDir && node.size > 0 && (
-          <span className="text-xs text-[var(--color-text-dim)]">
+        {!isDir && node.size > 0 && !isRenaming && (
+          <span className="text-xs text-[var(--color-text-dim)] flex-shrink-0">
             {formatFileSize(node.size)}
           </span>
         )}
-      </button>
+      </div>
 
       {isDir && isExpanded && node.children.length > 0 && (
         <div role="group">
@@ -260,6 +375,10 @@ function TreeNodeItem(props: {
               expandedDirs={expandedDirs}
               onToggleExpand={onToggleExpand}
               onFileSelect={onFileSelect}
+              renamingPath={renamingPath}
+              onStartRename={onStartRename}
+              onCancelRename={onCancelRename}
+              {...(onFileRename ? { onFileRename } : {})}
             />
           ))}
         </div>
@@ -296,6 +415,7 @@ export function FileBrowser(props: FileBrowserProps) {
     files,
     selectedFile,
     onFileSelect,
+    onFileRename,
     filters,
     onFilterChange,
     isLoading,
@@ -305,6 +425,18 @@ export function FileBrowser(props: FileBrowserProps) {
 
   // Track expanded directories
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set())
+
+  // Track file being renamed
+  const [renamingPath, setRenamingPath] = useState<string | null>(null)
+
+  // Handlers for rename mode
+  const handleStartRename = useCallback((path: string) => {
+    setRenamingPath(path)
+  }, [])
+
+  const handleCancelRename = useCallback(() => {
+    setRenamingPath(null)
+  }, [])
 
   // Filter files based on search
   const filteredFiles = useMemo(() => {
@@ -463,6 +595,10 @@ export function FileBrowser(props: FileBrowserProps) {
               expandedDirs={expandedDirs}
               onToggleExpand={handleToggleExpand}
               onFileSelect={onFileSelect}
+              renamingPath={renamingPath}
+              onStartRename={handleStartRename}
+              onCancelRename={handleCancelRename}
+              {...(onFileRename ? { onFileRename } : {})}
             />
           ))
         )}

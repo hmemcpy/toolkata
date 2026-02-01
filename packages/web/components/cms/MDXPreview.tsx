@@ -34,7 +34,7 @@ interface MDXPreviewProps {
   readonly debounceDelay?: number
   /** Callback when scroll position changes (for sync scroll) */
   readonly onScroll?: (scrollTop: number, scrollHeight: number) => void
-  /** External scroll position to sync to */
+  /** External scroll position to sync to (percentage 0-1) */
   readonly scrollPosition?: number
 }
 
@@ -237,12 +237,14 @@ export function MDXPreview(props: MDXPreviewProps) {
     [onScroll],
   )
 
-  // Sync scroll position from external source
+  // Sync scroll position from external source (percentage 0-1)
   useEffect(() => {
     if (scrollPosition !== undefined) {
       const previewElement = document.getElementById("mdx-preview-scroll")
       if (previewElement) {
-        previewElement.scrollTop = scrollPosition
+        // Convert percentage to actual scroll position
+        const targetScrollTop = scrollPosition * previewElement.scrollHeight
+        previewElement.scrollTop = targetScrollTop
       }
     }
   }, [scrollPosition])

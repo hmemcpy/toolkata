@@ -39,6 +39,10 @@ interface FileEditorProps {
   readonly isSaving?: boolean
   /** Auto-save delay in ms (0 to disable) */
   readonly autoSaveDelay?: number
+  /** Callback when editor scroll position changes (for sync scroll) */
+  readonly onScroll?: (scrollTop: number, scrollHeight: number) => void
+  /** External scroll position to sync to (percentage 0-1) */
+  readonly scrollPercent?: number
 }
 
 /**
@@ -155,11 +159,14 @@ export function FileEditor(props: FileEditorProps) {
     validationStatus,
     isSaving,
     autoSaveDelay = 2000,
+    onScroll,
+    scrollPercent,
   } = props
 
   const editorRef = useRef<Parameters<OnMount>[0] | null>(null)
   const monacoRef = useRef<Monaco | null>(null)
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "pending" | "saved">("idle")
+  const isScrollSyncing = useRef(false)
 
   // Get the active file
   const activeFile = files[activeFileIndex]
@@ -241,7 +248,17 @@ export function FileEditor(props: FileEditorProps) {
         }
       },
     )
-  }, [files.length, activeFileIndex, onSave, onTabClose, onTabSelect])
+
+    // Set up scroll event listener for sync scroll
+    if (onScroll) {
+      editor.onDidScrollChange((e) => {
+        if (isScrollSyncing.current) return
+        const scrollTop = e.scrollTop
+        const scrollHeight = e.scrollHeight
+        onScroll(scrollTop, scrollHeight)
+      })
+    }
+  }, [files.length, activeFileIndex, onSave, onTabClose, onTabSelect, onScroll])
 
   // Handle content change
   const handleContentChange = useCallback(
@@ -276,6 +293,21 @@ export function FileEditor(props: FileEditorProps) {
       editorRef.current.focus()
     }
   }, [activeFileIndex])
+
+  // Sync scroll position from external source
+  useEffect(() => {
+    if (scrollPercent !== undefined && editorRef.current) {
+      isScrollSyncing.current = true
+      const editor = editorRef.current
+      const scrollHeight = editor.getScrollHeight()
+      const targetScrollTop = scrollPercent * scrollHeight
+      editor.setScrollTop(targetScrollTop)
+      // Reset flag after a short delay to allow scroll event to fire
+      setTimeout(() => {
+        isScrollSyncing.current = false
+      }, 50)
+    }
+  }, [scrollPercent])
 
   // No files open
   if (files.length === 0) {

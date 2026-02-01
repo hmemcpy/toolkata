@@ -223,7 +223,10 @@ const createApp = (
     }
     // Mount CMS routes (only if GitHub is configured)
     if (githubService && isGitHubConfigured()) {
-      adminApp.route("/cms", createAdminCMSRoutes(githubService, contentValidationService))
+      adminApp.route(
+        "/cms",
+        createAdminCMSRoutes(githubService, contentValidationService, auditService),
+      )
       console.log("CMS routes enabled at /admin/cms/*")
     }
 

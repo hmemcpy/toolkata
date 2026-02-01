@@ -321,6 +321,32 @@ GitHub-native content management system. See `specs/content-cms.md` for full spe
   - Responsive design (desktop, tablet, mobile)
   - File: `packages/web/tests/cms.spec.ts`
 
+**Frontend (web) - Additional Features**
+
+- [x] **Add file rename functionality**
+  - User story: "As an author, I can rename files"
+  - Backend: Added `PATCH /admin/cms/file/:path` endpoint with `{ newPath: string }` body
+  - Added `renameFile` to GitHubService using Git Data API (atomic rename via tree manipulation)
+  - Frontend: Added rename button on file hover in FileBrowser, inline rename input, F2 keyboard shortcut
+  - Added `renameFile` to cms-client.ts and wired up in CMS page
+  - Files: `packages/sandbox-api/src/services/github.ts`, `packages/sandbox-api/src/routes/admin-cms.ts`, `packages/web/components/cms/FileBrowser.tsx`, `packages/web/services/cms-client.ts`, `packages/web/app/admin/(dashboard)/cms/page.tsx`
+
+- [x] **Add scroll sync between editor and preview**
+  - R3.4: "Sync scroll with editor"
+  - Added `onScroll` and `scrollPercent` props to FileEditor (Monaco editor)
+  - Updated MDXPreview to use percentage-based scroll position
+  - Wired up bidirectional scroll sync in CMS page (editor ↔ preview)
+  - Files: `packages/web/components/cms/FileEditor.tsx`, `packages/web/components/cms/MDXPreview.tsx`, `packages/web/app/admin/(dashboard)/cms/page.tsx`
+
+**Security & Operations - Additional Features**
+
+- [x] **Add audit logging for CMS operations**
+  - Per spec "Security Considerations > Audit Logging"
+  - Added CMS-specific audit event types to AuditService
+  - Logging: file reads/writes/deletes/renames, branch creates/deletes, commits, PRs, validation runs
+  - Each log includes path, branch, clientIp, commitSha/prNumber as applicable
+  - Files: `packages/sandbox-api/src/services/audit.ts`, `packages/sandbox-api/src/routes/admin-cms.ts`, `packages/sandbox-api/src/index.ts`
+
 ---
 
 ## Task Dependencies
@@ -410,6 +436,6 @@ cd packages/web && bun run validate:snippets
 |----------|---------|-----------|
 | P0 | 0 | 0 |
 | P1 | 0 | 6 |
-| P2 | 3 | 0 |
-| P3 | 1 | 19 |
-| **Total** | **4** | **25** |
+| P2 | 0 | 3 |
+| P3 | 0 | 23 |
+| **Total** | **0** | **32** |

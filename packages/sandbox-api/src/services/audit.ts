@@ -42,6 +42,18 @@ export const AuditEventType = {
 
   // Circuit breaker events
   CIRCUIT_BREAKER_OPEN: "circuit_breaker.open",
+
+  // CMS events
+  CMS_FILE_READ: "cms.file.read",
+  CMS_FILE_CREATED: "cms.file.created",
+  CMS_FILE_UPDATED: "cms.file.updated",
+  CMS_FILE_DELETED: "cms.file.deleted",
+  CMS_FILE_RENAMED: "cms.file.renamed",
+  CMS_BRANCH_CREATED: "cms.branch.created",
+  CMS_BRANCH_DELETED: "cms.branch.deleted",
+  CMS_COMMIT_CREATED: "cms.commit.created",
+  CMS_PR_CREATED: "cms.pr.created",
+  CMS_VALIDATION_RUN: "cms.validation.run",
 } as const
 
 export type AuditEventType = (typeof AuditEventType)[keyof typeof AuditEventType]
@@ -104,6 +116,64 @@ export interface AuditServiceShape {
     errorType: string,
     message: string,
     metadata: AuditMetadata,
+  ) => Effect.Effect<void>
+  // CMS operations
+  readonly logCMSFileRead: (
+    path: string,
+    branch: string,
+    clientIp: string,
+  ) => Effect.Effect<void>
+  readonly logCMSFileCreated: (
+    path: string,
+    branch: string,
+    clientIp: string,
+    commitSha: string,
+  ) => Effect.Effect<void>
+  readonly logCMSFileUpdated: (
+    path: string,
+    branch: string,
+    clientIp: string,
+    commitSha: string,
+  ) => Effect.Effect<void>
+  readonly logCMSFileDeleted: (
+    path: string,
+    branch: string,
+    clientIp: string,
+    commitSha: string,
+  ) => Effect.Effect<void>
+  readonly logCMSFileRenamed: (
+    oldPath: string,
+    newPath: string,
+    branch: string,
+    clientIp: string,
+    commitSha: string,
+  ) => Effect.Effect<void>
+  readonly logCMSBranchCreated: (
+    branchName: string,
+    fromRef: string,
+    clientIp: string,
+  ) => Effect.Effect<void>
+  readonly logCMSBranchDeleted: (
+    branchName: string,
+    clientIp: string,
+  ) => Effect.Effect<void>
+  readonly logCMSCommitCreated: (
+    branch: string,
+    filesCount: number,
+    clientIp: string,
+    commitSha: string,
+  ) => Effect.Effect<void>
+  readonly logCMSPRCreated: (
+    prNumber: number,
+    head: string,
+    base: string,
+    clientIp: string,
+  ) => Effect.Effect<void>
+  readonly logCMSValidationRun: (
+    filesCount: number,
+    clientIp: string,
+    hasErrors: boolean,
+    duration: number,
   ) => Effect.Effect<void>
 }
 
@@ -217,6 +287,105 @@ const make = Effect.gen(function* () {
       metadata,
     )
 
+  // CMS audit logging methods
+  const logCMSFileRead = (path: string, branch: string, clientIp: string) =>
+    log("info", AuditEventType.CMS_FILE_READ, `CMS file read: ${path}`, {
+      path,
+      branch,
+      clientIp,
+    })
+
+  const logCMSFileCreated = (path: string, branch: string, clientIp: string, commitSha: string) =>
+    log("info", AuditEventType.CMS_FILE_CREATED, `CMS file created: ${path}`, {
+      path,
+      branch,
+      clientIp,
+      commitSha,
+    })
+
+  const logCMSFileUpdated = (path: string, branch: string, clientIp: string, commitSha: string) =>
+    log("info", AuditEventType.CMS_FILE_UPDATED, `CMS file updated: ${path}`, {
+      path,
+      branch,
+      clientIp,
+      commitSha,
+    })
+
+  const logCMSFileDeleted = (path: string, branch: string, clientIp: string, commitSha: string) =>
+    log("info", AuditEventType.CMS_FILE_DELETED, `CMS file deleted: ${path}`, {
+      path,
+      branch,
+      clientIp,
+      commitSha,
+    })
+
+  const logCMSFileRenamed = (
+    oldPath: string,
+    newPath: string,
+    branch: string,
+    clientIp: string,
+    commitSha: string,
+  ) =>
+    log("info", AuditEventType.CMS_FILE_RENAMED, `CMS file renamed: ${oldPath} -> ${newPath}`, {
+      oldPath,
+      newPath,
+      branch,
+      clientIp,
+      commitSha,
+    })
+
+  const logCMSBranchCreated = (branchName: string, fromRef: string, clientIp: string) =>
+    log("info", AuditEventType.CMS_BRANCH_CREATED, `CMS branch created: ${branchName}`, {
+      branchName,
+      fromRef,
+      clientIp,
+    })
+
+  const logCMSBranchDeleted = (branchName: string, clientIp: string) =>
+    log("info", AuditEventType.CMS_BRANCH_DELETED, `CMS branch deleted: ${branchName}`, {
+      branchName,
+      clientIp,
+    })
+
+  const logCMSCommitCreated = (
+    branch: string,
+    filesCount: number,
+    clientIp: string,
+    commitSha: string,
+  ) =>
+    log("info", AuditEventType.CMS_COMMIT_CREATED, `CMS commit created on ${branch}`, {
+      branch,
+      filesCount: String(filesCount),
+      clientIp,
+      commitSha,
+    })
+
+  const logCMSPRCreated = (prNumber: number, head: string, base: string, clientIp: string) =>
+    log("info", AuditEventType.CMS_PR_CREATED, `CMS PR #${prNumber} created: ${head} -> ${base}`, {
+      prNumber: String(prNumber),
+      head,
+      base,
+      clientIp,
+    })
+
+  const logCMSValidationRun = (
+    filesCount: number,
+    clientIp: string,
+    hasErrors: boolean,
+    duration: number,
+  ) =>
+    log(
+      hasErrors ? "warn" : "info",
+      AuditEventType.CMS_VALIDATION_RUN,
+      `CMS validation run: ${filesCount} file(s), ${hasErrors ? "errors found" : "passed"}`,
+      {
+        filesCount: String(filesCount),
+        clientIp,
+        hasErrors: String(hasErrors),
+        durationMs: String(duration),
+      },
+    )
+
   return {
     log,
     logSessionCreated,
@@ -225,6 +394,16 @@ const make = Effect.gen(function* () {
     logRateLimitHit,
     logInputInvalid,
     logError,
+    logCMSFileRead,
+    logCMSFileCreated,
+    logCMSFileUpdated,
+    logCMSFileDeleted,
+    logCMSFileRenamed,
+    logCMSBranchCreated,
+    logCMSBranchDeleted,
+    logCMSCommitCreated,
+    logCMSPRCreated,
+    logCMSValidationRun,
   }
 })
 
