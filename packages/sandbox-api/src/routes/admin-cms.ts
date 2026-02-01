@@ -312,8 +312,10 @@ export const createAdminCMSRoutes = (
   // GET /file/:path - Read a file from content repository
   app.get("/file/*", async (c) => {
     try {
-      // Get path from wildcard parameter
-      const filePath = c.req.param("*")
+      // Extract file path from URL pathname (after /file/)
+      const pathname = new URL(c.req.url).pathname
+      const fileMatch = pathname.match(/\/file\/(.+)$/)
+      const filePath = fileMatch?.[1]
       if (!filePath) {
         return c.json<ErrorResponse>(
           { error: "BadRequest", message: "Missing file path" },
@@ -352,8 +354,10 @@ export const createAdminCMSRoutes = (
   // PUT /file/:path - Create or update a file
   app.put("/file/*", async (c) => {
     try {
-      // Get path from wildcard
-      const filePath = c.req.param("*")
+      // Extract file path from URL pathname (after /file/)
+      const pathname = new URL(c.req.url).pathname
+      const fileMatch = pathname.match(/\/file\/(.+)$/)
+      const filePath = fileMatch?.[1]
       if (!filePath) {
         return c.json<ErrorResponse>(
           { error: "BadRequest", message: "Missing file path" },
@@ -451,8 +455,10 @@ export const createAdminCMSRoutes = (
   // DELETE /file/:path - Delete a file
   app.delete("/file/*", async (c) => {
     try {
-      // Get path from wildcard
-      const filePath = c.req.param("*")
+      // Extract file path from URL pathname (after /file/)
+      const pathname = new URL(c.req.url).pathname
+      const fileMatch = pathname.match(/\/file\/(.+)$/)
+      const filePath = fileMatch?.[1]
       if (!filePath) {
         return c.json<ErrorResponse>(
           { error: "BadRequest", message: "Missing file path" },
@@ -518,8 +524,10 @@ export const createAdminCMSRoutes = (
   // PATCH /file/:path - Rename a file
   app.patch("/file/*", async (c) => {
     try {
-      // Get path from wildcard
-      const filePath = c.req.param("*")
+      // Extract file path from URL pathname (after /file/)
+      const pathname = new URL(c.req.url).pathname
+      const fileMatch = pathname.match(/\/file\/(.+)$/)
+      const filePath = fileMatch?.[1]
       if (!filePath) {
         return c.json<ErrorResponse>(
           { error: "BadRequest", message: "Missing file path" },
