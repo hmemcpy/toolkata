@@ -19,8 +19,11 @@ export const SANDBOX_API_KEY = process.env["NEXT_PUBLIC_SANDBOX_API_KEY"] ?? ""
 /**
  * Admin API key for admin endpoints.
  * Required for accessing /admin/* routes on the sandbox API.
+ *
+ * Uses server-side environment variable ADMIN_API_KEY (not NEXT_PUBLIC_ prefixed)
+ * since this is only used in server actions.
  */
-export const ADMIN_API_KEY = process.env["NEXT_PUBLIC_ADMIN_API_KEY"] ?? ""
+export const ADMIN_API_KEY = process.env["ADMIN_API_KEY"] ?? ""
 
 /**
  * Convert a WebSocket URL to an HTTP URL.
