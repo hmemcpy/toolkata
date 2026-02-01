@@ -89,7 +89,7 @@ Glossary page exists. GitToggle component exists (shows/hides git column in kata
   - Accessible table also reflects swapped order
   - File: `packages/web/components/ui/SideBySide.tsx` (updated)
 
-- [ ] **Update GlossaryClient to support reversed direction**
+- [x] **Update GlossaryClient to support reversed direction**
   - Use direction hook
   - Swap columns in table based on direction
   - Update column headers
@@ -363,7 +363,7 @@ cd packages/web && bun run validate:snippets
 | Priority | Pending | Completed |
 |----------|---------|-----------|
 | P0 | 0 | 0 |
-| P1 | 2 | 4 |
+| P1 | 1 | 5 |
 | P2 | 3 | 0 |
 | P3 | 21 | 0 |
-| **Total** | **26** | **4** |
+| **Total** | **25** | **5** |

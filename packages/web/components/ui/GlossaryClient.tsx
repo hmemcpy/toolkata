@@ -8,6 +8,7 @@
  * - Two-column table with copy buttons
  * - Responsive: horizontal scroll on mobile
  * - Empty state for no results
+ * - Direction reversal via useDirection hook (swaps columns)
  *
  * @example
  * ```tsx
@@ -22,6 +23,7 @@
 import React from "react"
 import type { GlossaryEntry } from "../../content/glossary/types"
 import { useGlossarySearch } from "../../hooks/useGlossarySearch"
+import { useDirection } from "@/hooks/useDirection"
 
 /**
  * Copy button component for individual commands.
@@ -97,6 +99,7 @@ export interface GlossaryClientProps {
  * GlossaryClient component.
  *
  * Renders an interactive glossary with search and category filtering.
+ * Supports direction reversal via useDirection hook to swap which tool appears on which side.
  */
 export function GlossaryClient({
   entries,
@@ -106,6 +109,14 @@ export function GlossaryClient({
 }: GlossaryClientProps): React.JSX.Element {
   const { query, setQuery, category, setCategory, filteredEntries, resultCount } =
     useGlossarySearch(entries)
+
+  // Get direction preference for column ordering
+  const { isReversed } = useDirection()
+
+  // When reversed, swap which labels appear in left vs right columns
+  // Colors follow semantic meaning: left column = orange (accent-alt), right column = green (accent)
+  const leftLabel = isReversed ? toLabel : fromLabel
+  const rightLabel = isReversed ? fromLabel : toLabel
 
   // Extract unique categories from entries
   const categories = React.useMemo(() => {
@@ -198,39 +209,45 @@ export function GlossaryClient({
             {/* Table header */}
             <div className="grid grid-cols-2 gap-4 border-b border-[var(--color-border)] bg-[var(--color-bg)] px-6 py-3">
               <div className="text-xs font-mono font-medium uppercase tracking-wide text-[var(--color-accent-alt)]">
-                {fromLabel}
+                {leftLabel}
               </div>
               <div className="text-xs font-mono font-medium uppercase tracking-wide text-[var(--color-accent)]">
-                {toLabel}
+                {rightLabel}
               </div>
             </div>
 
-            {/* Command rows */}
-            {filteredEntries.map((entry) => (
-              <div
-                key={entry.id}
-                className="grid grid-cols-2 gap-4 border-b border-[var(--color-border)] px-6 py-3 last:border-b-0 hover:bg-[var(--color-surface-hover)] transition-colors duration-[var(--transition-fast)]"
-              >
-                <div className="flex items-center">
-                  <code className="text-sm font-mono text-[var(--color-accent-alt)]">
-                    {entry.fromCommand}
-                  </code>
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <code className="text-sm font-mono text-[var(--color-accent)]">
-                      {entry.toCommand}
+            {/* Command rows - swap commands based on direction */}
+            {filteredEntries.map((entry) => {
+              // When reversed, swap which command appears in which column
+              const leftCommand = isReversed ? entry.toCommand : entry.fromCommand
+              const rightCommand = isReversed ? entry.fromCommand : entry.toCommand
+
+              return (
+                <div
+                  key={entry.id}
+                  className="grid grid-cols-2 gap-4 border-b border-[var(--color-border)] px-6 py-3 last:border-b-0 hover:bg-[var(--color-surface-hover)] transition-colors duration-[var(--transition-fast)]"
+                >
+                  <div className="flex items-center">
+                    <code className="text-sm font-mono text-[var(--color-accent-alt)]">
+                      {leftCommand}
                     </code>
-                    {entry.note && (
-                      <span className="text-xs text-[var(--color-text-muted)] italic hidden sm:inline">
-                        ({entry.note})
-                      </span>
-                    )}
                   </div>
-                  <CopyButton text={entry.toCommand} />
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <code className="text-sm font-mono text-[var(--color-accent)]">
+                        {rightCommand}
+                      </code>
+                      {entry.note && (
+                        <span className="text-xs text-[var(--color-text-muted)] italic hidden sm:inline">
+                          ({entry.note})
+                        </span>
+                      )}
+                    </div>
+                    <CopyButton text={rightCommand} />
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
