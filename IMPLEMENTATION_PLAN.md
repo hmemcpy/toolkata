@@ -295,12 +295,17 @@ GitHub-native content management system. See `specs/content-cms.md` for full spe
   - Route: `/admin/cms`
   - File: `packages/web/components/admin/AdminSidebar.tsx` (updated)
 
-- [ ] **Write Playwright tests for CMS**
-  - File browsing, selection
-  - Editor open, edit, save
-  - Validation workflow
-  - Branch switching
-  - PR creation flow
+- [x] **Write Playwright tests for CMS**
+  - Authentication tests (redirects to login)
+  - File browser API mocking
+  - Editor API mocking (file content, save)
+  - Validation workflow mocking
+  - Branch operations mocking (create, delete)
+  - PR creation mocking
+  - History page tests
+  - Error handling (401, 404, 409, 429)
+  - Keyboard navigation and accessibility
+  - Responsive design (desktop, tablet, mobile)
   - File: `packages/web/tests/cms.spec.ts`
 
 ---
@@ -393,5 +398,5 @@ cd packages/web && bun run validate:snippets
 | P0 | 0 | 0 |
 | P1 | 0 | 6 |
 | P2 | 3 | 0 |
-| P3 | 2 | 18 |
-| **Total** | **5** | **24** |
+| P3 | 1 | 19 |
+| **Total** | **4** | **25** |
