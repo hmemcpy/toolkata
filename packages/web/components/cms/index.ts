@@ -14,3 +14,6 @@
 
 export { FileBrowser, FileBrowserSkeleton } from "./FileBrowser"
 export type { FileEntry, FileBrowserFilters } from "./FileBrowser"
+
+export { FileEditor, FileEditorSkeleton } from "./FileEditor"
+export type { EditorFile } from "./FileEditor"

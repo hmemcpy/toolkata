@@ -199,7 +199,7 @@ GitHub-native content management system. See `specs/content-cms.md` for full spe
   - File: `packages/web/components/cms/FileBrowser.tsx`
   - Note: Multi-select and context menu deferred to CMS page integration
 
-- [ ] **Create FileEditor component with Monaco**
+- [x] **Create FileEditor component with Monaco**
   - MDX syntax highlighting and autocomplete
   - Multi-file tabs (max 10 open files)
   - Auto-save to localStorage (debounced)
@@ -368,5 +368,5 @@ cd packages/web && bun run validate:snippets
 | P0 | 0 | 0 |
 | P1 | 0 | 6 |
 | P2 | 3 | 0 |
-| P3 | 12 | 8 |
-| **Total** | **15** | **14** |
+| P3 | 11 | 9 |
+| **Total** | **14** | **15** |
