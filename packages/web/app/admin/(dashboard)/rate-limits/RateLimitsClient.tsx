@@ -97,28 +97,6 @@ export function RateLimitsClient(props: RateLimitsClientProps) {
     )
   }
 
-  // Show skeleton while initial data is loading (empty array with no error means loading)
-  if (rateLimits.length === 0 && !error) {
-    return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold font-mono text-[var(--color-text)]">
-              [≈] Rate Limits
-            </h1>
-            <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-              View and manage rate limit status for all clients
-            </p>
-          </div>
-        </div>
-
-        {/* Skeleton */}
-        <RateLimitTableSkeleton />
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-6">
       {/* Header */}
