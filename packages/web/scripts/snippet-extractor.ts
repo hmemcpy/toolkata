@@ -17,7 +17,7 @@ import { glob } from "glob"
  * Represents an extracted code snippet from MDX content.
  */
 export interface ExtractedSnippet {
-  /** Source file path, e.g., "content/comparisons/jj-git/03-step.mdx" */
+  /** Source file path, e.g., "content/jj-git/lessons/03-step.mdx" */
   readonly file: string
   /** Tool pairing, e.g., "jj-git" */
   readonly toolPair: string

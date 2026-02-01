@@ -557,7 +557,7 @@ async function validateToolPairFull(
     }
 
     // Resolve the full path to the MDX file
-    // firstSnippet.file is like "content/comparisons/jj-git/04-step.mdx"
+    // firstSnippet.file is like "content/jj-git/lessons/04-step.mdx"
     // contentDir is like "packages/web/content"
     // So we need to strip the "content/" prefix
     const mdxPath = resolve(contentDir, firstSnippet.file.replace(/^content\//, ""))

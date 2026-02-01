@@ -26,6 +26,11 @@ Scripts for deploying the toolkata sandbox API to Hetzner Cloud.
 export SANDBOX_API_KEY="your-strong-random-key"
 export SANDBOX_ALLOWED_ORIGINS="https://toolkata.com,https://www.toolkata.com"
 
+# Optional: GitHub CMS configuration (enables content editing in admin dashboard)
+export GITHUB_TOKEN="ghp_xxxxx"
+export GITHUB_OWNER="toolkata"
+export GITHUB_REPO="content"
+
 # Deploy sandbox-api
 ./scripts/hetzner/deploy.sh
 

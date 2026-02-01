@@ -97,22 +97,17 @@ export function resolveSandboxConfig(
 /**
  * Content root directory (relative to packages/web).
  */
-export const CONTENT_ROOT = "./content/comparisons"
-
-/**
- * Kata content root directory (relative to packages/web).
- */
-export const KATA_ROOT = "./content/katas"
+export const CONTENT_ROOT = "./content"
 
 /**
  * Step content type.
  *
- * Path pattern: {toolPair}/{step} → content/comparisons/{toolPair}/{step.padStart(2, "0")}-step.mdx
+ * Path pattern: {toolPair}/{step} → content/{toolPair}/lessons/{step.padStart(2, "0")}-step.mdx
  *
  * @example
  * ```ts
  * const step = yield* service.load(StepType, "jj-git/1")
- * // Loads: content/comparisons/jj-git/01-step.mdx
+ * // Loads: content/jj-git/lessons/01-step.mdx
  * ```
  */
 export const StepType = defineContentType({
@@ -126,27 +121,27 @@ export const StepType = defineContentType({
       throw new Error(`Invalid step slug: ${slug}. Expected format: toolPair/stepNumber`)
     }
     const paddedStep = stepNum.padStart(2, "0")
-    return `${CONTENT_ROOT}/${toolPair}/${paddedStep}-step.mdx`
+    return `${CONTENT_ROOT}/${toolPair}/lessons/${paddedStep}-step.mdx`
   },
-  filePattern: "**/[0-9][0-9]-step.mdx",
+  filePattern: "**/lessons/[0-9][0-9]-step.mdx",
 })
 
 /**
  * Index content type.
  *
- * Path pattern: {toolPair} → content/comparisons/{toolPair}/index.mdx
+ * Path pattern: {toolPair} → content/{toolPair}/lessons/index.mdx
  *
  * @example
  * ```ts
  * const index = yield* service.load(IndexType, "jj-git")
- * // Loads: content/comparisons/jj-git/index.mdx
+ * // Loads: content/jj-git/lessons/index.mdx
  * ```
  */
 export const IndexType = defineContentType({
   name: "index",
   schema: indexFrontmatterSchema,
-  pathResolver: (slug) => `${CONTENT_ROOT}/${slug}/index.mdx`,
-  filePattern: "**/index.mdx",
+  pathResolver: (slug) => `${CONTENT_ROOT}/${slug}/lessons/index.mdx`,
+  filePattern: "**/lessons/index.mdx",
 })
 
 /**
@@ -178,12 +173,12 @@ export interface KataMeta {
 /**
  * Kata content type.
  *
- * Path pattern: {toolPair}/{kataId} → content/katas/{toolPair}/{kataId.padStart(2, "0")}-kata.mdx
+ * Path pattern: {toolPair}/{kataId} → content/{toolPair}/katas/{kataId.padStart(2, "0")}-kata.mdx
  *
  * @example
  * ```ts
  * const kata = yield* service.load(KataType, "jj-git/1")
- * // Loads: content/katas/jj-git/01-kata.mdx
+ * // Loads: content/jj-git/katas/01-kata.mdx
  * ```
  */
 export const KataType = defineContentType({
@@ -197,7 +192,7 @@ export const KataType = defineContentType({
       throw new Error(`Invalid kata slug: ${slug}. Expected format: toolPair/kataId`)
     }
     const paddedKata = kataId.padStart(2, "0")
-    return `${KATA_ROOT}/${toolPair}/${paddedKata}-kata.mdx`
+    return `${CONTENT_ROOT}/${toolPair}/katas/${paddedKata}-kata.mdx`
   },
-  filePattern: "**/[0-9][0-9]-kata.mdx",
+  filePattern: "**/katas/[0-9][0-9]-kata.mdx",
 })

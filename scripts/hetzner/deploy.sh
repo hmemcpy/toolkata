@@ -205,7 +205,7 @@ EXISTING_CADDY=$(ssh "$SSH_USER@$SERVER_IP" "cat /etc/caddy/Caddyfile 2>/dev/nul
 if [ "$EXISTING_CADDY" != "$(cat "$CADDY_TEMP")" ]; then
     info "Caddy config changed, updating..."
     scp "$CADDY_TEMP" "$SSH_USER@$SERVER_IP:/etc/caddy/Caddyfile"
-    systemctl reload caddy
+    ssh "$SSH_USER@$SERVER_IP" "systemctl reload caddy"
     success "Caddy reloaded with new config"
 else
     success "Caddy config unchanged, skipping reload"
@@ -249,6 +249,16 @@ ADMIN_API_KEY=$ADMIN_API_KEY
 REDIS_URL=redis://localhost:6379
 EOF
 
+# Add optional GitHub CMS configuration (if set)
+if [ -n "${GITHUB_TOKEN:-}" ]; then
+    cat >> "$ENV_TEMP" << EOF
+GITHUB_TOKEN=$GITHUB_TOKEN
+GITHUB_OWNER=${GITHUB_OWNER:-}
+GITHUB_REPO=${GITHUB_REPO:-}
+GITHUB_DEFAULT_BRANCH=${GITHUB_DEFAULT_BRANCH:-main}
+EOF
+fi
+
 # Check if .env changed
 ENV_REMOTE_HASH=$(ssh "$SSH_USER@$SERVER_IP" "md5sum /opt/sandbox-api/.env 2>/dev/null | cut -d' ' -f1" || echo "none")
 ENV_LOCAL_HASH=$(md5sum "$ENV_TEMP" | cut -d' ' -f1)
@@ -264,8 +274,7 @@ else
 fi
 rm -f "$ENV_TEMP"
 
-systemctl daemon-reload
-systemctl enable sandbox-api
+ssh "$SSH_USER@$SERVER_IP" "systemctl daemon-reload && systemctl enable sandbox-api"
 
 # Restart if service file, .env changed, or service not running
 NEEDS_RESTART=false

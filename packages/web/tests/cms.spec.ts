@@ -78,7 +78,7 @@ async function mockCMSAPI(page: Page) {
       body: JSON.stringify({
         files: [
           {
-            path: "content/comparisons/jj-git/01-step.mdx",
+            path: "jj-git/lessons/01-step.mdx",
             name: "01-step.mdx",
             type: "file",
             size: 2500,
@@ -86,7 +86,7 @@ async function mockCMSAPI(page: Page) {
             url: "https://api.github.com/repos/toolkata/content/contents/...",
           },
           {
-            path: "content/comparisons/jj-git/02-step.mdx",
+            path: "jj-git/lessons/02-step.mdx",
             name: "02-step.mdx",
             type: "file",
             size: 3200,
@@ -94,7 +94,7 @@ async function mockCMSAPI(page: Page) {
             url: "https://api.github.com/repos/toolkata/content/contents/...",
           },
           {
-            path: "content/comparisons/zio-cats/01-step.mdx",
+            path: "zio-cats/lessons/01-step.mdx",
             name: "01-step.mdx",
             type: "file",
             size: 4100,
@@ -116,7 +116,7 @@ async function mockCMSAPI(page: Page) {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          path: "content/comparisons/jj-git/01-step.mdx",
+          path: "jj-git/lessons/01-step.mdx",
           content: `---
 title: "Getting Started"
 step: 1
@@ -171,7 +171,7 @@ Welcome to the first step.`,
           sha: "abc123",
           files: [
             {
-              filename: "content/comparisons/jj-git/01-step.mdx",
+              filename: "jj-git/lessons/01-step.mdx",
               status: "modified",
               additions: 5,
               deletions: 2,
@@ -234,7 +234,7 @@ Welcome to the first step.`,
       body: JSON.stringify({
         results: [
           {
-            file: "content/comparisons/jj-git/01-step.mdx",
+            file: "jj-git/lessons/01-step.mdx",
             valid: true,
             errors: [],
             duration: 1234,
@@ -388,7 +388,7 @@ test.describe("File Browser API Mocking", () => {
       const response = {
         files: [
           {
-            path: "content/comparisons/jj-git/01-step.mdx",
+            path: "jj-git/lessons/01-step.mdx",
             name: "01-step.mdx",
             type: "file",
             size: 2500,
@@ -450,7 +450,7 @@ test.describe("Editor API Mocking", () => {
     await page.route(`${sandboxUrl}/admin/cms/file/**`, async (route) => {
       if (route.request().method() === "GET") {
         const response = {
-          path: "content/comparisons/jj-git/01-step.mdx",
+          path: "jj-git/lessons/01-step.mdx",
           content: `---\ntitle: "Test"\n---\n# Test`,
           sha: "file123",
           encoding: "utf-8",
@@ -512,7 +512,7 @@ test.describe("Validation API Mocking", () => {
         const response = {
           results: [
             {
-              file: "content/comparisons/jj-git/01-step.mdx",
+              file: "jj-git/lessons/01-step.mdx",
               valid: true,
               errors: [],
               duration: 1234,
@@ -542,7 +542,7 @@ test.describe("Validation API Mocking", () => {
           body: JSON.stringify({
             results: [
               {
-                file: "content/comparisons/jj-git/01-step.mdx",
+                file: "jj-git/lessons/01-step.mdx",
                 valid: false,
                 errors: [
                   { line: 10, message: "Invalid syntax", type: "syntax" },
@@ -700,7 +700,7 @@ test.describe("History Page", () => {
         sha: "abc123",
         files: [
           {
-            filename: "content/comparisons/jj-git/01-step.mdx",
+            filename: "jj-git/lessons/01-step.mdx",
             status: "modified",
             additions: 5,
             deletions: 2,

@@ -124,20 +124,15 @@ function toFileEntry(file: ContentFile): FileEntry {
 
 /**
  * Get tool pair from file path.
- * E.g., "content/comparisons/jj-git/01-step.mdx" -> "jj-git"
+ * E.g., "jj-git/lessons/01-step.mdx" -> "jj-git"
  */
 function getToolPairFromPath(path: string): string {
   const parts = path.split("/")
-  const comparisonsIndex = parts.indexOf("comparisons")
-  const comparisonsPair = parts[comparisonsIndex + 1]
-  if (comparisonsIndex >= 0 && comparisonsPair) {
-    return comparisonsPair
-  }
-  // Check for katas
-  const katasIndex = parts.indexOf("katas")
-  const katasPair = parts[katasIndex + 1]
-  if (katasIndex >= 0 && katasPair) {
-    return katasPair
+  // New structure: {toolPair}/lessons/... or {toolPair}/katas/...
+  // Tool pair is the first directory
+  const firstPart = parts[0]
+  if (firstPart && (parts.includes("lessons") || parts.includes("katas"))) {
+    return firstPart
   }
   return "unknown"
 }

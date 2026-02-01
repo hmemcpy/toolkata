@@ -10,6 +10,7 @@ import { ContentConfig } from "./config"
 import type { Content, ContentType } from "./content-type"
 import { ContentError } from "./errors"
 import { listFiles, loadFile } from "./loader"
+import { loadFileFromGitHub, listFilesFromGitHub } from "./github-loader"
 import { parseFrontmatter } from "./parser"
 import { validateFrontmatter } from "./validator"
 
@@ -85,18 +86,39 @@ const makeContentService = Effect.gen(function* () {
   const config = yield* ContentConfig
   const cache = yield* CacheService
 
+  /**
+   * Load a file from the configured source (local or GitHub).
+   */
+  const loadFromSource = (filePath: string) => {
+    if (config.source.type === "github") {
+      return loadFileFromGitHub(filePath, config.source.source)
+    }
+    return loadFile(filePath)
+  }
+
+  /**
+   * List files from the configured source (local or GitHub).
+   */
+  const listFromSource = (pattern: string) => {
+    if (config.source.type === "github") {
+      return listFilesFromGitHub(pattern, config.source.source)
+    }
+    return listFiles(pattern, config.contentRoot)
+  }
+
   const load = <T>(type: ContentType<T>, slug: string): Effect.Effect<Content<T>, ContentError> =>
     Effect.gen(function* () {
       const filePath = yield* resolveFilePath(type, slug, config.contentRoot)
 
-      if (config.cache.enabled) {
+      // In-memory cache only for local source
+      if (config.cache.enabled && config.source.type === "local") {
         const cached = yield* cache.get<Content<T>>(cacheKey(type.name, slug))
         if (Option.isSome(cached)) {
           return cached.value
         }
       }
 
-      const file = yield* loadFile(filePath)
+      const file = yield* loadFromSource(filePath)
       const parsed = yield* parseFrontmatter(file.raw)
       const validated = yield* validateFrontmatter(type.schema, parsed.data, filePath, type.name)
 
@@ -112,7 +134,8 @@ const makeContentService = Effect.gen(function* () {
         ? type.transform(baseContent)
         : (baseContent as Content<T>)
 
-      if (config.cache.enabled) {
+      // In-memory cache only for local source (GitHub uses Next.js fetch cache)
+      if (config.cache.enabled && config.source.type === "local") {
         yield* cache.set(cacheKey(type.name, slug), finalContent, config.cache.ttl)
       }
 
@@ -125,12 +148,17 @@ const makeContentService = Effect.gen(function* () {
   ): Effect.Effect<ReadonlyArray<Content<T>>, ContentError> =>
     Effect.gen(function* () {
       const pattern = type.filePattern ?? "**/*.mdx"
-      const relativePaths = yield* listFiles(pattern, config.contentRoot)
+      const relativePaths = yield* listFromSource(pattern)
 
       const contents: Content<T>[] = []
       for (const relativePath of relativePaths) {
-        const filePath = path.join(config.contentRoot, relativePath)
-        const slug = extractSlug(filePath, config.contentRoot)
+        const filePath = config.source.type === "github"
+          ? relativePath  // GitHub paths are already relative
+          : path.join(config.contentRoot, relativePath)
+        const slug = extractSlug(
+          config.source.type === "github" ? relativePath : filePath,
+          config.source.type === "github" ? "" : config.contentRoot
+        )
 
         const result = yield* Effect.either(load(type, slug))
 

@@ -97,11 +97,11 @@ export default async function StepPage(props: {
 
   // Generate GitHub edit link
   const stepFile = `${stepNum.toString().padStart(2, "0")}-step.mdx`
-  const editHref = `https://github.com/hmemcpy/toolkata/edit/main/packages/web/content/comparisons/${toolPair}/${stepFile}`
+  const editHref = `https://github.com/hmemcpy/toolkata-content/edit/main/${toolPair}/lessons/${stepFile}`
 
   // Load tool-pair config and resolve sandbox configuration
   // Sandbox config is resolved from: step frontmatter → tool-pair config.yml → global defaults
-  const toolConfigResult = await loadToolConfig(toolPair, "content/comparisons").pipe(
+  const toolConfigResult = await loadToolConfig(toolPair, "content").pipe(
     (await import("effect")).Effect.either,
     (await import("effect")).Effect.runPromise,
   )

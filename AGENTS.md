@@ -675,7 +675,7 @@ Add `validate={false}` prop to skip validation for specific snippets:
 
 ### Adding New Tool Pairings
 
-1. Create `content/comparisons/{pairing}/config.yml` with validation config:
+1. Create `content/{pairing}/config.yml` with validation config:
 
 ```yaml
 validation:
@@ -708,7 +708,7 @@ validation:
 **Problem: "error: not a git repository"**
 ```
 Solution: The config.yml prelude needs to initialize the repository before commands run.
-Check content/comparisons/jj-git/config.yml has:
+Check content/jj-git/config.yml has:
 
 validation:
   environment: bash

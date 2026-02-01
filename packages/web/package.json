@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "CONTENT_SOURCE=github next dev --turbopack",
+    "dev:local": "next dev --turbopack",
+    "content:clone": "git clone git@github.com:hmemcpy/toolkata-content.git content || (cd content && git pull)",
     "validate:snippets": "bun run scripts/validate-snippets.ts",
     "build": "next build",
     "start": "next start",

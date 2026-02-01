@@ -75,7 +75,7 @@ export default async function KataLandingPage(props: {
   }
 
   // Load tool-pair config and resolve sandbox configuration
-  const toolConfigResult = await loadToolConfig(toolPair, "content/comparisons").pipe(
+  const toolConfigResult = await loadToolConfig(toolPair, "content").pipe(
     (await import("effect")).Effect.either,
     (await import("effect")).Effect.runPromise,
   )
