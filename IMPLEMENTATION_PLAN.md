@@ -147,12 +147,12 @@ GitHub-native content management system. See `specs/content-cms.md` for full spe
   - Repository settings (owner, repo, default branch)
   - File: `packages/sandbox-api/src/config/github.ts`
 
-- [ ] **Create GitHubService (Effect-TS)**
+- [x] **Create GitHubService (Effect-TS)**
   - Repository operations: getTree, getFile, createFile, updateFile, deleteFile
   - Branch operations: listBranches, createBranch, deleteBranch
   - Commit operations: getCommit, createCommit, getCommitHistory
-  - PR operations: createPR, getPRStatus
-  - Error types: NotFound, Unauthorized, RateLimited, ValidationFailed, ConflictError
+  - PR operations: createPR, getPR
+  - Error types: NotFound, Unauthorized, RateLimited, ValidationFailed, ConflictError, NetworkError, UnknownError
   - File: `packages/sandbox-api/src/services/github.ts`
 
 - [ ] **Create ContentValidationService (Effect-TS)**
@@ -364,5 +364,5 @@ cd packages/web && bun run validate:snippets
 | P0 | 0 | 0 |
 | P1 | 0 | 6 |
 | P2 | 3 | 0 |
-| P3 | 19 | 2 |
-| **Total** | **22** | **8** |
+| P3 | 18 | 3 |
+| **Total** | **21** | **9** |
