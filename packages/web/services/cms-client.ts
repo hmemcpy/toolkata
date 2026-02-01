@@ -27,7 +27,15 @@
  */
 
 import { Context, Data, Effect, Layer } from "effect"
-import { getSandboxHttpUrl, ADMIN_API_KEY } from "@/lib/sandbox-url"
+import { ADMIN_API_KEY } from "@/lib/sandbox-url"
+
+/**
+ * Get the CMS API base URL.
+ *
+ * Returns `/api` for browser-side requests (uses Next.js API proxy).
+ * The proxy at /api/admin/cms/* forwards to sandbox.toolkata.com/admin/cms/*.
+ */
+const getCMSApiUrl = (): string => "/api"
 
 // ============================================================================
 // Error Types
@@ -524,7 +532,7 @@ const make = Effect.succeed<CMSClientShape>({
   getStatus: () =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
+        const apiUrl = getCMSApiUrl()
         return fetchCMS<CMSStatus>(`${apiUrl}/admin/cms/status`)
       },
       catch: (error) =>
@@ -540,7 +548,7 @@ const make = Effect.succeed<CMSClientShape>({
   getValidationStatus: () =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
+        const apiUrl = getCMSApiUrl()
         return fetchCMS<ValidationStatus>(`${apiUrl}/admin/cms/validate/status`)
       },
       catch: (error) =>
@@ -557,7 +565,7 @@ const make = Effect.succeed<CMSClientShape>({
   listFiles: (params) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
+        const apiUrl = getCMSApiUrl()
         const searchParams = new URLSearchParams()
         if (params?.path) searchParams.set("path", params.path)
         if (params?.branch) searchParams.set("branch", params.branch)
@@ -580,7 +588,7 @@ const make = Effect.succeed<CMSClientShape>({
   getFile: (path, branch) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
+        const apiUrl = getCMSApiUrl()
         const encodedPath = encodeURIComponent(path)
         const searchParams = new URLSearchParams()
         if (branch) searchParams.set("branch", branch)
@@ -603,7 +611,7 @@ const make = Effect.succeed<CMSClientShape>({
   createFile: (path, request) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
+        const apiUrl = getCMSApiUrl()
         const encodedPath = encodeURIComponent(path)
         return fetchCMS<FileCommitResponse>(`${apiUrl}/admin/cms/file/${encodedPath}`, {
           method: "PUT",
@@ -623,7 +631,7 @@ const make = Effect.succeed<CMSClientShape>({
   updateFile: (path, request) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
+        const apiUrl = getCMSApiUrl()
         const encodedPath = encodeURIComponent(path)
         return fetchCMS<FileCommitResponse>(`${apiUrl}/admin/cms/file/${encodedPath}`, {
           method: "PUT",
@@ -643,7 +651,7 @@ const make = Effect.succeed<CMSClientShape>({
   deleteFile: (path, request) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
+        const apiUrl = getCMSApiUrl()
         const encodedPath = encodeURIComponent(path)
         return fetchCMS<FileCommitResponse>(`${apiUrl}/admin/cms/file/${encodedPath}`, {
           method: "DELETE",
@@ -663,7 +671,7 @@ const make = Effect.succeed<CMSClientShape>({
   renameFile: (oldPath, request) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
+        const apiUrl = getCMSApiUrl()
         const encodedPath = encodeURIComponent(oldPath)
         return fetchCMS<FileCommitResponse>(`${apiUrl}/admin/cms/file/${encodedPath}`, {
           method: "PATCH",
@@ -684,7 +692,7 @@ const make = Effect.succeed<CMSClientShape>({
   listBranches: () =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
+        const apiUrl = getCMSApiUrl()
         return fetchCMS<BranchesResponse>(`${apiUrl}/admin/cms/branches`)
       },
       catch: (error) =>
@@ -700,7 +708,7 @@ const make = Effect.succeed<CMSClientShape>({
   createBranch: (request) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
+        const apiUrl = getCMSApiUrl()
         return fetchCMS<BranchResponse>(`${apiUrl}/admin/cms/branches`, {
           method: "POST",
           body: JSON.stringify(request),
@@ -719,7 +727,7 @@ const make = Effect.succeed<CMSClientShape>({
   deleteBranch: (name) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
+        const apiUrl = getCMSApiUrl()
         await fetchCMS<{ success: boolean }>(`${apiUrl}/admin/cms/branches/${encodeURIComponent(name)}`, {
           method: "DELETE",
         })
@@ -738,7 +746,7 @@ const make = Effect.succeed<CMSClientShape>({
   getCommitHistory: (params) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
+        const apiUrl = getCMSApiUrl()
         const searchParams = new URLSearchParams()
         if (params?.path) searchParams.set("path", params.path)
         if (params?.branch) searchParams.set("branch", params.branch)
@@ -762,7 +770,7 @@ const make = Effect.succeed<CMSClientShape>({
   getCommit: (sha) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
+        const apiUrl = getCMSApiUrl()
         return fetchCMS<GitHubCommit>(`${apiUrl}/admin/cms/commits/${encodeURIComponent(sha)}`)
       },
       catch: (error) =>
@@ -778,7 +786,7 @@ const make = Effect.succeed<CMSClientShape>({
   getCommitDiff: (sha) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
+        const apiUrl = getCMSApiUrl()
         return fetchCMS<CommitDiff>(`${apiUrl}/admin/cms/commits/${encodeURIComponent(sha)}/diff`)
       },
       catch: (error) =>
@@ -794,7 +802,7 @@ const make = Effect.succeed<CMSClientShape>({
   createCommit: (request) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
+        const apiUrl = getCMSApiUrl()
         return fetchCMS<FileCommitResponse>(`${apiUrl}/admin/cms/commits`, {
           method: "POST",
           body: JSON.stringify(request),
@@ -814,7 +822,7 @@ const make = Effect.succeed<CMSClientShape>({
   createPR: (request) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
+        const apiUrl = getCMSApiUrl()
         return fetchCMS<PRResponse>(`${apiUrl}/admin/cms/pr`, {
           method: "POST",
           body: JSON.stringify(request),
@@ -833,7 +841,7 @@ const make = Effect.succeed<CMSClientShape>({
   getPR: (number) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
+        const apiUrl = getCMSApiUrl()
         return fetchCMS<GitHubPullRequest>(`${apiUrl}/admin/cms/pr/${number}`)
       },
       catch: (error) =>
@@ -850,7 +858,7 @@ const make = Effect.succeed<CMSClientShape>({
   validateContent: (files) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
+        const apiUrl = getCMSApiUrl()
         return fetchCMS<ValidationResponse>(`${apiUrl}/admin/cms/validate`, {
           method: "POST",
           body: JSON.stringify({ files }),
