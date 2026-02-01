@@ -235,11 +235,15 @@ GitHub-native content management system. See `specs/content-cms.md` for full spe
   - BranchIndicator compact variant for headers
   - File: `packages/web/components/cms/BranchSelector.tsx`
 
-- [ ] **Create PRDialog component**
+- [x] **Create PRDialog component**
   - PR title and body editor
   - Validation check before create
-  - Target branch selector
-  - Link to created PR
+  - Target branch selector (base branch prop)
+  - Link to created PR (PRSuccessView)
+  - Branch confirmation display
+  - Auto-fill title from branch name
+  - ValidationStatusBadge with re-run option
+  - Escape key handling, backdrop click to close
   - File: `packages/web/components/cms/PRDialog.tsx`
 
 - [ ] **Create HistoryPanel component**
@@ -375,5 +379,5 @@ cd packages/web && bun run validate:snippets
 | P0 | 0 | 0 |
 | P1 | 0 | 6 |
 | P2 | 3 | 0 |
-| P3 | 8 | 12 |
-| **Total** | **11** | **18** |
+| P3 | 7 | 13 |
+| **Total** | **10** | **19** |
