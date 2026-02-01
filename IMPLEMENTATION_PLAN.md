@@ -138,7 +138,7 @@ GitHub-native content management system. See `specs/content-cms.md` for full spe
 
 **Backend (sandbox-api)**
 
-- [ ] **Install octokit dependency**
+- [x] **Install octokit dependency**
   - Add `@octokit/rest` to sandbox-api package
   - File: `packages/sandbox-api/package.json`
 
@@ -364,5 +364,5 @@ cd packages/web && bun run validate:snippets
 | P0 | 0 | 0 |
 | P1 | 0 | 6 |
 | P2 | 3 | 0 |
-| P3 | 21 | 0 |
-| **Total** | **24** | **6** |
+| P3 | 20 | 1 |
+| **Total** | **23** | **7** |

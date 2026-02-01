@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@hono/zod-validator": "^0.7.6",
+    "@octokit/rest": "^21.1.1",
     "@types/dockerode": "^4.0.1",
     "dockerode": "^4.0.9",
     "effect": "^3.19.14",
