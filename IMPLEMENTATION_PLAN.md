@@ -75,7 +75,7 @@ Glossary page exists. GitToggle component exists (shows/hides git column in kata
   - Listens for storage events from other tabs
   - File: `packages/web/hooks/useDirection.ts`
 
-- [ ] **Create DirectionToggle component**
+- [x] **Create DirectionToggle component**
   - Toggle button showing `[git → jj]` or `[jj → git]`
   - Clicking swaps the direction
   - Only show for bidirectional tool pairings (jj-git has both directions)
@@ -362,7 +362,7 @@ cd packages/web && bun run validate:snippets
 | Priority | Pending | Completed |
 |----------|---------|-----------|
 | P0 | 0 | 0 |
-| P1 | 4 | 2 |
+| P1 | 3 | 3 |
 | P2 | 3 | 0 |
 | P3 | 21 | 0 |
-| **Total** | **28** | **2** |
+| **Total** | **27** | **3** |
