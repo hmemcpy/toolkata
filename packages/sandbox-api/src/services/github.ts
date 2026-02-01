@@ -108,6 +108,22 @@ export interface CommitAuthor {
   readonly email: string
 }
 
+export interface FileChange {
+  readonly filename: string
+  readonly status: "added" | "removed" | "modified" | "renamed"
+  readonly additions: number
+  readonly deletions: number
+  readonly patch?: string
+  readonly previousFilename?: string
+}
+
+export interface CommitDiff {
+  readonly sha: string
+  readonly files: readonly FileChange[]
+  readonly additions: number
+  readonly deletions: number
+}
+
 // ============================================================================
 // Service Interface
 // ============================================================================
@@ -165,6 +181,10 @@ export interface GitHubServiceShape {
   readonly getCommit: (
     sha: string,
   ) => Effect.Effect<GitHubCommit, GitHubError | GitHubConfigError>
+
+  readonly getCommitDiff: (
+    sha: string,
+  ) => Effect.Effect<CommitDiff, GitHubError | GitHubConfigError>
 
   readonly getCommitHistory: (
     path?: string,
@@ -643,6 +663,53 @@ const make = Effect.gen(function* () {
       return parseCommit(response.data)
     })
 
+  const getCommitDiff = (
+    sha: string,
+  ): Effect.Effect<CommitDiff, GitHubError | GitHubConfigError> =>
+    Effect.gen(function* () {
+      yield* requireGitHubConfig()
+
+      const response = yield* Effect.tryPromise({
+        try: () =>
+          octokit.repos.getCommit({
+            owner,
+            repo,
+            ref: sha,
+          }),
+        catch: mapOctokitError,
+      })
+
+      const files: FileChange[] = (response.data.files ?? []).map((file) => {
+        let status: FileChange["status"] = "modified"
+        if (file.status === "added") status = "added"
+        else if (file.status === "removed") status = "removed"
+        else if (file.status === "renamed") status = "renamed"
+
+        const result: FileChange = {
+          filename: file.filename,
+          status,
+          additions: file.additions,
+          deletions: file.deletions,
+        }
+
+        // Only add optional properties if they exist
+        if (file.patch !== undefined) {
+          return { ...result, patch: file.patch }
+        }
+        if (file.previous_filename !== undefined) {
+          return { ...result, previousFilename: file.previous_filename }
+        }
+        return result
+      })
+
+      return {
+        sha: response.data.sha,
+        files,
+        additions: response.data.stats?.additions ?? 0,
+        deletions: response.data.stats?.deletions ?? 0,
+      }
+    })
+
   const getCommitHistory = (
     path?: string,
     branch?: string,
@@ -916,6 +983,7 @@ const make = Effect.gen(function* () {
     createBranch,
     deleteBranch,
     getCommit,
+    getCommitDiff,
     getCommitHistory,
     createCommit,
     createPR,

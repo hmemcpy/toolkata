@@ -280,9 +280,14 @@ GitHub-native content management system. See `specs/content-cms.md` for full spe
   - Child pages (main CMS, history) handle their own state and branch selection
   - File: `packages/web/app/admin/(dashboard)/cms/layout.tsx`
 
-- [ ] **Create CMS history page**
-  - File history view with diffs
-  - Commit details
+- [x] **Create CMS history page**
+  - File history view with diffs (using HistoryPanel component)
+  - Commit details with diff viewer (via getCommitDiff API)
+  - Branch selector for viewing history across branches
+  - Query params: `path` (filter by file), `branch` (select branch)
+  - Wrapped in Suspense for useSearchParams compatibility
+  - Backend: Added getCommitDiff to GitHubService and /commits/:sha/diff endpoint
+  - Frontend: Added getCommitDiff to cms-client, CommitDiff/FileChange types
   - File: `packages/web/app/admin/(dashboard)/cms/history/page.tsx`
 
 - [x] **Add CMS to admin sidebar**

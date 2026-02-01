@@ -566,6 +566,26 @@ export const createAdminCMSRoutes = (
     }
   })
 
+  // GET /commits/:sha/diff - Get commit diff with file changes
+  app.get("/commits/:sha/diff", async (c) => {
+    try {
+      const sha = c.req.param("sha")
+      if (!sha) {
+        return c.json<ErrorResponse>(
+          { error: "BadRequest", message: "Missing commit sha" },
+          400,
+        )
+      }
+
+      const diff = await Effect.runPromise(githubService.getCommitDiff(sha))
+
+      return c.json(diff, 200)
+    } catch (error) {
+      const { statusCode, body } = errorToResponse(error)
+      return c.json<ErrorResponse>(body, toStatusCode(statusCode))
+    }
+  })
+
   // POST /commits - Create a new commit with multiple files
   app.post("/commits", async (c) => {
     try {

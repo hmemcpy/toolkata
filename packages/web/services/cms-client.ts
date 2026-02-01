@@ -142,6 +142,28 @@ export interface CommitAuthor {
 }
 
 /**
+ * File change in a commit diff.
+ */
+export interface FileChange {
+  readonly filename: string
+  readonly status: "added" | "removed" | "modified" | "renamed"
+  readonly additions: number
+  readonly deletions: number
+  readonly patch?: string
+  readonly previousFilename?: string
+}
+
+/**
+ * Commit diff with file changes.
+ */
+export interface CommitDiff {
+  readonly sha: string
+  readonly files: readonly FileChange[]
+  readonly additions: number
+  readonly deletions: number
+}
+
+/**
  * Snippet validation error.
  */
 export interface SnippetError {
@@ -337,6 +359,8 @@ export interface CMSClientShape {
   }) => Effect.Effect<CommitsResponse, CMSClientError>
 
   readonly getCommit: (sha: string) => Effect.Effect<GitHubCommit, CMSClientError>
+
+  readonly getCommitDiff: (sha: string) => Effect.Effect<CommitDiff, CMSClientError>
 
   readonly createCommit: (
     request: CreateCommitRequest,
@@ -713,6 +737,22 @@ const make = Effect.succeed<CMSClientShape>({
           : new CMSClientError({
               cause: "NetworkError",
               message: error instanceof Error ? error.message : "Failed to get commit",
+              originalError: error,
+            }),
+    }),
+
+  getCommitDiff: (sha) =>
+    Effect.tryPromise({
+      try: async () => {
+        const apiUrl = getSandboxHttpUrl()
+        return fetchCMS<CommitDiff>(`${apiUrl}/admin/cms/commits/${encodeURIComponent(sha)}/diff`)
+      },
+      catch: (error) =>
+        error instanceof CMSClientError
+          ? error
+          : new CMSClientError({
+              cause: "NetworkError",
+              message: error instanceof Error ? error.message : "Failed to get commit diff",
               originalError: error,
             }),
     }),
