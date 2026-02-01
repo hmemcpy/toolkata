@@ -40,7 +40,8 @@ export interface DockerClientShape {
   readonly docker: Docker
 }
 
-export const DockerClient = Context.GenericTag<DockerClientShape>("DockerClient")
+// Use class-based tag for stable identity in Layer.mergeAll
+export class DockerClient extends Context.Tag("DockerClient")<DockerClient, DockerClientShape>() {}
 
 // Security configuration from PLAN.md
 const CONTAINER_SECURITY = {

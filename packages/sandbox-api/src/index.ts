@@ -335,22 +335,6 @@ const make = Effect.gen(function* () {
 // Live layer
 export const HttpServerLive = Layer.effect(HttpServer, make)
 
-// Main server layer composition - all services needed for the API
-// Effect's Layer.mergeAll automatically resolves dependencies when layers are merged
-export const ServerLayer = Layer.mergeAll(
-  ServerConfigLive,
-  MetricsServiceLive,
-  DockerClientLive,
-  RateLimitServiceLive,
-  RateLimitAdminServiceLive,
-  ContainerAdminServiceLive,
-  AuditServiceLive,
-  EnvironmentServiceLive,
-  ContainerServiceLive,
-  SessionServiceLive,
-  WebSocketServiceLive,
-)
-
 // Default config from environment
 const defaultConfig = Effect.sync(() => {
   const port = Number(process.env["PORT"] ?? "3001")
@@ -366,6 +350,59 @@ const defaultConfig = Effect.sync(() => {
 
 // Default layer
 export const ServerConfigLive = Layer.effect(ServerConfig, defaultConfig)
+
+// Build dependent layers with explicit dependencies
+// Chain: DockerClient + EnvironmentService -> ContainerService -> SessionService
+
+// ContainerService depends on BOTH DockerClient AND EnvironmentService
+const ContainerServiceLiveWithDeps = ContainerServiceLive.pipe(
+  Layer.provide(DockerClientLive),
+  Layer.provide(EnvironmentServiceLive),
+)
+
+// SessionService depends on ContainerService
+const SessionServiceLiveWithDeps = SessionServiceLive.pipe(
+  Layer.provide(ContainerServiceLiveWithDeps),
+)
+
+// WebSocketService depends on ContainerService
+const WebSocketServiceLiveWithDeps = WebSocketServiceLive.pipe(
+  Layer.provide(ContainerServiceLiveWithDeps),
+)
+
+// ContainerAdminService depends on DockerClient
+const ContainerAdminServiceLiveWithDeps = ContainerAdminServiceLive.pipe(
+  Layer.provide(DockerClientLive),
+)
+
+// MetricsService depends on DockerClient, SessionService, RateLimitService
+const MetricsServiceLiveWithDeps = MetricsServiceLive.pipe(
+  Layer.provide(DockerClientLive),
+  Layer.provide(SessionServiceLiveWithDeps),
+  Layer.provide(RateLimitServiceLive),
+)
+
+// RateLimitAdminService depends on RateLimitService
+const RateLimitAdminServiceLiveWithDeps = RateLimitAdminServiceLive.pipe(
+  Layer.provide(RateLimitServiceLive),
+)
+
+// Main server layer composition - all services needed for the API
+// Only include base layers that have NO unmet dependencies.
+// ContainerServiceLiveWithDeps already includes DockerClientLive and EnvironmentServiceLive,
+// but we include EnvironmentServiceLive here too since mainProgram uses it directly.
+export const ServerLayer = Layer.mergeAll(
+  ServerConfigLive,
+  AuditServiceLive,
+  EnvironmentServiceLive,
+  ContainerServiceLiveWithDeps,
+  SessionServiceLiveWithDeps,
+  WebSocketServiceLiveWithDeps,
+  ContainerAdminServiceLiveWithDeps,
+  RateLimitServiceLive,
+  RateLimitAdminServiceLiveWithDeps,
+  MetricsServiceLiveWithDeps,
+)
 
 // Main function for Bun runtime
 const mainProgram = Effect.gen(function* () {
@@ -422,9 +459,15 @@ const mainProgram = Effect.gen(function* () {
 
 // Run main when file is executed directly
 if (import.meta.main) {
-  // HttpServerLive depends on all services in ServerLayer
+  // Build the complete layer:
+  // 1. HttpServerLive needs ServerLayer for its dependencies
+  // 2. mainProgram needs HttpServer (from HttpServerLive) AND services from ServerLayer
+  // So we build HttpServerLive with deps, then merge it with ServerLayer
+  const HttpServerLiveWithDeps = HttpServerLive.pipe(Layer.provide(ServerLayer))
+  const CompleteLayer = Layer.mergeAll(HttpServerLiveWithDeps, ServerLayer)
+
   const program = mainProgram.pipe(
-    Effect.provide(HttpServerLive.pipe(Layer.provide(ServerLayer))),
+    Effect.provide(CompleteLayer),
     Effect.catchAll((error) =>
       Effect.sync(() => {
         console.error("Server failed to start:", error)
