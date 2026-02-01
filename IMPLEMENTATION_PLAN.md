@@ -225,11 +225,14 @@ GitHub-native content management system. See `specs/content-cms.md` for full spe
   - Includes ValidationSummary compact badge component
   - File: `packages/web/components/cms/ValidationPanel.tsx`
 
-- [ ] **Create BranchSelector component**
+- [x] **Create BranchSelector component**
   - Dropdown with branch list
   - Current branch indicator
-  - Create new branch option
-  - Switch branch with unsaved changes warning
+  - Create new branch option with name validation
+  - Switch branch with unsaved changes warning dialog
+  - Protected branch indicator (lock icon)
+  - Default branch badge
+  - BranchIndicator compact variant for headers
   - File: `packages/web/components/cms/BranchSelector.tsx`
 
 - [ ] **Create PRDialog component**
@@ -372,5 +375,5 @@ cd packages/web && bun run validate:snippets
 | P0 | 0 | 0 |
 | P1 | 0 | 6 |
 | P2 | 3 | 0 |
-| P3 | 9 | 11 |
-| **Total** | **12** | **17** |
+| P3 | 8 | 12 |
+| **Total** | **11** | **18** |
