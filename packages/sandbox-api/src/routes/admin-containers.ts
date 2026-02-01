@@ -65,7 +65,7 @@ const adminErrorToResponse = (error: unknown): { statusCode: number; body: Error
     error &&
     typeof error === "object" &&
     "name" in error &&
-    (error as any).name === "(FiberFailure) Error"
+    (error as { name: string }).name === "(FiberFailure) Error"
   ) {
     try {
       const json = JSON.stringify(error)

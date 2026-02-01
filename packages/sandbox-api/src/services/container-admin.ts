@@ -17,7 +17,7 @@
  */
 
 import { Context, Data, Effect, Layer } from "effect"
-import Docker from "dockerode"
+import type Docker from "dockerode"
 import { DockerClient } from "./container.js"
 
 // Docker container stats type (from dockerode)
@@ -283,7 +283,8 @@ const make = Effect.gen(function* () {
 
         // Filter by olderThan if specified
         if (filters?.olderThan !== undefined) {
-          result = result.filter((c) => c.createdAt < filters.olderThan!)
+          const olderThan = filters.olderThan
+          result = result.filter((c) => c.createdAt < olderThan)
         }
 
         return result as readonly ContainerInfo[]

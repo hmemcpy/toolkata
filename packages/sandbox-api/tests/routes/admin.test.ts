@@ -29,7 +29,7 @@ import {
   type RateLimitStatusResponse,
   createAdminRateLimitsRoutes,
 } from "../../src/routes/admin-rate-limits.js"
-import { ContainerAdminError } from "../../src/services/container-admin.js"
+import { ContainerAdminError, type ContainerFilters } from "../../src/services/container-admin.js"
 import { RateLimitAdminError } from "../../src/services/rate-limit-admin.js"
 
 /**
@@ -223,7 +223,7 @@ const createMockContainerAdminService = () => {
   ]
 
   return {
-    listContainers: (filters: any) =>
+    listContainers: (filters?: ContainerFilters) =>
       Effect.sync(() => {
         let containers = mockContainers
 
@@ -305,8 +305,6 @@ const createMockContainerAdminService = () => {
  * Create mock MetricsServiceShape for testing
  */
 const createMockMetricsService = () => {
-  const now = Date.now()
-
   return {
     getSystemMetrics: Effect.sync(() => ({
       timestamp: Date.now(),
@@ -407,7 +405,7 @@ const setupTestServer = () => {
   const app = new Hono()
 
   // Auth middleware - validates X-Admin-Key header
-  app.use("/*", async (c: any, next: any) => {
+  app.use("/*", async (c, next) => {
     const apiKey = c.req.header("X-Admin-Key")
     if (!apiKey || apiKey !== VALID_API_KEY) {
       return c.json({ error: "Unauthorized", message: "Invalid or missing admin API key" }, 401)

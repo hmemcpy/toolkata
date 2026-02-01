@@ -6,14 +6,14 @@
  * @see packages/sandbox-api/src/services/rate-limit-admin.ts
  */
 
-import { Effect, Option } from "effect"
+import { Effect } from "effect"
 import { describe, test, expect, beforeEach } from "bun:test"
 import {
   RateLimitAdminError,
   type RateLimitStatus,
   type AdjustRateLimitRequest,
 } from "../../src/services/rate-limit-admin.js"
-import { RateLimitService, type IpTracking } from "../../src/services/rate-limit.js"
+import type { IpTracking } from "../../src/services/rate-limit.js"
 
 /**
  * Helper to create a test IpTracking object.
@@ -37,7 +37,7 @@ const createMockTracking = (overrides?: Partial<IpTracking>): IpTracking => ({
 const createTestRateLimitAdmin = (mockStore: Map<string, IpTracking>) => {
   // Use closures to capture the store reference
   const getAllStatus = (): Effect.Effect<readonly RateLimitStatus[], never> => {
-    return Effect.gen(function* () {
+    return Effect.sync(() => {
       const statuses: RateLimitStatus[] = []
       for (const [clientId, tracking] of mockStore.entries()) {
         statuses.push(toRateLimitStatus(clientId, tracking))
