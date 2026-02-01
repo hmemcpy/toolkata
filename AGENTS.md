@@ -353,6 +353,26 @@ bun run format
 - `for...of` loops, not `forEach`
 - Optional chaining enforced (`?.`)
 
+### Import Paths
+
+**ALWAYS use `@/` path aliases instead of relative paths.**
+
+```typescript
+// ✅ Correct - use path aliases
+import { AdminSidebar } from "@/components/admin/AdminSidebar"
+import { getSandboxHttpUrl } from "@/lib/sandbox-url"
+import { auth } from "@/lib/auth"
+
+// ❌ Wrong - never use relative paths for imports
+import { AdminSidebar } from "../../../components/admin/AdminSidebar"
+import { getSandboxHttpUrl } from "../../lib/sandbox-url"
+```
+
+Path aliases are configured in `tsconfig.json` as `@/*` pointing to the web package root. This makes imports:
+- **More readable** - clear what's being imported
+- **More maintainable** - no broken imports when moving files
+- **More consistent** - same pattern regardless of file location
+
 ### TypeScript Strictness
 
 ```typescript

@@ -1,5 +1,5 @@
 import { revalidatePath } from "next/cache"
-import { getSandboxHttpUrl, ADMIN_API_KEY } from "../../../lib/sandbox-url"
+import { getSandboxHttpUrl, ADMIN_API_KEY } from "@/lib/sandbox-url"
 import type { SystemMetricsInfo, SandboxMetricsInfo, RateLimitMetricsInfo } from "./MetricsTypes"
 import { MetricsClient } from "./MetricsClient"
 

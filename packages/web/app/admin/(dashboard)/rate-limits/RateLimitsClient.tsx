@@ -2,8 +2,8 @@
 
 import { useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { RateLimitTable, RateLimitTableSkeleton } from "../../../components/admin/RateLimitTable"
-import type { RateLimitInfo, AdjustRateLimitRequest } from "../../../components/admin/RateLimitTable"
+import { RateLimitTable, RateLimitTableSkeleton } from "../../../../components/admin/RateLimitTable"
+import type { RateLimitInfo, AdjustRateLimitRequest } from "../../../../components/admin/RateLimitTable"
 
 /**
  * RateLimitsClient props.

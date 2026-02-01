@@ -1,6 +1,6 @@
 import { revalidatePath } from "next/cache"
-import { getSandboxHttpUrl, ADMIN_API_KEY } from "../../../lib/sandbox-url"
-import type { ContainerInfo } from "../../../components/admin/ContainerGrid"
+import { getSandboxHttpUrl, ADMIN_API_KEY } from "@/lib/sandbox-url"
+import type { ContainerInfo } from "@/components/admin/ContainerGrid"
 import { ContainersClient } from "./ContainersClient"
 
 /**

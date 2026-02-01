@@ -336,8 +336,10 @@ const make = Effect.gen(function* () {
 export const HttpServerLive = Layer.effect(HttpServer, make)
 
 // Main server layer composition - all services needed for the API
-// Simple approach: Layer.mergeAll automatically resolves dependencies
+// Effect's Layer.mergeAll automatically resolves dependencies when layers are merged
 export const ServerLayer = Layer.mergeAll(
+  ServerConfigLive,
+  MetricsServiceLive,
   DockerClientLive,
   RateLimitServiceLive,
   RateLimitAdminServiceLive,
@@ -420,59 +422,9 @@ const mainProgram = Effect.gen(function* () {
 
 // Run main when file is executed directly
 if (import.meta.main) {
-  // Build the complete application layer with proper dependency resolution
-  // Base layers (no dependencies)
-  const baseLayer = Layer.mergeAll(
-    ServerConfigLive,
-    DockerClientLive,
-    RateLimitServiceLive,
-    RateLimitAdminServiceLive,
-    ContainerAdminServiceLive,
-    AuditServiceLive,
-    EnvironmentServiceLive,
-    MetricsServiceLive,
-  )
-
-  // Container service depends on DockerClient and EnvironmentService
-  const containerLayer = ContainerServiceLive.pipe(
-    Layer.provide(Layer.merge(DockerClientLive, EnvironmentServiceLive)),
-  )
-
-  // Session service depends on ContainerService
-  const sessionLayer = SessionServiceLive.pipe(Layer.provide(containerLayer))
-
-  // WebSocket service depends on ContainerService and DockerClient
-  const wsLayer = WebSocketServiceLive.pipe(
-    Layer.provide(Layer.merge(containerLayer, DockerClientLive)),
-  )
-
-  // HTTP server depends on ServerConfig, SessionService, RateLimitService, RateLimitAdminService, ContainerAdminService, WebSocketService, AuditService
-  const httpLayer = HttpServerLive.pipe(
-    Layer.provide(
-      Layer.mergeAll(
-        ServerConfigLive,
-        sessionLayer,
-        RateLimitServiceLive,
-        RateLimitAdminServiceLive,
-        ContainerAdminServiceLive,
-        wsLayer,
-        AuditServiceLive,
-      ),
-    ),
-  )
-
-  // Merge all layers for the final app
-  const appLayer = Layer.mergeAll(
-    baseLayer,
-    EnvironmentServiceLive,
-    containerLayer,
-    sessionLayer,
-    wsLayer,
-    httpLayer,
-  )
-
+  // HttpServerLive depends on all services in ServerLayer
   const program = mainProgram.pipe(
-    Effect.provide(appLayer),
+    Effect.provide(HttpServerLive.pipe(Layer.provide(ServerLayer))),
     Effect.catchAll((error) =>
       Effect.sync(() => {
         console.error("Server failed to start:", error)

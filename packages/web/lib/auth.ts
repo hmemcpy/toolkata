@@ -74,21 +74,22 @@ export const authConfig: NextAuthConfig = {
      * Callback invoked when creating/updating the session.
      * Adds isAdmin flag to session for server-side checks.
      */
-    session({ session, user }) {
-      if (session.user && user.email) {
-        session.user.isAdmin = isAdminEmail(user.email)
+    session({ session, token }) {
+      if (session.user && token.email) {
+        session.user.isAdmin = isAdminEmail(token.email)
       }
       return session
     },
 
     /**
      * Callback invoked when JWT is created.
-     * Persists isAdmin flag in JWT for session continuity.
+     * Persists email and isAdmin flag in JWT for session continuity.
      */
     async jwt({ token, user }) {
       if (user) {
-        // First call, user is available. Persist isAdmin in token.
-        token["isAdmin"] = isAdminEmail(user.email ?? "")
+        // First call, user is available. Persist email and isAdmin in token.
+        token.email = user.email
+        token.isAdmin = isAdminEmail(user.email ?? "")
       }
       return token
     },

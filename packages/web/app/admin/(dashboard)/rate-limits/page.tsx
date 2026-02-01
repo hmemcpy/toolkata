@@ -1,6 +1,6 @@
 import { revalidatePath } from "next/cache"
-import { getSandboxHttpUrl, ADMIN_API_KEY } from "../../../lib/sandbox-url"
-import type { RateLimitInfo, AdjustRateLimitRequest } from "../../../components/admin/RateLimitTable"
+import { getSandboxHttpUrl, ADMIN_API_KEY } from "@/lib/sandbox-url"
+import type { RateLimitInfo, AdjustRateLimitRequest } from "@/components/admin/RateLimitTable"
 import { RateLimitsClient } from "./RateLimitsClient"
 
 /**

@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation"
 import { useTransition } from "react"
 import { useState } from "react"
-import type { ContainerInfo } from "../../../components/admin/ContainerGrid"
-import { ContainerGrid } from "../../../components/admin/ContainerGrid"
+import type { ContainerInfo } from "../../../../components/admin/ContainerGrid"
+import { ContainerGrid } from "../../../../components/admin/ContainerGrid"
 
 /**
  * ContainersClient props.
