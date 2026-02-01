@@ -37,7 +37,7 @@ This plan tracks implementation of features specified in `specs/` against the cu
 
 | Feature | Spec | Status | Missing |
 |---------|------|--------|---------|
-| **Bidirectional Comparison** | bidirectional-comparison.md | Glossary done, GitToggle exists, PreferencesStore done | Direction toggle to swap columns, useDirection hook, DirectionToggle component |
+| **Bidirectional Comparison** | bidirectional-comparison.md | Glossary done, GitToggle exists, PreferencesStore done, useDirection hook done | Direction toggle to swap columns, DirectionToggle component, SideBySide/GlossaryClient updates |
 
 ### Not Implemented
 
@@ -68,10 +68,11 @@ Glossary page exists. GitToggle component exists (shows/hides git column in kata
   - Values: `"default"` | `"reversed"`
   - File: `packages/web/core/PreferencesStore.ts`
 
-- [ ] **Create useDirection hook**
+- [x] **Create useDirection hook**
   - Hook to read/write direction preference
-  - Returns `{ direction, setDirection, isReversed }`
+  - Returns `{ direction, setDirection, isReversed, toggleDirection, isLoading, isAvailable }`
   - Reads from PreferencesStore, updates on change
+  - Listens for storage events from other tabs
   - File: `packages/web/hooks/useDirection.ts`
 
 - [ ] **Create DirectionToggle component**
@@ -352,6 +353,8 @@ cd packages/web && bun run validate:snippets
 
 7. **sandbox-api has pre-existing type errors** - `bun run typecheck` in sandbox-api fails with Effect-TS type mismatches in `environments/index.ts`, `routes/sessions.ts`, and `services/container.ts`. These are `exactOptionalPropertyTypes` issues with Effect return types (`Effect<undefined, ...>` vs `Effect<void, ...>`) and index signature access patterns.
 
+8. **Playwright tests have pre-existing failures** - `bun run test` in packages/web shows ~50 failures unrelated to new changes. Issues include localStorage access SecurityError in Glossary tests and admin sidebar visibility assertions. These need investigation as they may be test environment issues.
+
 ---
 
 ## Task Count
@@ -359,7 +362,7 @@ cd packages/web && bun run validate:snippets
 | Priority | Pending | Completed |
 |----------|---------|-----------|
 | P0 | 0 | 0 |
-| P1 | 5 | 1 |
+| P1 | 4 | 2 |
 | P2 | 3 | 0 |
 | P3 | 21 | 0 |
-| **Total** | **29** | **1** |
+| **Total** | **28** | **2** |
