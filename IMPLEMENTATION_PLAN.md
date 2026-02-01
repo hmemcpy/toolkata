@@ -285,9 +285,10 @@ GitHub-native content management system. See `specs/content-cms.md` for full spe
   - Commit details
   - File: `packages/web/app/admin/(dashboard)/cms/history/page.tsx`
 
-- [ ] **Add CMS to admin sidebar**
-  - "Content" menu item with icon
-  - File: `packages/web/components/admin/AdminSidebar.tsx` (update)
+- [x] **Add CMS to admin sidebar**
+  - "Content" menu item with [✎] icon added to both desktop and mobile nav
+  - Route: `/admin/cms`
+  - File: `packages/web/components/admin/AdminSidebar.tsx` (updated)
 
 - [ ] **Write Playwright tests for CMS**
   - File browsing, selection
@@ -387,5 +388,5 @@ cd packages/web && bun run validate:snippets
 | P0 | 0 | 0 |
 | P1 | 0 | 6 |
 | P2 | 3 | 0 |
-| P3 | 3 | 17 |
-| **Total** | **6** | **23** |
+| P3 | 2 | 18 |
+| **Total** | **5** | **24** |

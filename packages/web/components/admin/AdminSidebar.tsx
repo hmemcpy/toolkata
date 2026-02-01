@@ -9,6 +9,7 @@ import { signOut } from "../../lib/auth"
  *
  * Displays navigation links for all admin sections:
  * - Dashboard (/admin)
+ * - Content (/admin/cms) - CMS for editing MDX content
  * - Rate Limits (/admin/rate-limits)
  * - Containers (/admin/containers)
  * - Metrics (/admin/metrics)
@@ -23,6 +24,7 @@ export function AdminSidebar() {
 
   const navItems = [
     { href: "/admin", label: "Dashboard", icon: "[▓]" },
+    { href: "/admin/cms", label: "Content", icon: "[✎]" },
     { href: "/admin/rate-limits", label: "Rate Limits", icon: "[≈]" },
     { href: "/admin/containers", label: "Containers", icon: "[⌘]" },
     { href: "/admin/metrics", label: "Metrics", icon: "[≡]" },
@@ -101,6 +103,7 @@ export function AdminMobileNav() {
 
   const navItems = [
     { href: "/admin", label: "Dash", icon: "[▓]" },
+    { href: "/admin/cms", label: "Content", icon: "[✎]" },
     { href: "/admin/rate-limits", label: "Limits", icon: "[≈]" },
     { href: "/admin/containers", label: "Containers", icon: "[⌘]" },
     { href: "/admin/metrics", label: "Metrics", icon: "[≡]" },
