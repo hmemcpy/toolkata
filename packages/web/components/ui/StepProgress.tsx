@@ -3,6 +3,8 @@
 import Link from "next/link"
 import type { JSX } from "react"
 import { useStepProgress } from "../../hooks/useStepProgress"
+import { DirectionToggle } from "./DirectionToggle"
+import { getPairing } from "../../content/pairings"
 
 export interface StepProgressProps {
   readonly currentStep: number
@@ -33,6 +35,11 @@ export function StepProgress({
 }: StepProgressProps): JSX.Element {
   const { isStepComplete } = useStepProgress(toolPair, totalSteps)
   const step12Complete = isStepComplete(12)
+
+  // Get pairing data for direction toggle
+  const pairing = getPairing(toolPair)
+  // Only show direction toggle for bidirectional pairings (currently jj-git)
+  const showDirectionToggle = toolPair === "jj-git" && pairing !== null
 
   return (
     <header className={`border-b border-[var(--color-border)] ${className}`}>
@@ -79,8 +86,15 @@ export function StepProgress({
             )}
           </div>
 
-          {/* Glossary and Kata links */}
+          {/* Direction toggle, Glossary and Kata links */}
           <div className="flex items-center gap-2 sm:gap-4">
+            {showDirectionToggle && pairing && (
+              <DirectionToggle
+                fromTool={pairing.from.name}
+                toTool={pairing.to.name}
+                className="text-xs py-1 min-h-[32px]"
+              />
+            )}
             <Link
               href={`/${toolPair}/glossary`}
               className="text-xs font-mono text-[var(--color-text-muted)] hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors"

@@ -32,12 +32,11 @@ This plan tracks implementation of features specified in `specs/` against the cu
 | **Circuit Breaker** | sandbox-integration.md | Container/memory/CPU threshold protection |
 | **Audit Logging** | admin-dashboard.md | Structured JSON audit events |
 | **Metrics Collection** | admin-dashboard.md | System, sandbox, rate limit metrics |
+| **Bidirectional Comparison** | bidirectional-comparison.md | PreferencesStore, useDirection hook, DirectionToggle, SideBySide, GlossaryClient, StepProgress integration |
 
 ### Partially Implemented
 
-| Feature | Spec | Status | Missing |
-|---------|------|--------|---------|
-| **Bidirectional Comparison** | bidirectional-comparison.md | Glossary done, GitToggle exists, PreferencesStore done, useDirection hook done | Direction toggle to swap columns, DirectionToggle component, SideBySide/GlossaryClient updates |
+*None - all P1 features are now complete.*
 
 ### Not Implemented
 
@@ -95,10 +94,10 @@ Glossary page exists. GitToggle component exists (shows/hides git column in kata
   - Update column headers
   - File: `packages/web/components/ui/GlossaryClient.tsx` (update)
 
-- [ ] **Add DirectionToggle to step page header**
+- [x] **Add DirectionToggle to step page header**
   - Show toggle in step page header for bidirectional pairings
-  - Position: near navigation or in step progress area
-  - File: `packages/web/components/ui/StepProgress.tsx` or `StepPageClientWrapper.tsx` (update)
+  - Position: in secondary navigation bar, before Glossary link
+  - File: `packages/web/components/ui/StepProgress.tsx` (updated)
 
 ---
 
@@ -363,7 +362,7 @@ cd packages/web && bun run validate:snippets
 | Priority | Pending | Completed |
 |----------|---------|-----------|
 | P0 | 0 | 0 |
-| P1 | 1 | 5 |
+| P1 | 0 | 6 |
 | P2 | 3 | 0 |
 | P3 | 21 | 0 |
-| **Total** | **25** | **5** |
+| **Total** | **24** | **6** |
