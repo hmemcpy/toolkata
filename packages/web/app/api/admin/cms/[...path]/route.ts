@@ -13,9 +13,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getSandboxHttpUrl, ADMIN_API_KEY } from "@/lib/sandbox-url"
 
-// Sandbox API base URL
-const SANDBOX_URL = getSandboxHttpUrl()
-
 /**
  * Proxy a request to the sandbox API.
  */
@@ -24,8 +21,10 @@ async function proxyRequest(
   path: string[],
   method: string,
 ): Promise<NextResponse> {
+  // Get sandbox URL at runtime (not build time)
+  const sandboxUrl = getSandboxHttpUrl()
   const targetPath = path.join("/")
-  const targetUrl = `${SANDBOX_URL}/admin/cms/${targetPath}`
+  const targetUrl = `${sandboxUrl}/admin/cms/${targetPath}`
 
   // Forward query params
   const url = new URL(request.url)
