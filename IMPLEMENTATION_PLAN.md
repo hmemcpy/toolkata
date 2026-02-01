@@ -207,11 +207,13 @@ GitHub-native content management system. See `specs/content-cms.md` for full spe
   - Dirty indicator for unsaved changes
   - File: `packages/web/components/cms/FileEditor.tsx`
 
-- [ ] **Create MDXPreview component**
+- [x] **Create MDXPreview component**
   - Live preview with app's MDX components (SideBySide, CodeBlock, etc.)
-  - Split pane layout (50/50 editor/preview)
-  - Sync scroll with editor
+  - Compiles MDX on client using next-mdx-remote/serialize
   - Error boundary for render failures
+  - Debounced updates (configurable delay)
+  - Frontmatter display (title, description, step number)
+  - Scroll sync callbacks (for future sync scroll feature)
   - File: `packages/web/components/cms/MDXPreview.tsx`
 
 - [ ] **Create ValidationPanel component**
@@ -368,5 +370,5 @@ cd packages/web && bun run validate:snippets
 | P0 | 0 | 0 |
 | P1 | 0 | 6 |
 | P2 | 3 | 0 |
-| P3 | 11 | 9 |
-| **Total** | **14** | **15** |
+| P3 | 10 | 10 |
+| **Total** | **13** | **16** |
