@@ -216,11 +216,13 @@ GitHub-native content management system. See `specs/content-cms.md` for full spe
   - Scroll sync callbacks (for future sync scroll feature)
   - File: `packages/web/components/cms/MDXPreview.tsx`
 
-- [ ] **Create ValidationPanel component**
+- [x] **Create ValidationPanel component**
   - Error list with line numbers
-  - Severity icons (error, warning, info)
+  - Severity icons by error type (syntax=warning, compilation=error, runtime=error, missing-image=warning)
   - Click to jump to line in editor
   - Re-run validation button
+  - Dismissible panel with summary badge
+  - Includes ValidationSummary compact badge component
   - File: `packages/web/components/cms/ValidationPanel.tsx`
 
 - [ ] **Create BranchSelector component**
@@ -370,5 +372,5 @@ cd packages/web && bun run validate:snippets
 | P0 | 0 | 0 |
 | P1 | 0 | 6 |
 | P2 | 3 | 0 |
-| P3 | 10 | 10 |
-| **Total** | **13** | **16** |
+| P3 | 9 | 11 |
+| **Total** | **12** | **17** |
