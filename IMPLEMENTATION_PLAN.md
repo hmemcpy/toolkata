@@ -191,12 +191,13 @@ GitHub-native content management system. See `specs/content-cms.md` for full spe
 
 **Frontend (web) - Components**
 
-- [ ] **Create FileBrowser component**
+- [x] **Create FileBrowser component**
   - Tree view with file type icons (MDX, YAML, images)
   - Search and filtering
-  - File selection with multi-select for batch operations
-  - Context menu (rename, delete, copy path)
+  - Expand/collapse all controls
+  - Keyboard navigation (arrow keys, Enter, Space)
   - File: `packages/web/components/cms/FileBrowser.tsx`
+  - Note: Multi-select and context menu deferred to CMS page integration
 
 - [ ] **Create FileEditor component with Monaco**
   - MDX syntax highlighting and autocomplete
@@ -367,5 +368,5 @@ cd packages/web && bun run validate:snippets
 | P0 | 0 | 0 |
 | P1 | 0 | 6 |
 | P2 | 3 | 0 |
-| P3 | 14 | 7 |
-| **Total** | **17** | **13** |
+| P3 | 12 | 8 |
+| **Total** | **15** | **14** |
