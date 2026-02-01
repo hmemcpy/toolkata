@@ -155,7 +155,7 @@ GitHub-native content management system. See `specs/content-cms.md` for full spe
   - Error types: NotFound, Unauthorized, RateLimited, ValidationFailed, ConflictError, NetworkError, UnknownError
   - File: `packages/sandbox-api/src/services/github.ts`
 
-- [ ] **Create ContentValidationService (Effect-TS)**
+- [x] **Create ContentValidationService (Effect-TS)**
   - Wrapper around existing snippet validation for CMS use
   - Validates MDX content before commit
   - Returns structured validation results
@@ -364,5 +364,5 @@ cd packages/web && bun run validate:snippets
 | P0 | 0 | 0 |
 | P1 | 0 | 6 |
 | P2 | 3 | 0 |
-| P3 | 18 | 3 |
-| **Total** | **21** | **9** |
+| P3 | 17 | 4 |
+| **Total** | **20** | **10** |
