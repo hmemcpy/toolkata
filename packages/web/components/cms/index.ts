@@ -28,3 +28,6 @@ export { PRDialog } from "./PRDialog"
 
 export { HistoryPanel, HistoryPanelSkeleton } from "./HistoryPanel"
 export type { GitDiff, FileChange } from "./HistoryPanel"
+
+export { CreateFileDialog } from "./CreateFileDialog"
+export type { TemplateType } from "./CreateFileDialog"

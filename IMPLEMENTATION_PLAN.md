@@ -256,11 +256,13 @@ GitHub-native content management system. See `specs/content-cms.md` for full spe
   - Defines GitDiff and FileChange types
   - File: `packages/web/components/cms/HistoryPanel.tsx`
 
-- [ ] **Create CreateFileDialog component**
+- [x] **Create CreateFileDialog component**
   - Template picker (step, kata, overview, cheatsheet)
-  - Name input with validation (slug format)
-  - Parent folder selector
+  - Name input with validation (two-digit format for steps/katas)
+  - Tool pairing selector for parent folder
   - Pre-fill frontmatter from template
+  - Preview of generated file path and frontmatter
+  - Follows terminal aesthetic design system
   - File: `packages/web/components/cms/CreateFileDialog.tsx`
 
 **Frontend (web) - Integration**
@@ -383,5 +385,5 @@ cd packages/web && bun run validate:snippets
 | P0 | 0 | 0 |
 | P1 | 0 | 6 |
 | P2 | 3 | 0 |
-| P3 | 6 | 14 |
-| **Total** | **9** | **20** |
+| P3 | 5 | 15 |
+| **Total** | **8** | **21** |
