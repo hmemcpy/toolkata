@@ -68,8 +68,8 @@ const CONTAINER_SECURITY = {
     nofile: { soft: 64, hard: 64 },
   },
 
-  // Auto-remove on exit
-  autoRemove: false, // We'll handle cleanup explicitly
+  // Auto-remove on exit - Docker automatically removes container when it stops
+  autoRemove: true,
 } as const
 
 // Helper: Generate unique container name
@@ -173,7 +173,7 @@ const make = Effect.gen(function* () {
             Hard: CONTAINER_SECURITY.ulimit.nofile.hard,
           },
         ],
-        AutoRemove: false, // We'll manage cleanup explicitly
+        AutoRemove: CONTAINER_SECURITY.autoRemove,
       }
 
       // Add gVisor runtime if enabled
