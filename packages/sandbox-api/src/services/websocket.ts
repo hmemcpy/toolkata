@@ -155,6 +155,7 @@ const _parseMessage = (data: string): WebSocketMessage => {
 // Track output suppression state per session (for silent init commands)
 const suppressionState = new Map<string, boolean>()
 
+
 // Service implementation
 const make = Effect.gen(function* () {
   const containerService = yield* ContainerService
@@ -196,13 +197,20 @@ const make = Effect.gen(function* () {
             "-i",
           ]
         : [
-            "script",
-            "-q",
-            "--echo",
-            "never",
-            "-c",
-            `docker exec -it -e HOME=/home/toolkata -w /home/toolkata --user sandbox ${containerId} /bin/bash --init-file /home/toolkata/.bashrc -i`,
-            "/dev/null",
+            "docker",
+            "exec",
+            "-it",
+            "-e",
+            "HOME=/home/toolkata",
+            "-w",
+            "/home/toolkata",
+            "--user",
+            "sandbox",
+            containerId,
+            "/bin/bash",
+            "--init-file",
+            "/home/toolkata/.bashrc",
+            "-i",
           ]
 
       // Initialize suppression state for this session

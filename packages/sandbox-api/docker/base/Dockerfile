@@ -47,6 +47,10 @@ export TERM=xterm-256color
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
+# Disable PTY echo - Bun's PTY handles echo, Docker's PTY would double it
+# Only run if we're in an interactive terminal
+[[ $- == *i* ]] && stty -echo 2>/dev/null
+
 # Prompt: path (blue) + $ (green)
 export PS1='\[\033[34m\]\w\[\033[0m\] \[\033[32m\]$\[\033[0m\] '
 
