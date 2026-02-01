@@ -128,10 +128,16 @@ All 15 zio-cats MDX steps exist. Need review against Zionomicon book for ZIO 2.x
     - Step 9: `ZIOAppDefault`, `Runtime.setConfigProvider`, `Runtime.removeDefaultLoggers`, `ZIO.log*`, `ZIO.serviceWithZIO`, `ConfigProvider.envProvider` all correct
     - Step 10: Interop content marked `validate={false}` (external library) - appropriate
 
-- [ ] **Review steps 11-15 against Zionomicon**
+- [x] **Review steps 11-15 against Zionomicon**
   - Verify STM, concurrent data structures, config, HTTP, database content
   - Ensure modern ZIO ecosystem patterns
   - Files: `packages/web/content/comparisons/zio-cats/11-step.mdx` through `15-step.mdx`
+  - **Review completed 2026-02-01**: All ZIO 2.x APIs verified correct:
+    - Step 11 (STM): `TRef.make`, `STM.succeed`, `STM.retry`, `.commit` - correct
+    - Step 12 (Concurrent): `Ref.make`, `Queue.unbounded`, `Hub.bounded`, `Promise.make`, `Semaphore.make` - correct
+    - Step 13 (Config): `ZIO.config[AppConfig]`, `ConfigProvider.envProvider`, `deriveConfig` - correct
+    - Step 14 (HTTP): zio-http and http4s patterns accurate (all marked `validate={false}` appropriately)
+    - Step 15 (Database): ZIO JDBC and Doobie patterns correct (all marked `validate={false}` appropriately)
 
 ---
 
