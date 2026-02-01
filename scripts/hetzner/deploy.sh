@@ -33,6 +33,10 @@ error() { echo -e "${RED}✗${NC}  $1"; exit 1; }
 DOMAIN="${SANDBOX_DOMAIN:-sandbox.toolkata.com}"
 SANDBOX_API_KEY="${SANDBOX_API_KEY:-}"
 SANDBOX_ALLOWED_ORIGINS="${SANDBOX_ALLOWED_ORIGINS:-}"
+ADMIN_API_KEY="${ADMIN_API_KEY:-}"
+GITHUB_TOKEN="${GITHUB_TOKEN:-}"
+GITHUB_OWNER="${GITHUB_OWNER:-}"
+GITHUB_REPO="${GITHUB_REPO:-}"
 
 echo ""
 echo "============================================================"
@@ -44,15 +48,42 @@ info "Domain: $DOMAIN"
 echo ""
 
 # ============================================================
-# 0. REQUIRED SECURITY CONFIG
+# 0. VALIDATE CONFIGURATION
 # ============================================================
+info "Validating configuration..."
+
+ERRORS=0
+
 if [ -z "$SANDBOX_API_KEY" ]; then
-  error "SANDBOX_API_KEY is required. Set it in your environment before deploying."
+  echo -e "${RED}✗${NC}  SANDBOX_API_KEY is required"
+  ERRORS=$((ERRORS + 1))
+fi
+
+if [ -z "$ADMIN_API_KEY" ]; then
+  echo -e "${RED}✗${NC}  ADMIN_API_KEY is required"
+  ERRORS=$((ERRORS + 1))
 fi
 
 if [ -z "$SANDBOX_ALLOWED_ORIGINS" ]; then
-  error "SANDBOX_ALLOWED_ORIGINS is required. Example: https://toolkata.com,https://www.toolkata.com"
+  echo -e "${RED}✗${NC}  SANDBOX_ALLOWED_ORIGINS is required"
+  ERRORS=$((ERRORS + 1))
 fi
+
+if [ $ERRORS -gt 0 ]; then
+  echo ""
+  error "Missing $ERRORS required variable(s). Check scripts/hetzner/sandbox.env"
+fi
+
+# Warn about optional GitHub CMS config
+if [ -z "$GITHUB_TOKEN" ]; then
+  warn "GITHUB_TOKEN not set - CMS features will be disabled"
+elif [ -z "$GITHUB_OWNER" ] || [ -z "$GITHUB_REPO" ]; then
+  warn "GITHUB_OWNER or GITHUB_REPO not set - CMS features will be disabled"
+else
+  success "GitHub CMS: $GITHUB_OWNER/$GITHUB_REPO"
+fi
+
+echo ""
 
 # ============================================================
 # 1. SYNC CODE
@@ -135,19 +166,7 @@ success "User and log directory configured"
 # ============================================================
 info "Configuring hardened Caddy reverse proxy (with admin routes)..."
 
-# Generate admin API key if not provided
-if [ -z "${ADMIN_API_KEY:-}" ]; then
-    # Check if already exists on server
-    EXISTING_KEY=$(ssh "$SSH_USER@$SERVER_IP" "cat /etc/caddy/admin.env 2>/dev/null | grep ADMIN_API_KEY | cut -d= -f2" || echo "")
-    if [ -n "$EXISTING_KEY" ]; then
-        ADMIN_API_KEY="$EXISTING_KEY"
-        info "Using existing ADMIN_API_KEY from server"
-    else
-        ADMIN_API_KEY=$(openssl rand -hex 32)
-        warn "ADMIN_API_KEY not set, generated: $ADMIN_API_KEY"
-        warn "Save this key for Vercel environment variable!"
-    fi
-fi
+# ADMIN_API_KEY is now required and validated above
 
 # Get Vercel egress IPs for admin route protection
 VERCEL_IPS=$(curl -s https://api.vercel.com/v1/ips 2>/dev/null | jq -r '.blocks[]' 2>/dev/null || echo -e "76.76.21.0/24\n76.76.22.0/24")
@@ -324,17 +343,21 @@ echo -e "${GREEN}  ✓ DEPLOYMENT COMPLETE${NC}"
 echo "============================================================"
 echo ""
 echo "Server: $SERVER_IP"
-echo "Domain: $DOMAIN (configure DNS A record)"
+echo "Domain: $DOMAIN"
 echo ""
 echo "Commands:"
 echo "  ssh $SSH_USER@$SERVER_IP"
 echo "  journalctl -u sandbox-api -f    # View logs"
 echo "  systemctl restart sandbox-api   # Restart service"
 echo ""
-echo "Admin Configuration:"
-echo "  Add to Vercel environment (ADMIN_API_KEY):"
-echo "  $ADMIN_API_KEY"
+echo "Vercel Environment Variables (if not already set):"
+echo "  NEXT_PUBLIC_SANDBOX_API_KEY=$SANDBOX_API_KEY"
+echo "  ADMIN_API_KEY=$ADMIN_API_KEY"
+if [ -n "$GITHUB_TOKEN" ]; then
 echo ""
-echo "DNS Setup:"
+echo "GitHub CMS: Enabled ($GITHUB_OWNER/$GITHUB_REPO)"
+fi
+echo ""
+echo "DNS Setup (if not already done):"
 echo "  Add A record: $DOMAIN → $SERVER_IP"
 echo "============================================================"

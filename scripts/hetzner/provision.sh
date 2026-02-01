@@ -386,16 +386,49 @@ success "Software installed (including Redis for admin)"
 # ============================================================
 # 5. SAVE CONFIGURATION
 # ============================================================
+
+# Generate secure API keys
+GENERATED_SANDBOX_KEY=$(openssl rand -hex 32)
+GENERATED_ADMIN_KEY=$(openssl rand -hex 32)
+
 cat > "$SCRIPT_DIR/sandbox.env" << EOF
 # Hetzner Cloud sandbox infrastructure
 # Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
+# Server connection
 SERVER_NAME=$SERVER_NAME
 SERVER_IP=$SERVER_IP
 SERVER_TYPE=$SERVER_TYPE
 LOCATION=$LOCATION
 REGION=eu-central
 SSH_USER=root
+
+# =============================================================================
+# REQUIRED: Security Configuration
+# =============================================================================
+
+# API key for main sandbox endpoints (frontend → sandbox API)
+# Web frontend sends this as X-API-Key header
+# Also set in Vercel as NEXT_PUBLIC_SANDBOX_API_KEY
+SANDBOX_API_KEY=$GENERATED_SANDBOX_KEY
+
+# Admin API key for admin endpoints (Vercel CMS → sandbox API)
+# Used by Caddy for IP allowlist + header validation
+# Also set in Vercel as ADMIN_API_KEY
+ADMIN_API_KEY=$GENERATED_ADMIN_KEY
+
+# CORS allowed origins (comma-separated)
+SANDBOX_ALLOWED_ORIGINS=https://toolkata.com,https://www.toolkata.com
+
+# =============================================================================
+# OPTIONAL: GitHub CMS Configuration
+# =============================================================================
+# Required for CMS features. Get a PAT from: https://github.com/settings/tokens
+# Token needs 'repo' scope for read/write access to content repository
+
+GITHUB_TOKEN=
+GITHUB_OWNER=
+GITHUB_REPO=
 EOF
 
 success "Configuration saved to: $SCRIPT_DIR/sandbox.env"
@@ -418,8 +451,16 @@ echo ""
 echo "Connect via SSH:"
 echo "  ssh root@$SERVER_IP"
 echo ""
+echo -e "${YELLOW}IMPORTANT: Save these credentials and add to Vercel!${NC}"
+echo ""
+echo "  NEXT_PUBLIC_SANDBOX_API_KEY: $GENERATED_SANDBOX_KEY"
+echo "  ADMIN_API_KEY:               $GENERATED_ADMIN_KEY"
+echo ""
+echo "  (Also saved in sandbox.env)"
+echo ""
 echo "Next steps:"
 echo "  1. Add DNS A record: sandbox.toolkata.com → $SERVER_IP"
-echo "  2. Set environment: export SANDBOX_API_KEY=<generate-with-openssl>"
-echo "  3. Deploy: ./scripts/hetzner/deploy.sh"
+echo "  2. Add both API keys to Vercel environment variables"
+echo "  3. (Optional) Edit sandbox.env to add GITHUB_TOKEN for CMS features"
+echo "  4. Deploy: ./scripts/hetzner/deploy.sh"
 echo "============================================================"
