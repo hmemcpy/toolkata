@@ -42,7 +42,7 @@ export class LoggingService extends Context.Tag("LoggingService")<
 // Returns { service, message } where service is extracted or undefined
 const parseServicePrefix = (msg: string): { service?: string; message: string } => {
   const match = /^\[([^\]]+)\]\s*(.*)$/.exec(msg)
-  if (match && match[1] && match[2] !== undefined) {
+  if (match?.[1] && match[2] !== undefined) {
     return { service: match[1], message: match[2] }
   }
   return { message: msg }

@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react"
 import { Effect, pipe } from "effect"
 import { CMSClient, CMSClientLive } from "@/services/cms-client"
+import { getSandboxHttpUrl } from "@/lib/sandbox-url"
 import Link from "next/link"
 
 /**
@@ -82,15 +83,11 @@ export default function AdminDashboard() {
 
         // Check sandbox status
         try {
-          const sandboxUrl = process.env["NEXT_PUBLIC_SANDBOX_URL"]
-          if (sandboxUrl) {
-            const response = await fetch(`${sandboxUrl}/health`, {
-              signal: AbortSignal.timeout(5000),
-            })
-            setSandboxAvailable(response.ok)
-          } else {
-            setSandboxAvailable(false)
-          }
+          const sandboxUrl = getSandboxHttpUrl()
+          const response = await fetch(`${sandboxUrl}/health`, {
+            signal: AbortSignal.timeout(5000),
+          })
+          setSandboxAvailable(response.ok)
         } catch {
           setSandboxAvailable(false)
         }
