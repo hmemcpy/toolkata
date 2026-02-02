@@ -37,6 +37,7 @@ ADMIN_API_KEY="${ADMIN_API_KEY:-}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 GITHUB_OWNER="${GITHUB_OWNER:-}"
 GITHUB_REPO="${GITHUB_REPO:-}"
+AUTH_SECRET="${AUTH_SECRET:-}"
 
 echo ""
 echo "============================================================"
@@ -74,7 +75,13 @@ if [ $ERRORS -gt 0 ]; then
   error "Missing $ERRORS required variable(s). Check scripts/hetzner/sandbox.env"
 fi
 
-# Warn about optional GitHub CMS config
+# Warn about optional config
+if [ -z "$AUTH_SECRET" ]; then
+  warn "AUTH_SECRET not set - tiered rate limiting will be disabled (all users = anonymous)"
+else
+  success "AUTH_SECRET configured for tiered rate limits"
+fi
+
 if [ -z "$GITHUB_TOKEN" ]; then
   warn "GITHUB_TOKEN not set - CMS features will be disabled"
 elif [ -z "$GITHUB_OWNER" ] || [ -z "$GITHUB_REPO" ]; then
@@ -266,6 +273,7 @@ SANDBOX_GVISOR_RUNTIME=runsc
 SANDBOX_API_KEY=$SANDBOX_API_KEY
 SANDBOX_ALLOWED_ORIGINS=$SANDBOX_ALLOWED_ORIGINS
 ADMIN_API_KEY=$ADMIN_API_KEY
+AUTH_SECRET=$AUTH_SECRET
 REDIS_URL=redis://localhost:6379
 EOF
 

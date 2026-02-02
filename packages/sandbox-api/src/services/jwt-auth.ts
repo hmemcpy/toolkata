@@ -103,60 +103,64 @@ const make = Effect.gen(function* () {
       // NextAuth uses a derived key from AUTH_SECRET
       // The derivation uses HKDF with the secret as input
       const encoder = new TextEncoder()
-      const secretKey = await jose.hkdf(
-        "sha256",
-        encoder.encode(authSecret),
-        new Uint8Array(0),
-        encoder.encode("Auth.js Generated Encryption Key"),
-        32,
+      const secretKey = yield* Effect.promise(() =>
+        jose.hkdf(
+          "sha256",
+          encoder.encode(authSecret),
+          new Uint8Array(0),
+          encoder.encode("Auth.js Generated Encryption Key"),
+          32,
+        ),
       )
 
-      try {
-        // NextAuth v5 uses JWE (encrypted JWT) by default
-        const { payload } = await jose.jwtDecrypt(token, secretKey, {
-          clockTolerance: 60, // Allow 60 seconds clock skew
-        })
+      // Decrypt and verify the JWT
+      const result = yield* Effect.tryPromise({
+        try: async () => {
+          // NextAuth v5 uses JWE (encrypted JWT) by default
+          const { payload } = await jose.jwtDecrypt(token, secretKey, {
+            clockTolerance: 60, // Allow 60 seconds clock skew
+          })
 
-        // Extract user information from NextAuth JWT payload
-        const email = typeof payload["email"] === "string" ? payload["email"] : null
-        const isAdmin = payload["isAdmin"] === true
+          // Extract user information from NextAuth JWT payload
+          const email = typeof payload["email"] === "string" ? payload["email"] : null
+          const isAdmin = payload["isAdmin"] === true
 
-        // Determine tier based on JWT claims
-        let tier: TierName = "logged-in"
-        if (isAdmin) {
-          tier = "admin"
-        } else if (payload["isPremium"] === true) {
-          tier = "premium"
-        }
+          // Determine tier based on JWT claims
+          let tier: TierName = "logged-in"
+          if (isAdmin) {
+            tier = "admin"
+          } else if (payload["isPremium"] === true) {
+            tier = "premium"
+          }
 
-        // Use email as userId, or sub if email not available
-        const userId =
-          email ?? (typeof payload["sub"] === "string" ? payload["sub"] : "unknown-user")
+          // Use email as userId, or sub if email not available
+          const userId =
+            email ?? (typeof payload["sub"] === "string" ? payload["sub"] : "unknown-user")
 
-        return {
-          tier,
-          userId,
-          email,
-          isAdmin,
-        } satisfies JwtVerifyResult
-      } catch (error) {
-        // Handle specific JWT errors
-        if (error instanceof jose.errors.JWTExpired) {
-          return yield* Effect.fail(
-            new JwtAuthError({
+          return {
+            tier,
+            userId,
+            email,
+            isAdmin,
+          } satisfies JwtVerifyResult
+        },
+        catch: (error) => {
+          // Handle specific JWT errors
+          if (error instanceof jose.errors.JWTExpired) {
+            return new JwtAuthError({
               cause: "ExpiredToken",
               message: "Token has expired",
-            }),
-          )
-        }
+            })
+          }
 
-        return yield* Effect.fail(
-          new JwtAuthError({
+          return new JwtAuthError({
             cause: "VerificationFailed",
             message: error instanceof Error ? error.message : "Token verification failed",
-          }),
-        )
-      }
+          })
+        },
+      })
+
+      return result
     })
 
   /**
