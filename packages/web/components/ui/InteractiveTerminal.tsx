@@ -286,6 +286,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
     const ptyReadyRef = useRef(false) // Flag to track when PTY is ready to receive commands
     const terminalReadyRef = useRef(false) // Flag to track when xterm.js is ready
     const ptyReadyCalledRef = useRef(false) // Flag to track if we've called onPtyReady
+    const currentSessionIdRef = useRef<string | null>(null) // Track current session for cleanup
 
     const [state, setState] = useState<TerminalState>("IDLE")
     const [error, setError] = useState<string | null>(null)
@@ -353,6 +354,8 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
         clearTimeout(reconnectTimeoutRef.current)
         reconnectTimeoutRef.current = undefined
       }
+      // Clear session tracking
+      currentSessionIdRef.current = null
       // Notify parent that session is no longer available
       onSessionIdChange?.(null)
     }, [onSessionIdChange])
@@ -360,6 +363,30 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
     // Storage key for persisting session (includes environment for isolation)
     const environment = sandboxConfig?.environment ?? "bash"
     const sessionStorageKey = `sandbox-session-${toolPair}-${environment}`
+
+    // Destroy session on page unload to prevent orphaned sessions
+    useEffect(() => {
+      const handleBeforeUnload = () => {
+        const sessionId = currentSessionIdRef.current
+        if (!sessionId) return
+
+        // Use sendBeacon for reliable delivery during page unload
+        const httpUrl = getSandboxHttpUrl()
+        const url = `${httpUrl}/api/v1/sessions/${sessionId}/destroy`
+
+        // sendBeacon sends a POST request - server has a POST /destroy endpoint for this
+        // Include API key in the body since we can't set headers with sendBeacon
+        const body = JSON.stringify({ apiKey: SANDBOX_API_KEY })
+        navigator.sendBeacon(url, new Blob([body], { type: "application/json" }))
+
+        // Clear localStorage to prevent reuse of destroyed session
+        localStorage.removeItem(sessionStorageKey)
+        currentSessionIdRef.current = null
+      }
+
+      window.addEventListener("beforeunload", handleBeforeUnload)
+      return () => window.removeEventListener("beforeunload", handleBeforeUnload)
+    }, [sessionStorageKey])
 
     // Start the sandbox session
     const startSession = useCallback(async () => {
@@ -460,6 +487,9 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
             }),
           )
         }
+
+        // Track session ID for cleanup on page unload
+        currentSessionIdRef.current = sessionId
 
         // Use the original WebSocket URL (ws:// or wss://) for the connection
         const wsBase = SANDBOX_API_URL.replace(/^http:\/\//, "ws://").replace(

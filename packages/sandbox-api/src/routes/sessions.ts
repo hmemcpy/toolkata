@@ -1,7 +1,7 @@
 import { Data, Effect } from "effect"
 import { Hono } from "hono"
 import type { Env } from "hono"
-import { AuthError, extractJwtTokenFromHeaders, validateApiKey } from "../config.js"
+import { AuthError, extractJwtTokenFromHeaders, SandboxConfig, validateApiKey } from "../config.js"
 import type { EnvironmentServiceShape } from "../environments/index.js"
 import type { EnvironmentInfo } from "../environments/types.js"
 import { AuditEventType, type AuditServiceShape } from "../services/audit.js"
@@ -491,6 +491,47 @@ const createSessionRoutes = (
         const { statusCode, body } = errorToResponse(error)
         return c.json<ErrorResponse>(body, toStatusCode(statusCode))
       }
+
+      return c.json<{ success: true }>({ success: true })
+    } catch (error) {
+      const { statusCode, body } = errorToResponse(error)
+      return c.json<ErrorResponse>(body, toStatusCode(statusCode))
+    }
+  })
+
+  // POST /sessions/:id/destroy - Alternative destroy endpoint for sendBeacon
+  // sendBeacon only supports POST, so this allows cleanup on page unload
+  app.post("/:id/destroy", async (c) => {
+    const sessionId = c.req.param("id")
+    const clientIp = getClientIp(c)
+
+    // Validate API key (from body since sendBeacon can't set headers)
+    if (SandboxConfig.apiKey) {
+      try {
+        const body = await c.req.json<{ apiKey?: string }>()
+        if (body.apiKey !== SandboxConfig.apiKey) {
+          return c.json<ErrorResponse>({ error: "InvalidApiKey", message: "Unauthorized" }, 401)
+        }
+      } catch {
+        return c.json<ErrorResponse>({ error: "InvalidApiKey", message: "Unauthorized" }, 401)
+      }
+    }
+
+    try {
+      // Destroy session
+      const destroyResult = await Effect.runPromise(
+        Effect.either(sessionService.destroy(sessionId)),
+      )
+
+      // Log session destruction
+      if (destroyResult._tag === "Right") {
+        await Effect.runPromise(
+          auditService.logSessionDestroyed(sessionId, clientIp, "page_unload"),
+        )
+      }
+
+      // Remove from rate limit tracking regardless of destroy result
+      await Effect.runPromise(rateLimitService.removeSession(clientIp, sessionId))
 
       return c.json<{ success: true }>({ success: true })
     } catch (error) {
