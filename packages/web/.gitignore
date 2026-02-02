@@ -14,8 +14,8 @@ dist
 coverage
 *.lcov
 
-# logs
-logs
+# logs (root-level only, not app/admin/logs route)
+/logs
 _.log
 report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 

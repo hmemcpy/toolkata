@@ -125,6 +125,19 @@ export function AdminSidebar() {
                   <span>Metrics</span>
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/admin/logs"
+                  className={`flex items-center gap-2 px-3 py-2 text-sm font-mono transition-colors rounded focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] ${
+                    isActive("/admin/logs")
+                      ? "bg-[var(--color-accent-bg)] text-[var(--color-accent)]"
+                      : "text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]"
+                  }`}
+                >
+                  <span className="text-xs">[▤]</span>
+                  <span>Logs</span>
+                </Link>
+              </li>
             </ul>
           </div>
         </nav>
@@ -161,6 +174,7 @@ export function AdminMobileNav() {
     { href: "/admin/rate-limits", label: "Limits", icon: "[≈]" },
     { href: "/admin/containers", label: "Containers", icon: "[⌘]" },
     { href: "/admin/metrics", label: "Metrics", icon: "[≡]" },
+    { href: "/admin/logs", label: "Logs", icon: "[▤]" },
   ] as const
 
   const isActive = (href: string) => {

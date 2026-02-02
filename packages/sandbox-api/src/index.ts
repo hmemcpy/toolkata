@@ -19,6 +19,7 @@ import { EnvironmentService, EnvironmentServiceLive } from "./environments/index
 import type { EnvironmentServiceShape } from "./environments/index.js"
 import { createAdminCMSRoutes } from "./routes/admin-cms.js"
 import { createAdminContainersRoutes } from "./routes/admin-containers.js"
+import { createAdminLogsRoutes } from "./routes/admin-logs.js"
 import { createAdminMetricsRoutes } from "./routes/admin-metrics.js"
 import { createAdminRateLimitsRoutes } from "./routes/admin-rate-limits.js"
 import { createSessionRoutes } from "./routes/sessions.js"
@@ -58,6 +59,12 @@ import {
 import { SessionService, SessionServiceLive, type SessionServiceShape } from "./services/session.js"
 import { WebSocketService, WebSocketServiceLive } from "./services/websocket.js"
 import { LoggingService, LoggingServiceLive } from "./services/logging.js"
+import {
+  LogsService,
+  LogsServiceLive,
+  setGlobalLogsService,
+  type LogsServiceShape,
+} from "./services/logs.js"
 
 // Module-level reference to SessionService for health checks
 // This is set when the server starts and allows the health endpoint to access session stats
@@ -121,6 +128,7 @@ const createApp = (
   metricsService?: MetricsServiceShape,
   githubService?: GitHubServiceShape,
   contentValidationService?: ContentValidationServiceShape,
+  logsService?: LogsServiceShape,
 ) => {
   const app = new Hono<{ Bindings: Env }>()
 
@@ -207,10 +215,11 @@ const createApp = (
   if (adminApiKey && adminApiKey.length > 0) {
     const adminApp = new Hono<{ Bindings: Env }>()
 
-    // Admin authentication middleware - validates X-Admin-Key header
+    // Admin authentication middleware - validates X-Admin-Key header or query param
+    // Query param fallback needed for SSE (EventSource can't send custom headers)
     // This is defense in depth - Caddy should also enforce IP allowlist
     adminApp.use("/*", async (c, next) => {
-      const providedKey = c.req.header("X-Admin-Key")
+      const providedKey = c.req.header("X-Admin-Key") ?? c.req.query("key")
       if (providedKey !== adminApiKey) {
         return c.json({ error: "Forbidden", message: "Invalid or missing admin key" }, 403)
       }
@@ -226,6 +235,9 @@ const createApp = (
     }
     if (metricsService) {
       adminApp.route("/metrics", createAdminMetricsRoutes(metricsService))
+    }
+    if (logsService) {
+      adminApp.route("/logs", createAdminLogsRoutes(logsService))
     }
     // Mount CMS routes (only if GitHub is configured)
     if (githubService && isGitHubConfigured()) {
@@ -259,6 +271,7 @@ const make = Effect.gen(function* () {
   const githubService = yield* GitHubService
   const contentValidationService = yield* ContentValidationService
   const envService = yield* EnvironmentService
+  const logsService = yield* LogsService
 
   // Create circuit breaker (depends on session service for container count)
   const circuitBreakerService = makeCircuitBreakerService(sessionService)
@@ -277,11 +290,13 @@ const make = Effect.gen(function* () {
     metricsService,
     githubService,
     contentValidationService,
+    logsService,
   )
 
   const start = Effect.sync(() => {
-    // Store session service reference for health checks
+    // Store service references for health checks and log streaming
     sessionServiceForHealth = sessionService
+    setGlobalLogsService(logsService)
 
     // Create Node.js HTTP server for WebSocket upgrade support
     httpServer = createHttpServer(async (req: IncomingMessage, res: ServerResponse) => {
@@ -341,7 +356,14 @@ const make = Effect.gen(function* () {
       console.log(`Health check: http://${config.host}:${config.port}/health`)
       console.log(`API v1: http://${config.host}:${config.port}/api/v1`)
       console.log(`WebSocket: ws://${config.host}:${config.port}/api/v1/sessions/:id/ws`)
-      console.log(`CORS origin: ${config.frontendOrigin}`)
+      const allowedOriginsForLog = getAllowedOrigins()
+      if (allowedOriginsForLog.length === 0) {
+        console.log("CORS: allowing any origin (dev mode)")
+      } else {
+        for (const origin of allowedOriginsForLog) {
+          console.log(`CORS origin: ${origin}`)
+        }
+      }
       logRateLimitConfig()
       logCircuitBreakerConfig()
     })
@@ -352,8 +374,9 @@ const make = Effect.gen(function* () {
   })
 
   const stop = Effect.sync(() => {
-    // Clear session service reference
+    // Clear service references
     sessionServiceForHealth = null
+    setGlobalLogsService(null)
 
     // Close all WebSocket connections first
     Effect.runSync(closeAllConnections)
@@ -434,6 +457,7 @@ const RateLimitAdminServiceLiveWithDeps = RateLimitAdminServiceLive.pipe(
 // LoggingServiceLive is listed first to intercept console calls early.
 export const ServerLayer = Layer.mergeAll(
   LoggingServiceLive,
+  LogsServiceLive,
   ServerConfigLive,
   AuditServiceLive,
   EnvironmentServiceLive,

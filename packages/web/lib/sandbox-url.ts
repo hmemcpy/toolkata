@@ -6,9 +6,10 @@
 
 /**
  * Sandbox API base URL from environment.
- * Defaults to ws://localhost:3001 for local development.
+ * Defaults to ws://127.0.0.1:3001 for local development.
+ * Note: Using 127.0.0.1 instead of localhost to avoid IPv6 resolution issues.
  */
-export const SANDBOX_API_URL = process.env["NEXT_PUBLIC_SANDBOX_API_URL"] ?? "ws://localhost:3001"
+export const SANDBOX_API_URL = process.env["NEXT_PUBLIC_SANDBOX_API_URL"] || "ws://127.0.0.1:3001"
 
 /**
  * Sandbox API key from environment.

@@ -4,6 +4,7 @@ import { Context, Effect, Layer } from "effect"
 import pino from "pino"
 import type { Logger } from "pino"
 import { LoggingConfig, type LogLevel } from "../config/logging.js"
+import { getGlobalLogsService, levelToName, LOG_LEVELS, type LogEntryInput } from "./logs.js"
 
 /**
  * Logging Service
@@ -134,6 +135,22 @@ const interceptConsole = (logger: Logger): void => {
     { method: "trace", level: "trace" },
   ]
 
+  // Helper to push log entry to the logs service for SSE streaming
+  const pushToLogsService = (level: LogLevel, msg: string, context?: object): void => {
+    const logsService = getGlobalLogsService()
+    if (!logsService) return
+
+    const numericLevel = LOG_LEVELS[level]
+    const entry: LogEntryInput = {
+      level: numericLevel,
+      levelName: levelToName(numericLevel),
+      time: Date.now(),
+      msg,
+      ...context,
+    }
+    logsService.addEntry(entry)
+  }
+
   for (const { method, level } of methodMap) {
     console[method] = (...args: unknown[]) => {
       // Handle different argument patterns
@@ -147,7 +164,7 @@ const interceptConsole = (logger: Logger): void => {
         const restArgs = args.slice(1)
 
         // Build context object
-        let context: object = {}
+        let context: Record<string, unknown> = {}
         if (service) {
           context = { ...context, service }
         }
@@ -165,8 +182,10 @@ const interceptConsole = (logger: Logger): void => {
 
         if (Object.keys(context).length > 0) {
           logger[level](context, message)
+          pushToLogsService(level, message, context)
         } else {
           logger[level](message)
+          pushToLogsService(level, message)
         }
         return
       }
@@ -176,14 +195,18 @@ const interceptConsole = (logger: Logger): void => {
         const message = args.length > 1 && typeof args[1] === "string" ? args[1] : undefined
         if (message) {
           logger[level](firstArg, message)
+          pushToLogsService(level, message, firstArg as Record<string, unknown>)
         } else {
           logger[level](firstArg)
+          pushToLogsService(level, JSON.stringify(firstArg), firstArg as Record<string, unknown>)
         }
         return
       }
 
       // Fallback: stringify all args
-      logger[level](args.map((a) => String(a)).join(" "))
+      const msg = args.map((a) => String(a)).join(" ")
+      logger[level](msg)
+      pushToLogsService(level, msg)
     }
   }
 }
