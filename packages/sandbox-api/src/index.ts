@@ -8,13 +8,28 @@ import { Context, Data, Effect, Layer } from "effect"
 import { Hono } from "hono"
 import type { Env } from "hono"
 import { cors } from "hono/cors"
-import { createSessionRoutes } from "./routes/sessions.js"
-import { closeAllConnections, createWebSocketServer } from "./routes/websocket.js"
-import { createAdminRateLimitsRoutes } from "./routes/admin-rate-limits.js"
+import {
+  SandboxConfig,
+  getAllowedOrigins,
+  validateGvisorConfig,
+  validateSecurityConfig,
+} from "./config.js"
+import { isGitHubConfigured } from "./config/github.js"
+import { EnvironmentService, EnvironmentServiceLive } from "./environments/index.js"
+import type { EnvironmentServiceShape } from "./environments/index.js"
+import { createAdminCMSRoutes } from "./routes/admin-cms.js"
 import { createAdminContainersRoutes } from "./routes/admin-containers.js"
 import { createAdminMetricsRoutes } from "./routes/admin-metrics.js"
-import { createAdminCMSRoutes } from "./routes/admin-cms.js"
+import { createAdminRateLimitsRoutes } from "./routes/admin-rate-limits.js"
+import { createSessionRoutes } from "./routes/sessions.js"
+import { closeAllConnections, createWebSocketServer } from "./routes/websocket.js"
 import { AuditService, AuditServiceLive, type AuditServiceShape } from "./services/audit.js"
+import {
+  type CircuitBreakerServiceShape,
+  logCircuitBreakerConfig,
+  makeCircuitBreakerService,
+} from "./services/circuit-breaker.js"
+import { ContainerAdminService, ContainerAdminServiceLive } from "./services/container-admin.js"
 import {
   ContainerService,
   ContainerServiceLive,
@@ -22,45 +37,21 @@ import {
   checkGvisorAvailable,
 } from "./services/container.js"
 import {
+  ContentValidationService,
+  ContentValidationServiceLive,
+  type ContentValidationServiceShape,
+} from "./services/content-validation.js"
+import { GitHubService, GitHubServiceLive, type GitHubServiceShape } from "./services/github.js"
+import { MetricsService, MetricsServiceLive, type MetricsServiceShape } from "./services/metrics.js"
+import { RateLimitAdminService, RateLimitAdminServiceLive } from "./services/rate-limit-admin.js"
+import {
   RateLimitService,
   RateLimitServiceLive,
   type RateLimitServiceShape,
   logRateLimitConfig,
 } from "./services/rate-limit.js"
-import {
-  RateLimitAdminService,
-  RateLimitAdminServiceLive,
-} from "./services/rate-limit-admin.js"
-import {
-  ContainerAdminService,
-  ContainerAdminServiceLive,
-} from "./services/container-admin.js"
-import {
-  type CircuitBreakerServiceShape,
-  makeCircuitBreakerService,
-  logCircuitBreakerConfig,
-} from "./services/circuit-breaker.js"
-import { MetricsService, MetricsServiceLive, type MetricsServiceShape } from "./services/metrics.js"
 import { SessionService, SessionServiceLive, type SessionServiceShape } from "./services/session.js"
 import { WebSocketService, WebSocketServiceLive } from "./services/websocket.js"
-import {
-  GitHubService,
-  GitHubServiceLive,
-  type GitHubServiceShape,
-} from "./services/github.js"
-import {
-  ContentValidationService,
-  ContentValidationServiceLive,
-  type ContentValidationServiceShape,
-} from "./services/content-validation.js"
-import { isGitHubConfigured } from "./config/github.js"
-import { EnvironmentServiceLive, EnvironmentService } from "./environments/index.js"
-import {
-  getAllowedOrigins,
-  SandboxConfig,
-  validateGvisorConfig,
-  validateSecurityConfig,
-} from "./config.js"
 
 // Module-level reference to SessionService for health checks
 // This is set when the server starts and allows the health endpoint to access session stats
@@ -117,6 +108,7 @@ const createApp = (
   rateLimitService: RateLimitServiceShape,
   auditService: AuditServiceShape,
   circuitBreakerService: CircuitBreakerServiceShape,
+  envService: EnvironmentServiceShape,
   rateLimitAdminService?: import("./services/rate-limit-admin.js").RateLimitAdminServiceShape,
   containerAdminService?: import("./services/container-admin.js").ContainerAdminServiceShape,
   metricsService?: MetricsServiceShape,
@@ -193,7 +185,13 @@ const createApp = (
   // Mount session routes under /api/v1
   app.route(
     "/api/v1",
-    createSessionRoutes(sessionService, rateLimitService, auditService, circuitBreakerService),
+    createSessionRoutes(
+      sessionService,
+      rateLimitService,
+      auditService,
+      circuitBreakerService,
+      envService,
+    ),
   )
 
   // Mount admin routes under /admin (only if ADMIN_API_KEY is configured)
@@ -251,6 +249,7 @@ const make = Effect.gen(function* () {
   const metricsService = yield* MetricsService
   const githubService = yield* GitHubService
   const contentValidationService = yield* ContentValidationService
+  const envService = yield* EnvironmentService
 
   // Create circuit breaker (depends on session service for container count)
   const circuitBreakerService = makeCircuitBreakerService(sessionService)
@@ -262,6 +261,7 @@ const make = Effect.gen(function* () {
     rateLimitService,
     auditService,
     circuitBreakerService,
+    envService,
     rateLimitAdminService,
     containerAdminService,
     metricsService,

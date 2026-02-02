@@ -2,14 +2,14 @@ import { Data, Effect } from "effect"
 import { Hono } from "hono"
 import type { Env } from "hono"
 import { AuthError, validateApiKey } from "../config.js"
+import type { EnvironmentServiceShape } from "../environments/index.js"
+import type { EnvironmentInfo } from "../environments/types.js"
 import { AuditEventType, type AuditServiceShape } from "../services/audit.js"
 import type { CircuitBreakerServiceShape, CircuitStatus } from "../services/circuit-breaker.js"
 import type { RateLimitServiceShape } from "../services/rate-limit.js"
-import { RateLimitError } from "../services/rate-limit.js"
-import type { SessionServiceShape } from "../services/session.js"
+import { RATE_LIMITS_CONFIG, RateLimitError } from "../services/rate-limit.js"
+import type { CreateSessionOptions, SessionServiceShape } from "../services/session.js"
 import { SessionError } from "../services/session.js"
-import type { EnvironmentInfo } from "../environments/types.js"
-import { EnvironmentService } from "../environments/index.js"
 
 // Helper: Cast statusCode to the literal type Hono expects
 const toStatusCode = (code: number): 200 | 201 | 400 | 401 | 403 | 404 | 409 | 429 | 500 | 503 => {
@@ -183,12 +183,13 @@ const createSessionRoutes = (
   rateLimitService: RateLimitServiceShape,
   auditService: AuditServiceShape,
   circuitBreakerService: CircuitBreakerServiceShape,
+  environmentService: EnvironmentServiceShape,
 ) => {
   const app = new Hono<{ Bindings: Env }>()
 
   // GET /environments - List available environments (no auth required)
   app.get("/environments", async (c) => {
-    const environments = await Effect.runPromise(EnvironmentService.list)
+    const environments = await Effect.runPromise(environmentService.list)
     return c.json<EnvironmentsResponse>({ environments }, 200)
   })
 
@@ -298,7 +299,14 @@ const createSessionRoutes = (
       const limitResult = await Effect.runPromise(rateLimitService.checkSessionLimit(clientIp))
       if (!limitResult.allowed) {
         // Log rate limit hit
-        await Effect.runPromise(auditService.logRateLimitHit("session", clientIp, 10, "hour"))
+        await Effect.runPromise(
+          auditService.logRateLimitHit(
+            "session",
+            clientIp,
+            RATE_LIMITS_CONFIG.sessionsPerHour,
+            "hour",
+          ),
+        )
         const errorData = {
           cause: "TooManySessions" as const,
           message: "Rate limit exceeded. Please try again later.",
@@ -318,14 +326,14 @@ const createSessionRoutes = (
       }
 
       // Create the session
-      const session = await Effect.runPromise(
-        sessionService.create({
-          toolPair,
-          environment,
-          initCommands,
-          timeout,
-        }),
-      )
+      const options = {
+        toolPair,
+        ...(environment !== undefined && { environment }),
+        ...(initCommands !== undefined && { initCommands }),
+        ...(timeout !== undefined && { timeout }),
+      } satisfies CreateSessionOptions
+
+      const session = await Effect.runPromise(sessionService.create(options))
 
       // Log session creation
       await Effect.runPromise(
