@@ -180,27 +180,23 @@ export interface AuditServiceShape {
 // Service tag
 export class AuditService extends Context.Tag("AuditService")<AuditService, AuditServiceShape>() {}
 
-// Helper: Write audit log to console (structured JSON format)
+// Helper: Write audit log to console (structured format for Pino)
 const writeLog = (entry: AuditLogEntry): void => {
-  // Output structured JSON logs for easy parsing by log aggregators
-  // Format: [AUDIT] level=INFO event=session.created message="..." metadata={...}
-  const logLine = `[AUDIT] ${JSON.stringify({
-    level: entry.level,
+  // Output structured logs - Pino interceptor will format appropriately
+  const context = {
     event: entry.eventType,
-    message: entry.message,
     ...entry.metadata,
-    timestamp: entry.timestamp,
-  })}`
+  }
 
   switch (entry.level) {
     case "error":
-      console.error(logLine)
+      console.error(`[Audit] ${entry.message}`, context)
       break
     case "warn":
-      console.warn(logLine)
+      console.warn(`[Audit] ${entry.message}`, context)
       break
     default:
-      console.log(logLine)
+      console.log(`[Audit] ${entry.message}`, context)
   }
 }
 

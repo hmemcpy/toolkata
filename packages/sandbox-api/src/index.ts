@@ -57,6 +57,7 @@ import {
 } from "./services/rate-limit.js"
 import { SessionService, SessionServiceLive, type SessionServiceShape } from "./services/session.js"
 import { WebSocketService, WebSocketServiceLive } from "./services/websocket.js"
+import { LoggingService, LoggingServiceLive } from "./services/logging.js"
 
 // Module-level reference to SessionService for health checks
 // This is set when the server starts and allows the health endpoint to access session stats
@@ -430,7 +431,9 @@ const RateLimitAdminServiceLiveWithDeps = RateLimitAdminServiceLive.pipe(
 // Only include base layers that have NO unmet dependencies.
 // ContainerServiceLiveWithDeps already includes DockerClientLive and EnvironmentServiceLive,
 // but we include EnvironmentServiceLive here too since mainProgram uses it directly.
+// LoggingServiceLive is listed first to intercept console calls early.
 export const ServerLayer = Layer.mergeAll(
+  LoggingServiceLive,
   ServerConfigLive,
   AuditServiceLive,
   EnvironmentServiceLive,
@@ -448,6 +451,9 @@ export const ServerLayer = Layer.mergeAll(
 
 // Main function for Bun runtime
 const mainProgram = Effect.gen(function* () {
+  // Initialize logging service first (intercepts console calls)
+  const loggingService = yield* LoggingService
+
   // Validate gVisor configuration before starting server
   const gvisorValidation = validateGvisorConfig()
   if (!gvisorValidation.valid) {
@@ -490,6 +496,12 @@ const mainProgram = Effect.gen(function* () {
   const orphanedCount = yield* containerService.cleanupOrphaned
   if (orphanedCount > 0) {
     console.log(`[Startup] Cleaned up ${orphanedCount} orphaned container(s)`)
+  }
+
+  // Clean up old log files beyond retention period
+  const cleanedLogs = yield* loggingService.cleanupOldLogs
+  if (cleanedLogs > 0) {
+    console.log(`[Startup] Cleaned up ${cleanedLogs} old log file(s)`)
   }
 
   // Start the session cleanup scheduler
