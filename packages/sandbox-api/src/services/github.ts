@@ -362,45 +362,51 @@ const make = Effect.gen(function* () {
       yield* requireGitHubConfig()
 
       const ref = branch ?? defaultBranch
-      const targetPath = path ?? ""
 
-      const response = yield* Effect.tryPromise({
+      // Get the commit SHA for the branch
+      const branchResponse = yield* Effect.tryPromise({
         try: () =>
-          octokit.repos.getContent({
+          octokit.repos.getBranch({
             owner,
             repo,
-            path: targetPath,
-            ref,
+            branch: ref,
           }),
         catch: mapOctokitError,
       })
 
-      const data = response.data
+      const treeSha = branchResponse.data.commit.commit.tree.sha
 
-      // GitHub returns array for directories, single object for files
-      if (!Array.isArray(data)) {
-        // Single file - return as array with one item
-        return [
-          {
-            path: data.path,
-            name: data.name,
-            type: data.type as "file" | "dir",
-            size: data.size ?? 0,
-            sha: data.sha,
-            url: data.html_url ?? "",
-          },
-        ] as const
-      }
+      // Use Git Trees API with recursive mode to get all files
+      const treeResponse = yield* Effect.tryPromise({
+        try: () =>
+          octokit.git.getTree({
+            owner,
+            repo,
+            tree_sha: treeSha,
+            recursive: "true",
+          }),
+        catch: mapOctokitError,
+      })
 
-      // Directory listing
-      return data.map((item) => ({
-        path: item.path,
-        name: item.name,
-        type: item.type as "file" | "dir",
-        size: item.size ?? 0,
-        sha: item.sha,
-        url: item.html_url ?? "",
-      })) as readonly ContentFile[]
+      const items = treeResponse.data.tree
+
+      // Filter by path prefix if specified
+      const targetPath = path ?? ""
+      const filteredItems = targetPath
+        ? items.filter((item) => item.path?.startsWith(targetPath))
+        : items
+
+      // Map to ContentFile format
+      return filteredItems
+        .filter((item) => item.path && item.sha)
+        .map((item) => ({
+          path: item.path as string,
+          name: (item.path as string).split("/").pop() ?? "",
+          type: (item.type === "tree" ? "dir" : "file") as "file" | "dir",
+          size: item.size ?? 0,
+          sha: item.sha as string,
+          url: "",
+        })) as readonly ContentFile[]
     })
 
   const getFile = (

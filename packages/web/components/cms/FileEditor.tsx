@@ -332,43 +332,52 @@ export function FileEditor(props: FileEditorProps) {
         role="tablist"
         aria-label="Open files"
       >
-        {files.map((file, index) => (
-          <button
-            key={file.path}
-            type="button"
-            role="tab"
-            aria-selected={index === activeFileIndex}
-            aria-controls={`editor-panel-${index}`}
-            onClick={() => onTabSelect(index)}
-            onMouseDown={(e) => handleTabMouseDown(e, index)}
-            className={`group flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono rounded-t transition-colors whitespace-nowrap ${
-              index === activeFileIndex
-                ? "bg-[var(--color-surface)] text-[var(--color-text)] border-t border-l border-r border-[var(--color-border)]"
-                : "text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]"
-            }`}
-          >
-            <span className="text-sm">{getFileIcon(file.path)}</span>
-            <span className="max-w-[120px] truncate">{getFileName(file.path)}</span>
-            {file.dirty && (
-              <span
-                className="w-2 h-2 rounded-full bg-[var(--color-accent)]"
-                aria-label="Unsaved changes"
-                title="Unsaved changes"
-              />
-            )}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation()
-                onTabClose(index)
+        {files.map((file, index) => {
+          const isActive = index === activeFileIndex
+          return (
+            <div
+              key={file.path}
+              role="tab"
+              aria-selected={isActive}
+              aria-controls={`editor-panel-${index}`}
+              tabIndex={0}
+              onClick={() => onTabSelect(index)}
+              onMouseDown={(e) => handleTabMouseDown(e, index)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault()
+                  onTabSelect(index)
+                }
               }}
-              className="ml-1 p-0.5 rounded text-[var(--color-text-dim)] hover:text-[var(--color-error)] hover:bg-[var(--color-surface-hover)] opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-              aria-label={`Close ${getFileName(file.path)}`}
+              className={`group flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono rounded-t transition-colors whitespace-nowrap cursor-pointer ${
+                isActive
+                  ? "bg-[var(--color-surface)] text-[var(--color-text)] border-t border-l border-r border-[var(--color-border)]"
+                  : "text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]"
+              }`}
             >
-              ✕
-            </button>
-          </button>
-        ))}
+              <span className="text-sm">{getFileIcon(file.path)}</span>
+              <span className="max-w-[120px] truncate">{getFileName(file.path)}</span>
+              {file.dirty && (
+                <span
+                  className="w-2 h-2 rounded-full bg-[var(--color-accent)]"
+                  aria-label="Unsaved changes"
+                  title="Unsaved changes"
+                />
+              )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onTabClose(index)
+                }}
+                className="ml-1 p-0.5 rounded text-[var(--color-text-dim)] hover:text-[var(--color-error)] hover:bg-[var(--color-surface-hover)] opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                aria-label={`Close ${getFileName(file.path)}`}
+              >
+                ✕
+              </button>
+            </div>
+          )
+        })}
         {files.length >= MAX_TABS && (
           <span className="px-2 text-xs text-[var(--color-text-dim)] font-mono">
             ({MAX_TABS} max)

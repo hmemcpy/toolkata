@@ -22,20 +22,7 @@ import { signOut } from "../../lib/auth"
 export function AdminSidebar() {
   const pathname = usePathname()
 
-  const navItems = [
-    { href: "/admin", label: "Dashboard", icon: "[▓]" },
-    { href: "/admin/cms", label: "Content", icon: "[✎]" },
-    { href: "/admin/rate-limits", label: "Rate Limits", icon: "[≈]" },
-    { href: "/admin/containers", label: "Containers", icon: "[⌘]" },
-    { href: "/admin/metrics", label: "Metrics", icon: "[≡]" },
-  ] as const
-
-  const isActive = (href: string) => {
-    if (href === "/admin") {
-      return pathname === "/admin"
-    }
-    return pathname.startsWith(href)
-  }
+  const isActive = (href: string) => pathname.startsWith(href)
 
   return (
     <aside className="w-64 border-r border-[var(--color-border)] bg-[var(--color-surface)] hidden md:block">
@@ -55,24 +42,91 @@ export function AdminSidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto p-4">
-          <ul className="space-y-1">
-            {navItems.map((item) => (
-              <li key={item.href}>
+        <nav className="flex-1 overflow-y-auto p-4 space-y-6">
+          {/* Dashboard */}
+          <div>
+            <Link
+              href="/admin"
+              className={`flex items-center gap-2 px-3 py-2 text-sm font-mono transition-colors rounded focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] ${
+                pathname === "/admin"
+                  ? "bg-[var(--color-accent-bg)] text-[var(--color-accent)]"
+                  : "text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]"
+              }`}
+            >
+              <span className="text-xs">[▓]</span>
+              <span>Dashboard</span>
+            </Link>
+          </div>
+
+          {/* Content section */}
+          <div>
+            <h3 className="px-3 mb-2 text-xs font-mono text-[var(--color-text-dim)] uppercase tracking-wider">
+              Content
+            </h3>
+            <ul className="space-y-1">
+              <li>
                 <Link
-                  href={item.href}
+                  href="/admin/cms"
                   className={`flex items-center gap-2 px-3 py-2 text-sm font-mono transition-colors rounded focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] ${
-                    isActive(item.href)
+                    isActive("/admin/cms")
                       ? "bg-[var(--color-accent-bg)] text-[var(--color-accent)]"
                       : "text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]"
                   }`}
                 >
-                  <span className="text-xs">{item.icon}</span>
-                  <span>{item.label}</span>
+                  <span className="text-xs">[✎]</span>
+                  <span>Editor</span>
                 </Link>
               </li>
-            ))}
-          </ul>
+            </ul>
+          </div>
+
+          {/* Sandbox section */}
+          <div>
+            <h3 className="px-3 mb-2 text-xs font-mono text-[var(--color-text-dim)] uppercase tracking-wider">
+              Sandbox
+            </h3>
+            <ul className="space-y-1">
+              <li>
+                <Link
+                  href="/admin/rate-limits"
+                  className={`flex items-center gap-2 px-3 py-2 text-sm font-mono transition-colors rounded focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] ${
+                    isActive("/admin/rate-limits")
+                      ? "bg-[var(--color-accent-bg)] text-[var(--color-accent)]"
+                      : "text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]"
+                  }`}
+                >
+                  <span className="text-xs">[≈]</span>
+                  <span>Rate Limits</span>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/admin/containers"
+                  className={`flex items-center gap-2 px-3 py-2 text-sm font-mono transition-colors rounded focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] ${
+                    isActive("/admin/containers")
+                      ? "bg-[var(--color-accent-bg)] text-[var(--color-accent)]"
+                      : "text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]"
+                  }`}
+                >
+                  <span className="text-xs">[⌘]</span>
+                  <span>Containers</span>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/admin/metrics"
+                  className={`flex items-center gap-2 px-3 py-2 text-sm font-mono transition-colors rounded focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] ${
+                    isActive("/admin/metrics")
+                      ? "bg-[var(--color-accent-bg)] text-[var(--color-accent)]"
+                      : "text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]"
+                  }`}
+                >
+                  <span className="text-xs">[≡]</span>
+                  <span>Metrics</span>
+                </Link>
+              </li>
+            </ul>
+          </div>
         </nav>
 
         {/* User actions */}

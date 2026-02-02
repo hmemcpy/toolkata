@@ -344,7 +344,7 @@ function TreeNodeItem(props: {
               aria-label="New file name"
             />
           ) : (
-            <span className="flex-1 truncate">{node.name}</span>
+            <span className="flex-1 truncate text-left">{node.name}</span>
           )}
         </button>
         {!isDir && !isRenaming && onFileRename && (

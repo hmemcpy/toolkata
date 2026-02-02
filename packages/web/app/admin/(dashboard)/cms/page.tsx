@@ -14,6 +14,8 @@ import {
   PRDialog,
   CreateFileDialog,
 } from "@/components/cms"
+import { CodeBlock } from "@/components/ui/CodeBlock"
+import { InteractiveTerminal } from "@/components/ui/InteractiveTerminal"
 import type { FileEntry, FileBrowserFilters, EditorFile } from "@/components/cms"
 import {
   CMSClient,
@@ -59,6 +61,9 @@ interface CMSState {
   // Create file state
   readonly showCreateDialog: boolean
 
+  // Sandbox state
+  readonly showSandbox: boolean
+
   // CMS availability
   readonly cmsAvailable: boolean
   readonly cmsError: string | null
@@ -93,6 +98,8 @@ const initialState: CMSState = {
   prCreating: false,
 
   showCreateDialog: false,
+
+  showSandbox: false,
 
   cmsAvailable: false,
   cmsError: null,
@@ -699,6 +706,19 @@ export default function CMSPage() {
           [+] New File
         </button>
 
+        {/* Sandbox toggle button */}
+        <button
+          type="button"
+          onClick={() => setState((prev) => ({ ...prev, showSandbox: !prev.showSandbox }))}
+          className={`px-3 py-1.5 text-xs font-mono border rounded transition-colors ${
+            state.showSandbox
+              ? "border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent-bg)]"
+              : "border-[var(--color-border)] text-[var(--color-text)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+          }`}
+        >
+          [{state.showSandbox ? "×" : "_"}] Sandbox
+        </button>
+
         {/* Create PR button */}
         {state.currentBranch !== state.defaultBranch && (
           <button
@@ -762,16 +782,55 @@ export default function CMSPage() {
               isValidating={state.isValidating}
             />
           )}
+
+          {/* Sandbox panel (toggled via header button) */}
+          {state.showSandbox && (
+            <div className="border-t border-[var(--color-border)] h-64 bg-[var(--color-bg)]">
+              <InteractiveTerminal
+                key="cms-sandbox"
+                toolPair={getToolPairFromPath(state.selectedFilePath ?? "")}
+                stepId="cms-editor"
+                sandboxConfig={{
+                  enabled: true,
+                  environment: "bash",
+                  timeout: 300,
+                  init: [],
+                }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Preview (right column - hidden on small screens) */}
         <div className="hidden lg:block w-[400px] xl:w-[500px] flex-shrink-0 border-l border-[var(--color-border)]">
-          <MDXPreview
-            content={activeFileContent}
-            debounceDelay={500}
-            onScroll={handlePreviewScroll}
-            {...(previewScrollPercent !== undefined ? { scrollPosition: previewScrollPercent } : {})}
-          />
+          {(() => {
+            const activeFile = state.openFiles[state.activeFileIndex]
+            const fileExt = activeFile?.path.split(".").pop()?.toLowerCase()
+
+            // For YAML files, show raw code preview
+            if (fileExt === "yml" || fileExt === "yaml") {
+              return (
+                <div className="flex flex-col h-full bg-[var(--color-surface)]">
+                  <div className="flex items-center gap-3 px-3 py-2 border-b border-[var(--color-border)] bg-[var(--color-bg)]">
+                    <span className="text-xs font-mono text-[var(--color-text-muted)]">Preview (YAML)</span>
+                  </div>
+                  <div className="flex-1 overflow-auto px-4 py-6">
+                    <CodeBlock code={activeFileContent} language="yaml" />
+                  </div>
+                </div>
+              )
+            }
+
+            // For MDX files, use MDX preview
+            return (
+              <MDXPreview
+                content={activeFileContent}
+                debounceDelay={500}
+                onScroll={handlePreviewScroll}
+                {...(previewScrollPercent !== undefined ? { scrollPosition: previewScrollPercent } : {})}
+              />
+            )
+          })()}
         </div>
       </div>
 

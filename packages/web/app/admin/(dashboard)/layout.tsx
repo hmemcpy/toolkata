@@ -23,7 +23,7 @@ export default function AdminLayout(props: {
 
       {/* Main content area */}
       <main className="flex-1 p-6 md:p-8 pb-20 md:pb-8">
-        <div className="mx-auto max-w-7xl">{props.children}</div>
+        {props.children}
       </main>
 
       {/* Mobile navigation */}
