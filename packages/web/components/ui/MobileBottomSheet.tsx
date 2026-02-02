@@ -145,6 +145,7 @@ export function MobileBottomSheet({ toolPair }: MobileBottomSheetProps): ReactNo
     onTerminalStateChange,
     onTerminalTimeChange,
     sandboxConfig,
+    authToken,
   } = useTerminalContext()
   const sheetRef = useRef<HTMLDivElement>(null)
   const handleRef = useRef<HTMLDivElement>(null)
@@ -282,6 +283,8 @@ export function MobileBottomSheet({ toolPair }: MobileBottomSheetProps): ReactNo
               ref={terminalRef}
               toolPair={toolPair}
               stepId="mobile"
+              {...(sandboxConfig !== undefined ? { sandboxConfig } : {})}
+              {...(authToken !== null ? { authToken } : {})}
               onStateChange={onTerminalStateChange}
               onSessionTimeChange={onTerminalTimeChange}
             />

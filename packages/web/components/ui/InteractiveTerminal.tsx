@@ -161,6 +161,12 @@ export interface InteractiveTerminalProps {
   readonly sandboxConfig?: SandboxConfig
 
   /**
+   * Optional JWT auth token for tiered rate limiting.
+   * If provided, included in API requests for higher rate limits.
+   */
+  readonly authToken?: string
+
+  /**
    * Optional callback when user clicks a suggested command.
    */
   readonly onCommandInsert?: (command: string) => void
@@ -256,6 +262,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
       toolPair,
       stepId: _stepId,
       sandboxConfig,
+      authToken,
       onCommandInsert,
       onStateChange,
       onErrorChange,
@@ -408,6 +415,10 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
           if (SANDBOX_API_KEY) {
             headers["X-API-Key"] = SANDBOX_API_KEY
           }
+          // Include JWT auth token for tiered rate limiting
+          if (authToken) {
+            headers["Authorization"] = `Bearer ${authToken}`
+          }
 
           // Build request body with sandbox config
           const requestBody: Record<string, unknown> = { toolPair }
@@ -469,10 +480,14 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
           rows = Math.max(10, Math.floor(availableHeight / 17))
         }
 
-        // Build WebSocket URL with size parameters
+        // Build WebSocket URL with size parameters and auth token
         const params = new URLSearchParams()
         if (SANDBOX_API_KEY) {
           params.set("api_key", SANDBOX_API_KEY)
+        }
+        // Include JWT auth token for tiered rate limiting
+        if (authToken) {
+          params.set("token", authToken)
         }
         params.set("cols", String(cols))
         params.set("rows", String(rows))
@@ -586,7 +601,7 @@ export const InteractiveTerminal = forwardRef<InteractiveTerminalRef, Interactiv
         setState("ERROR")
         setError(err instanceof Error ? err.message : "Failed to connect to sandbox")
       }
-    }, [onPtyReady, onInitComplete, onSessionIdChange, toolPair, sandboxConfig, sessionStorageKey])
+    }, [onPtyReady, onInitComplete, onSessionIdChange, toolPair, sandboxConfig, sessionStorageKey, authToken])
 
     // Reset the terminal (creates fresh session if expired/error, otherwise reconnects)
     const reset = useCallback(() => {

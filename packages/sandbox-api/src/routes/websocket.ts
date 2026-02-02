@@ -2,15 +2,18 @@ import type { Server as HttpServer } from "node:http"
 import { Data, Effect } from "effect"
 import { WebSocketServer } from "ws"
 import {
+  extractJwtTokenFromUpgrade,
   validateApiKey,
   validateMessageSize,
   validateOrigin,
   validateTerminalInput,
 } from "../config.js"
 import { getBanner } from "../config/banners.js"
+import type { TierName } from "../config/tiers.js"
 import type { AuditServiceShape } from "../services/audit.js"
-import type { SessionServiceShape } from "../services/session.js"
+import type { JwtAuthServiceShape, JwtVerifyResult } from "../services/jwt-auth.js"
 import type { RateLimitServiceShape } from "../services/rate-limit.js"
+import type { SessionServiceShape } from "../services/session.js"
 import { type WebSocketServiceShape, parseMessage } from "../services/websocket.js"
 
 // Error types for WebSocket route
@@ -28,6 +31,19 @@ interface ActiveConnection {
 }
 
 const connections = new Map<string, ActiveConnection>()
+
+/**
+ * Get tracking key and tier from JWT auth result or IP address.
+ */
+const getTrackingInfo = (
+  authResult: JwtVerifyResult,
+  clientIp: string,
+): { trackingKey: string; tier: TierName } => {
+  if (authResult.tier !== "anonymous") {
+    return { trackingKey: authResult.userId, tier: authResult.tier }
+  }
+  return { trackingKey: clientIp, tier: "anonymous" }
+}
 
 // Helper: Get client IP from request headers (trust proxy only when local)
 const getClientIp = (request: import("http").IncomingMessage): string => {
@@ -71,6 +87,7 @@ export const createWebSocketServer = (
   webSocketService: WebSocketServiceShape,
   rateLimitService: RateLimitServiceShape, // V-007: Add rate limit service
   auditService: AuditServiceShape, // V-019: Add audit service
+  jwtAuthService: JwtAuthServiceShape, // JWT auth for tiered rate limits
 ) => {
   const wss = new WebSocketServer({ noServer: true })
 
@@ -104,33 +121,44 @@ export const createWebSocketServer = (
       return
     }
 
-    // Validate API key before upgrading
-    // Check header first, then query parameter (for browser WebSocket fallback)
-    let apiKey = request.headers["x-api-key"] as string | null
-    if (!apiKey || apiKey === "") {
-      apiKey = searchParams.get("api_key")
-    }
-    const authResult = await Effect.runPromise(Effect.either(validateApiKey(apiKey)))
-    if (authResult._tag === "Left") {
-      const authError = authResult.left
-      // Log auth failure
-      await Effect.runPromise(auditService.logAuthFailure(authError.cause, clientIp, sessionId))
-      const statusCode = authError.cause === "MissingApiKey" ? 401 : 401
-      socket.write(`HTTP/1.1 ${statusCode} Unauthorized\r\n\r\n${authError.message}\r\n`)
-      socket.destroy()
-      return
+    // Step 1: Try JWT authentication first
+    // For WebSockets, browsers can't set custom headers, so token comes via query param
+    const jwtToken = extractJwtTokenFromUpgrade(request, searchParams)
+    const jwtAuthResult = await Effect.runPromise(jwtAuthService.getTierFromToken(jwtToken))
+
+    // Step 2: If no valid JWT, fall back to API key validation for anonymous access
+    if (jwtAuthResult.tier === "anonymous") {
+      let apiKey = request.headers["x-api-key"] as string | null
+      if (!apiKey || apiKey === "") {
+        apiKey = searchParams.get("api_key")
+      }
+      const apiKeyResult = await Effect.runPromise(Effect.either(validateApiKey(apiKey)))
+      if (apiKeyResult._tag === "Left") {
+        const authError = apiKeyResult.left
+        // Log auth failure
+        await Effect.runPromise(auditService.logAuthFailure(authError.cause, clientIp, sessionId))
+        const statusCode = authError.cause === "MissingApiKey" ? 401 : 401
+        socket.write(`HTTP/1.1 ${statusCode} Unauthorized\r\n\r\n${authError.message}\r\n`)
+        socket.destroy()
+        return
+      }
     }
 
-    // V-007: Check WebSocket connection limit per IP
+    // Get tracking info based on auth result
+    const { trackingKey, tier } = getTrackingInfo(jwtAuthResult, clientIp)
+
+    // Check WebSocket connection limit per user/IP with tier
     const wsLimitResult = await Effect.runPromise(
-      Effect.either(rateLimitService.checkWebSocketLimit(clientIp)),
+      Effect.either(rateLimitService.checkWebSocketLimit(trackingKey, tier)),
     )
     if (wsLimitResult._tag === "Left") {
       const wsLimitError = wsLimitResult.left
       // Log rate limit hit
-      await Effect.runPromise(auditService.logRateLimitHit("websocket", clientIp, 3, "concurrent"))
+      await Effect.runPromise(
+        auditService.logRateLimitHit("websocket", trackingKey, 3, "concurrent"),
+      )
       console.error(
-        `[WebSocket] Connection limit exceeded for ${clientIp}: ${wsLimitError.message}`,
+        `[WebSocket] Connection limit exceeded for ${trackingKey} (tier: ${tier}): ${wsLimitError.message}`,
       )
       socket.write("HTTP/1.1 429 Too Many Requests\r\n\r\nToo many concurrent connections\r\n")
       socket.destroy()
@@ -138,8 +166,10 @@ export const createWebSocketServer = (
     }
     if (!wsLimitResult.right.allowed) {
       // Log rate limit hit
-      await Effect.runPromise(auditService.logRateLimitHit("websocket", clientIp, 3, "concurrent"))
-      console.error(`[WebSocket] Connection limit exceeded for ${clientIp}`)
+      await Effect.runPromise(
+        auditService.logRateLimitHit("websocket", trackingKey, 3, "concurrent"),
+      )
+      console.error(`[WebSocket] Connection limit exceeded for ${trackingKey} (tier: ${tier})`)
       socket.write("HTTP/1.1 429 Too Many Requests\r\n\r\nToo many concurrent connections\r\n")
       socket.destroy()
       return
@@ -158,11 +188,11 @@ export const createWebSocketServer = (
     // Upgrade the connection to WebSocket
     wss.handleUpgrade(request, socket, head, (ws) => {
       // V-007: Generate unique connection ID for tracking
-      const connectionId = `${clientIp}-${sessionId}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+      const connectionId = `${trackingKey}-${sessionId}-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 
-      // Register WebSocket connection
+      // Register WebSocket connection with tier
       Effect.runPromise(
-        rateLimitService.registerWebSocket(clientIp, connectionId).pipe(
+        rateLimitService.registerWebSocket(trackingKey, connectionId, tier).pipe(
           Effect.catchAll((error) => {
             console.error("[WebSocket] Failed to register connection:", error)
             return Effect.void
@@ -170,9 +200,10 @@ export const createWebSocketServer = (
         ),
       )
 
-      // Store connection ID on the WebSocket for cleanup
+      // Store connection ID and tracking info on the WebSocket for cleanup
       ;(ws as unknown as Record<string, unknown>)["__connectionId"] = connectionId
-      ;(ws as unknown as Record<string, unknown>)["__clientIp"] = clientIp
+      ;(ws as unknown as Record<string, unknown>)["__trackingKey"] = trackingKey
+      ;(ws as unknown as Record<string, unknown>)["__tier"] = tier
 
       wss.emit(
         "connection",
@@ -180,7 +211,8 @@ export const createWebSocketServer = (
         request,
         sessionId,
         connectionId,
-        clientIp,
+        trackingKey,
+        tier,
         initialCols,
         initialRows,
         rateLimitService,
@@ -197,14 +229,15 @@ export const createWebSocketServer = (
       _request: import("http").IncomingMessage,
       sessionId: string,
       connectionId: string, // V-007: Connection ID for rate limit tracking
-      clientIp: string, // V-007: Client IP for rate limit tracking
+      trackingKey: string, // User ID or IP for rate limit tracking
+      tier: TierName, // User tier for rate limits
       initialCols: number, // Initial terminal columns from client
       initialRows: number, // Initial terminal rows from client
       rateLimitService: RateLimitServiceShape, // V-007: Rate limit service for cleanup
       auditService: AuditServiceShape, // V-019: Audit service for logging
     ) => {
       console.log(
-        `[WebSocket] Connection attempt for session: ${sessionId} (${initialCols}x${initialRows})`,
+        `[WebSocket] Connection attempt for session: ${sessionId} (${initialCols}x${initialRows}, tier: ${tier})`,
       )
 
       // Run the connection handler using passed-in services
@@ -234,7 +267,7 @@ export const createWebSocketServer = (
         const closeEffect = Effect.all([
           webSocketService.close(connection),
           sessionService.updateActivity(sessionId),
-          rateLimitService.unregisterWebSocket(clientIp, connectionId), // V-007: Cleanup rate limit tracking
+          rateLimitService.unregisterWebSocket(trackingKey, connectionId), // V-007: Cleanup rate limit tracking
         ]).pipe(
           Effect.asVoid,
           Effect.catchAll(() => Effect.void),
@@ -246,7 +279,7 @@ export const createWebSocketServer = (
           closeEffect,
         })
 
-        console.log(`[WebSocket] Connected for session: ${sessionId}`)
+        console.log(`[WebSocket] Connected for session: ${sessionId} (tier: ${tier})`)
         // Log WebSocket connection success (fire and forget - don't block connection setup)
         Effect.runPromise(
           auditService.log(
@@ -255,7 +288,8 @@ export const createWebSocketServer = (
             `WebSocket connected for session: ${sessionId}`,
             {
               sessionId,
-              clientIp,
+              trackingKey,
+              tier,
               connectionId,
             },
           ),
@@ -306,7 +340,7 @@ export const createWebSocketServer = (
               await Effect.runPromise(
                 auditService.logInputInvalid(
                   sessionId,
-                  clientIp,
+                  trackingKey,
                   sanitizeError.cause,
                   message.data,
                 ),
@@ -378,7 +412,8 @@ export const createWebSocketServer = (
               `WebSocket disconnected for session: ${sessionId}`,
               {
                 sessionId,
-                clientIp,
+                trackingKey,
+                tier,
               },
             ),
           )
@@ -414,7 +449,8 @@ export const createWebSocketServer = (
         await Effect.runPromise(
           auditService.logError("websocket", `WebSocket connection failed: ${error.message}`, {
             sessionId,
-            clientIp,
+            trackingKey,
+            tier,
             error: error.cause,
           }),
         )

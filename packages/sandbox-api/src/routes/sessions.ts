@@ -1,13 +1,14 @@
 import { Data, Effect } from "effect"
 import { Hono } from "hono"
 import type { Env } from "hono"
-import { AuthError, validateApiKey } from "../config.js"
+import { AuthError, extractJwtTokenFromHeaders, validateApiKey } from "../config.js"
 import type { EnvironmentServiceShape } from "../environments/index.js"
 import type { EnvironmentInfo } from "../environments/types.js"
 import { AuditEventType, type AuditServiceShape } from "../services/audit.js"
 import type { CircuitBreakerServiceShape, CircuitStatus } from "../services/circuit-breaker.js"
-import type { RateLimitServiceShape } from "../services/rate-limit.js"
-import { RATE_LIMITS_CONFIG, RateLimitError } from "../services/rate-limit.js"
+import type { JwtAuthServiceShape, JwtVerifyResult } from "../services/jwt-auth.js"
+import type { RateLimitServiceShape, TierName } from "../services/rate-limit.js"
+import { TIER_LIMITS, RateLimitError } from "../services/rate-limit.js"
 import type { CreateSessionOptions, SessionServiceShape } from "../services/session.js"
 import { SessionError } from "../services/session.js"
 
@@ -177,6 +178,22 @@ const getWsUrl = (request: Request, sessionId: string): string => {
   return `${protocol === "https" ? "wss" : "ws"}://${host}/api/v1/sessions/${sessionId}/ws`
 }
 
+/**
+ * Get tracking key and tier from JWT auth result or IP address.
+ *
+ * For authenticated users: tracking key is userId, tier from JWT
+ * For anonymous users: tracking key is IP address, tier is "anonymous"
+ */
+const getTrackingInfo = (
+  authResult: JwtVerifyResult,
+  clientIp: string,
+): { trackingKey: string; tier: TierName } => {
+  if (authResult.tier !== "anonymous") {
+    return { trackingKey: authResult.userId, tier: authResult.tier }
+  }
+  return { trackingKey: clientIp, tier: "anonymous" }
+}
+
 // Create session routes with service instances
 const createSessionRoutes = (
   sessionService: SessionServiceShape,
@@ -184,6 +201,7 @@ const createSessionRoutes = (
   auditService: AuditServiceShape,
   circuitBreakerService: CircuitBreakerServiceShape,
   environmentService: EnvironmentServiceShape,
+  jwtAuthService: JwtAuthServiceShape,
 ) => {
   const app = new Hono<{ Bindings: Env }>()
 
@@ -202,16 +220,27 @@ const createSessionRoutes = (
   // POST /sessions - Create a new session
   app.post("/sessions", async (c) => {
     try {
-      // Validate API key first
-      const apiKey = getApiKey(c.req.raw)
-      const authResult = await Effect.runPromise(Effect.either(validateApiKey(apiKey)))
-      if (authResult._tag === "Left") {
-        // Log auth failure
-        const clientIp = getClientIp(c.req.raw)
-        await Effect.runPromise(auditService.logAuthFailure(authResult.left.cause, clientIp))
-        const { statusCode, body } = errorToResponse(authResult.left)
-        return c.json<ErrorResponse>(body, toStatusCode(statusCode))
+      // Get client IP first for logging
+      const clientIp = getClientIp(c.req.raw)
+
+      // Step 1: Try JWT authentication first
+      const jwtToken = extractJwtTokenFromHeaders(c.req.raw)
+      const jwtAuthResult = await Effect.runPromise(jwtAuthService.getTierFromToken(jwtToken))
+
+      // Step 2: If no valid JWT, fall back to API key validation
+      if (jwtAuthResult.tier === "anonymous") {
+        const apiKey = getApiKey(c.req.raw)
+        const apiKeyResult = await Effect.runPromise(Effect.either(validateApiKey(apiKey)))
+        if (apiKeyResult._tag === "Left") {
+          // Log auth failure
+          await Effect.runPromise(auditService.logAuthFailure(apiKeyResult.left.cause, clientIp))
+          const { statusCode, body } = errorToResponse(apiKeyResult.left)
+          return c.json<ErrorResponse>(body, toStatusCode(statusCode))
+        }
       }
+
+      // Get tracking info based on auth result
+      const { trackingKey, tier } = getTrackingInfo(jwtAuthResult, clientIp)
 
       // Parse request body
       const body = (await c.req.json()) as CreateSessionRequest
@@ -268,9 +297,6 @@ const createSessionRoutes = (
         return c.json<ErrorResponse>(errorBody, toStatusCode(statusCode))
       }
 
-      // Get client IP for rate limiting
-      const clientIp = getClientIp(c.req.raw)
-
       // Check circuit breaker first
       const circuitStatus = await Effect.runPromise(circuitBreakerService.getStatus)
       if (circuitStatus.isOpen) {
@@ -282,6 +308,7 @@ const createSessionRoutes = (
             circuitStatus.reason ?? "Circuit open",
             {
               clientIp,
+              tier,
               ...circuitStatus.metrics,
             },
           ),
@@ -295,17 +322,14 @@ const createSessionRoutes = (
         )
       }
 
-      // Check rate limits
-      const limitResult = await Effect.runPromise(rateLimitService.checkSessionLimit(clientIp))
+      // Check rate limits with tier
+      const limitResult = await Effect.runPromise(
+        rateLimitService.checkSessionLimit(trackingKey, tier),
+      )
       if (!limitResult.allowed) {
-        // Log rate limit hit
+        // Log rate limit hit with tier info
         await Effect.runPromise(
-          auditService.logRateLimitHit(
-            "session",
-            clientIp,
-            RATE_LIMITS_CONFIG.sessionsPerHour,
-            "hour",
-          ),
+          auditService.logRateLimitHit("session", trackingKey, TIER_LIMITS[tier].sessionsPerHour, "hour"),
         )
         const errorData = {
           cause: "TooManySessions" as const,
@@ -335,13 +359,13 @@ const createSessionRoutes = (
 
       const session = await Effect.runPromise(sessionService.create(options))
 
-      // Log session creation
+      // Log session creation with tier info
       await Effect.runPromise(
         auditService.logSessionCreated(session.id, toolPair, clientIp, session.expiresAt),
       )
 
-      // Record the session for rate limiting
-      await Effect.runPromise(rateLimitService.recordSession(clientIp, session.id))
+      // Record the session for rate limiting with tier
+      await Effect.runPromise(rateLimitService.recordSession(trackingKey, session.id, tier))
 
       // Build response
       const wsUrl = getWsUrl(c.req.raw, session.id)

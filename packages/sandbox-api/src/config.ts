@@ -85,6 +85,12 @@ export const SandboxConfig = {
     process.env["SANDBOX_MAX_WS_MESSAGE_SIZE"] ?? "1024",
     10,
   ) as number,
+
+  /**
+   * Auth secret for JWT verification (same as AUTH_SECRET in web frontend)
+   * @default "" (JWT verification disabled)
+   */
+  authSecret: (process.env["AUTH_SECRET"] ?? "") as string,
 } as const
 
 /**
@@ -434,6 +440,68 @@ export class InputSanitizationError extends Data.TaggedClass("InputSanitizationE
  * // Invalid input (bracketed paste attack)
  * validateTerminalInput("\x1b[200~rm -rf /\x1b[201~")  // REJECTED
  */
+/**
+ * Extract JWT token from HTTP request headers.
+ *
+ * Checks for Authorization: Bearer <token> header.
+ *
+ * @param request - The HTTP request
+ * @returns The JWT token or null if not present
+ */
+export const extractJwtTokenFromHeaders = (request: Request): string | null => {
+  const authHeader = request.headers.get("authorization")
+  if (!authHeader) {
+    return null
+  }
+
+  // Check for Bearer scheme
+  const parts = authHeader.split(" ")
+  if (parts.length !== 2 || parts[0]?.toLowerCase() !== "bearer") {
+    return null
+  }
+
+  return parts[1] ?? null
+}
+
+/**
+ * Extract JWT token from WebSocket query parameters.
+ *
+ * Browsers cannot set custom headers on WebSocket connections,
+ * so the token is passed via ?token=<token> query parameter.
+ *
+ * @param searchParams - URLSearchParams from the WebSocket URL
+ * @returns The JWT token or null if not present
+ */
+export const extractJwtTokenFromQuery = (searchParams: URLSearchParams): string | null => {
+  return searchParams.get("token")
+}
+
+/**
+ * Extract JWT token from an HTTP IncomingMessage (for WebSocket upgrade).
+ *
+ * First checks the Authorization header, then falls back to query parameter.
+ *
+ * @param request - The HTTP IncomingMessage
+ * @param searchParams - URLSearchParams from the request URL
+ * @returns The JWT token or null if not present
+ */
+export const extractJwtTokenFromUpgrade = (
+  request: import("http").IncomingMessage,
+  searchParams: URLSearchParams,
+): string | null => {
+  // Check Authorization header first
+  const authHeader = request.headers["authorization"]
+  if (authHeader) {
+    const parts = authHeader.split(" ")
+    if (parts.length === 2 && parts[0]?.toLowerCase() === "bearer") {
+      return parts[1] ?? null
+    }
+  }
+
+  // Fall back to query parameter
+  return searchParams.get("token")
+}
+
 export const validateTerminalInput = (
   input: string,
 ): Effect.Effect<void, InputSanitizationError> => {

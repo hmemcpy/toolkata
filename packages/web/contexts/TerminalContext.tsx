@@ -130,6 +130,17 @@ export interface TerminalContextValue {
   readonly setSandboxConfig: (config: SandboxConfig | undefined) => void
 
   /**
+   * JWT auth token for tiered rate limiting.
+   * Passed to InteractiveTerminal for API requests.
+   */
+  readonly authToken: string | null
+
+  /**
+   * Set the auth token.
+   */
+  readonly setAuthToken: (token: string | null) => void
+
+  /**
    * Commands from the current step's MDX frontmatter.
    * Used by InfoPanel to show "Try it" commands.
    */
@@ -283,6 +294,12 @@ export interface TerminalProviderProps {
   readonly toolPair: string
 
   /**
+   * JWT auth token for tiered rate limiting.
+   * Retrieved server-side and passed to terminals for API requests.
+   */
+  readonly authToken: string | null
+
+  /**
    * React children to receive terminal context.
    */
   readonly children: ReactNode
@@ -319,7 +336,11 @@ const DEFAULT_SIDEBAR_WIDTH = 400
 const DEFAULT_INFO_PANEL_HEIGHT = 30 // percentage
 const SIDEBAR_OPEN_KEY = "terminal-sidebar-open"
 
-export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProviderProps) {
+export function TerminalProvider({
+  toolPair: _toolPair,
+  authToken: initialAuthToken,
+  children,
+}: TerminalProviderProps) {
   // Sidebar open/closed state with localStorage persistence
   const [isOpen, setIsOpenState] = useState(false)
 
@@ -332,6 +353,9 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
   // Sandbox config for current step
   const [sandboxConfig, setSandboxConfigState] = useState<SandboxConfig | undefined>(undefined)
   const previousSandboxConfigRef = useRef<SandboxConfig | undefined>(undefined)
+
+  // Auth token for tiered rate limiting (initialized from prop)
+  const [authToken, setAuthTokenState] = useState<string | null>(initialAuthToken)
 
   // Info panel collapsed state with localStorage persistence
   const [infoPanelCollapsed, setInfoPanelCollapsedState] = useState(false)
@@ -458,6 +482,11 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
   const setShowGitEquivalents = useCallback((show: boolean) => {
     setShowGitEquivalentsState(show)
     localStorage.setItem("toolkata-git-toggle", String(show))
+  }, [])
+
+  // Wrapper to set auth token
+  const setAuthToken = useCallback((token: string | null) => {
+    setAuthTokenState(token)
   }, [])
 
   /**
@@ -677,6 +706,8 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       sessionId,
       sandboxConfig,
       setSandboxConfig,
+      authToken,
+      setAuthToken,
       contextCommands,
       setContextCommands,
       infoPanelCollapsed,
@@ -707,6 +738,8 @@ export function TerminalProvider({ toolPair: _toolPair, children }: TerminalProv
       sessionId,
       sandboxConfig,
       setSandboxConfig,
+      authToken,
+      setAuthToken,
       contextCommands,
       setContextCommands,
       infoPanelCollapsed,

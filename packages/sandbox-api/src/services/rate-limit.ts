@@ -1,33 +1,9 @@
 import { Context, Data, Effect, Layer, MutableHashMap, Option, Ref } from "effect"
+import { TIER_LIMITS, type TierLimits, type TierName, isUnlimitedTier } from "../config/tiers.js"
 
 // Check if rate limiting should be disabled (development mode)
 const isDevMode =
   process.env["NODE_ENV"] === "development" || process.env["DISABLE_RATE_LIMIT"] === "true"
-
-// Defaults
-const DEFAULTS = {
-  sessionsPerHour: 50,
-  maxConcurrentSessions: 2,
-  commandsPerMinute: 60,
-  maxConcurrentWebSockets: 3,
-} as const
-
-// Rate limit configuration (from env or defaults)
-// In dev mode, use very high limits to effectively disable rate limiting
-const RATE_LIMITS = {
-  sessionsPerHour: isDevMode
-    ? 999999
-    : Number(process.env["MAX_SESSIONS_PER_HOUR"]) || DEFAULTS.sessionsPerHour,
-  maxConcurrentSessions: isDevMode
-    ? 999999
-    : Number(process.env["MAX_CONCURRENT_PER_IP"]) || DEFAULTS.maxConcurrentSessions,
-  commandsPerMinute: isDevMode
-    ? 999999
-    : Number(process.env["COMMANDS_PER_MINUTE"]) || DEFAULTS.commandsPerMinute,
-  maxConcurrentWebSockets: isDevMode
-    ? 999999
-    : Number(process.env["MAX_WEBSOCKETS_PER_IP"]) || DEFAULTS.maxConcurrentWebSockets,
-} as const
 
 // Log rate limit configuration on startup
 export const logRateLimitConfig = () => {
@@ -36,26 +12,39 @@ export const logRateLimitConfig = () => {
     return
   }
 
-  const source = (envVar: string, actualVal: number) =>
-    process.env[envVar] ? `${actualVal} (from env)` : `${actualVal} (default)`
-
-  console.log("Rate limits:")
-  console.log(
-    `  Sessions/hour:       ${source("MAX_SESSIONS_PER_HOUR", RATE_LIMITS.sessionsPerHour)}`,
-  )
-  console.log(
-    `  Concurrent sessions: ${source("MAX_CONCURRENT_PER_IP", RATE_LIMITS.maxConcurrentSessions)}`,
-  )
-  console.log(
-    `  Commands/minute:     ${source("COMMANDS_PER_MINUTE", RATE_LIMITS.commandsPerMinute)}`,
-  )
-  console.log(
-    `  Concurrent WS:       ${source("MAX_WEBSOCKETS_PER_IP", RATE_LIMITS.maxConcurrentWebSockets)}`,
-  )
+  console.log("Rate limits (tiered):")
+  for (const tier of ["anonymous", "logged-in", "premium", "admin"] as const) {
+    const limits = TIER_LIMITS[tier]
+    const sessionsDisplay = Number.isFinite(limits.sessionsPerHour)
+      ? limits.sessionsPerHour
+      : "unlimited"
+    const concurrentDisplay = Number.isFinite(limits.maxConcurrentSessions)
+      ? limits.maxConcurrentSessions
+      : "unlimited"
+    console.log(`  ${tier}: ${sessionsDisplay} sessions/hr, ${concurrentDisplay} concurrent`)
+  }
 }
 
-// Per-IP tracking data
-export interface IpTracking {
+/**
+ * Get rate limits for a tier, accounting for dev mode.
+ */
+const getLimitsForTier = (tier: TierName): TierLimits => {
+  if (isDevMode) {
+    // In dev mode, use very high limits to effectively disable rate limiting
+    return {
+      sessionsPerHour: 999999,
+      maxConcurrentSessions: 999999,
+      commandsPerMinute: 999999,
+      maxConcurrentWebSockets: 999999,
+    }
+  }
+  return TIER_LIMITS[tier]
+}
+
+// Per-key tracking data (key is userId for auth users, IP for anonymous)
+export interface RateLimitTracking {
+  readonly trackingKey: string // userId or IP address
+  readonly tier: TierName // User tier for rate limit lookup
   readonly sessionCount: number // Sessions created in current hour window
   readonly hourWindowStart: number // Timestamp of hour window start
   readonly activeSessions: readonly string[] // List of active session IDs
@@ -63,6 +52,9 @@ export interface IpTracking {
   readonly minuteWindowStart: number // Timestamp of minute window start
   readonly activeWebSocketIds: readonly string[] // List of active WebSocket connection IDs (V-007)
 }
+
+// Legacy alias for backwards compatibility
+export type IpTracking = RateLimitTracking
 
 // Rate limit check result
 export interface RateLimitResult {
@@ -79,30 +71,108 @@ export class RateLimitError extends Data.TaggedClass("RateLimitError")<{
 
 // Admin interface for rate limit management (internal use)
 export interface RateLimitAdminShape {
-  readonly getAllTracking: () => Effect.Effect<ReadonlyMap<string, IpTracking>, never>
-  readonly getTracking: (ipAddress: string) => Effect.Effect<Option.Option<IpTracking>, never>
-  readonly removeTracking: (ipAddress: string) => Effect.Effect<void, never>
+  readonly getAllTracking: () => Effect.Effect<ReadonlyMap<string, RateLimitTracking>, never>
+  readonly getTracking: (
+    trackingKey: string,
+  ) => Effect.Effect<Option.Option<RateLimitTracking>, never>
+  readonly removeTracking: (trackingKey: string) => Effect.Effect<void, never>
 }
 
 // Service interface
 export interface RateLimitServiceShape {
-  readonly checkSessionLimit: (ipAddress: string) => Effect.Effect<RateLimitResult, RateLimitError>
-  readonly recordSession: (ipAddress: string, sessionId: string) => Effect.Effect<void, never>
-  readonly removeSession: (ipAddress: string, sessionId: string) => Effect.Effect<void, never>
-  readonly checkCommandLimit: (ipAddress: string) => Effect.Effect<RateLimitResult, RateLimitError>
-  readonly recordCommand: (ipAddress: string) => Effect.Effect<void, never>
-  readonly getActiveSessionCount: (ipAddress: string) => Effect.Effect<number, never>
+  /**
+   * Check if a user can create a new session.
+   *
+   * @param trackingKey - User ID (for auth users) or IP address (for anonymous)
+   * @param tier - User tier for rate limit lookup
+   */
+  readonly checkSessionLimit: (
+    trackingKey: string,
+    tier: TierName,
+  ) => Effect.Effect<RateLimitResult, RateLimitError>
+
+  /**
+   * Record a new session creation.
+   *
+   * @param trackingKey - User ID (for auth users) or IP address (for anonymous)
+   * @param sessionId - The session ID
+   * @param tier - User tier for tracking
+   */
+  readonly recordSession: (
+    trackingKey: string,
+    sessionId: string,
+    tier: TierName,
+  ) => Effect.Effect<void, never>
+
+  /**
+   * Remove a session from tracking (on destroy or expiry).
+   *
+   * @param trackingKey - User ID (for auth users) or IP address (for anonymous)
+   * @param sessionId - The session ID
+   */
+  readonly removeSession: (trackingKey: string, sessionId: string) => Effect.Effect<void, never>
+
+  /**
+   * Check if a user can execute a command.
+   *
+   * @param trackingKey - User ID (for auth users) or IP address (for anonymous)
+   * @param tier - User tier for rate limit lookup
+   */
+  readonly checkCommandLimit: (
+    trackingKey: string,
+    tier: TierName,
+  ) => Effect.Effect<RateLimitResult, RateLimitError>
+
+  /**
+   * Record a command execution.
+   *
+   * @param trackingKey - User ID (for auth users) or IP address (for anonymous)
+   * @param tier - User tier for tracking
+   */
+  readonly recordCommand: (trackingKey: string, tier: TierName) => Effect.Effect<void, never>
+
+  /**
+   * Get the count of active sessions for a tracking key.
+   *
+   * @param trackingKey - User ID (for auth users) or IP address (for anonymous)
+   */
+  readonly getActiveSessionCount: (trackingKey: string) => Effect.Effect<number, never>
+
+  /**
+   * Check if a user can open a new WebSocket connection.
+   *
+   * @param trackingKey - User ID (for auth users) or IP address (for anonymous)
+   * @param tier - User tier for rate limit lookup
+   */
   readonly checkWebSocketLimit: (
-    ipAddress: string,
-  ) => Effect.Effect<RateLimitResult, RateLimitError> // V-007
+    trackingKey: string,
+    tier: TierName,
+  ) => Effect.Effect<RateLimitResult, RateLimitError>
+
+  /**
+   * Register a new WebSocket connection.
+   *
+   * @param trackingKey - User ID (for auth users) or IP address (for anonymous)
+   * @param connectionId - Unique connection identifier
+   * @param tier - User tier for tracking
+   */
   readonly registerWebSocket: (
-    ipAddress: string,
+    trackingKey: string,
     connectionId: string,
-  ) => Effect.Effect<void, never> // V-007
+    tier: TierName,
+  ) => Effect.Effect<void, never>
+
+  /**
+   * Unregister a WebSocket connection.
+   *
+   * @param trackingKey - User ID (for auth users) or IP address (for anonymous)
+   * @param connectionId - Unique connection identifier
+   */
   readonly unregisterWebSocket: (
-    ipAddress: string,
+    trackingKey: string,
     connectionId: string,
-  ) => Effect.Effect<void, never> // V-007
+  ) => Effect.Effect<void, never>
+
   readonly admin: RateLimitAdminShape
 }
 
@@ -112,26 +182,33 @@ export class RateLimitService extends Context.Tag("RateLimitService")<
   RateLimitServiceShape
 >() {}
 
-// IP tracking store type
+// Rate limit tracking store type
 interface RateLimitStore {
-  readonly ipTracking: MutableHashMap.MutableHashMap<string, IpTracking>
+  readonly tracking: MutableHashMap.MutableHashMap<string, RateLimitTracking>
 }
 
-// Helper: Get current tracking state for IP, creating if needed
-const getOrCreateTracking = (store: RateLimitStore, ipAddress: string, now: number): IpTracking => {
+// Helper: Get current tracking state for a key, creating if needed
+const getOrCreateTracking = (
+  store: RateLimitStore,
+  trackingKey: string,
+  tier: TierName,
+  now: number,
+): RateLimitTracking => {
   // MutableHashMap.get is synchronous in Effect 3.x
-  const existingOption = MutableHashMap.get(store.ipTracking, ipAddress)
+  const existingOption = MutableHashMap.get(store.tracking, trackingKey)
 
   if (Option.isNone(existingOption)) {
-    // First request from this IP
+    // First request from this key
     return {
+      trackingKey,
+      tier,
       sessionCount: 0,
       hourWindowStart: now,
       activeSessions: [],
       commandCount: 0,
       minuteWindowStart: now,
       activeWebSocketIds: [],
-    } satisfies IpTracking
+    } satisfies RateLimitTracking
   }
 
   const tracking = existingOption.value
@@ -140,9 +217,14 @@ const getOrCreateTracking = (store: RateLimitStore, ipAddress: string, now: numb
   const hourElapsed = now - tracking.hourWindowStart >= 60 * 60 * 1000
   const minuteElapsed = now - tracking.minuteWindowStart >= 60 * 1000
 
+  // Update tier if it changed (e.g., user logged in)
+  const updatedTier = tier
+
   // Reset counters if windows have expired
   if (hourElapsed && minuteElapsed) {
     return {
+      trackingKey,
+      tier: updatedTier,
       sessionCount: 0,
       hourWindowStart: now,
       activeSessions: tracking.activeSessions,
@@ -155,6 +237,7 @@ const getOrCreateTracking = (store: RateLimitStore, ipAddress: string, now: numb
   if (hourElapsed) {
     return {
       ...tracking,
+      tier: updatedTier,
       sessionCount: 0,
       hourWindowStart: now,
       activeWebSocketIds,
@@ -164,13 +247,14 @@ const getOrCreateTracking = (store: RateLimitStore, ipAddress: string, now: numb
   if (minuteElapsed) {
     return {
       ...tracking,
+      tier: updatedTier,
       commandCount: 0,
       minuteWindowStart: now,
       activeWebSocketIds,
     }
   }
 
-  return { ...tracking, activeWebSocketIds }
+  return { ...tracking, tier: updatedTier, activeWebSocketIds }
 }
 
 // Helper: Calculate retry-after seconds
@@ -184,18 +268,24 @@ const calculateRetryAfter = (windowStart: number, windowDuration: number, now: n
 const make = Effect.gen(function* () {
   // Create rate limit store
   const storeRef = yield* Ref.make<RateLimitStore>({
-    ipTracking: MutableHashMap.empty<string, IpTracking>(),
+    tracking: MutableHashMap.empty<string, RateLimitTracking>(),
   })
 
-  // Check if IP can create a new session
-  const checkSessionLimit = (ipAddress: string) =>
+  // Check if user can create a new session
+  const checkSessionLimit = (trackingKey: string, tier: TierName) =>
     Effect.gen(function* () {
+      // Admin tier bypasses all checks
+      if (isUnlimitedTier(tier)) {
+        return { allowed: true } satisfies RateLimitResult
+      }
+
       const now = Date.now()
       const store = yield* Ref.get(storeRef)
-      const tracking = getOrCreateTracking(store, ipAddress, now)
+      const tracking = getOrCreateTracking(store, trackingKey, tier, now)
+      const limits = getLimitsForTier(tier)
 
       // Check hourly limit
-      if (tracking.sessionCount >= RATE_LIMITS.sessionsPerHour) {
+      if (tracking.sessionCount >= limits.sessionsPerHour) {
         const retryAfter = calculateRetryAfter(tracking.hourWindowStart, 60 * 60 * 1000, now)
         return {
           allowed: false,
@@ -204,7 +294,7 @@ const make = Effect.gen(function* () {
       }
 
       // Check concurrent limit
-      if (tracking.activeSessions.length >= RATE_LIMITS.maxConcurrentSessions) {
+      if (tracking.activeSessions.length >= limits.maxConcurrentSessions) {
         return {
           allowed: false,
           // No retry time for concurrent - user must destroy a session
@@ -215,15 +305,17 @@ const make = Effect.gen(function* () {
     })
 
   // Record a new session creation
-  const recordSession = (ipAddress: string, sessionId: string) =>
+  const recordSession = (trackingKey: string, sessionId: string, tier: TierName) =>
     Effect.gen(function* () {
       const now = Date.now()
       const store = yield* Ref.get(storeRef)
 
       // Get or create tracking, then increment counters
-      const tracking = getOrCreateTracking(store, ipAddress, now)
+      const tracking = getOrCreateTracking(store, trackingKey, tier, now)
 
-      const updatedTracking: IpTracking = {
+      const updatedTracking: RateLimitTracking = {
+        trackingKey: tracking.trackingKey,
+        tier: tracking.tier,
         sessionCount: tracking.sessionCount + 1,
         hourWindowStart: tracking.hourWindowStart,
         activeSessions: [...tracking.activeSessions, sessionId],
@@ -233,17 +325,17 @@ const make = Effect.gen(function* () {
       }
 
       // MutableHashMap.set is synchronous and mutates in place
-      MutableHashMap.set(store.ipTracking, ipAddress, updatedTracking)
+      MutableHashMap.set(store.tracking, trackingKey, updatedTracking)
     })
 
   // Remove a session from active tracking
-  const removeSession = (ipAddress: string, sessionId: string) =>
+  const removeSession = (trackingKey: string, sessionId: string) =>
     Effect.gen(function* () {
       const store = yield* Ref.get(storeRef)
-      const trackingOption = MutableHashMap.get(store.ipTracking, ipAddress)
+      const trackingOption = MutableHashMap.get(store.tracking, trackingKey)
 
       if (Option.isNone(trackingOption)) {
-        // IP not tracked, nothing to do
+        // Key not tracked, nothing to do
         return
       }
 
@@ -253,23 +345,29 @@ const make = Effect.gen(function* () {
       // If no active sessions and no recent activity, we could clean up
       // But keep the tracking entry for rate limit state
 
-      const updatedTracking: IpTracking = {
+      const updatedTracking: RateLimitTracking = {
         ...tracking,
         activeSessions: updatedActiveSessions,
       }
 
       // MutableHashMap.set is synchronous and mutates in place
-      MutableHashMap.set(store.ipTracking, ipAddress, updatedTracking)
+      MutableHashMap.set(store.tracking, trackingKey, updatedTracking)
     })
 
-  // Check if IP can execute a command
-  const checkCommandLimit = (ipAddress: string) =>
+  // Check if user can execute a command
+  const checkCommandLimit = (trackingKey: string, tier: TierName) =>
     Effect.gen(function* () {
+      // Admin tier bypasses all checks
+      if (isUnlimitedTier(tier)) {
+        return { allowed: true } satisfies RateLimitResult
+      }
+
       const now = Date.now()
       const store = yield* Ref.get(storeRef)
-      const tracking = getOrCreateTracking(store, ipAddress, now)
+      const tracking = getOrCreateTracking(store, trackingKey, tier, now)
+      const limits = getLimitsForTier(tier)
 
-      if (tracking.commandCount >= RATE_LIMITS.commandsPerMinute) {
+      if (tracking.commandCount >= limits.commandsPerMinute) {
         const retryAfter = calculateRetryAfter(tracking.minuteWindowStart, 60 * 1000, now)
         return {
           allowed: false,
@@ -281,27 +379,27 @@ const make = Effect.gen(function* () {
     })
 
   // Record a command execution
-  const recordCommand = (ipAddress: string) =>
+  const recordCommand = (trackingKey: string, tier: TierName) =>
     Effect.gen(function* () {
       const now = Date.now()
       const store = yield* Ref.get(storeRef)
-      const tracking = getOrCreateTracking(store, ipAddress, now)
+      const tracking = getOrCreateTracking(store, trackingKey, tier, now)
 
-      const updatedTracking: IpTracking = {
+      const updatedTracking: RateLimitTracking = {
         ...tracking,
         commandCount: tracking.commandCount + 1,
         minuteWindowStart: tracking.minuteWindowStart,
       }
 
       // MutableHashMap.set is synchronous and mutates in place
-      MutableHashMap.set(store.ipTracking, ipAddress, updatedTracking)
+      MutableHashMap.set(store.tracking, trackingKey, updatedTracking)
     })
 
-  // Get active session count for an IP
-  const getActiveSessionCount = (ipAddress: string) =>
+  // Get active session count for a tracking key
+  const getActiveSessionCount = (trackingKey: string) =>
     Ref.get(storeRef).pipe(
       Effect.map((store) => {
-        const trackingOption = MutableHashMap.get(store.ipTracking, ipAddress)
+        const trackingOption = MutableHashMap.get(store.tracking, trackingKey)
         if (Option.isNone(trackingOption)) {
           return 0
         }
@@ -309,15 +407,21 @@ const make = Effect.gen(function* () {
       }),
     )
 
-  // V-007: Check if IP can open a new WebSocket connection
-  const checkWebSocketLimit = (ipAddress: string) =>
+  // Check if user can open a new WebSocket connection
+  const checkWebSocketLimit = (trackingKey: string, tier: TierName) =>
     Effect.gen(function* () {
+      // Admin tier bypasses all checks
+      if (isUnlimitedTier(tier)) {
+        return { allowed: true } satisfies RateLimitResult
+      }
+
       const now = Date.now()
       const store = yield* Ref.get(storeRef)
-      const tracking = getOrCreateTracking(store, ipAddress, now)
+      const tracking = getOrCreateTracking(store, trackingKey, tier, now)
+      const limits = getLimitsForTier(tier)
 
       // Check concurrent WebSocket limit
-      if (tracking.activeWebSocketIds.length >= RATE_LIMITS.maxConcurrentWebSockets) {
+      if (tracking.activeWebSocketIds.length >= limits.maxConcurrentWebSockets) {
         return {
           allowed: false,
           // No retry time for concurrent - user must close a connection
@@ -327,30 +431,30 @@ const make = Effect.gen(function* () {
       return { allowed: true } satisfies RateLimitResult
     })
 
-  // V-007: Register a new WebSocket connection for an IP
-  const registerWebSocket = (ipAddress: string, connectionId: string) =>
+  // Register a new WebSocket connection
+  const registerWebSocket = (trackingKey: string, connectionId: string, tier: TierName) =>
     Effect.gen(function* () {
       const now = Date.now()
       const store = yield* Ref.get(storeRef)
-      const tracking = getOrCreateTracking(store, ipAddress, now)
+      const tracking = getOrCreateTracking(store, trackingKey, tier, now)
 
-      const updatedTracking: IpTracking = {
+      const updatedTracking: RateLimitTracking = {
         ...tracking,
         activeWebSocketIds: [...tracking.activeWebSocketIds, connectionId],
       }
 
       // MutableHashMap.set is synchronous and mutates in place
-      MutableHashMap.set(store.ipTracking, ipAddress, updatedTracking)
+      MutableHashMap.set(store.tracking, trackingKey, updatedTracking)
     })
 
-  // V-007: Unregister a WebSocket connection for an IP
-  const unregisterWebSocket = (ipAddress: string, connectionId: string) =>
+  // Unregister a WebSocket connection
+  const unregisterWebSocket = (trackingKey: string, connectionId: string) =>
     Effect.gen(function* () {
       const store = yield* Ref.get(storeRef)
-      const trackingOption = MutableHashMap.get(store.ipTracking, ipAddress)
+      const trackingOption = MutableHashMap.get(store.tracking, trackingKey)
 
       if (Option.isNone(trackingOption)) {
-        // IP not tracked, nothing to do
+        // Key not tracked, nothing to do
         return
       }
 
@@ -359,13 +463,13 @@ const make = Effect.gen(function* () {
         (id: string) => id !== connectionId,
       )
 
-      const updatedTracking: IpTracking = {
+      const updatedTracking: RateLimitTracking = {
         ...tracking,
         activeWebSocketIds: updatedWebSocketIds,
       }
 
       // MutableHashMap.set is synchronous and mutates in place
-      MutableHashMap.set(store.ipTracking, ipAddress, updatedTracking)
+      MutableHashMap.set(store.tracking, trackingKey, updatedTracking)
     })
 
   // Admin interface for rate limit management
@@ -375,25 +479,25 @@ const make = Effect.gen(function* () {
       Ref.get(storeRef).pipe(
         Effect.map((store) => {
           // Convert MutableHashMap to ReadonlyMap
-          const map = new Map<string, IpTracking>()
-          MutableHashMap.forEach(store.ipTracking, (value, key) => {
+          const map = new Map<string, RateLimitTracking>()
+          MutableHashMap.forEach(store.tracking, (value, key) => {
             map.set(key, value)
           })
-          return map as ReadonlyMap<string, IpTracking>
+          return map as ReadonlyMap<string, RateLimitTracking>
         }),
       ),
 
-    // Get tracking data for a specific IP
-    getTracking: (ipAddress: string) =>
+    // Get tracking data for a specific key
+    getTracking: (trackingKey: string) =>
       Ref.get(storeRef).pipe(
-        Effect.map((store) => MutableHashMap.get(store.ipTracking, ipAddress)),
+        Effect.map((store) => MutableHashMap.get(store.tracking, trackingKey)),
       ),
 
-    // Remove all tracking data for an IP
-    removeTracking: (ipAddress: string) =>
+    // Remove all tracking data for a key
+    removeTracking: (trackingKey: string) =>
       Ref.get(storeRef).pipe(
         Effect.map((store) => {
-          MutableHashMap.remove(store.ipTracking, ipAddress)
+          MutableHashMap.remove(store.tracking, trackingKey)
         }),
       ),
   }
@@ -415,5 +519,5 @@ const make = Effect.gen(function* () {
 // Live layer
 export const RateLimitServiceLive = Layer.effect(RateLimitService, make)
 
-// Export rate limit constants for use in other services
-export const RATE_LIMITS_CONFIG = RATE_LIMITS
+// Re-export tier configuration for use in other services
+export { TIER_LIMITS, type TierName, type TierLimits } from "../config/tiers.js"

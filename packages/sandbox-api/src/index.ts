@@ -42,6 +42,11 @@ import {
   type ContentValidationServiceShape,
 } from "./services/content-validation.js"
 import { GitHubService, GitHubServiceLive, type GitHubServiceShape } from "./services/github.js"
+import {
+  JwtAuthService,
+  JwtAuthServiceLive,
+  type JwtAuthServiceShape,
+} from "./services/jwt-auth.js"
 import { MetricsService, MetricsServiceLive, type MetricsServiceShape } from "./services/metrics.js"
 import { RateLimitAdminService, RateLimitAdminServiceLive } from "./services/rate-limit-admin.js"
 import {
@@ -109,6 +114,7 @@ const createApp = (
   auditService: AuditServiceShape,
   circuitBreakerService: CircuitBreakerServiceShape,
   envService: EnvironmentServiceShape,
+  jwtAuthService: JwtAuthServiceShape,
   rateLimitAdminService?: import("./services/rate-limit-admin.js").RateLimitAdminServiceShape,
   containerAdminService?: import("./services/container-admin.js").ContainerAdminServiceShape,
   metricsService?: MetricsServiceShape,
@@ -191,6 +197,7 @@ const createApp = (
       auditService,
       circuitBreakerService,
       envService,
+      jwtAuthService,
     ),
   )
 
@@ -244,6 +251,7 @@ const make = Effect.gen(function* () {
   const rateLimitService = yield* RateLimitService
   const webSocketService = yield* WebSocketService
   const auditService = yield* AuditService
+  const jwtAuthService = yield* JwtAuthService
   const rateLimitAdminService = yield* RateLimitAdminService
   const containerAdminService = yield* ContainerAdminService
   const metricsService = yield* MetricsService
@@ -262,6 +270,7 @@ const make = Effect.gen(function* () {
     auditService,
     circuitBreakerService,
     envService,
+    jwtAuthService,
     rateLimitAdminService,
     containerAdminService,
     metricsService,
@@ -322,6 +331,7 @@ const make = Effect.gen(function* () {
       webSocketService,
       rateLimitService,
       auditService,
+      jwtAuthService,
     )
 
     // Start listening
@@ -433,6 +443,7 @@ export const ServerLayer = Layer.mergeAll(
   MetricsServiceLiveWithDeps,
   GitHubServiceLive,
   ContentValidationServiceLive,
+  JwtAuthServiceLive,
 )
 
 // Main function for Bun runtime

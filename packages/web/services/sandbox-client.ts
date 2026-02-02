@@ -87,6 +87,12 @@ export interface CreateSessionOptions {
   readonly timeout?: number
 
   /**
+   * Optional JWT auth token for tiered rate limiting.
+   * If provided, included as Authorization: Bearer header.
+   */
+  readonly authToken?: string
+
+  /**
    * Optional callback for WebSocket messages.
    */
   readonly onMessage?: (message: TerminalMessage) => void
@@ -196,12 +202,16 @@ const make = Effect.succeed<SandboxClientShape>({
       try: async () => {
         const apiUrl = getSandboxHttpUrl()
 
-        // Build headers, including API key if configured
+        // Build headers, including API key and auth token if configured
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
         }
         if (SANDBOX_API_KEY !== "") {
           headers["X-API-Key"] = SANDBOX_API_KEY
+        }
+        // Include JWT auth token for tiered rate limiting
+        if (options.authToken) {
+          headers["Authorization"] = `Bearer ${options.authToken}`
         }
 
         // Build request body with optional sandbox config
@@ -312,13 +322,20 @@ const make = Effect.succeed<SandboxClientShape>({
     Effect.sync(() => {
       const wsUrl = `${SANDBOX_API_URL}/api/v1/sessions/${sessionId}/ws`
 
-      // Build WebSocket protocols array - browser WebSocket API doesn't support custom headers
-      // The API key will be sent via query parameter as a fallback
-      const protocols: string | string[] = []
-      const finalWsUrl =
-        SANDBOX_API_KEY !== "" ? `${wsUrl}?api_key=${encodeURIComponent(SANDBOX_API_KEY)}` : wsUrl
+      // Build WebSocket query parameters
+      // Browser WebSocket API doesn't support custom headers, so we use query params
+      const params = new URLSearchParams()
+      if (SANDBOX_API_KEY !== "") {
+        params.set("api_key", SANDBOX_API_KEY)
+      }
+      // Include JWT auth token for tiered rate limiting
+      if (options.authToken) {
+        params.set("token", options.authToken)
+      }
+      const paramString = params.toString()
+      const finalWsUrl = paramString ? `${wsUrl}?${paramString}` : wsUrl
 
-      const ws = new WebSocket(finalWsUrl, protocols)
+      const ws = new WebSocket(finalWsUrl)
 
       const send = (data: string): Effect.Effect<void, SandboxClientError> =>
         Effect.try({

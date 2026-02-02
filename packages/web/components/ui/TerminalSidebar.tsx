@@ -152,6 +152,7 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
     errorMessage,
     sessionTimeRemaining,
     sandboxConfig,
+    authToken,
     sidebarWidth,
     setSidebarWidth,
     infoPanelCollapsed,
@@ -334,6 +335,7 @@ export function TerminalSidebar({ toolPair }: TerminalSidebarProps): ReactNode {
                   toolPair={toolPair}
                   stepId="sidebar"
                   {...(sandboxConfig !== undefined ? { sandboxConfig } : {})}
+                  {...(authToken !== null ? { authToken } : {})}
                   onStateChange={onTerminalStateChange}
                   onErrorChange={onTerminalErrorChange}
                   onSessionTimeChange={onTerminalTimeChange}

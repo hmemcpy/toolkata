@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import { Providers } from "../../components/Providers"
 import { notFound } from "next/navigation"
 import { isValidPairingSlug } from "../../content/pairings"
+import { getAuthToken } from "../../lib/get-auth-token"
 
 /**
  * Layout for all tool comparison pages.
@@ -36,5 +37,12 @@ export default async function ToolPairLayout(props: {
     notFound()
   }
 
-  return <Providers toolPair={toolPair}>{props.children}</Providers>
+  // Get auth token for tiered rate limiting (server-side)
+  const authToken = await getAuthToken()
+
+  return (
+    <Providers toolPair={toolPair} authToken={authToken}>
+      {props.children}
+    </Providers>
+  )
 }

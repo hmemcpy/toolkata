@@ -18,6 +18,12 @@ export interface ProvidersProps {
   readonly toolPair: string
 
   /**
+   * JWT auth token for tiered rate limiting.
+   * Retrieved server-side and passed to TerminalProvider.
+   */
+  readonly authToken?: string | null
+
+  /**
    * React children to receive provider contexts.
    */
   readonly children: ReactNode
@@ -64,10 +70,10 @@ export interface ProvidersProps {
  * }
  * ```
  */
-export function Providers({ toolPair, children }: ProvidersProps): ReactNode {
+export function Providers({ toolPair, authToken, children }: ProvidersProps): ReactNode {
   return (
     <KataProgressProvider>
-      <TerminalProvider toolPair={toolPair}>
+      <TerminalProvider toolPair={toolPair} authToken={authToken ?? null}>
         {children}
         <MobileBottomSheet toolPair={toolPair} />
         <TerminalSidebar toolPair={toolPair} />

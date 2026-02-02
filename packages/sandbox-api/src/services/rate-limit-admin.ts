@@ -17,13 +17,19 @@
  */
 
 import { Context, Data, Effect, Layer, Option } from "effect"
-import { type IpTracking, RATE_LIMITS_CONFIG, RateLimitService } from "./rate-limit.js"
+import {
+  type RateLimitTracking,
+  type TierName,
+  TIER_LIMITS,
+  RateLimitService,
+} from "./rate-limit.js"
 
 /**
- * Rate limit status for a single client (IP address).
+ * Rate limit status for a single client (user ID or IP address).
  */
 export interface RateLimitStatus {
   readonly clientId: string
+  readonly tier: TierName
   readonly sessionCount: number
   readonly sessionsPerHour: number
   readonly hourWindowStart: number
@@ -113,26 +119,28 @@ export class RateLimitAdminService extends Context.Tag("RateLimitAdminService")<
 >() {}
 
 /**
- * Convert IpTracking to RateLimitStatus with computed values.
+ * Convert RateLimitTracking to RateLimitStatus with computed values.
  */
-function toRateLimitStatus(clientId: string, tracking: IpTracking): RateLimitStatus {
+function toRateLimitStatus(clientId: string, tracking: RateLimitTracking): RateLimitStatus {
   const hourWindowEnd = tracking.hourWindowStart + 60 * 60 * 1000
   const minuteWindowEnd = tracking.minuteWindowStart + 60 * 1000
+  const tierLimits = TIER_LIMITS[tracking.tier]
 
   return {
     clientId,
+    tier: tracking.tier,
     sessionCount: tracking.sessionCount,
-    sessionsPerHour: RATE_LIMITS_CONFIG.sessionsPerHour,
+    sessionsPerHour: tierLimits.sessionsPerHour,
     hourWindowStart: tracking.hourWindowStart,
     hourWindowEnd,
     activeSessions: tracking.activeSessions,
     commandCount: tracking.commandCount,
-    commandsPerMinute: RATE_LIMITS_CONFIG.commandsPerMinute,
+    commandsPerMinute: tierLimits.commandsPerMinute,
     minuteWindowStart: tracking.minuteWindowStart,
     minuteWindowEnd,
     activeWebSocketIds: tracking.activeWebSocketIds,
-    maxConcurrentSessions: RATE_LIMITS_CONFIG.maxConcurrentSessions,
-    maxConcurrentWebSockets: RATE_LIMITS_CONFIG.maxConcurrentWebSockets,
+    maxConcurrentSessions: tierLimits.maxConcurrentSessions,
+    maxConcurrentWebSockets: tierLimits.maxConcurrentWebSockets,
   }
 }
 
@@ -233,6 +241,10 @@ const make = Effect.gen(function* () {
         )
       }
 
+      // Get the tier from the current tracking before removing
+      const tier = trackingOption.value.tier
+      const tierLimits = TIER_LIMITS[tier]
+
       // Since rate limits are global (configured at startup),
       // we reset the client's counters to give them a fresh window
       yield* rateLimitService.admin.removeTracking(clientId)
@@ -241,18 +253,19 @@ const make = Effect.gen(function* () {
       // The next request from this client will start fresh
       return {
         clientId,
+        tier,
         sessionCount: 0,
-        sessionsPerHour: RATE_LIMITS_CONFIG.sessionsPerHour,
+        sessionsPerHour: tierLimits.sessionsPerHour,
         hourWindowStart: 0,
         hourWindowEnd: 0,
         activeSessions: [],
         commandCount: 0,
-        commandsPerMinute: RATE_LIMITS_CONFIG.commandsPerMinute,
+        commandsPerMinute: tierLimits.commandsPerMinute,
         minuteWindowStart: 0,
         minuteWindowEnd: 0,
         activeWebSocketIds: [],
-        maxConcurrentSessions: RATE_LIMITS_CONFIG.maxConcurrentSessions,
-        maxConcurrentWebSockets: RATE_LIMITS_CONFIG.maxConcurrentWebSockets,
+        maxConcurrentSessions: tierLimits.maxConcurrentSessions,
+        maxConcurrentWebSockets: tierLimits.maxConcurrentWebSockets,
       } satisfies RateLimitStatus
     })
 
