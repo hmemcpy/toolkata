@@ -1,7 +1,8 @@
-import { revalidatePath } from "next/cache"
-import { getSandboxHttpUrl, ADMIN_API_KEY } from "@/lib/sandbox-url"
 import type { ContainerInfo } from "@/components/admin/ContainerGrid"
+import { ADMIN_API_KEY, getSandboxHttpUrl } from "@/lib/sandbox-url"
 import { ContainersClient } from "./ContainersClient"
+
+export const dynamic = "force-dynamic"
 
 /**
  * Containers fetch result.
@@ -34,7 +35,6 @@ export default async function ContainersPage() {
   // Server action to refresh container data
   async function refreshContainers() {
     "use server"
-    revalidatePath("/admin/containers")
   }
 
   // Server action to restart a container
@@ -49,17 +49,18 @@ export default async function ContainersPage() {
       headers["X-Admin-Key"] = ADMIN_API_KEY
     }
 
-    const response = await fetch(`${apiUrl}/admin/containers/${encodeURIComponent(containerId)}/restart`, {
-      method: "POST",
-      headers,
-    })
+    const response = await fetch(
+      `${apiUrl}/admin/containers/${encodeURIComponent(containerId)}/restart`,
+      {
+        method: "POST",
+        headers,
+      },
+    )
 
     if (!response.ok) {
       console.error(`Failed to restart container: ${response.status}`)
       throw new Error("Failed to restart container")
     }
-
-    revalidatePath("/admin/containers")
   }
 
   // Server action to stop a container
@@ -74,17 +75,18 @@ export default async function ContainersPage() {
       headers["X-Admin-Key"] = ADMIN_API_KEY
     }
 
-    const response = await fetch(`${apiUrl}/admin/containers/${encodeURIComponent(containerId)}/stop`, {
-      method: "POST",
-      headers,
-    })
+    const response = await fetch(
+      `${apiUrl}/admin/containers/${encodeURIComponent(containerId)}/stop`,
+      {
+        method: "POST",
+        headers,
+      },
+    )
 
     if (!response.ok) {
       console.error(`Failed to stop container: ${response.status}`)
       throw new Error("Failed to stop container")
     }
-
-    revalidatePath("/admin/containers")
   }
 
   // Server action to remove a container
@@ -112,8 +114,6 @@ export default async function ContainersPage() {
       console.error(`Failed to remove container: ${response.status}`)
       throw new Error("Failed to remove container")
     }
-
-    revalidatePath("/admin/containers")
   }
 
   // Server action to get container logs

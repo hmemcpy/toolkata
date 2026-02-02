@@ -1,7 +1,8 @@
-import { revalidatePath } from "next/cache"
-import { getSandboxHttpUrl, ADMIN_API_KEY } from "@/lib/sandbox-url"
-import type { SystemMetricsInfo, SandboxMetricsInfo, RateLimitMetricsInfo } from "./MetricsTypes"
+import { ADMIN_API_KEY, getSandboxHttpUrl } from "@/lib/sandbox-url"
 import { MetricsClient } from "./MetricsClient"
+import type { RateLimitMetricsInfo, SandboxMetricsInfo, SystemMetricsInfo } from "./MetricsTypes"
+
+export const dynamic = "force-dynamic"
 
 /**
  * Metrics fetch result.
@@ -34,7 +35,6 @@ export default async function MetricsPage() {
   // Server action to refresh metrics data
   async function refreshMetrics() {
     "use server"
-    revalidatePath("/admin/metrics")
   }
 
   return (

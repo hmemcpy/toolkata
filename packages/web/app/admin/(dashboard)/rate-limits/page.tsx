@@ -1,7 +1,9 @@
+import type { AdjustRateLimitRequest, RateLimitInfo } from "@/components/admin/RateLimitTable"
+import { ADMIN_API_KEY, getSandboxHttpUrl } from "@/lib/sandbox-url"
 import { revalidatePath } from "next/cache"
-import { getSandboxHttpUrl, ADMIN_API_KEY } from "@/lib/sandbox-url"
-import type { RateLimitInfo, AdjustRateLimitRequest } from "@/components/admin/RateLimitTable"
 import { RateLimitsClient } from "./RateLimitsClient"
+
+export const dynamic = "force-dynamic"
 
 /**
  * Rate limits fetch result.
@@ -32,7 +34,6 @@ export default async function RateLimitsPage() {
   // Server action to refresh rate limit data
   async function refreshRateLimits() {
     "use server"
-    revalidatePath("/admin/rate-limits")
   }
 
   // Server action to reset rate limit
@@ -47,10 +48,13 @@ export default async function RateLimitsPage() {
       headers["X-Admin-Key"] = ADMIN_API_KEY
     }
 
-    const response = await fetch(`${apiUrl}/admin/rate-limits/${encodeURIComponent(clientId)}/reset`, {
-      method: "POST",
-      headers,
-    })
+    const response = await fetch(
+      `${apiUrl}/admin/rate-limits/${encodeURIComponent(clientId)}/reset`,
+      {
+        method: "POST",
+        headers,
+      },
+    )
 
     if (!response.ok) {
       console.error(`Failed to reset rate limit: ${response.status}`)
@@ -72,18 +76,19 @@ export default async function RateLimitsPage() {
       headers["X-Admin-Key"] = ADMIN_API_KEY
     }
 
-    const response = await fetch(`${apiUrl}/admin/rate-limits/${encodeURIComponent(clientId)}/adjust`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(params),
-    })
+    const response = await fetch(
+      `${apiUrl}/admin/rate-limits/${encodeURIComponent(clientId)}/adjust`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify(params),
+      },
+    )
 
     if (!response.ok) {
       console.error(`Failed to adjust rate limit: ${response.status}`)
       throw new Error("Failed to adjust rate limit")
     }
-
-    revalidatePath("/admin/rate-limits")
   }
 
   return (
