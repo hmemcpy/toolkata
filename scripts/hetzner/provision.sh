@@ -390,6 +390,7 @@ success "Software installed (including Redis for admin)"
 # Generate secure API keys
 GENERATED_SANDBOX_KEY=$(openssl rand -hex 32)
 GENERATED_ADMIN_KEY=$(openssl rand -hex 32)
+GENERATED_AUTH_SECRET=$(openssl rand -base64 32)
 
 cat > "$SCRIPT_DIR/sandbox.env" << EOF
 # Hetzner Cloud sandbox infrastructure
@@ -417,6 +418,10 @@ SANDBOX_API_KEY=$GENERATED_SANDBOX_KEY
 # Also set in Vercel as ADMIN_API_KEY
 ADMIN_API_KEY=$GENERATED_ADMIN_KEY
 
+# Auth secret for JWT verification (tiered rate limiting)
+# Must match AUTH_SECRET in Vercel for NextAuth JWT verification
+AUTH_SECRET=$GENERATED_AUTH_SECRET
+
 # CORS allowed origins (comma-separated)
 SANDBOX_ALLOWED_ORIGINS=https://toolkata.com,https://www.toolkata.com
 
@@ -434,7 +439,39 @@ EOF
 success "Configuration saved to: $SCRIPT_DIR/sandbox.env"
 
 # ============================================================
-# 6. OUTPUT SUMMARY
+# 6. SET VERCEL ENVIRONMENT VARIABLES
+# ============================================================
+info "Setting Vercel environment variables..."
+
+if command -v vercel &> /dev/null; then
+  # Check if logged in to Vercel
+  if vercel whoami &> /dev/null; then
+    echo ""
+    read -p "Set environment variables in Vercel now? [y/N] " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      info "Setting NEXT_PUBLIC_SANDBOX_API_KEY..."
+      echo "$GENERATED_SANDBOX_KEY" | vercel env add NEXT_PUBLIC_SANDBOX_API_KEY production --force 2>/dev/null || warn "Failed to set NEXT_PUBLIC_SANDBOX_API_KEY"
+
+      info "Setting ADMIN_API_KEY..."
+      echo "$GENERATED_ADMIN_KEY" | vercel env add ADMIN_API_KEY production --force 2>/dev/null || warn "Failed to set ADMIN_API_KEY"
+
+      info "Setting AUTH_SECRET..."
+      echo "$GENERATED_AUTH_SECRET" | vercel env add AUTH_SECRET production --force 2>/dev/null || warn "Failed to set AUTH_SECRET"
+
+      success "Vercel environment variables set"
+    else
+      warn "Skipped Vercel env setup - you'll need to set them manually"
+    fi
+  else
+    warn "Not logged in to Vercel CLI. Run 'vercel login' first, then set env vars manually."
+  fi
+else
+  warn "Vercel CLI not installed. Install with: npm i -g vercel"
+fi
+
+# ============================================================
+# 7. OUTPUT SUMMARY
 # ============================================================
 echo ""
 echo "============================================================"
@@ -451,16 +488,15 @@ echo ""
 echo "Connect via SSH:"
 echo "  ssh root@$SERVER_IP"
 echo ""
-echo -e "${YELLOW}IMPORTANT: Save these credentials and add to Vercel!${NC}"
+echo -e "${YELLOW}Credentials (saved in sandbox.env):${NC}"
 echo ""
 echo "  NEXT_PUBLIC_SANDBOX_API_KEY: $GENERATED_SANDBOX_KEY"
 echo "  ADMIN_API_KEY:               $GENERATED_ADMIN_KEY"
-echo ""
-echo "  (Also saved in sandbox.env)"
+echo "  AUTH_SECRET:                 $GENERATED_AUTH_SECRET"
 echo ""
 echo "Next steps:"
 echo "  1. Add DNS A record: sandbox.toolkata.com → $SERVER_IP"
-echo "  2. Add both API keys to Vercel environment variables"
+echo "  2. (If not done above) Add API keys to Vercel environment variables"
 echo "  3. (Optional) Edit sandbox.env to add GITHUB_TOKEN for CMS features"
 echo "  4. Deploy: ./scripts/hetzner/deploy.sh"
 echo "============================================================"
