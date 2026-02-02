@@ -15,7 +15,7 @@ export const SANDBOX_API_URL = process.env["NEXT_PUBLIC_SANDBOX_API_URL"] || "ws
  * Sandbox API key from environment.
  * Only required in production when SANDBOX_API_KEY is set on the server.
  */
-export const SANDBOX_API_KEY = process.env["NEXT_PUBLIC_SANDBOX_API_KEY"] ?? ""
+export const SANDBOX_API_KEY = (process.env["NEXT_PUBLIC_SANDBOX_API_KEY"] ?? "").trim()
 
 /**
  * Admin API key for admin endpoints.
@@ -24,7 +24,7 @@ export const SANDBOX_API_KEY = process.env["NEXT_PUBLIC_SANDBOX_API_KEY"] ?? ""
  * Uses server-side environment variable ADMIN_API_KEY (not NEXT_PUBLIC_ prefixed)
  * since this is only used in server actions.
  */
-export const ADMIN_API_KEY = process.env["ADMIN_API_KEY"] ?? ""
+export const ADMIN_API_KEY = (process.env["ADMIN_API_KEY"] ?? "").trim()
 
 /**
  * Convert a WebSocket URL to an HTTP URL.
