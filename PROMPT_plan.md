@@ -9,11 +9,14 @@ Read all files in `specs/` directory using parallel subagents.
 
 ### 0b. Study existing implementation
 Use parallel subagents to analyze relevant source directories:
-- `packages/sandbox-api/src/services/` - Backend Effect-TS services
-- `packages/sandbox-api/src/routes/` - Backend Hono routes
-- `packages/web/services/` - Frontend Effect-TS services
-- `packages/web/app/` - Next.js App Router pages
-- `packages/web/components/` - React components
+- `packages/web/content/` — pairings registry, glossary data
+- `packages/web/app/[toolPair]/` — routing, overview, step, glossary pages
+- `packages/web/components/ui/` — LessonCard, GlossaryClientWrapper, TerminalSearch, InteractiveTerminal
+- `packages/web/lib/content/` — schemas, types, content loading
+- `packages/web/lib/search-data.ts` — search index
+- `packages/sandbox-api/src/environments/` — environment registry, builtin configs
+- `packages/sandbox-api/docker/environments/` — Docker images (bash, node, etc.)
+- `/Users/hmemcpy/git/toolkata-content/` — content repo structure
 
 ### 0c. Study the current plan
 Read `IMPLEMENTATION_PLAN.md` if it exists.

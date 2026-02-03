@@ -40,7 +40,7 @@ PROMPT_FILE="PROMPT_${MODE}.md"
 
 if [[ ! -f "$PROMPT_FILE" ]]; then
   echo -e "${RED}Error: $PROMPT_FILE not found${NC}"
-  echo "Run the ralph skill first to generate the required files."
+  echo "Run the ralph-claude skill first to generate the required files."
   exit 1
 fi
 
@@ -91,8 +91,8 @@ countdown() {
 }
 
 is_usage_limit_error() {
-  local output=$1
-  local exit_code=$2
+  local output="$1"
+  local exit_code="$2"
 
   # Only check for usage limits if there was an error
   [[ "$exit_code" -eq 0 ]] && return 1
@@ -120,7 +120,7 @@ is_usage_limit_error() {
 }
 
 get_sleep_duration() {
-  local output=$1
+  local output="$1"
 
   if [[ "$output" =~ "try again in "([0-9]+)" minute" ]]; then
     echo $(( ${BASH_REMATCH[1]} * 60 + 60 ))
@@ -169,7 +169,7 @@ get_sleep_duration() {
 }
 
 handle_usage_limit() {
-  local output=$1
+  local output="$1"
   local sleep_duration=$(get_sleep_duration "$output")
 
   echo ""
@@ -195,7 +195,7 @@ handle_usage_limit() {
 }
 
 if [[ "$AUTO_MODE" == true ]]; then
-  echo -e "${GREEN}Ralph loop: AUTO mode (plan ×${PLAN_MAX_ITERATIONS} → build)${NC}"
+  echo -e "${GREEN}Ralph loop: AUTO mode (plan x${PLAN_MAX_ITERATIONS} -> build)${NC}"
   [[ $MAX_ITERATIONS -gt 0 ]] && echo "Max build iterations: $MAX_ITERATIONS"
 else
   echo -e "${GREEN}Ralph loop: $(echo "$MODE" | tr '[:lower:]' '[:upper:]') mode${NC}"

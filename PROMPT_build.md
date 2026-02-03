@@ -5,8 +5,8 @@ Implement ONE task from the plan, validate, commit, exit.
 ## Phase 0: Orient
 
 Study with subagents:
-- @CLAUDE.md or @AGENTS.md (how to build/test)
-- @specs/content-cms.md (requirements)
+- @AGENTS.md or @CLAUDE.md (how to build/test)
+- @specs/* (requirements)
 - @IMPLEMENTATION_PLAN.md (current state)
 
 ### Check for completion
@@ -23,7 +23,7 @@ grep -c "^\- \[ \]" IMPLEMENTATION_PLAN.md || echo 0
 1. **Study the plan** — Choose the most important task from @IMPLEMENTATION_PLAN.md
 2. **Search first** — Don't assume not implemented. Verify behavior doesn't already exist
 3. **Implement** — ONE task only. Implement completely — no placeholders or stubs
-4. **Validate** — Run validation commands, must pass before continuing
+4. **Validate** — Run `bun run --cwd packages/web build`, must pass before continuing
 
 If stuck, use extended thinking to debug. Add extra logging if needed.
 
@@ -42,7 +42,7 @@ If stuck, use extended thinking to debug. Add extra logging if needed.
 ## Phase 3: Commit & Exit
 
 ```bash
-git add -A && git commit -m "feat(cms): [description]"
+git add -A && git commit -m "feat([scope]): [description]"
 ```
 
 Check remaining:
@@ -62,18 +62,3 @@ grep -c "^\- \[ \]" IMPLEMENTATION_PLAN.md || echo 0
 999999999. Keep @AGENTS.md operational only — status updates and progress notes pollute every future loop's context.
 9999999999. For any bugs you notice, resolve them or document them in @IMPLEMENTATION_PLAN.md even if unrelated to current work.
 99999999999. ONE task per iteration. Search before implementing. Validation MUST pass. Never output RALPH_COMPLETE if tasks remain.
-
-## Validation Commands
-
-```bash
-# Type check and lint
-cd packages/sandbox-api && bun run typecheck && bun run lint
-cd packages/web && bun run typecheck && bun run lint
-
-# Run tests
-cd packages/sandbox-api && bun test
-cd packages/web && bun run test
-
-# Build verification
-cd packages/web && bun run build
-```
