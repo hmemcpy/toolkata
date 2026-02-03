@@ -222,15 +222,16 @@ export function getSearchableSteps(): readonly SearchableStep[] {
 
     // Build searchable steps with pairing metadata
     for (const step of pairingSteps) {
-      steps.push({
+      const baseStep = {
         toolPair: pairing.slug,
         toName: pairing.to.name,
         fromName: pairing.from.name,
         step: step.step,
         title: step.title,
         description: step.description,
-        tags: pairing.tags,
-      })
+      }
+      // Only add tags if defined (exactOptionalPropertyTypes: true)
+      steps.push(pairing.tags ? { ...baseStep, tags: pairing.tags } : baseStep)
     }
   }
 
@@ -254,13 +255,16 @@ export function getSearchableStepsForPairing(toolPair: string): readonly Searcha
     return []
   }
 
-  return pairingSteps.map((step) => ({
-    toolPair: pairing.slug,
-    toName: pairing.to.name,
-    fromName: pairing.from.name,
-    step: step.step,
-    title: step.title,
-    description: step.description,
-    tags: pairing.tags,
-  }))
+  return pairingSteps.map((step) => {
+    const baseStep = {
+      toolPair: pairing.slug,
+      toName: pairing.to.name,
+      fromName: pairing.from.name,
+      step: step.step,
+      title: step.title,
+      description: step.description,
+    }
+    // Only add tags if defined (exactOptionalPropertyTypes: true)
+    return pairing.tags ? { ...baseStep, tags: pairing.tags } : baseStep
+  })
 }
