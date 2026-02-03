@@ -17,7 +17,7 @@ import { z } from "zod"
 export const sandboxConfigSchema = z
   .object({
     enabled: z.boolean().optional(),
-    environment: z.enum(["bash", "node", "python"]).optional(),
+    environment: z.enum(["bash", "node", "python", "scala", "typescript", "tmux"]).optional(),
     timeout: z.number().int().positive().optional(),
     init: z.array(z.string()).optional(),
   })
@@ -79,6 +79,8 @@ export const stepFrontmatterSchema = z.object({
   description: z.string().min(1, "Description is required").optional(),
   gitCommands: z.array(z.string()).optional(),
   jjCommands: z.array(z.string()).optional(),
+  zioCommands: z.array(z.string()).optional(),
+  commands: z.array(z.string()).optional(),
   sandbox: sandboxConfigSchema,
   validation: validationConfigSchema,
 })

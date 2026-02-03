@@ -19,7 +19,7 @@ import { indexFrontmatterSchema, kataFrontmatterSchema, stepFrontmatterSchema } 
  */
 export interface SandboxConfig {
   readonly enabled: boolean
-  readonly environment: "bash" | "node" | "python"
+  readonly environment: "bash" | "node" | "python" | "scala" | "typescript" | "tmux"
   readonly timeout: number
   readonly init: readonly string[]
 }
@@ -41,7 +41,7 @@ export const DEFAULT_SANDBOX_CONFIG: SandboxConfig = {
  */
 export type RawSandboxConfig = {
   readonly enabled?: boolean
-  readonly environment?: "bash" | "node" | "python"
+  readonly environment?: "bash" | "node" | "python" | "scala" | "typescript" | "tmux"
   readonly timeout?: number
   readonly init?: string[]
 }
@@ -85,8 +85,8 @@ export function resolveSandboxConfig(
     enabled:
       stepConfig?.enabled ?? toolPairConfig?.sandbox?.enabled ?? DEFAULT_SANDBOX_CONFIG.enabled,
     environment:
-      (stepConfig?.environment as "bash" | "node" | "python" | undefined) ??
-      (toolPairConfig?.sandbox?.environment as "bash" | "node" | "python" | undefined) ??
+      (stepConfig?.environment as SandboxConfig["environment"] | undefined) ??
+      (toolPairConfig?.sandbox?.environment as SandboxConfig["environment"] | undefined) ??
       DEFAULT_SANDBOX_CONFIG.environment,
     timeout:
       stepConfig?.timeout ?? toolPairConfig?.sandbox?.timeout ?? DEFAULT_SANDBOX_CONFIG.timeout,

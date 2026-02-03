@@ -135,7 +135,7 @@ export interface InteractiveTerminalRef {
  */
 export interface SandboxConfig {
   readonly enabled: boolean
-  readonly environment: "bash" | "node" | "python"
+  readonly environment: "bash" | "node" | "python" | "scala" | "typescript" | "tmux"
   readonly timeout: number
   readonly init: readonly string[]
 }
