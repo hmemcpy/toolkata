@@ -169,7 +169,13 @@ export const EnvironmentServiceLive = Layer.effect(EnvironmentService, make)
 
 // Re-export types for convenience
 export type { EnvironmentConfig, EnvironmentInfo, EnvironmentError } from "./types.js"
-export { bashEnvironment, nodeEnvironment, pythonEnvironment } from "./builtin.js"
+export {
+  bashEnvironment,
+  nodeEnvironment,
+  pythonEnvironment,
+  scalaEnvironment,
+  typescriptEnvironment,
+} from "./builtin.js"
 
 // MissingImagesError for startup validation
 export class MissingImagesError extends Data.TaggedClass("MissingImagesError")<{

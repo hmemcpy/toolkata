@@ -11,7 +11,7 @@
 | `bidirectional-comparison.md` | Done | DirectionToggle, glossary, useDirection hook |
 | `terminal-sidebar.md` | Done | TerminalSidebar, SplitPane, InfoPanel, TryIt |
 | `sandbox-integration.md` | Done | TerminalContext, TryIt, gVisor, per-pair Docker |
-| `multi-environment-sandbox.md` | Mostly done | bash/node/python registered; **scala/typescript NOT registered in registry.ts** |
+| `multi-environment-sandbox.md` | Done | All 5 environments (bash/node/python/scala/typescript) registered |
 | `cats-effect-zio-comparison.md` | Done | 15-step zio-cats content, ScalaComparisonBlock, Scastie |
 | `cats-zio-improvements.md` | Mostly done | Shiki highlighting done; Zionomicon accuracy audit pending |
 | `zionomicon-tutorial-update.md` | Mostly done | All 15 steps exist in content repo; accuracy audit against Zionomicon not yet done |
@@ -27,7 +27,7 @@
 
 ## P0 — Critical Fixes (unblocks existing features)
 
-- [ ] **Register scala and typescript environments in sandbox registry** — `scalaEnvironment` and `typescriptEnvironment` are defined in `builtin.ts` (lines 41-58) but NOT added to `REGISTERED_ENVIRONMENTS` in `registry.ts` (line 15). The import on line 3 only brings in `bashEnvironment, nodeEnvironment, pythonEnvironment`. Fix: (1) Update import in `registry.ts` to also import `scalaEnvironment, typescriptEnvironment` from `./builtin.js`. (2) Add both to the `REGISTERED_ENVIRONMENTS` array. (3) Update the re-export in `index.ts` line 172 to include `scalaEnvironment, typescriptEnvironment`. Impact: `GET /api/v1/environments` will list all 5 environments, `hasEnvironment("scala")` returns true, `validateAllImages()` checks all Docker images at startup. Files: `packages/sandbox-api/src/environments/registry.ts`, `packages/sandbox-api/src/environments/index.ts`
+- [x] Completed: **Register scala and typescript environments in sandbox registry** — Updated `registry.ts` to import and register `scalaEnvironment, typescriptEnvironment`, updated `index.ts` re-export. Impact: `GET /api/v1/environments` now lists all 5 environments, `hasEnvironment("scala")` returns true, `validateAllImages()` checks all Docker images at startup.
 
 ---
 

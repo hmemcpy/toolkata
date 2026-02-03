@@ -1,6 +1,12 @@
 import type { EnvironmentConfig } from "./types.js"
 import type { EnvironmentInfo } from "./types.js"
-import { bashEnvironment, nodeEnvironment, pythonEnvironment } from "./builtin.js"
+import {
+  bashEnvironment,
+  nodeEnvironment,
+  pythonEnvironment,
+  scalaEnvironment,
+  typescriptEnvironment,
+} from "./builtin.js"
 
 /**
  * Central registry of all available environments
@@ -16,6 +22,8 @@ const REGISTERED_ENVIRONMENTS: EnvironmentConfig[] = [
   bashEnvironment,
   nodeEnvironment,
   pythonEnvironment,
+  scalaEnvironment,
+  typescriptEnvironment,
   // Add plugin environments here
   // ...myCustomEnvironment,
 ]
