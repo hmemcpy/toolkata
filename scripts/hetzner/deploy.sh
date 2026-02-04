@@ -176,11 +176,9 @@ info "Configuring hardened Caddy reverse proxy (with admin routes)..."
 
 # ADMIN_API_KEY is now required and validated above
 
-# Get Vercel egress IPs for admin route protection
-VERCEL_IPS=$(curl -s https://api.vercel.com/v1/ips 2>/dev/null | jq -r '.blocks[]' 2>/dev/null || echo -e "76.76.21.0/24\n76.76.22.0/24")
-
 # Build Caddyfile locally for comparison
 CADDY_TEMP=$(mktemp)
+# First part: unquoted heredoc so $DOMAIN is expanded
 cat > "$CADDY_TEMP" << CADDYHEADER
 $DOMAIN {
     request_body {
@@ -197,21 +195,8 @@ $DOMAIN {
 
     handle /admin/* {
 CADDYHEADER
-
-# Add Vercel IP allowlist matcher (negated - block IPs NOT in the list)
-VERCEL_IP_LIST=""
-while IFS= read -r ip; do
-    VERCEL_IP_LIST="$VERCEL_IP_LIST $ip"
-done <<< "$VERCEL_IPS"
-cat >> "$CADDY_TEMP" << EOF
-        @not_vercel {
-            not remote_ip$VERCEL_IP_LIST
-        }
-        respond @not_vercel "Forbidden" 403
-EOF
-
+# Second part: quoted heredoc so {$ADMIN_API_KEY} stays literal for Caddy
 cat >> "$CADDY_TEMP" << 'CADDYFOOTER'
-
         @invalid_key {
             not header X-Admin-Key {$ADMIN_API_KEY}
         }

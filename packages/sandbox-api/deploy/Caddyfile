@@ -12,9 +12,8 @@
 # - Handles HTTP/2 and WebSocket upgrades
 #
 # Admin route security:
-# - /admin/* routes are protected by IP allowlist (Vercel egress IPs)
-# - Application also validates X-Admin-Key header (defense in depth)
-# - Vercel egress IPs: https://vercel.com/docs/ips
+# - /admin/* routes are protected by X-Admin-Key header
+# - Vercel middleware enforces NextAuth admin session (defense in depth)
 
 # Global options
 {
@@ -67,17 +66,8 @@ sandbox.toolkata.com {
 		reverse_proxy localhost:3001
 	}
 
-	# Admin endpoints - protected by IP allowlist + X-Admin-Key header
-	# Only allow requests from Vercel egress IPs (https://vercel.com/docs/ips)
+	# Admin endpoints - protected by X-Admin-Key header
 	handle /admin* {
-		# IP allowlist - Vercel egress IPs (update regularly)
-		# Get current list from: https://vercel.com/docs/ips
-		# Format: ip4 ranges, ip6 ranges
-		remote_ip 76.76.21.0/24 76.76.19.0/24 {
-			# Reject requests not from Vercel
-			respond "Forbidden" 403
-		}
-
 		reverse_proxy localhost:3001 {
 			# Forward real client IP (the Vercel server IP)
 			header_up X-Real-IP {remote_host}
