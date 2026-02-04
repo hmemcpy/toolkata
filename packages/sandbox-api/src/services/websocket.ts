@@ -312,6 +312,14 @@ const make = Effect.gen(function* () {
   const resize = (connection: ConnectionState, rows: number, cols: number) =>
     Effect.sync(() => {
       connection.bunProcess.terminal.resize(cols, rows)
+
+      // On macOS, the `script -q /dev/null` wrapper (needed for proper TTY allocation
+      // with docker exec) does not propagate SIGWINCH to child processes.
+      // Work around by writing `stty` directly to the PTY to force the inner shell
+      // to update its terminal size, followed by `clear` to clean up the echoed command.
+      if (isMacOS) {
+        connection.bunProcess.terminal.write(`stty rows ${rows} cols ${cols} && clear\n`)
+      }
     })
 
   // Execute init commands (optionally silent - without sending output to client)

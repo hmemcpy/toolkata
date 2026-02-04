@@ -548,11 +548,14 @@ export const validateTerminalInput = (
 
   // Dangerous patterns to block:
   // - OSC (Operating System Command) sequences: \x1b ] ... BEL
+  //   Exception: OSC 10-19 are safe color query/set sequences sent by xterm.js
   // - DCS (Device Control String) sequences: \x1b P ... \
   // - PM (Privacy Message) sequences: \x1b ^ ... \
   // - APC (Application Program Command) sequences: \x1b _ ... \
   // These can be used for terminal manipulation attacks
 
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentional escape sequence detection for security
+  const safeOsc = /\x1b\]1\d;/  // OSC 10-19: color queries/sets (xterm.js sends these)
   // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentional escape sequence detection for security
   const dangerousOsc = /\x1b\]/
   // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentional escape sequence detection for security
@@ -564,6 +567,10 @@ export const validateTerminalInput = (
 
   for (const pattern of [dangerousOsc, dangerousDcs, dangerousPm, dangerousApc]) {
     if (pattern.test(input)) {
+      // Allow safe OSC sequences (color queries from xterm.js)
+      if (pattern === dangerousOsc && safeOsc.test(input)) {
+        continue
+      }
       console.warn(
         `[security] Dangerous escape sequence detected in input: ${JSON.stringify(input.slice(0, 50))}`,
       )

@@ -18,18 +18,35 @@ import { useState, type ReactNode } from "react"
 import { useTerminalContext } from "../../contexts/TerminalContext"
 
 /**
- * Tool version information.
- * Hardcoded for the sandbox environment.
+ * Per-environment tool info and common commands.
  */
-const TOOL_VERSIONS = {
-  jj: "0.25.0",
-  git: "2.39.x",
+const ENVIRONMENT_INFO: Record<
+  string,
+  {
+    readonly tools: ReadonlyArray<{ readonly name: string; readonly version: string; readonly color: string }>
+    readonly commonCommands: readonly string[]
+  }
+> = {
+  bash: {
+    tools: [
+      { name: "jj", version: "0.25.0", color: "var(--color-accent)" },
+      { name: "git", version: "2.39.x", color: "var(--color-git)" },
+    ],
+    commonCommands: ["jj status", "jj log", "jj diff", "jj show @"],
+  },
+  tmux: {
+    tools: [{ name: "tmux", version: "3.5a", color: "var(--color-accent)" }],
+    commonCommands: ["tmux list-sessions", "tmux list-windows", "tmux list-panes"],
+  },
+  scala: {
+    tools: [{ name: "scala-cli", version: "1.x", color: "var(--color-accent)" }],
+    commonCommands: [],
+  },
+  typescript: {
+    tools: [{ name: "tsx", version: "4.x", color: "var(--color-accent)" }],
+    commonCommands: [],
+  },
 }
-
-/**
- * Common commands always available in the sandbox.
- */
-const COMMON_COMMANDS = ["jj status", "jj log", "jj diff", "jj show @"]
 
 /**
  * Command button component for consistent styling.
@@ -91,27 +108,30 @@ function CommandButton({
  * Commands can be executed in the terminal via "Run" buttons.
  */
 export function InfoPanel(): ReactNode {
-  const { contextCommands, executeCommand, state } = useTerminalContext()
+  const { contextCommands, executeCommand, state, sandboxConfig } = useTerminalContext()
 
   const isTerminalReady = state === "CONNECTED" || state === "TIMEOUT_WARNING"
 
+  const environment = sandboxConfig?.environment ?? "bash"
+  const defaultEnvInfo = { tools: [], commonCommands: [] as readonly string[] }
+  const envInfo = ENVIRONMENT_INFO[environment] ?? defaultEnvInfo
+  const commonCommands = envInfo.commonCommands
+
   // Filter common commands to exclude any that are already in contextCommands
-  const filteredCommonCommands = COMMON_COMMANDS.filter((cmd) => !contextCommands.includes(cmd))
+  const filteredCommonCommands = commonCommands.filter((cmd) => !contextCommands.includes(cmd))
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {/* Tool versions header */}
       <div className="flex shrink-0 items-center gap-4 border-b border-[var(--color-border)] px-4 py-2">
         <span className="text-xs text-[var(--color-text-dim)]">Installed:</span>
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs font-medium text-[var(--color-accent)]">jj</span>
-          <span className="text-xs text-[var(--color-text-muted)]">{TOOL_VERSIONS.jj}</span>
-        </div>
-        <div className="h-3 w-px bg-[var(--color-border)]" aria-hidden="true" />
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs font-medium text-[var(--color-git)]">git</span>
-          <span className="text-xs text-[var(--color-text-muted)]">{TOOL_VERSIONS.git}</span>
-        </div>
+        {envInfo.tools.map((tool, i) => (
+          <div key={tool.name} className="flex items-center gap-1.5">
+            {i > 0 && <div className="h-3 w-px bg-[var(--color-border)]" aria-hidden="true" />}
+            <span className="text-xs font-medium" style={{ color: tool.color }}>{tool.name}</span>
+            <span className="text-xs text-[var(--color-text-muted)]">{tool.version}</span>
+          </div>
+        ))}
       </div>
 
       {/* Commands list */}
