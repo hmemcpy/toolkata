@@ -332,17 +332,16 @@ export function getSearchableStepsForPairing(toolPair: string): readonly Searcha
         description: step.description,
       }
       return entry.tags ? { ...baseStep, tags: entry.tags } : baseStep
-    } else {
-      // Tutorial mode: Learn X (no fromName)
-      baseStep = {
-        toolPair: entry.slug,
-        toName: entry.tool.name,
-        fromName: "",
-        step: step.step,
-        title: step.title,
-        description: step.description,
-      }
-      return entry.tags ? { ...baseStep, tags: entry.tags } : baseStep
     }
+    // Tutorial mode: Learn X (no fromName)
+    baseStep = {
+      toolPair: entry.slug,
+      toName: entry.tool.name,
+      fromName: "",
+      step: step.step,
+      title: step.title,
+      description: step.description,
+    }
+    return entry.tags ? { ...baseStep, tags: entry.tags } : baseStep
   })
 }

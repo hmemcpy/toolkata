@@ -104,7 +104,7 @@ function searchEntries(entries: readonly CheatSheetEntry[], query: string): read
     (entry) =>
       entry.command.toLowerCase().includes(lowerQuery) ||
       entry.description.toLowerCase().includes(lowerQuery) ||
-      (entry.note && entry.note.toLowerCase().includes(lowerQuery)),
+      (entry.note?.toLowerCase().includes(lowerQuery)),
   )
 }
 

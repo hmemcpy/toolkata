@@ -422,7 +422,7 @@ export default async function ComparisonOverviewPage(props: {
             </h1>
             {(isPairing(entry) ? entry.toUrl : entry.toolUrl) && (
               <a
-                href={isPairing(entry) ? entry.toUrl! : entry.toolUrl!}
+                href={(isPairing(entry) ? entry.toUrl : entry.toolUrl) ?? "#"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-block mt-2 text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"

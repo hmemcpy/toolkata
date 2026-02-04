@@ -54,12 +54,11 @@ export async function generateMetadata(props: {
       title: `Step ${stepNum} | ${entry.to.name} ← ${entry.from.name}`,
       description: `Learn ${entry.to.name} if you already know ${entry.from.name}. Step ${stepNum} of ${entry.steps}.`,
     }
-  } else {
-    // Tutorial mode: "Learn tmux"
-    return {
-      title: `Step ${stepNum} | Learn ${entry.tool.name}`,
-      description: `Learn ${entry.tool.name}. ${entry.estimatedTime} tutorial. Step ${stepNum} of ${entry.steps}.`,
-    }
+  }
+  // Tutorial mode: "Learn tmux"
+  return {
+    title: `Step ${stepNum} | Learn ${entry.tool.name}`,
+    description: `Learn ${entry.tool.name}. ${entry.estimatedTime} tutorial. Step ${stepNum} of ${entry.steps}.`,
   }
 }
 

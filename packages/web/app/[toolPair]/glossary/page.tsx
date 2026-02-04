@@ -70,22 +70,21 @@ export async function generateMetadata({
         description: `Compare commands between ${entry.to.name} and ${entry.from.name}`,
       },
     }
-  } else {
-    // Tutorial mode: single-tool cheat sheet
-    return {
+  }
+  // Tutorial mode: single-tool cheat sheet
+  return {
+    title: `${entry.tool.name} Cheat Sheet`,
+    description: `Command reference for ${entry.tool.name}. Search and filter ${entry.tool.name} commands.`,
+    openGraph: {
       title: `${entry.tool.name} Cheat Sheet`,
-      description: `Command reference for ${entry.tool.name}. Search and filter ${entry.tool.name} commands.`,
-      openGraph: {
-        title: `${entry.tool.name} Cheat Sheet`,
-        description: `Search and filter ${entry.tool.name} commands`,
-        type: "website",
-      },
-      twitter: {
-        card: "summary",
-        title: `${entry.tool.name} Cheat Sheet`,
-        description: `Search and filter ${entry.tool.name} commands`,
-      },
-    }
+      description: `Search and filter ${entry.tool.name} commands`,
+      type: "website",
+    },
+    twitter: {
+      card: "summary",
+      title: `${entry.tool.name} Cheat Sheet`,
+      description: `Search and filter ${entry.tool.name} commands`,
+    },
   }
 }
 
@@ -149,9 +148,9 @@ export default async function GlossaryPage({
         <Footer />
       </div>
     )
-  } else {
-    // Tutorial mode: single-column cheat sheet
-    return (
+  }
+  // Tutorial mode: single-column cheat sheet
+  return (
       <div className="min-h-screen bg-[var(--color-bg)]">
         <Header />
 
@@ -177,5 +176,4 @@ export default async function GlossaryPage({
         <Footer />
       </div>
     )
-  }
 }
