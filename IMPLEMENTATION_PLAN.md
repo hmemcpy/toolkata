@@ -79,7 +79,7 @@ These tasks add tutorial mode alongside pairing mode, starting with tmux as the 
 
 ### P1-E: Verification
 
-- [ ] **Verify build passes after tutorial mode changes** — Run `bun run --cwd packages/web build` and fix any type errors. Ensure all 3 existing pairings (jj-git, zio-cats, effect-zio) still work correctly. Verify tmux routes render: `/tmux` (overview), `/tmux/1` through `/tmux/8` (steps), `/tmux/glossary` (cheat sheet).
+- [x] Completed: **Verify build passes after tutorial mode changes** — Ran `bun run --cwd packages/web build` — build passed successfully. All 3 existing pairings (jj-git: 12 steps, zio-cats: 15 steps, effect-zio: 15 steps) still work correctly. Tmux routes are statically generated: `/tmux` (overview), `/tmux/1` through `/tmux/8` (steps), `/tmux/glossary` (cheat sheet). The `generateStaticParams()` in step page correctly includes all 4 entries. No type errors.
 
 ---
 
