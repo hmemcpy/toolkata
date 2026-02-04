@@ -6,21 +6,25 @@ import type { SandboxConfig } from "../../components/ui/InteractiveTerminal"
 import { OverviewPageClientWrapper } from "../../components/ui/OverviewPageClientWrapper"
 import { ProgressCard } from "../../components/ui/ProgressCard"
 import { ShrinkingLayout } from "../../components/ui/ShrinkingLayout"
-import { getPairing, isValidPairingSlug } from "../../content/pairings"
+import { getEntry, isPairing, isValidEntrySlug } from "../../content/pairings"
 import { getServerProgressForPairAsync } from "../../core/progress-server"
 import { loadToolConfig } from "../../lib/content-core"
 import { resolveSandboxConfig } from "../../lib/content/types"
 import type { StepMeta } from "../../services/content"
 
 /**
- * Generate static params for all published tool pairings.
+ * Generate static params for all published tool pairings and tutorials.
  *
  * This enables Next.js to statically generate overview pages at build time
- * for all published tool comparisons, improving performance and SEO.
+ * for all published tool comparisons and single-tool tutorials, improving performance and SEO.
  */
 export function generateStaticParams() {
-  const pairings = [{ slug: "jj-git" }, { slug: "zio-cats" }, { slug: "effect-zio" }]
-  return pairings.map((pairing) => ({ toolPair: pairing.slug }))
+  return [
+    { toolPair: "jj-git" },
+    { toolPair: "zio-cats" },
+    { toolPair: "effect-zio" },
+    { toolPair: "tmux" },
+  ]
 }
 
 /**
@@ -33,27 +37,35 @@ export async function generateMetadata(props: {
   readonly params: Promise<{ readonly toolPair: string }>
 }) {
   const params = await props.params
-  const pairing = getPairing(params.toolPair)
+  const entry = getEntry(params.toolPair)
 
-  if (!pairing) {
+  if (!entry) {
     return {}
   }
 
+  if (isPairing(entry)) {
+    return {
+      title: `${entry.to.name} ← ${entry.from.name}`,
+      description: `Learn ${entry.to.name} if you already know ${entry.from.name}. ${entry.estimatedTime} tutorial.`,
+    }
+  }
+
+  // Tutorial mode (SingleToolEntry)
   return {
-    title: `${pairing.to.name} ← ${pairing.from.name}`,
-    description: `Learn ${pairing.to.name} if you already know ${pairing.from.name}. ${pairing.estimatedTime} tutorial.`,
+    title: entry.tool.name,
+    description: `Learn ${entry.tool.name}. ${entry.estimatedTime} tutorial.`,
   }
 }
 
 /**
- * Comparison overview page.
+ * Comparison overview page (or tutorial overview page for single-tool tutorials).
  *
  * Shows:
- * - "Why {tool}?" introduction section
+ * - "Why {tool}?" introduction section (or "Learn {tool.name}" for tutorials)
  * - Key differences callout box
  * - StepList with all steps grouped by section (with progress from localStorage)
  * - Progress summary sidebar (desktop) / section (mobile) (with continue button)
- * - Link to glossary
+ * - Link to glossary (or "Cheat Sheet" for tutorials)
  *
  * Progress features:
  * - Current step highlighted in StepList
@@ -71,13 +83,13 @@ export default async function ComparisonOverviewPage(props: {
   const params = await props.params
   const { toolPair } = params
 
-  // Validate the tool pair slug
-  if (!isValidPairingSlug(toolPair)) {
+  // Validate the tool entry slug
+  if (!isValidEntrySlug(toolPair)) {
     notFound()
   }
 
-  const pairing = getPairing(toolPair)
-  if (!pairing) {
+  const entry = getEntry(toolPair)
+  if (!entry) {
     notFound()
   }
 
@@ -272,9 +284,32 @@ export default async function ComparisonOverviewPage(props: {
     { step: 15, title: "Database Access", description: "@effect/sql, SqlClient", slug: "15-step" },
   ]
 
+  // Steps for tmux tutorial
+  const tmuxSteps: readonly StepMeta[] = [
+    { step: 1, title: "What is tmux?", description: "Install, first session, basic orientation", slug: "01-step" },
+    { step: 2, title: "Sessions", description: "New, list, attach, detach, kill", slug: "02-step" },
+    { step: 3, title: "Windows", description: "Create, navigate, rename, close, list", slug: "03-step" },
+    { step: 4, title: "Panes", description: "Split vertical/horizontal, cycle, zoom, resize", slug: "04-step" },
+    { step: 5, title: "Key Bindings", description: "Prefix key, list bindings, command mode", slug: "05-step" },
+    { step: 6, title: "Copy Mode", description: "Enter, vi/emacs nav, search, select/yank, paste", slug: "06-step" },
+    { step: 7, title: "Configuration", description: ".tmux.conf, prefix rebinding, options, status bar", slug: "07-step" },
+    {
+      step: 8,
+      title: "Session Management & Scripting",
+      description: "Multiple sessions, switch, send-keys, scripting",
+      slug: "08-step",
+    },
+  ]
+
   // Select steps based on tool pair
   const steps =
-    toolPair === "zio-cats" ? catsZioSteps : toolPair === "effect-zio" ? effectZioSteps : jjGitSteps
+    toolPair === "zio-cats"
+      ? catsZioSteps
+      : toolPair === "effect-zio"
+        ? effectZioSteps
+        : toolPair === "tmux"
+          ? tmuxSteps
+          : jjGitSteps
 
   // Default estimated times for jj-git
   const jjGitTimes = new Map<number, string>([
@@ -330,9 +365,27 @@ export default async function ComparisonOverviewPage(props: {
     [15, "~6 min"],
   ])
 
+  // Estimated times for tmux
+  const tmuxTimes = new Map<number, string>([
+    [1, "~3 min"],
+    [2, "~4 min"],
+    [3, "~4 min"],
+    [4, "~5 min"],
+    [5, "~3 min"],
+    [6, "~5 min"],
+    [7, "~4 min"],
+    [8, "~5 min"],
+  ])
+
   // Select estimated times based on tool pair
   const estimatedTimes =
-    toolPair === "zio-cats" ? catsZioTimes : toolPair === "effect-zio" ? effectZioTimes : jjGitTimes
+    toolPair === "zio-cats"
+      ? catsZioTimes
+      : toolPair === "effect-zio"
+        ? effectZioTimes
+        : toolPair === "tmux"
+          ? tmuxTimes
+          : jjGitTimes
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
@@ -352,23 +405,29 @@ export default async function ComparisonOverviewPage(props: {
               href={`/${toolPair}/glossary`}
               className="inline-flex items-center text-sm font-mono text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
             >
-              [Glossary →]
+              [{isPairing(entry) ? "Glossary" : "Cheat Sheet"} →]
             </Link>
           </div>
 
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold font-mono text-white sm:text-4xl">
-              {pairing.to.name} ← {pairing.from.name}
+              {isPairing(entry) ? (
+                <>
+                  {entry.to.name} ← {entry.from.name}
+                </>
+              ) : (
+                <>Learn {entry.tool.name}</>
+              )}
             </h1>
-            {pairing.toUrl && (
+            {(isPairing(entry) ? entry.toUrl : entry.toolUrl) && (
               <a
-                href={pairing.toUrl}
+                href={isPairing(entry) ? entry.toUrl! : entry.toolUrl!}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-block mt-2 text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
               >
-                [{pairing.to.name} documentation →]
+                [{isPairing(entry) ? entry.to.name : entry.tool.name} documentation →]
               </a>
             )}
           </div>
@@ -380,10 +439,40 @@ export default async function ComparisonOverviewPage(props: {
               {/* Why {tool}? Section */}
               <section>
                 <h2 className="mb-4 text-2xl font-bold font-mono text-white">
-                  Why {pairing.to.name}?
+                  Why {isPairing(entry) ? entry.to.name : entry.tool.name}?
                 </h2>
                 <div className="prose prose-invert max-w-none">
-                  {toolPair === "zio-cats" ? (
+                  {toolPair === "tmux" ? (
+                    <>
+                      <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
+                        tmux is a terminal multiplexer that lets you create and control multiple terminal
+                        sessions from a single screen. Perfect for remote workflows, long-running
+                        processes, and organizing your development environment.
+                      </p>
+                      <ul className="space-y-2 text-sm text-[#d1d5dc]">
+                        <li className="flex items-start gap-2">
+                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                          <span>Terminal multiplexing — split windows into panes for side-by-side workflows</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                          <span>Session persistence — detach and reattach without losing running processes</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                          <span>Remote workflows — maintain sessions over SSH connections</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                          <span>Pane and window management — organize workspaces with customizable layouts</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                          <span>Scriptability — automate session setup and configuration with .tmux.conf</span>
+                        </li>
+                      </ul>
+                    </>
+                  ) : toolPair === "zio-cats" ? (
                     <>
                       <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
                         ZIO 2 is a powerful effect system with built-in dependency injection and
@@ -446,38 +535,39 @@ export default async function ComparisonOverviewPage(props: {
                       </ul>
                     </>
                   ) : (
-                    <>
-                      <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
-                        {pairing.to.name} ({pairing.to.description}) rethinks version control from
-                        first principles. Built for developers who want a safer, more intuitive
-                        workflow.
-                      </p>
-                      <ul className="space-y-2 text-sm text-[#d1d5dc]">
-                        <li className="flex items-start gap-2">
-                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                          <span>Working copy IS a commit (no staging area complexity)</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                          <span>Change IDs survive rebases (stable identifiers)</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                          <span>Conflicts are first-class (stored in commits, not blocking)</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                          <span>Automatic descendant rebasing (no more --update-refs)</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                          <span>
-                            Compatible with existing {pairing.from.name} repos (use both tools
-                            together)
-                          </span>
-                        </li>
-                      </ul>
-                    </>
+                    // Default case: jj-git (pairings)
+                    isPairing(entry) && (
+                      <>
+                        <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
+                          {entry.to.name} ({entry.to.description}) rethinks version control from first
+                          principles. Built for developers who want a safer, more intuitive workflow.
+                        </p>
+                        <ul className="space-y-2 text-sm text-[#d1d5dc]">
+                          <li className="flex items-start gap-2">
+                            <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                            <span>Working copy IS a commit (no staging area complexity)</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                            <span>Change IDs survive rebases (stable identifiers)</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                            <span>Conflicts are first-class (stored in commits, not blocking)</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                            <span>Automatic descendant rebasing (no more --update-refs)</span>
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                            <span>
+                              Compatible with existing {entry.from.name} repos (use both tools together)
+                            </span>
+                          </li>
+                        </ul>
+                      </>
+                    )
                   )}
                 </div>
               </section>
@@ -485,17 +575,13 @@ export default async function ComparisonOverviewPage(props: {
 
             {/* Right column: Progress card */}
             <aside className="lg:col-span-1">
-              <ProgressCard
-                toolPair={toolPair}
-                totalSteps={pairing.steps}
-                initialProgress={initialProgress}
-              />
+              <ProgressCard toolPair={toolPair} totalSteps={entry.steps} initialProgress={initialProgress} />
             </aside>
 
             {/* Full width: Steps list */}
             <OverviewPageClientWrapper
               toolPair={toolPair}
-              totalSteps={pairing.steps}
+              totalSteps={entry.steps}
               steps={steps}
               estimatedTimes={estimatedTimes}
               initialProgress={initialProgress}
