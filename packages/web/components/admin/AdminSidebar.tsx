@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { signOut } from "../../lib/auth"
+import { signOut } from "next-auth/react"
 
 /**
  * Admin sidebar navigation.
@@ -144,17 +144,14 @@ export function AdminSidebar() {
 
         {/* User actions */}
         <div className="border-t border-[var(--color-border)] p-4">
-          <form action={async () => {
-            await signOut({ redirectTo: "/" })
-          }}>
-            <button
-              type="submit"
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-text-muted)] font-mono transition-colors rounded hover:text-[var(--color-error)] hover:bg-[var(--color-surface-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)]"
-            >
-              <span className="text-xs">[×]</span>
-              <span>Logout</span>
-            </button>
-          </form>
+          <button
+            type="button"
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-text-muted)] font-mono transition-colors rounded hover:text-[var(--color-error)] hover:bg-[var(--color-surface-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)]"
+          >
+            <span className="text-xs">[×]</span>
+            <span>Logout</span>
+          </button>
         </div>
       </div>
     </aside>
