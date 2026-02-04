@@ -5,7 +5,7 @@
  * This ensures all requests to the sandbox API originate from Vercel's infrastructure
  * (passes Caddy's IP allowlist) and keeps the ADMIN_API_KEY server-side.
  *
- * Auth: Requires a valid NextAuth admin session.
+ * Auth: Handled by middleware.ts (matched by /api/admin/:path*).
  *
  * @example
  * Browser: GET /api/admin/rate-limits
@@ -19,37 +19,19 @@
  */
 
 import { type NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
 import { adminApiFetch } from "@/lib/admin-api"
 
 /**
  * Proxy a request to the sandbox API.
+ *
+ * Auth is enforced by middleware — by the time this runs,
+ * the request is guaranteed to be from an authenticated admin.
  */
 async function proxyRequest(
   request: NextRequest,
   path: string[],
   method: string,
 ): Promise<NextResponse> {
-  // Check admin session
-  let session: { user?: { email?: string; isAdmin?: boolean } } | null = null
-  try {
-    session = await auth()
-  } catch (err) {
-    console.error(`[Admin Proxy] auth() failed for ${method} /${path.join("/")}:`, err instanceof Error ? err.message : err)
-    return NextResponse.json(
-      { error: "Unauthorized", message: "Session validation failed — try signing out and back in" },
-      { status: 401 },
-    )
-  }
-
-  console.log(`[Admin Proxy] ${method} /${path.join("/")} — session: ${session?.user?.email ?? "none"}, isAdmin: ${session?.user?.isAdmin ?? false}`)
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json(
-      { error: "Unauthorized", message: "Admin session required" },
-      { status: 401 },
-    )
-  }
-
   const targetPath = `/${path.join("/")}`
 
   // Forward query params
