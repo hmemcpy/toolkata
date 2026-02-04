@@ -32,8 +32,17 @@ export async function adminApiFetch(
     headers["X-Admin-Key"] = ADMIN_API_KEY
   }
 
-  return fetch(url, {
+  console.log(`[adminApiFetch] ${init?.method ?? "GET"} ${url} (key: ${ADMIN_API_KEY ? "set" : "MISSING"})`)
+
+  const response = await fetch(url, {
     ...init,
     headers,
   })
+
+  if (!response.ok) {
+    const body = await response.clone().text().catch(() => "")
+    console.error(`[adminApiFetch] ${response.status} ${response.statusText} — ${url}`, body.slice(0, 500))
+  }
+
+  return response
 }

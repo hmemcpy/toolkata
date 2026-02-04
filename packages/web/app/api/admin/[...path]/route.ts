@@ -32,6 +32,7 @@ async function proxyRequest(
 ): Promise<NextResponse> {
   // Check admin session
   const session = await auth()
+  console.log(`[Admin Proxy] ${method} /${path.join("/")} — session: ${session?.user?.email ?? "none"}, isAdmin: ${session?.user?.isAdmin ?? false}`)
   if (!session?.user?.isAdmin) {
     return NextResponse.json(
       { error: "Unauthorized", message: "Admin session required" },
