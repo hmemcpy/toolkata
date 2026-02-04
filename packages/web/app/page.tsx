@@ -2,7 +2,7 @@ import { Footer } from "../components/ui/Footer"
 import { Header } from "../components/ui/Header"
 import { LessonCard } from "../components/ui/LessonCard"
 import { TerminalSearch } from "../components/ui/TerminalSearch"
-import { getPairingsByCategory } from "../content/pairings"
+import { getEntriesByCategory } from "../content/pairings"
 import { getServerProgressAsync } from "../core/progress-server"
 
 // Page uses cookies for progress, so it must be dynamic
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic"
  * Progress is read from cookies during SSR - no hydration flicker.
  */
 export default async function HomePage() {
-  const pairingsByCategory = getPairingsByCategory()
+  const entriesByCategory = getEntriesByCategory()
   const progress = await getServerProgressAsync()
 
   return (
@@ -71,27 +71,27 @@ export default async function HomePage() {
 
         {/* Lesson Grid Grouped by Category */}
         <section className="space-y-12">
-          {Object.entries(pairingsByCategory).map(([category, pairings]) => (
+          {Object.entries(entriesByCategory).map(([category, entries]) => (
             <div key={category}>
               <div className="mb-6 flex items-center gap-4">
                 <span className="text-[var(--color-text-dim)] font-mono text-sm">{"/*"}</span>
                 <h2 className="text-lg font-bold font-mono text-[var(--color-text)]">{category}</h2>
                 <div className="flex-1 border-t border-[var(--color-border)]" />
                 <span className="text-[var(--color-text-dim)] font-mono text-xs">
-                  {pairings.length} {pairings.length === 1 ? "lesson" : "lessons"}
+                  {entries.length} {entries.length === 1 ? "lesson" : "lessons"}
                 </span>
                 <span className="text-[var(--color-text-dim)] font-mono text-sm">{"*/"}</span>
               </div>
 
               <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {pairings.map((pairing) => {
-                  const pairingProgress = progress[pairing.slug]
+                {entries.map((entry) => {
+                  const entryProgress = progress[entry.slug]
                   return (
                     <LessonCard
-                      key={pairing.slug}
-                      pairing={pairing}
-                      completedSteps={pairingProgress?.completedSteps.length ?? 0}
-                      currentStep={pairingProgress?.currentStep}
+                      key={entry.slug}
+                      entry={entry}
+                      completedSteps={entryProgress?.completedSteps.length ?? 0}
+                      currentStep={entryProgress?.currentStep}
                     />
                   )
                 })}

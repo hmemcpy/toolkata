@@ -45,7 +45,7 @@ These tasks add tutorial mode alongside pairing mode, starting with tmux as the 
 
 ### P1-B: UI Components (depends on P1-A)
 
-- [ ] **LessonCard: Handle tutorial mode (R2)** — Check if entry `isTutorial()`: render just tool name and icon (no "from ← to" arrow display), update aria-label to "Learn {tool.name}". Add tmux icon to `getToolIcon()` — use a terminal icon (e.g., from lucide-react `Terminal` icon or a simple SVG). File: `packages/web/components/ui/LessonCard.tsx`
+- [x] Completed: **LessonCard: Handle tutorial mode (R2)** — Updated `LessonCardProps` to accept `TutorialEntry` (union of `ToolPairing | SingleToolEntry`). Added `TerminalIcon` SVG component. Updated `getToolIcon()` to handle "terminal" icon for tmux. Used `isPairing()` type guard to conditionally render tool names with arrow (pairings) vs just tool name (tutorials). Updated aria-label to "Learn {tool.name}" for tutorials. Also updated `app/page.tsx` to use `getEntriesByCategory()` instead of `getPairingsByCategory()` and pass `entry` prop. Files: `packages/web/components/ui/LessonCard.tsx`, `packages/web/app/page.tsx`
 
 - [ ] **Overview page: Conditional rendering for tutorials (R3)** — Update `app/[toolPair]/page.tsx`: for tutorials, show "Learn {tool.name}" header instead of "Learn {to.name} if you know {from.name}". Add "Why tmux?" section with 5 features (terminal multiplexing, session persistence, remote workflows, pane/window management, scriptability). Add `tmuxSteps` metadata array (8 steps with titles/descriptions) and `tmuxTimes` map to `search-data.ts` or inline. Update glossary link text to "Cheat Sheet →" for tutorials. Adjust `generateMetadata()` for tutorial mode. Update `generateStaticParams()` to include `{ toolPair: "tmux" }`.
 
