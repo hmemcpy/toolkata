@@ -26,6 +26,9 @@ export interface EnvironmentConfig {
 
   // Language/tool category (e.g., "shell", "runtime", "vcs")
   readonly category: "shell" | "runtime" | "vcs"
+
+  // Disable gVisor for this environment (e.g., tmux needs proper PTY support)
+  readonly disableGvisor?: boolean
 }
 
 // Environment info (returned to API clients)

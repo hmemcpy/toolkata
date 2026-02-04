@@ -65,6 +65,7 @@ export const tmuxEnvironment: EnvironmentConfig = {
   defaultInitCommands: [],
   description: "Bash shell with tmux terminal multiplexer installed",
   category: "shell",
+  disableGvisor: true, // tmux needs proper PTY support (gVisor doesn't support nested PTY)
 } as const
 
 // Registry of all built-in environments

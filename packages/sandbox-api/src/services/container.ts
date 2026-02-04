@@ -176,8 +176,8 @@ const make = Effect.gen(function* () {
         AutoRemove: CONTAINER_SECURITY.autoRemove,
       }
 
-      // Add gVisor runtime if enabled
-      if (SandboxConfig.useGvisor) {
+      // Add gVisor runtime if enabled (unless environment opts out)
+      if (SandboxConfig.useGvisor && !envConfig.disableGvisor) {
         hostConfig.Runtime = SandboxConfig.gvisorRuntime
       }
 

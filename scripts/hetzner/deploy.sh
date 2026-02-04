@@ -198,10 +198,17 @@ $DOMAIN {
     handle /admin/* {
 CADDYHEADER
 
-# Add Vercel IPs
+# Add Vercel IP allowlist matcher (negated - block IPs NOT in the list)
+VERCEL_IP_LIST=""
 while IFS= read -r ip; do
-    echo "        remote_ip $ip" >> "$CADDY_TEMP"
+    VERCEL_IP_LIST="$VERCEL_IP_LIST $ip"
 done <<< "$VERCEL_IPS"
+cat >> "$CADDY_TEMP" << EOF
+        @not_vercel {
+            not remote_ip$VERCEL_IP_LIST
+        }
+        respond @not_vercel "Forbidden" 403
+EOF
 
 cat >> "$CADDY_TEMP" << 'CADDYFOOTER'
 
@@ -275,6 +282,7 @@ SANDBOX_ALLOWED_ORIGINS=$SANDBOX_ALLOWED_ORIGINS
 ADMIN_API_KEY=$ADMIN_API_KEY
 AUTH_SECRET=$AUTH_SECRET
 REDIS_URL=redis://localhost:6379
+LOG_DIR=/var/log/sandbox-api
 EOF
 
 # Add optional GitHub CMS configuration (if set)
