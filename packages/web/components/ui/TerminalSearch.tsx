@@ -172,7 +172,7 @@ export function TerminalSearch() {
                   <span className="text-[var(--color-accent)]">{result.step}.</span> {result.title}
                 </span>
                 <span className="text-xs text-[var(--color-text-dim)]">
-                  {result.toName} ← {result.fromName}
+                  {result.fromName ? `${result.toName} ← ${result.fromName}` : result.toName}
                 </span>
               </span>
               <span className="block text-xs text-[var(--color-text-dim)] mt-0.5">

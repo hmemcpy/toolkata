@@ -13,7 +13,7 @@
  * ```
  */
 
-import { toolPairings } from "../content/pairings"
+import { getPublishedEntries, isPairing, isTutorial } from "../content/pairings"
 
 /**
  * Searchable step data for TerminalSearch.
@@ -195,12 +195,63 @@ const STEPS_BY_PAIRING = {
     },
     { step: 15, title: "Database Access", description: "@effect/sql, SqlClient", slug: "15-step" },
   ] as const,
+
+  tmux: [
+    {
+      step: 1,
+      title: "What is tmux?",
+      description: "Terminal multiplexer basics",
+      slug: "01-step",
+    },
+    {
+      step: 2,
+      title: "Sessions",
+      description: "Create, list, attach, detach",
+      slug: "02-step",
+    },
+    {
+      step: 3,
+      title: "Windows",
+      description: "Create, navigate, rename",
+      slug: "03-step",
+    },
+    {
+      step: 4,
+      title: "Panes",
+      description: "Split vertical/horizontal",
+      slug: "04-step",
+    },
+    {
+      step: 5,
+      title: "Key Bindings",
+      description: "Prefix key, list bindings",
+      slug: "05-step",
+    },
+    {
+      step: 6,
+      title: "Copy Mode",
+      description: "Navigate, search, copy",
+      slug: "06-step",
+    },
+    {
+      step: 7,
+      title: "Configuration",
+      description: ".tmux.conf, options",
+      slug: "07-step",
+    },
+    {
+      step: 8,
+      title: "Session Management",
+      description: "Multiple sessions, scripting",
+      slug: "08-step",
+    },
+  ] as const,
 } as const
 
 /**
- * Get all searchable steps for published pairings.
+ * Get all searchable steps for published entries (pairings and tutorials).
  *
- * Combines pairing metadata (from pairings.ts) with step metadata arrays
+ * Combines entry metadata (from pairings.ts) with step metadata arrays
  * to build the search index for TerminalSearch.
  *
  * @returns Readonly array of searchable steps with tool pair, names, and tags.
@@ -208,30 +259,42 @@ const STEPS_BY_PAIRING = {
 export function getSearchableSteps(): readonly SearchableStep[] {
   const steps: SearchableStep[] = []
 
-  for (const pairing of toolPairings) {
-    // Only include published pairings in search
-    if (pairing.status !== "published") {
+  for (const entry of getPublishedEntries()) {
+    // Get step metadata for this entry
+    const entrySteps = STEPS_BY_PAIRING[entry.slug as keyof typeof STEPS_BY_PAIRING]
+    if (!entrySteps) {
       continue
     }
 
-    // Get step metadata for this pairing
-    const pairingSteps = STEPS_BY_PAIRING[pairing.slug as keyof typeof STEPS_BY_PAIRING]
-    if (!pairingSteps) {
-      continue
-    }
+    // Build searchable steps with entry metadata
+    for (const step of entrySteps) {
+      let baseStep: SearchableStep
 
-    // Build searchable steps with pairing metadata
-    for (const step of pairingSteps) {
-      const baseStep = {
-        toolPair: pairing.slug,
-        toName: pairing.to.name,
-        fromName: pairing.from.name,
-        step: step.step,
-        title: step.title,
-        description: step.description,
+      if (isPairing(entry)) {
+        // Pairing mode: X if you know Y (e.g., "jj ← git")
+        baseStep = {
+          toolPair: entry.slug,
+          toName: entry.to.name,
+          fromName: entry.from.name,
+          step: step.step,
+          title: step.title,
+          description: step.description,
+        }
+        // Only add tags if defined (exactOptionalPropertyTypes: true)
+        steps.push(entry.tags ? { ...baseStep, tags: entry.tags } : baseStep)
+      } else if (isTutorial(entry)) {
+        // Tutorial mode: Learn X (e.g., "tmux" with empty fromName)
+        baseStep = {
+          toolPair: entry.slug,
+          toName: entry.tool.name,
+          fromName: "", // Tutorials have no source tool
+          step: step.step,
+          title: step.title,
+          description: step.description,
+        }
+        // Only add tags if defined (exactOptionalPropertyTypes: true)
+        steps.push(entry.tags ? { ...baseStep, tags: entry.tags } : baseStep)
       }
-      // Only add tags if defined (exactOptionalPropertyTypes: true)
-      steps.push(pairing.tags ? { ...baseStep, tags: pairing.tags } : baseStep)
     }
   }
 
@@ -239,32 +302,47 @@ export function getSearchableSteps(): readonly SearchableStep[] {
 }
 
 /**
- * Get searchable steps for a specific tool pairing.
+ * Get searchable steps for a specific entry (pairing or tutorial).
  *
- * @param toolPair - The tool pairing slug (e.g., "jj-git", "zio-cats", "effect-zio").
- * @returns Readonly array of searchable steps for the pairing, or empty array if not found.
+ * @param toolPair - The entry slug (e.g., "jj-git", "zio-cats", "effect-zio", "tmux").
+ * @returns Readonly array of searchable steps for the entry, or empty array if not found.
  */
 export function getSearchableStepsForPairing(toolPair: string): readonly SearchableStep[] {
-  const pairing = toolPairings.find((p) => p.slug === toolPair)
-  if (!pairing || pairing.status !== "published") {
+  const entry = getPublishedEntries().find((e) => e.slug === toolPair)
+  if (!entry) {
     return []
   }
 
-  const pairingSteps = STEPS_BY_PAIRING[toolPair as keyof typeof STEPS_BY_PAIRING]
-  if (!pairingSteps) {
+  const entrySteps = STEPS_BY_PAIRING[toolPair as keyof typeof STEPS_BY_PAIRING]
+  if (!entrySteps) {
     return []
   }
 
-  return pairingSteps.map((step) => {
-    const baseStep = {
-      toolPair: pairing.slug,
-      toName: pairing.to.name,
-      fromName: pairing.from.name,
-      step: step.step,
-      title: step.title,
-      description: step.description,
+  return entrySteps.map((step) => {
+    let baseStep: SearchableStep
+
+    if (isPairing(entry)) {
+      // Pairing mode: X if you know Y
+      baseStep = {
+        toolPair: entry.slug,
+        toName: entry.to.name,
+        fromName: entry.from.name,
+        step: step.step,
+        title: step.title,
+        description: step.description,
+      }
+      return entry.tags ? { ...baseStep, tags: entry.tags } : baseStep
+    } else {
+      // Tutorial mode: Learn X (no fromName)
+      baseStep = {
+        toolPair: entry.slug,
+        toName: entry.tool.name,
+        fromName: "",
+        step: step.step,
+        title: step.title,
+        description: step.description,
+      }
+      return entry.tags ? { ...baseStep, tags: entry.tags } : baseStep
     }
-    // Only add tags if defined (exactOptionalPropertyTypes: true)
-    return pairing.tags ? { ...baseStep, tags: pairing.tags } : baseStep
   })
 }
