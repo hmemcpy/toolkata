@@ -250,7 +250,9 @@ const make = Effect.gen(function* () {
             // Get container info to check if it exists
             await container.inspect()
 
-            // Kill and remove container with timeout
+            // Kill container — AutoRemove handles removal automatically.
+            // Don't call container.remove() after kill: it races with Docker's
+            // auto-removal and fails with 409 Conflict.
             await Promise.race([
               container.kill(),
               new Promise((_, reject) =>
@@ -260,20 +262,15 @@ const make = Effect.gen(function* () {
                 ),
               ),
             ])
-
-            await Promise.race([
-              container.remove(),
-              new Promise((_, reject) =>
-                setTimeout(
-                  () => reject(new Error("Container remove timed out after 10 seconds")),
-                  10000,
-                ),
-              ),
-            ])
           } catch (error) {
-            // If container doesn't exist (404), that's okay
-            if (error instanceof Error && "statusCode" in error && error.statusCode === 404) {
-              return // Container already gone
+            // If container doesn't exist (404) or is already stopped (409), that's okay
+            if (
+              error instanceof Error &&
+              "statusCode" in error &&
+              ((error as { statusCode: number }).statusCode === 404 ||
+                (error as { statusCode: number }).statusCode === 409)
+            ) {
+              return // Container already gone or stopping
             }
             throw error
           }
@@ -293,13 +290,15 @@ const make = Effect.gen(function* () {
       return result
     }).pipe(
       Effect.timeout("10 seconds"),
-      Effect.catchAll(() =>
+      Effect.catchAll((error) =>
         Effect.fail(
-          new ContainerError({
-            cause: "DestroyFailed",
-            message:
-              "Container destroy timed out after 10 seconds. Container may be in an inconsistent state.",
-          }),
+          error instanceof ContainerError
+            ? error
+            : new ContainerError({
+                cause: "DestroyFailed",
+                message:
+                  "Container destroy timed out after 10 seconds. Container may be in an inconsistent state.",
+              }),
         ),
       ),
     )
@@ -331,14 +330,13 @@ const make = Effect.gen(function* () {
       },
     })
 
-  // Clean up orphaned containers (stopped sandbox containers from previous runs)
+  // Clean up orphaned containers (sandbox containers from previous runs, any state)
   const cleanupOrphaned = Effect.tryPromise(async () => {
     const docker = dockerClient.docker
     const containers = await docker.listContainers({
       all: true,
       filters: {
         name: ["sandbox-"],
-        status: ["exited", "dead"],
       },
     })
 
@@ -351,6 +349,7 @@ const make = Effect.gen(function* () {
     for (const containerInfo of containers) {
       try {
         const container = docker.getContainer(containerInfo.Id)
+        // Force remove handles both running and stopped containers
         await container.remove({ force: true })
         console.log(
           `[ContainerService] Removed orphaned container: ${containerInfo.Names?.[0] ?? containerInfo.Id}`,
