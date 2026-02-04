@@ -25,3 +25,22 @@ export interface GlossaryEntry {
   /** Optional note about differences or usage */
   readonly note: string
 }
+
+/**
+ * Cheat sheet entry type for single-tool tutorials.
+ *
+ * Used for command reference pages where there's only one tool
+ * (e.g., tmux, vim) rather than a comparison between two tools.
+ */
+export interface CheatSheetEntry {
+  /** Unique identifier for React keys */
+  readonly id: string
+  /** Category grouping for this entry */
+  readonly category: string
+  /** The command or syntax */
+  readonly command: string
+  /** Description of what the command does */
+  readonly description: string
+  /** Optional note about usage or caveats */
+  readonly note?: string
+}
