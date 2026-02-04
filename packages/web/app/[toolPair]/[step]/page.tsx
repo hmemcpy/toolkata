@@ -5,7 +5,7 @@ import { Footer } from "../../../components/ui/Footer"
 import { Header } from "../../../components/ui/Header"
 import { ShrinkingLayout } from "../../../components/ui/ShrinkingLayout"
 import { StepPageClientWrapper } from "../../../components/ui/StepPageClientWrapper"
-import { getPairing, isValidPairingSlug } from "../../../content/pairings"
+import { getEntry, isPairing, isValidEntrySlug } from "../../../content/pairings"
 import { mdxComponents } from "../../../components/mdx/MDXComponents"
 import { loadStep } from "../../../services/content"
 import { loadToolConfig } from "../../../lib/content-core"
@@ -13,21 +13,22 @@ import { resolveSandboxConfig, type RawSandboxConfig } from "../../../lib/conten
 import type { SandboxConfig } from "../../../components/ui/InteractiveTerminal"
 
 /**
- * Generate static params for all steps of all published tool pairings.
+ * Generate static params for all steps of all published tutorial entries.
  *
  * This enables Next.js to statically generate step pages at build time
- * for all published tutorial steps.
+ * for all published tutorial steps (both pairings and single-tool tutorials).
  */
 export function generateStaticParams() {
-  const pairings = [
+  const entries = [
     { slug: "jj-git", steps: 12 },
     { slug: "zio-cats", steps: 15 },
     { slug: "effect-zio", steps: 15 },
+    { slug: "tmux", steps: 8 },
   ] as const
 
-  return pairings.flatMap((pairing) =>
-    Array.from({ length: pairing.steps }, (_, i) => ({
-      toolPair: pairing.slug,
+  return entries.flatMap((entry) =>
+    Array.from({ length: entry.steps }, (_, i) => ({
+      toolPair: entry.slug,
       step: (i + 1).toString(),
     })),
   )
@@ -40,16 +41,25 @@ export async function generateMetadata(props: {
   readonly params: Promise<{ readonly toolPair: string; readonly step: string }>
 }) {
   const params = await props.params
-  const pairing = getPairing(params.toolPair)
+  const entry = getEntry(params.toolPair)
   const stepNum = Number.parseInt(params.step, 10)
 
-  if (!pairing) {
+  if (!entry) {
     return {}
   }
 
-  return {
-    title: `Step ${stepNum} | ${pairing.to.name} ← ${pairing.from.name}`,
-    description: `Learn ${pairing.to.name} if you already know ${pairing.from.name}. Step ${stepNum} of ${pairing.steps}.`,
+  if (isPairing(entry)) {
+    // Pairing mode: "ZIO ← Cats Effect"
+    return {
+      title: `Step ${stepNum} | ${entry.to.name} ← ${entry.from.name}`,
+      description: `Learn ${entry.to.name} if you already know ${entry.from.name}. Step ${stepNum} of ${entry.steps}.`,
+    }
+  } else {
+    // Tutorial mode: "Learn tmux"
+    return {
+      title: `Step ${stepNum} | Learn ${entry.tool.name}`,
+      description: `Learn ${entry.tool.name}. ${entry.estimatedTime} tutorial. Step ${stepNum} of ${entry.steps}.`,
+    }
   }
 }
 
@@ -63,6 +73,8 @@ export async function generateMetadata(props: {
  *
  * The terminal is available as a collapsible sidebar via TerminalProvider,
  * accessible via the FAB toggle button or TryIt components in MDX content.
+ *
+ * Supports both pairing mode (X if you know Y) and tutorial mode (learn X).
  */
 export default async function StepPage(props: {
   readonly params: Promise<{ readonly toolPair: string; readonly step: string }>
@@ -71,18 +83,18 @@ export default async function StepPage(props: {
   const { toolPair, step: stepParam } = params
   const stepNum = Number.parseInt(stepParam, 10)
 
-  // Validate the tool pair slug
-  if (!isValidPairingSlug(toolPair)) {
+  // Validate the entry slug
+  if (!isValidEntrySlug(toolPair)) {
     notFound()
   }
 
-  const pairing = getPairing(toolPair)
-  if (!pairing) {
+  const entry = getEntry(toolPair)
+  if (!entry) {
     notFound()
   }
 
   // Validate step number
-  if (Number.isNaN(stepNum) || stepNum < 1 || stepNum > pairing.steps) {
+  if (Number.isNaN(stepNum) || stepNum < 1 || stepNum > entry.steps) {
     notFound()
   }
 
@@ -118,6 +130,14 @@ export default async function StepPage(props: {
     toolConfig,
   )
 
+  // Extract commands from frontmatter (supports generic commands + legacy fields)
+  const stepCommands = (
+    frontmatter.commands ??
+    frontmatter.jjCommands ??
+    frontmatter.zioCommands ??
+    []
+  ) as readonly string[]
+
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
       <Header />
@@ -127,12 +147,12 @@ export default async function StepPage(props: {
           <StepPageClientWrapper
             toolPair={toolPair}
             currentStep={stepNum}
-            totalSteps={pairing.steps}
+            totalSteps={entry.steps}
             title={frontmatter.title}
             previousHref={stepNum > 1 ? `/${toolPair}/${stepNum - 1}` : `/${toolPair}`}
-            nextHref={stepNum < pairing.steps ? `/${toolPair}/${stepNum + 1}` : null}
+            nextHref={stepNum < entry.steps ? `/${toolPair}/${stepNum + 1}` : null}
             editHref={editHref}
-            stepCommands={frontmatter.jjCommands ?? []}
+            stepCommands={stepCommands}
             sandboxConfig={sandboxConfig}
           >
             {/* MDX Content */}
