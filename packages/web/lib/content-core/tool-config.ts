@@ -11,13 +11,18 @@ import { loadFile } from "./loader"
 import type { ContentError } from "./errors"
 
 /**
+ * Valid sandbox environment names.
+ */
+export type SandboxEnvironment = "bash" | "node" | "python" | "scala" | "typescript" | "tmux"
+
+/**
  * Raw config.yml structure (before validation).
  */
 export interface RawToolConfig {
   readonly defaults?: {
     readonly sandbox?: {
       readonly enabled?: boolean
-      readonly environment?: "bash" | "node" | "python"
+      readonly environment?: SandboxEnvironment
       readonly timeout?: number
       readonly init?: readonly string[]
     }
@@ -30,7 +35,7 @@ export interface RawToolConfig {
 export interface ToolConfig {
   readonly sandbox: {
     readonly enabled: boolean
-    readonly environment: "bash" | "node" | "python"
+    readonly environment: SandboxEnvironment
     readonly timeout: number
     readonly init: readonly string[]
   }
@@ -41,7 +46,7 @@ export interface ToolConfig {
  */
 type SandboxConfig = {
   readonly enabled: boolean
-  readonly environment: "bash" | "node" | "python"
+  readonly environment: SandboxEnvironment
   readonly timeout: number
   readonly init: readonly string[]
 }
@@ -95,7 +100,7 @@ function extractYamlValues(yaml: string): RawToolConfig {
   const defaultsSection = defaultsMatch[1] ?? ""
 
   const enabledMatch = defaultsSection.match(/enabled:\s*(true|false)/)
-  const envMatch = defaultsSection.match(/environment:\s*(bash|node|python)/)
+  const envMatch = defaultsSection.match(/environment:\s*"?(bash|node|python|scala|typescript|tmux)"?/)
   const timeoutMatch = defaultsSection.match(/timeout:\s*(\d+)/)
   const initMatches = defaultsSection.match(/init:\s*\n((?:\s*-\s*[^\n]+\n?)+)/)
 
@@ -106,7 +111,7 @@ function extractYamlValues(yaml: string): RawToolConfig {
   }
 
   if (envMatch) {
-    Object.assign(sandboxConfig, { environment: envMatch[1] as "bash" | "node" | "python" })
+    Object.assign(sandboxConfig, { environment: envMatch[1] as SandboxEnvironment })
   }
 
   if (timeoutMatch) {

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { Providers } from "../../components/Providers"
 import { notFound } from "next/navigation"
-import { isValidPairingSlug } from "../../content/pairings"
+import { isValidEntrySlug } from "../../content/pairings"
 import { getAuthToken } from "../../lib/get-auth-token"
 
 /**
@@ -33,7 +33,7 @@ export default async function ToolPairLayout(props: {
 
   // Validate the tool pair slug - return 404 for invalid pairings
   // This prevents creating providers for non-existent routes
-  if (!isValidPairingSlug(toolPair)) {
+  if (!isValidEntrySlug(toolPair)) {
     notFound()
   }
 

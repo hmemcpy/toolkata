@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "CONTENT_SOURCE=github next dev --turbopack",
     "dev:local": "next dev --turbopack",
-    "content:clone": "git clone git@github.com:hmemcpy/toolkata-content.git content || (cd content && git pull)",
+    "content:clone": "git submodule update --init --recursive",
     "validate:snippets": "bun run scripts/validate-snippets.ts",
     "build": "next build",
     "start": "next start",
