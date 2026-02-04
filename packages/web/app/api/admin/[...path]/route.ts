@@ -31,7 +31,17 @@ async function proxyRequest(
   method: string,
 ): Promise<NextResponse> {
   // Check admin session
-  const session = await auth()
+  let session: { user?: { email?: string; isAdmin?: boolean } } | null = null
+  try {
+    session = await auth()
+  } catch (err) {
+    console.error(`[Admin Proxy] auth() failed for ${method} /${path.join("/")}:`, err instanceof Error ? err.message : err)
+    return NextResponse.json(
+      { error: "Unauthorized", message: "Session validation failed — try signing out and back in" },
+      { status: 401 },
+    )
+  }
+
   console.log(`[Admin Proxy] ${method} /${path.join("/")} — session: ${session?.user?.email ?? "none"}, isAdmin: ${session?.user?.isAdmin ?? false}`)
   if (!session?.user?.isAdmin) {
     return NextResponse.json(
