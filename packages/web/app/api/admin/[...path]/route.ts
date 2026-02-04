@@ -20,7 +20,7 @@
 
 import { type NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { getSandboxHttpUrl, ADMIN_API_KEY } from "@/lib/sandbox-url"
+import { adminApiFetch } from "@/lib/admin-api"
 
 /**
  * Proxy a request to the sandbox API.
@@ -39,14 +39,12 @@ async function proxyRequest(
     )
   }
 
-  // Get sandbox URL at runtime (not build time)
-  const sandboxUrl = getSandboxHttpUrl()
-  const targetPath = path.join("/")
-  const targetUrl = `${sandboxUrl}/admin/${targetPath}`
+  const targetPath = `/${path.join("/")}`
 
   // Forward query params
   const url = new URL(request.url)
   const queryString = url.search
+  const fullPath = `${targetPath}${queryString}`
 
   try {
     const headers: Record<string, string> = {}
@@ -57,11 +55,6 @@ async function proxyRequest(
       headers["Content-Type"] = contentType
     } else if (method !== "GET" && method !== "HEAD") {
       headers["Content-Type"] = "application/json"
-    }
-
-    // Add admin API key
-    if (ADMIN_API_KEY) {
-      headers["X-Admin-Key"] = ADMIN_API_KEY
     }
 
     const fetchOptions: RequestInit = {
@@ -77,7 +70,7 @@ async function proxyRequest(
       }
     }
 
-    const response = await fetch(`${targetUrl}${queryString}`, fetchOptions)
+    const response = await adminApiFetch(fullPath, fetchOptions)
 
     // Get response content-type to preserve it
     const responseContentType = response.headers.get("Content-Type") ?? "application/json"
@@ -105,7 +98,7 @@ async function proxyRequest(
       },
     })
   } catch (error) {
-    console.error(`[Admin Proxy] Error proxying to ${targetUrl}:`, error)
+    console.error(`[Admin Proxy] Error proxying ${fullPath}:`, error)
     return NextResponse.json(
       {
         error: "Proxy Error",

@@ -1,4 +1,4 @@
-import { ADMIN_API_KEY, getSandboxHttpUrl } from "@/lib/sandbox-url"
+import { adminApiFetch } from "@/lib/admin-api"
 import { LogsClient } from "./LogsClient"
 import type { LogsResponse, LogFilesResponse } from "./LogsTypes"
 
@@ -41,25 +41,10 @@ export default async function LogsPage() {
  * Fetch initial logs and file list from admin API.
  */
 async function fetchLogs(): Promise<FetchResult> {
-  const apiUrl = getSandboxHttpUrl()
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  }
-
-  if (ADMIN_API_KEY !== "") {
-    headers["X-Admin-Key"] = ADMIN_API_KEY
-  }
-
   try {
     const [logsResponse, filesResponse] = await Promise.all([
-      fetch(`${apiUrl}/admin/logs?limit=100`, {
-        headers,
-        cache: "no-store",
-      }),
-      fetch(`${apiUrl}/admin/logs/files`, {
-        headers,
-        cache: "no-store",
-      }),
+      adminApiFetch("/logs?limit=100", { cache: "no-store" }),
+      adminApiFetch("/logs/files", { cache: "no-store" }),
     ])
 
     let logs: LogsResponse | null = null

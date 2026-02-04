@@ -1,5 +1,5 @@
 import type { ContainerInfo } from "@/components/admin/ContainerGrid"
-import { ADMIN_API_KEY, getSandboxHttpUrl } from "@/lib/sandbox-url"
+import { adminApiFetch } from "@/lib/admin-api"
 import { ContainersClient } from "./ContainersClient"
 
 export const dynamic = "force-dynamic"
@@ -40,21 +40,9 @@ export default async function ContainersPage() {
   // Server action to restart a container
   async function restartContainer(containerId: string) {
     "use server"
-    const apiUrl = getSandboxHttpUrl()
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    }
-
-    if (ADMIN_API_KEY !== "") {
-      headers["X-Admin-Key"] = ADMIN_API_KEY
-    }
-
-    const response = await fetch(
-      `${apiUrl}/admin/containers/${encodeURIComponent(containerId)}/restart`,
-      {
-        method: "POST",
-        headers,
-      },
+    const response = await adminApiFetch(
+      `/containers/${encodeURIComponent(containerId)}/restart`,
+      { method: "POST" },
     )
 
     if (!response.ok) {
@@ -66,21 +54,9 @@ export default async function ContainersPage() {
   // Server action to stop a container
   async function stopContainer(containerId: string) {
     "use server"
-    const apiUrl = getSandboxHttpUrl()
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    }
-
-    if (ADMIN_API_KEY !== "") {
-      headers["X-Admin-Key"] = ADMIN_API_KEY
-    }
-
-    const response = await fetch(
-      `${apiUrl}/admin/containers/${encodeURIComponent(containerId)}/stop`,
-      {
-        method: "POST",
-        headers,
-      },
+    const response = await adminApiFetch(
+      `/containers/${encodeURIComponent(containerId)}/stop`,
+      { method: "POST" },
     )
 
     if (!response.ok) {
@@ -92,23 +68,11 @@ export default async function ContainersPage() {
   // Server action to remove a container
   async function removeContainer(containerId: string, force = false) {
     "use server"
-    const apiUrl = getSandboxHttpUrl()
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    }
-
-    if (ADMIN_API_KEY !== "") {
-      headers["X-Admin-Key"] = ADMIN_API_KEY
-    }
-
     const url = force
-      ? `${apiUrl}/admin/containers/${encodeURIComponent(containerId)}?force=true`
-      : `${apiUrl}/admin/containers/${encodeURIComponent(containerId)}`
+      ? `/containers/${encodeURIComponent(containerId)}?force=true`
+      : `/containers/${encodeURIComponent(containerId)}`
 
-    const response = await fetch(url, {
-      method: "DELETE",
-      headers,
-    })
+    const response = await adminApiFetch(url, { method: "DELETE" })
 
     if (!response.ok) {
       console.error(`Failed to remove container: ${response.status}`)
@@ -119,16 +83,8 @@ export default async function ContainersPage() {
   // Server action to get container logs
   async function getContainerLogs(containerId: string, tail = 100) {
     "use server"
-    const apiUrl = getSandboxHttpUrl()
-    const headers: Record<string, string> = {}
-
-    if (ADMIN_API_KEY !== "") {
-      headers["X-Admin-Key"] = ADMIN_API_KEY
-    }
-
-    const response = await fetch(
-      `${apiUrl}/admin/containers/${encodeURIComponent(containerId)}/logs?tail=${tail}`,
-      { headers },
+    const response = await adminApiFetch(
+      `/containers/${encodeURIComponent(containerId)}/logs?tail=${tail}`,
     )
 
     if (!response.ok) {
@@ -159,18 +115,7 @@ export default async function ContainersPage() {
  */
 async function fetchContainers(): Promise<ContainersResult> {
   try {
-    const apiUrl = getSandboxHttpUrl()
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    }
-
-    if (ADMIN_API_KEY !== "") {
-      headers["X-Admin-Key"] = ADMIN_API_KEY
-    }
-
-    const response = await fetch(`${apiUrl}/admin/containers`, {
-      headers,
-      // Don't cache - always show fresh data
+    const response = await adminApiFetch("/containers", {
       cache: "no-store",
     })
 

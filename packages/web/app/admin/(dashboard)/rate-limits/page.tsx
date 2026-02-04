@@ -1,5 +1,5 @@
 import type { AdjustRateLimitRequest, RateLimitInfo } from "@/components/admin/RateLimitTable"
-import { ADMIN_API_KEY, getSandboxHttpUrl } from "@/lib/sandbox-url"
+import { adminApiFetch } from "@/lib/admin-api"
 import { revalidatePath } from "next/cache"
 import { RateLimitsClient } from "./RateLimitsClient"
 
@@ -39,21 +39,9 @@ export default async function RateLimitsPage() {
   // Server action to reset rate limit
   async function resetRateLimit(clientId: string) {
     "use server"
-    const apiUrl = getSandboxHttpUrl()
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    }
-
-    if (ADMIN_API_KEY !== "") {
-      headers["X-Admin-Key"] = ADMIN_API_KEY
-    }
-
-    const response = await fetch(
-      `${apiUrl}/admin/rate-limits/${encodeURIComponent(clientId)}/reset`,
-      {
-        method: "POST",
-        headers,
-      },
+    const response = await adminApiFetch(
+      `/rate-limits/${encodeURIComponent(clientId)}/reset`,
+      { method: "POST" },
     )
 
     if (!response.ok) {
@@ -67,20 +55,11 @@ export default async function RateLimitsPage() {
   // Server action to adjust rate limit
   async function adjustRateLimit(clientId: string, params: AdjustRateLimitRequest) {
     "use server"
-    const apiUrl = getSandboxHttpUrl()
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    }
-
-    if (ADMIN_API_KEY !== "") {
-      headers["X-Admin-Key"] = ADMIN_API_KEY
-    }
-
-    const response = await fetch(
-      `${apiUrl}/admin/rate-limits/${encodeURIComponent(clientId)}/adjust`,
+    const response = await adminApiFetch(
+      `/rate-limits/${encodeURIComponent(clientId)}/adjust`,
       {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(params),
       },
     )
@@ -109,18 +88,7 @@ export default async function RateLimitsPage() {
  */
 async function fetchRateLimits(): Promise<RateLimitsResult> {
   try {
-    const apiUrl = getSandboxHttpUrl()
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    }
-
-    if (ADMIN_API_KEY !== "") {
-      headers["X-Admin-Key"] = ADMIN_API_KEY
-    }
-
-    const response = await fetch(`${apiUrl}/admin/rate-limits`, {
-      headers,
-      // Don't cache - always show fresh data
+    const response = await adminApiFetch("/rate-limits", {
       cache: "no-store",
     })
 

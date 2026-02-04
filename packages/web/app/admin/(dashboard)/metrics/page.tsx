@@ -1,4 +1,4 @@
-import { ADMIN_API_KEY, getSandboxHttpUrl } from "@/lib/sandbox-url"
+import { adminApiFetch } from "@/lib/admin-api"
 import { MetricsClient } from "./MetricsClient"
 import type { RateLimitMetricsInfo, SandboxMetricsInfo, SystemMetricsInfo } from "./MetricsTypes"
 
@@ -54,30 +54,12 @@ export default async function MetricsPage() {
  * Returns both the data and any error that occurred.
  */
 async function fetchMetrics(): Promise<MetricsResult> {
-  const apiUrl = getSandboxHttpUrl()
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  }
-
-  if (ADMIN_API_KEY !== "") {
-    headers["X-Admin-Key"] = ADMIN_API_KEY
-  }
-
   // Fetch all three metrics types in parallel
   try {
     const [systemResponse, sandboxResponse, rateLimitsResponse] = await Promise.all([
-      fetch(`${apiUrl}/admin/metrics/system`, {
-        headers,
-        cache: "no-store",
-      }),
-      fetch(`${apiUrl}/admin/metrics/sandbox`, {
-        headers,
-        cache: "no-store",
-      }),
-      fetch(`${apiUrl}/admin/metrics/rate-limits`, {
-        headers,
-        cache: "no-store",
-      }),
+      adminApiFetch("/metrics/system", { cache: "no-store" }),
+      adminApiFetch("/metrics/sandbox", { cache: "no-store" }),
+      adminApiFetch("/metrics/rate-limits", { cache: "no-store" }),
     ])
 
     // Parse responses
