@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { getSandboxHttpUrl } from "@/lib/sandbox-url"
 import type { LogEntry, LogsResponse } from "./LogsTypes"
 import { LOG_LEVELS, LEVEL_CONFIG, type LogLevelName } from "./LogsTypes"
 
@@ -12,7 +11,6 @@ interface LogsClientProps {
   readonly initialLogs: LogsResponse | null
   readonly availableFiles: readonly string[]
   readonly error: string | null
-  readonly adminApiKey: string
 }
 
 /**
@@ -38,7 +36,7 @@ const AUTO_SCROLL_THRESHOLD = 50
  * - Auto-scroll to bottom (can be disabled by scrolling up)
  */
 export function LogsClient(props: LogsClientProps) {
-  const { initialLogs, availableFiles, error: initialError, adminApiKey } = props
+  const { initialLogs, availableFiles, error: initialError } = props
 
   // State
   const [entries, setEntries] = useState<LogEntry[]>(
@@ -96,13 +94,9 @@ export function LogsClient(props: LogsClientProps) {
       eventSourceRef.current.close()
     }
 
-    const apiUrl = getSandboxHttpUrl()
-    const url = new URL(`${apiUrl}/admin/logs/stream`)
+    // Use the Vercel proxy — auth is handled via NextAuth session cookie
+    const url = new URL("/api/admin/logs/stream", window.location.origin)
     url.searchParams.set("level", String(minLevel))
-    // EventSource doesn't support custom headers, so we pass the key via query param
-    if (adminApiKey !== "") {
-      url.searchParams.set("key", adminApiKey)
-    }
 
     const eventSource = new EventSource(url.toString())
     eventSourceRef.current = eventSource
@@ -143,7 +137,7 @@ export function LogsClient(props: LogsClientProps) {
 
     setIsStreaming(true)
     isStreamingRef.current = true
-  }, [minLevel, adminApiKey])
+  }, [minLevel])
 
   // Stop SSE streaming
   const stopStreaming = useCallback(() => {
@@ -212,16 +206,8 @@ export function LogsClient(props: LogsClientProps) {
 
   // Download logs
   const downloadLogs = useCallback(async () => {
-    const apiUrl = getSandboxHttpUrl()
-    const headers: Record<string, string> = {}
-    if (adminApiKey !== "") {
-      headers["X-Admin-Key"] = adminApiKey
-    }
-
     try {
-      const response = await fetch(`${apiUrl}/admin/logs/download`, {
-        headers,
-      })
+      const response = await fetch("/api/admin/logs/download")
       if (!response.ok) {
         throw new Error(`Failed to download: ${response.status}`)
       }
@@ -238,7 +224,7 @@ export function LogsClient(props: LogsClientProps) {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Download failed")
     }
-  }, [adminApiKey])
+  }, [])
 
   // Clear logs
   const clearLogs = useCallback(() => {

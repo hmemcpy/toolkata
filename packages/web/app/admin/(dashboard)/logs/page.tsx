@@ -33,7 +33,6 @@ export default async function LogsPage() {
       initialLogs={result.logs}
       availableFiles={result.files}
       error={result.error}
-      adminApiKey={ADMIN_API_KEY}
     />
   )
 }

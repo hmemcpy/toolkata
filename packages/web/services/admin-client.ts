@@ -1,12 +1,13 @@
 /**
  * AdminClient - Effect-TS client service for admin API endpoints.
  *
- * Manages communication with the sandbox API's admin routes:
- * - /admin/rate-limits - Rate limit management
- * - /admin/containers - Container administration
- * - /admin/metrics - System and sandbox metrics
+ * Manages communication with the sandbox API's admin routes via the Vercel proxy:
+ * - /api/admin/rate-limits - Rate limit management
+ * - /api/admin/containers - Container administration
+ * - /api/admin/metrics - System and sandbox metrics
  *
- * All requests require X-Admin-Key header authentication.
+ * All requests go through the /api/admin/[...path] proxy which handles
+ * auth (NextAuth session) and adds the admin API key server-side.
  *
  * @example
  * ```ts
@@ -21,7 +22,6 @@
  */
 
 import { Context, Data, Effect, Layer } from "effect"
-import { getSandboxHttpUrl, ADMIN_API_KEY } from "../lib/sandbox-url"
 
 /**
  * Error types for admin operations.
@@ -254,19 +254,12 @@ function parseAdminError(status: number, body: unknown): AdminClientError {
 }
 
 /**
- * Build admin API headers.
+ * Admin API base URL.
+ *
+ * Uses the Vercel proxy at /api/admin/* which forwards to the sandbox API.
+ * The proxy handles auth (NextAuth session check) and adds the admin API key.
  */
-function getAdminHeaders(): Record<string, string> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  }
-
-  if (ADMIN_API_KEY !== "") {
-    headers["X-Admin-Key"] = ADMIN_API_KEY
-  }
-
-  return headers
-}
+const ADMIN_API_BASE = "/api/admin"
 
 /**
  * Create the AdminClient implementation.
@@ -275,10 +268,7 @@ const make = Effect.succeed<AdminClientShape>({
   getRateLimits: () =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
-        const response = await fetch(`${apiUrl}/admin/rate-limits`, {
-          headers: getAdminHeaders(),
-        })
+        const response = await fetch(`${ADMIN_API_BASE}/rate-limits`)
 
         if (!response.ok) {
           throw parseAdminError(response.status, await response.json().catch(() => undefined))
@@ -300,10 +290,7 @@ const make = Effect.succeed<AdminClientShape>({
   getRateLimit: (clientId: string) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
-        const response = await fetch(`${apiUrl}/admin/rate-limits/${encodeURIComponent(clientId)}`, {
-          headers: getAdminHeaders(),
-        })
+        const response = await fetch(`${ADMIN_API_BASE}/rate-limits/${encodeURIComponent(clientId)}`)
 
         if (!response.ok) {
           throw parseAdminError(response.status, await response.json().catch(() => undefined))
@@ -324,10 +311,8 @@ const make = Effect.succeed<AdminClientShape>({
   resetRateLimit: (clientId: string) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
-        const response = await fetch(`${apiUrl}/admin/rate-limits/${encodeURIComponent(clientId)}/reset`, {
+        const response = await fetch(`${ADMIN_API_BASE}/rate-limits/${encodeURIComponent(clientId)}/reset`, {
           method: "POST",
-          headers: getAdminHeaders(),
         })
 
         if (!response.ok) {
@@ -350,8 +335,6 @@ const make = Effect.succeed<AdminClientShape>({
   adjustRateLimit: (clientId: string, params: AdjustRateLimitRequest) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
-
         // Build request body without undefined values
         const body = Object.freeze(
           Object.keys(params).length > 0
@@ -359,9 +342,9 @@ const make = Effect.succeed<AdminClientShape>({
             : JSON.stringify({}),
         )
 
-        const response = await fetch(`${apiUrl}/admin/rate-limits/${encodeURIComponent(clientId)}/adjust`, {
+        const response = await fetch(`${ADMIN_API_BASE}/rate-limits/${encodeURIComponent(clientId)}/adjust`, {
           method: "POST",
-          headers: getAdminHeaders(),
+          headers: { "Content-Type": "application/json" },
           body,
         })
 
@@ -384,10 +367,7 @@ const make = Effect.succeed<AdminClientShape>({
   listContainers: () =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
-        const response = await fetch(`${apiUrl}/admin/containers`, {
-          headers: getAdminHeaders(),
-        })
+        const response = await fetch(`${ADMIN_API_BASE}/containers`)
 
         if (!response.ok) {
           throw parseAdminError(response.status, await response.json().catch(() => undefined))
@@ -408,10 +388,7 @@ const make = Effect.succeed<AdminClientShape>({
   getContainer: (id: string) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
-        const response = await fetch(`${apiUrl}/admin/containers/${encodeURIComponent(id)}`, {
-          headers: getAdminHeaders(),
-        })
+        const response = await fetch(`${ADMIN_API_BASE}/containers/${encodeURIComponent(id)}`)
 
         if (!response.ok) {
           throw parseAdminError(response.status, await response.json().catch(() => undefined))
@@ -432,10 +409,8 @@ const make = Effect.succeed<AdminClientShape>({
   restartContainer: (id: string) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
-        const response = await fetch(`${apiUrl}/admin/containers/${encodeURIComponent(id)}/restart`, {
+        const response = await fetch(`${ADMIN_API_BASE}/containers/${encodeURIComponent(id)}/restart`, {
           method: "POST",
-          headers: getAdminHeaders(),
         })
 
         if (!response.ok) {
@@ -458,10 +433,8 @@ const make = Effect.succeed<AdminClientShape>({
   stopContainer: (id: string) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
-        const response = await fetch(`${apiUrl}/admin/containers/${encodeURIComponent(id)}/stop`, {
+        const response = await fetch(`${ADMIN_API_BASE}/containers/${encodeURIComponent(id)}/stop`, {
           method: "POST",
-          headers: getAdminHeaders(),
         })
 
         if (!response.ok) {
@@ -484,10 +457,8 @@ const make = Effect.succeed<AdminClientShape>({
   removeContainer: (id: string) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
-        const response = await fetch(`${apiUrl}/admin/containers/${encodeURIComponent(id)}`, {
+        const response = await fetch(`${ADMIN_API_BASE}/containers/${encodeURIComponent(id)}`, {
           method: "DELETE",
-          headers: getAdminHeaders(),
         })
 
         if (!response.ok) {
@@ -510,14 +481,11 @@ const make = Effect.succeed<AdminClientShape>({
   getContainerLogs: (id: string, tail?: number) =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
         const url = tail
-          ? `${apiUrl}/admin/containers/${encodeURIComponent(id)}/logs?tail=${tail}`
-          : `${apiUrl}/admin/containers/${encodeURIComponent(id)}/logs`
+          ? `${ADMIN_API_BASE}/containers/${encodeURIComponent(id)}/logs?tail=${tail}`
+          : `${ADMIN_API_BASE}/containers/${encodeURIComponent(id)}/logs`
 
-        const response = await fetch(url, {
-          headers: getAdminHeaders(),
-        })
+        const response = await fetch(url)
 
         if (!response.ok) {
           throw parseAdminError(response.status, await response.json().catch(() => undefined))
@@ -538,10 +506,7 @@ const make = Effect.succeed<AdminClientShape>({
   getSystemMetrics: () =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
-        const response = await fetch(`${apiUrl}/admin/metrics/system`, {
-          headers: getAdminHeaders(),
-        })
+        const response = await fetch(`${ADMIN_API_BASE}/metrics/system`)
 
         if (!response.ok) {
           throw parseAdminError(response.status, await response.json().catch(() => undefined))
@@ -562,10 +527,7 @@ const make = Effect.succeed<AdminClientShape>({
   getSandboxMetrics: () =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
-        const response = await fetch(`${apiUrl}/admin/metrics/sandbox`, {
-          headers: getAdminHeaders(),
-        })
+        const response = await fetch(`${ADMIN_API_BASE}/metrics/sandbox`)
 
         if (!response.ok) {
           throw parseAdminError(response.status, await response.json().catch(() => undefined))
@@ -586,10 +548,7 @@ const make = Effect.succeed<AdminClientShape>({
   getRateLimitMetrics: () =>
     Effect.tryPromise({
       try: async () => {
-        const apiUrl = getSandboxHttpUrl()
-        const response = await fetch(`${apiUrl}/admin/metrics/rate-limits`, {
-          headers: getAdminHeaders(),
-        })
+        const response = await fetch(`${ADMIN_API_BASE}/metrics/rate-limits`)
 
         if (!response.ok) {
           throw parseAdminError(response.status, await response.json().catch(() => undefined))

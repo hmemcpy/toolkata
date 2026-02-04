@@ -1,16 +1,25 @@
 /**
- * Proxy API route for CMS admin endpoints.
+ * Proxy API route for all admin endpoints.
  *
- * Proxies requests from the browser to the sandbox API's /admin/cms/* endpoints.
- * This allows the browser-based CMS UI to work while maintaining IP-based security
- * (Caddy only allows Vercel server IPs to access /admin/* routes).
+ * Proxies requests from the browser to the sandbox API's /admin/* endpoints.
+ * This ensures all requests to the sandbox API originate from Vercel's infrastructure
+ * (passes Caddy's IP allowlist) and keeps the ADMIN_API_KEY server-side.
+ *
+ * Auth: Requires a valid NextAuth admin session.
  *
  * @example
+ * Browser: GET /api/admin/rate-limits
+ * → Proxy: GET https://sandbox.toolkata.com/admin/rate-limits
+ *
+ * Browser: POST /api/admin/containers/abc/restart
+ * → Proxy: POST https://sandbox.toolkata.com/admin/containers/abc/restart
+ *
  * Browser: GET /api/admin/cms/status
  * → Proxy: GET https://sandbox.toolkata.com/admin/cms/status
  */
 
 import { type NextRequest, NextResponse } from "next/server"
+import { auth } from "@/lib/auth"
 import { getSandboxHttpUrl, ADMIN_API_KEY } from "@/lib/sandbox-url"
 
 /**
@@ -21,18 +30,33 @@ async function proxyRequest(
   path: string[],
   method: string,
 ): Promise<NextResponse> {
+  // Check admin session
+  const session = await auth()
+  if (!session?.user?.isAdmin) {
+    return NextResponse.json(
+      { error: "Unauthorized", message: "Admin session required" },
+      { status: 401 },
+    )
+  }
+
   // Get sandbox URL at runtime (not build time)
   const sandboxUrl = getSandboxHttpUrl()
   const targetPath = path.join("/")
-  const targetUrl = `${sandboxUrl}/admin/cms/${targetPath}`
+  const targetUrl = `${sandboxUrl}/admin/${targetPath}`
 
   // Forward query params
   const url = new URL(request.url)
   const queryString = url.search
 
   try {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
+    const headers: Record<string, string> = {}
+
+    // Forward content-type from original request if present
+    const contentType = request.headers.get("Content-Type")
+    if (contentType) {
+      headers["Content-Type"] = contentType
+    } else if (method !== "GET" && method !== "HEAD") {
+      headers["Content-Type"] = "application/json"
     }
 
     // Add admin API key
@@ -55,22 +79,37 @@ async function proxyRequest(
 
     const response = await fetch(`${targetUrl}${queryString}`, fetchOptions)
 
-    // Get response body
-    const responseText = await response.text()
+    // Get response content-type to preserve it
+    const responseContentType = response.headers.get("Content-Type") ?? "application/json"
 
-    // Return proxied response with original status
-    return new NextResponse(responseText, {
+    // Stream SSE responses instead of buffering
+    if (responseContentType.includes("text/event-stream") && response.body) {
+      return new NextResponse(response.body, {
+        status: response.status,
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
+        },
+      })
+    }
+
+    // Get response body as appropriate type
+    const responseBody = await response.arrayBuffer()
+
+    // Return proxied response with original status and content-type
+    return new NextResponse(responseBody, {
       status: response.status,
       headers: {
-        "Content-Type": response.headers.get("Content-Type") ?? "application/json",
+        "Content-Type": responseContentType,
       },
     })
   } catch (error) {
-    console.error(`[CMS Proxy] Error proxying to ${targetUrl}:`, error)
+    console.error(`[Admin Proxy] Error proxying to ${targetUrl}:`, error)
     return NextResponse.json(
       {
         error: "Proxy Error",
-        message: error instanceof Error ? error.message : "Failed to reach CMS API",
+        message: error instanceof Error ? error.message : "Failed to reach admin API",
       },
       { status: 502 },
     )
