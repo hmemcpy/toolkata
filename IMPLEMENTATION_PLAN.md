@@ -67,15 +67,15 @@ These tasks add tutorial mode alongside pairing mode, starting with tmux as the 
 
 ### P1-D: Content (depends on P1-A for schema, can parallel with P1-B/C)
 
-- [ ] **Content: tmux config.yml** — Create `/Users/hmemcpy/git/toolkata-content/tmux/config.yml` with sandbox enabled, environment `"tmux"`, timeout 120s, and init commands (e.g., `tmux -V` to verify installed).
+- [x] Completed: **Content: tmux config.yml** — Created `/Users/hmemcpy/git/toolkata-content/tmux/config.yml` with sandbox enabled, environment `"tmux"`, timeout 120s, and init commands (`tmux -V` to verify installed).
 
-- [ ] **Content: tmux index.mdx** — Create `/Users/hmemcpy/git/toolkata-content/tmux/lessons/index.mdx` with overview frontmatter. Brief intro to tmux, what users will learn (sessions, windows, panes, copy mode, config), prerequisites (basic terminal knowledge).
+- [x] Completed: **Content: tmux index.mdx** — Created `/Users/hmemcpy/git/toolkata-content/tmux/lessons/index.mdx` with overview frontmatter. Brief intro to tmux, what users will learn (sessions, windows, panes, copy mode, config), prerequisites (basic terminal knowledge).
 
-- [ ] **Content: tmux lessons 01-04 (basics)** — Create 4 MDX files in `/Users/hmemcpy/git/toolkata-content/tmux/lessons/`: `01-step.mdx` (What is tmux? — install, first session, basic orientation), `02-step.mdx` (Sessions — new, list, attach, detach, kill), `03-step.mdx` (Windows — create, navigate, rename, close, list), `04-step.mdx` (Panes — split vertical/horizontal, cycle, zoom, resize). Each uses `<TryIt>` and `<Callout>` components, frontmatter with `commands` array.
+- [x] Completed: **Content: tmux lessons 01-04 (basics)** — Created 4 MDX files in `/Users/hmemcpy/git/toolkata-content/tmux/lessons/`: `01-step.mdx` (What is tmux? — install, first session, basic orientation), `02-step.mdx` (Sessions — new, list, attach, detach, kill), `03-step.mdx` (Windows — create, navigate, rename, close, list), `04-step.mdx` (Panes — split vertical/horizontal, cycle, zoom, resize). Each uses `<TryIt>` and `<Callout>` components, frontmatter with `commands` array.
 
-- [ ] **Content: tmux lessons 05-08 (advanced)** — Create 4 MDX files: `05-step.mdx` (Key Bindings — prefix key, list bindings, command mode), `06-step.mdx` (Copy Mode — enter, vi/emacs nav, search, select/yank, paste), `07-step.mdx` (Configuration — .tmux.conf, prefix rebinding, options, status bar; `validate={false}` for editor-dependent snippets), `08-step.mdx` (Session Management & Scripting — multiple sessions, switch, send-keys, scripting, session groups).
+- [x] Completed: **Content: tmux lessons 05-08 (advanced)** — Created 4 MDX files: `05-step.mdx` (Key Bindings — prefix key, list bindings, command mode), `06-step.mdx` (Copy Mode — enter, vi/emacs nav, search, select/yank, paste), `07-step.mdx` (Configuration — .tmux.conf, prefix rebinding, options, status bar; `validate={false}` for editor-dependent snippets), `08-step.mdx` (Session Management & Scripting — multiple sessions, switch, send-keys, scripting, session groups).
 
-- [ ] **Content: tmux glossary data** — Create `/Users/hmemcpy/git/toolkata-content/tmux/glossary.ts` with tmux command reference data matching `CheatSheetEntry` format. Categories: SESSIONS, WINDOWS, PANES, NAVIGATION, COPY_MODE, CONFIG. Also create matching file in `packages/web/content/glossary/tmux.ts` (the web repo is currently the source of truth for glossary imports — see Discoveries).
+- [x] Completed: **Content: tmux glossary data** — Created `/Users/hmemcpy/git/toolkata-content/tmux/glossary.ts` with tmux command reference data matching `CheatSheetEntry` format. Categories: SESSIONS (7 entries), WINDOWS (8 entries), PANES (10 entries), NAVIGATION (5 entries), COPY_MODE (8 entries), CONFIG (8 entries). The web repo already had `packages/web/content/glossary/tmux.ts` as source of truth — created matching file in content repo for R12 migration.
 
 ### P1-E: Verification
 
