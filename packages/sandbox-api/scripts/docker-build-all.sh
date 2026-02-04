@@ -135,6 +135,18 @@ fi
 TYPESCRIPT_SIZE=$(docker images "$ENV_IMAGE_NAME:typescript" --format "{{.Size}}")
 log_info "typescript environment size: $TYPESCRIPT_SIZE"
 
+# Build tmux environment image
+log_info "Building tmux environment image: $ENV_IMAGE_NAME:tmux"
+docker build -t "$ENV_IMAGE_NAME:tmux" "$DOCKER_DIR/environments/tmux"
+
+if [ $? -ne 0 ]; then
+    log_error "tmux environment image build failed"
+    exit 1
+fi
+
+TMUX_SIZE=$(docker images "$ENV_IMAGE_NAME:tmux" --format "{{.Size}}")
+log_info "tmux environment size: $TMUX_SIZE"
+
 # Step 3: Run tests if enabled
 if [ "$RUN_TESTS" = true ]; then
     log_step "Running tests..."
@@ -580,6 +592,97 @@ EOF
 
     log_info "typescript environment tests passed!"
 
+    # Test tmux environment
+    log_info "Testing tmux environment..."
+
+    # Test 21: tmux is available
+    log_info "  Test 21: Checking tmux is installed..."
+    docker run --rm "$ENV_IMAGE_NAME:tmux" /bin/bash -c '
+        set -e
+        tmux -V > /dev/null
+        echo "tmux is available"
+    '
+    if [ $? -ne 0 ]; then
+        log_error "Test 21 failed: tmux not available in tmux environment"
+        exit 2
+    fi
+
+    # Test 22: tmux can start a new session
+    log_info "  Test 22: Testing tmux can start a session..."
+    docker run --rm "$ENV_IMAGE_NAME:tmux" /bin/bash -c '
+        set -e
+
+        # Start tmux in detached mode with a simple command
+        tmux new-session -d -s test "echo Hello && sleep 1"
+
+        # Verify session exists
+        tmux list-sessions | grep -q "test"
+
+        # Kill the session
+        tmux kill-session -t test
+
+        echo "tmux session management works"
+    '
+    if [ $? -ne 0 ]; then
+        log_error "Test 22 failed: tmux session management broken"
+        exit 2
+    fi
+
+    # Test 23: git and jj still work in tmux environment
+    log_info "  Test 23: Testing git and jj work in tmux environment..."
+    docker run --rm "$ENV_IMAGE_NAME:tmux" /bin/bash -c '
+        set -e
+        git --version > /dev/null
+        jj --version > /dev/null
+        echo "git and jj are available in tmux environment"
+    '
+    if [ $? -ne 0 ]; then
+        log_error "Test 23 failed: git/jj not available in tmux environment"
+        exit 2
+    fi
+
+    # Test 24: Verify user is non-root in tmux
+    log_info "  Test 24: Verifying non-root user in tmux..."
+    docker run --rm "$ENV_IMAGE_NAME:tmux" /bin/bash -c '
+        set -e
+
+        CURRENT_USER=$(whoami)
+        if [ "$CURRENT_USER" = "root" ]; then
+            echo "FAIL: Running as root"
+            exit 1
+        fi
+
+        echo "Running as non-root user: $CURRENT_USER"
+    '
+    if [ $? -ne 0 ]; then
+        log_error "Test 24 failed: Running as root in tmux environment"
+        exit 2
+    fi
+
+    # Test 25: Verify security hardening in tmux
+    log_info "  Test 25: Verifying security hardening in tmux..."
+    docker run --rm "$ENV_IMAGE_NAME:tmux" /bin/bash -c '
+        set -e
+
+        # These should NOT exist
+        DANGEROUS_TOOLS="curl wget sudo su apt apt-get dpkg"
+
+        for tool in $DANGEROUS_TOOLS; do
+            if command -v "$tool" &> /dev/null; then
+                echo "FAIL: $tool should not be available"
+                exit 1
+            fi
+        done
+
+        echo "Security hardening verified"
+    '
+    if [ $? -ne 0 ]; then
+        log_error "Test 25 failed: Dangerous tools found in tmux environment"
+        exit 2
+    fi
+
+    log_info "tmux environment tests passed!"
+
     log_info "All environment tests passed!"
 fi
 
@@ -590,4 +693,5 @@ log_info "node env:       $ENV_IMAGE_NAME:node ($NODE_SIZE)"
 log_info "python env:     $ENV_IMAGE_NAME:python ($PYTHON_SIZE)"
 log_info "scala env:      $ENV_IMAGE_NAME:scala ($SCALA_SIZE)"
 log_info "typescript env: $ENV_IMAGE_NAME:typescript ($TYPESCRIPT_SIZE)"
+log_info "tmux env:       $ENV_IMAGE_NAME:tmux ($TMUX_SIZE)"
 log_info "Done. All images ready."

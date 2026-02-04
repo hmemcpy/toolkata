@@ -6,6 +6,7 @@ import {
   pythonEnvironment,
   scalaEnvironment,
   typescriptEnvironment,
+  tmuxEnvironment,
 } from "./builtin.js"
 
 /**
@@ -24,6 +25,7 @@ const REGISTERED_ENVIRONMENTS: EnvironmentConfig[] = [
   pythonEnvironment,
   scalaEnvironment,
   typescriptEnvironment,
+  tmuxEnvironment,
   // Add plugin environments here
   // ...myCustomEnvironment,
 ]

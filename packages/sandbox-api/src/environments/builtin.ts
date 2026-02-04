@@ -57,6 +57,16 @@ export const typescriptEnvironment: EnvironmentConfig = {
   category: "runtime",
 } as const
 
+// tmux environment - for tmux terminal multiplexer tutorials
+export const tmuxEnvironment: EnvironmentConfig = {
+  name: "tmux",
+  dockerImage: "toolkata-env:tmux",
+  defaultTimeout: 120000, // 120 seconds (tmux sessions can take longer)
+  defaultInitCommands: [],
+  description: "Bash shell with tmux terminal multiplexer installed",
+  category: "shell",
+} as const
+
 // Registry of all built-in environments
 export const builtinEnvironments: readonly EnvironmentConfig[] = [
   bashEnvironment,
@@ -64,6 +74,7 @@ export const builtinEnvironments: readonly EnvironmentConfig[] = [
   pythonEnvironment,
   scalaEnvironment,
   typescriptEnvironment,
+  tmuxEnvironment,
 ] as const
 
 // Helper: Get environment by name

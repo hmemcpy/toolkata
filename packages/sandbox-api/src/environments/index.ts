@@ -175,6 +175,7 @@ export {
   pythonEnvironment,
   scalaEnvironment,
   typescriptEnvironment,
+  tmuxEnvironment,
 } from "./builtin.js"
 
 // MissingImagesError for startup validation
