@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@vercel/analytics": "^1.6.1",
-    "next-mdx-remote": "^5.0.0",
+    "next-mdx-remote": "^6.0.0",
     "shiki": "^3.21.0",
     "yaml": "^2.8.2"
   }
