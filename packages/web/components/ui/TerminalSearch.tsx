@@ -1,9 +1,15 @@
 "use client"
 
+import type { SearchableStep } from "@/lib/search-data"
+import { getSearchableSteps } from "@/lib/search-data"
 import Link from "next/link"
 import { useCallback, useEffect, useRef, useState } from "react"
-import type { SearchableStep } from "../../lib/search-data"
-import { getSearchableSteps } from "../../lib/search-data"
+
+interface TerminalSearchProps {
+  readonly autoFocus?: boolean
+  readonly placeholder?: string
+  readonly className?: string
+}
 
 /**
  * TerminalSearch component.
@@ -14,10 +20,14 @@ import { getSearchableSteps } from "../../lib/search-data"
  * Features:
  * - Keyboard navigation (arrows, enter, escape)
  * - Searches across title, description, tool names, and tags
- * - Shows top 6 results
+ * - Shows top 8 results
  * - Click outside to close
  */
-export function TerminalSearch() {
+export function TerminalSearch({
+  autoFocus = false,
+  placeholder = " type to search by tool, step, or concept",
+  className = "",
+}: TerminalSearchProps = {}) {
   const [query, setQuery] = useState("")
   const [isOpen, setIsOpen] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -49,7 +59,7 @@ export function TerminalSearch() {
           const diverse: SearchableStep[] = []
           const pairingKeys = Array.from(byPairing.keys())
           const maxPerPairing = 2
-          const maxResults = 6
+          const maxResults = 8
 
           // Track how many steps we've taken from each pairing
           const takenFromPairing = new Map<string, number>()
@@ -101,10 +111,11 @@ export function TerminalSearch() {
     [results, selectedIndex],
   )
 
-  // Auto-focus input on mount
+  // Auto-focus input on mount when enabled (home page command deck).
   useEffect(() => {
+    if (!autoFocus) return
     inputRef.current?.focus()
-  }, [])
+  }, [autoFocus])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -117,42 +128,70 @@ export function TerminalSearch() {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  const showPlaceholder = query.length === 0 && !isOpen
+  // Global shortcut to focus search ("/" or Cmd/Ctrl+K).
+  useEffect(() => {
+    const handleKeyDownGlobal = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return
+      const target = event.target
+      const isFormField =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
+      if (isFormField) return
+
+      const isSlash = event.key === "/" && !event.metaKey && !event.ctrlKey && !event.altKey
+      const isCommandK =
+        event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey) && !event.altKey
+
+      if (!isSlash && !isCommandK) return
+      event.preventDefault()
+      setIsOpen(true)
+      inputRef.current?.focus()
+    }
+
+    window.addEventListener("keydown", handleKeyDownGlobal)
+    return () => window.removeEventListener("keydown", handleKeyDownGlobal)
+  }, [])
 
   return (
-    <div ref={containerRef} className="relative inline-block w-full max-w-md">
-      <div className="flex items-center">
-        <span className="text-[var(--color-accent)]">$</span>
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value)
-            setSelectedIndex(0)
-            setIsOpen(true)
-          }}
-          onFocus={() => setIsOpen(true)}
-          onKeyDown={handleKeyDown}
-          className="flex-1 bg-transparent font-mono text-sm sm:text-base text-[var(--color-text)] outline-none ml-2"
-          style={{ boxShadow: "none" }}
-          aria-label="Search lessons"
-        />
-        {showPlaceholder && (
-          <span className="absolute left-5 text-[#555] font-mono text-sm sm:text-base pointer-events-none">
-            # type to search, or scroll down
-          </span>
-        )}
-        {query.length > 0 && (
-          <span className="text-[var(--color-text-dim)]" style={{ animation: "blink 1s infinite" }}>
-            _
-          </span>
-        )}
+    <div ref={containerRef} className={`relative inline-block w-full ${className}`}>
+      <div className="border border-[var(--color-border)] bg-[var(--color-surface)]">
+        <div className="flex items-center px-3 py-2.5">
+          <span className="text-[var(--color-accent)] font-mono">$</span>
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            placeholder={placeholder}
+            onChange={(e) => {
+              setQuery(e.target.value)
+              setSelectedIndex(0)
+              setIsOpen(true)
+            }}
+            onFocus={() => setIsOpen(true)}
+            onKeyDown={handleKeyDown}
+            className="flex-1 bg-transparent font-mono text-sm sm:text-base text-[var(--color-text)] outline-none ml-2 placeholder:text-[var(--color-text-dim)]"
+            style={{ boxShadow: "none" }}
+            aria-label="Search lessons"
+          />
+          {query.length > 0 && (
+            <span
+              className="text-[var(--color-text-dim)]"
+              style={{ animation: "blink 1s infinite" }}
+            >
+              _
+            </span>
+          )}
+        </div>
+
+        <div className="px-3 pb-2 text-[10px] font-mono text-[var(--color-text-dim)]">
+          [/] or [Cmd/Ctrl+K] focus · [↑↓] navigate · [enter] open · [esc] clear
+        </div>
       </div>
 
       {/* Results dropdown */}
       {isOpen && results.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded shadow-lg z-50 overflow-hidden">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--color-surface)] border border-[var(--color-border)] shadow-lg z-50 overflow-hidden">
           {results.map((result, index) => (
             <Link
               key={`${result.toolPair}-${result.step}`}
@@ -185,7 +224,7 @@ export function TerminalSearch() {
 
       {/* No results message */}
       {isOpen && query.length > 0 && results.length === 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded shadow-lg z-50 px-3 py-2">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--color-surface)] border border-[var(--color-border)] shadow-lg z-50 px-3 py-2">
           <span className="font-mono text-sm text-[var(--color-text-dim)]">no matches found</span>
         </div>
       )}

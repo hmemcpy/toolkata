@@ -6,7 +6,6 @@ import type { SandboxConfig } from "../../components/ui/InteractiveTerminal"
 import { OverviewPageClientWrapper } from "../../components/ui/OverviewPageClientWrapper"
 import { ProgressCard } from "../../components/ui/ProgressCard"
 import { getEntry, isPairing, isValidEntrySlug } from "../../content/pairings"
-import { getServerProgressForPairAsync } from "../../core/progress-server"
 import { loadToolConfig } from "../../lib/content-core"
 import { resolveSandboxConfig } from "../../lib/content/types"
 import type { StepMeta } from "../../services/content"
@@ -109,15 +108,6 @@ export default async function ComparisonOverviewPage(props: {
     undefined, // Overview page has no step-specific sandbox config
     toolConfig,
   )
-
-  // Read progress from cookie for flicker-free SSR
-  const serverProgress = await getServerProgressForPairAsync(toolPair)
-  const initialProgress = serverProgress
-    ? {
-        completedSteps: serverProgress.completedSteps,
-        currentStep: serverProgress.currentStep,
-      }
-    : undefined
 
   // Default steps for jj-git (also used as fallback)
   const jjGitSteps: readonly StepMeta[] = [
@@ -285,13 +275,43 @@ export default async function ComparisonOverviewPage(props: {
 
   // Steps for tmux tutorial
   const tmuxSteps: readonly StepMeta[] = [
-    { step: 1, title: "What is tmux?", description: "Install, first session, basic orientation", slug: "01-step" },
+    {
+      step: 1,
+      title: "What is tmux?",
+      description: "Install, first session, basic orientation",
+      slug: "01-step",
+    },
     { step: 2, title: "Sessions", description: "New, list, attach, detach, kill", slug: "02-step" },
-    { step: 3, title: "Windows", description: "Create, navigate, rename, close, list", slug: "03-step" },
-    { step: 4, title: "Panes", description: "Split vertical/horizontal, cycle, zoom, resize", slug: "04-step" },
-    { step: 5, title: "Key Bindings", description: "Prefix key, list bindings, command mode", slug: "05-step" },
-    { step: 6, title: "Copy Mode", description: "Enter, vi/emacs nav, search, select/yank, paste", slug: "06-step" },
-    { step: 7, title: "Configuration", description: ".tmux.conf, prefix rebinding, options, status bar", slug: "07-step" },
+    {
+      step: 3,
+      title: "Windows",
+      description: "Create, navigate, rename, close, list",
+      slug: "03-step",
+    },
+    {
+      step: 4,
+      title: "Panes",
+      description: "Split vertical/horizontal, cycle, zoom, resize",
+      slug: "04-step",
+    },
+    {
+      step: 5,
+      title: "Key Bindings",
+      description: "Prefix key, list bindings, command mode",
+      slug: "05-step",
+    },
+    {
+      step: 6,
+      title: "Copy Mode",
+      description: "Enter, vi/emacs nav, search, select/yank, paste",
+      slug: "06-step",
+    },
+    {
+      step: 7,
+      title: "Configuration",
+      description: ".tmux.conf, prefix rebinding, options, status bar",
+      slug: "07-step",
+    },
     {
       step: 8,
       title: "Session Management & Scripting",
@@ -391,202 +411,209 @@ export default async function ComparisonOverviewPage(props: {
       <Header />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          {/* Breadcrumb / Back link and Quick Links */}
-          <div className="mb-8 flex items-center justify-between">
-            <Link
-              href="/"
-              className="inline-flex items-center text-sm text-[#d1d5dc] hover:text-white focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
-            >
-              ← Home
-            </Link>
-            <Link
-              href={`/${toolPair}/glossary`}
-              className="inline-flex items-center text-sm font-mono text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
-            >
-              [{isPairing(entry) ? "Glossary" : "Cheat Sheet"} →]
-            </Link>
-          </div>
+        {/* Breadcrumb / Back link and Quick Links */}
+        <div className="mb-8 flex items-center justify-between">
+          <Link
+            href="/"
+            className="inline-flex items-center text-sm text-[#d1d5dc] hover:text-white focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
+          >
+            ← Home
+          </Link>
+          <Link
+            href={`/${toolPair}/glossary`}
+            className="inline-flex items-center text-sm font-mono text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
+          >
+            [{isPairing(entry) ? "Glossary" : "Cheat Sheet"} →]
+          </Link>
+        </div>
 
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold font-mono text-white sm:text-4xl">
-              {isPairing(entry) ? (
-                <>
-                  {entry.to.name} ← {entry.from.name}
-                </>
-              ) : (
-                <>Learn {entry.tool.name}</>
-              )}
-            </h1>
-            {(isPairing(entry) ? entry.toUrl : entry.toolUrl) && (
-              <a
-                href={(isPairing(entry) ? entry.toUrl : entry.toolUrl) ?? "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block mt-2 text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
-              >
-                [{isPairing(entry) ? entry.to.name : entry.tool.name} documentation →]
-              </a>
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold font-mono text-white sm:text-4xl">
+            {isPairing(entry) ? (
+              <>
+                {entry.to.name} ← {entry.from.name}
+              </>
+            ) : (
+              <>Learn {entry.tool.name}</>
             )}
-          </div>
+          </h1>
+          {(isPairing(entry) ? entry.toUrl : entry.toolUrl) && (
+            <a
+              href={(isPairing(entry) ? entry.toUrl : entry.toolUrl) ?? "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-2 text-sm text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-colors duration-[var(--transition-fast)]"
+            >
+              [{isPairing(entry) ? entry.to.name : entry.tool.name} documentation →]
+            </a>
+          )}
+        </div>
 
-          {/* Main content with progress sidebar */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left column: Introduction */}
-            <div className="lg:col-span-2">
-              {/* Why {tool}? Section */}
-              <section>
-                <h2 className="mb-4 text-2xl font-bold font-mono text-white">
-                  Why {isPairing(entry) ? entry.to.name : entry.tool.name}?
-                </h2>
-                <div className="prose prose-invert max-w-none">
-                  {toolPair === "tmux" ? (
+        {/* Main content with progress sidebar */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left column: Introduction */}
+          <div className="lg:col-span-2">
+            {/* Why {tool}? Section */}
+            <section>
+              <h2 className="mb-4 text-2xl font-bold font-mono text-white">
+                Why {isPairing(entry) ? entry.to.name : entry.tool.name}?
+              </h2>
+              <div className="prose prose-invert max-w-none">
+                {toolPair === "tmux" ? (
+                  <>
+                    <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
+                      tmux is a terminal multiplexer that lets you create and control multiple
+                      terminal sessions from a single screen. Perfect for remote workflows,
+                      long-running processes, and organizing your development environment.
+                    </p>
+                    <ul className="space-y-2 text-sm text-[#d1d5dc]">
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>
+                          Terminal multiplexing — split windows into panes for side-by-side
+                          workflows
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>
+                          Session persistence — detach and reattach without losing running processes
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Remote workflows — maintain sessions over SSH connections</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>
+                          Pane and window management — organize workspaces with customizable layouts
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>
+                          Scriptability — automate session setup and configuration with .tmux.conf
+                        </span>
+                      </li>
+                    </ul>
+                  </>
+                ) : toolPair === "zio-cats" ? (
+                  <>
+                    <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
+                      ZIO 2 is a powerful effect system with built-in dependency injection and typed
+                      errors. If you know Cats Effect, you&apos;ll find the core concepts familiar
+                      but with a different API philosophy.
+                    </p>
+                    <ul className="space-y-2 text-sm text-[#d1d5dc]">
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>R/E/A type signature with environment parameter</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>ZLayer for type-safe dependency injection</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Typed error channel with error accumulation</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>ZStream for high-performance streaming</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Interop libraries available for gradual migration</span>
+                      </li>
+                    </ul>
+                  </>
+                ) : toolPair === "effect-zio" ? (
+                  <>
+                    <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
+                      Effect is a modern functional effect system with TypeScript-first design and
+                      cross-platform support. If you know ZIO, you&apos;ll find the concepts
+                      familiar but with cleaner syntax and better type inference.
+                    </p>
+                    <ul className="space-y-2 text-sm text-[#d1d5dc]">
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Effect&lt;A, E, R&gt; type order (result before requirements)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Effect.gen for clean composition (no for-comprehension nesting)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Context.Tag for type-safe dependency injection</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Built-in Schema for validation and encoding</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-[var(--color-accent)] mt-0.5">•</span>
+                        <span>Cross-platform (Node, Browser, Deno, Bun)</span>
+                      </li>
+                    </ul>
+                  </>
+                ) : (
+                  // Default case: jj-git (pairings)
+                  isPairing(entry) && (
                     <>
                       <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
-                        tmux is a terminal multiplexer that lets you create and control multiple terminal
-                        sessions from a single screen. Perfect for remote workflows, long-running
-                        processes, and organizing your development environment.
+                        {entry.to.name} ({entry.to.description}) rethinks version control from first
+                        principles. Built for developers who want a safer, more intuitive workflow.
                       </p>
                       <ul className="space-y-2 text-sm text-[#d1d5dc]">
                         <li className="flex items-start gap-2">
                           <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                          <span>Terminal multiplexing — split windows into panes for side-by-side workflows</span>
+                          <span>Working copy IS a commit (no staging area complexity)</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                          <span>Session persistence — detach and reattach without losing running processes</span>
+                          <span>Change IDs survive rebases (stable identifiers)</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                          <span>Remote workflows — maintain sessions over SSH connections</span>
+                          <span>Conflicts are first-class (stored in commits, not blocking)</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                          <span>Pane and window management — organize workspaces with customizable layouts</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                          <span>Scriptability — automate session setup and configuration with .tmux.conf</span>
-                        </li>
-                      </ul>
-                    </>
-                  ) : toolPair === "zio-cats" ? (
-                    <>
-                      <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
-                        ZIO 2 is a powerful effect system with built-in dependency injection and
-                        typed errors. If you know Cats Effect, you&apos;ll find the core concepts
-                        familiar but with a different API philosophy.
-                      </p>
-                      <ul className="space-y-2 text-sm text-[#d1d5dc]">
-                        <li className="flex items-start gap-2">
-                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                          <span>R/E/A type signature with environment parameter</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                          <span>ZLayer for type-safe dependency injection</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                          <span>Typed error channel with error accumulation</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                          <span>ZStream for high-performance streaming</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                          <span>Interop libraries available for gradual migration</span>
-                        </li>
-                      </ul>
-                    </>
-                  ) : toolPair === "effect-zio" ? (
-                    <>
-                      <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
-                        Effect is a modern functional effect system with TypeScript-first design and
-                        cross-platform support. If you know ZIO, you&apos;ll find the concepts
-                        familiar but with cleaner syntax and better type inference.
-                      </p>
-                      <ul className="space-y-2 text-sm text-[#d1d5dc]">
-                        <li className="flex items-start gap-2">
-                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                          <span>Effect&lt;A, E, R&gt; type order (result before requirements)</span>
+                          <span>Automatic descendant rebasing (no more --update-refs)</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <span className="text-[var(--color-accent)] mt-0.5">•</span>
                           <span>
-                            Effect.gen for clean composition (no for-comprehension nesting)
+                            Compatible with existing {entry.from.name} repos (use both tools
+                            together)
                           </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                          <span>Context.Tag for type-safe dependency injection</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                          <span>Built-in Schema for validation and encoding</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                          <span>Cross-platform (Node, Browser, Deno, Bun)</span>
                         </li>
                       </ul>
                     </>
-                  ) : (
-                    // Default case: jj-git (pairings)
-                    isPairing(entry) && (
-                      <>
-                        <p className="text-base text-[#d1d5dc] leading-relaxed mb-4">
-                          {entry.to.name} ({entry.to.description}) rethinks version control from first
-                          principles. Built for developers who want a safer, more intuitive workflow.
-                        </p>
-                        <ul className="space-y-2 text-sm text-[#d1d5dc]">
-                          <li className="flex items-start gap-2">
-                            <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                            <span>Working copy IS a commit (no staging area complexity)</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                            <span>Change IDs survive rebases (stable identifiers)</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                            <span>Conflicts are first-class (stored in commits, not blocking)</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                            <span>Automatic descendant rebasing (no more --update-refs)</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-[var(--color-accent)] mt-0.5">•</span>
-                            <span>
-                              Compatible with existing {entry.from.name} repos (use both tools together)
-                            </span>
-                          </li>
-                        </ul>
-                      </>
-                    )
-                  )}
-                </div>
-              </section>
-            </div>
-
-            {/* Right column: Progress card */}
-            <aside className="lg:col-span-1">
-              <ProgressCard toolPair={toolPair} totalSteps={entry.steps} initialProgress={initialProgress} />
-            </aside>
-
-            {/* Full width: Steps list */}
-            <OverviewPageClientWrapper
-              toolPair={toolPair}
-              totalSteps={entry.steps}
-              steps={steps}
-              estimatedTimes={estimatedTimes}
-              initialProgress={initialProgress}
-              sandboxConfig={sandboxConfig}
-            />
+                  )
+                )}
+              </div>
+            </section>
           </div>
-        </main>
+
+          {/* Right column: Progress card */}
+          <aside className="lg:col-span-1">
+            <ProgressCard toolPair={toolPair} totalSteps={entry.steps} />
+          </aside>
+
+          {/* Full width: Steps list */}
+          <OverviewPageClientWrapper
+            toolPair={toolPair}
+            totalSteps={entry.steps}
+            steps={steps}
+            estimatedTimes={estimatedTimes}
+            sandboxConfig={sandboxConfig}
+          />
+        </div>
+      </main>
 
       <Footer />
     </div>

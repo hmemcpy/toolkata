@@ -49,6 +49,10 @@
   --color-accent-alt-glow: rgba(255, 176, 0, 0.15);
   --color-git: #ffb000;
 
+  /* Frameworks & Libraries category (mint phosphor) */
+  --color-framework: #5ccf94;
+  --color-framework-hover: #4ab381;
+
   /* ZIO (blue) */
   --color-zio: #0066ff;
   --color-zio-hover: #0052cc;

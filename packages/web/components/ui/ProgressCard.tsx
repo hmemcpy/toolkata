@@ -1,7 +1,32 @@
 "use client"
 
 import Link from "next/link"
+import type { CSSProperties } from "react"
 import { useStepProgress } from "../../hooks/useStepProgress"
+
+const TOOL_ACCENT: Record<string, { readonly accent: string; readonly hover: string }> = {
+  "jj-git": {
+    accent: "var(--color-accent)",
+    hover: "var(--color-accent-hover)",
+  },
+  "zio-cats": {
+    accent: "var(--color-framework)",
+    hover: "var(--color-framework-hover)",
+  },
+  "effect-zio": {
+    accent: "var(--color-framework)",
+    hover: "var(--color-framework-hover)",
+  },
+  tmux: {
+    accent: "var(--color-accent-alt)",
+    hover: "var(--color-accent-alt-hover)",
+  },
+}
+
+const DEFAULT_ACCENT = {
+  accent: "var(--color-accent)",
+  hover: "var(--color-accent-hover)",
+} as const
 
 /**
  * Props for ProgressCard component
@@ -16,17 +41,6 @@ export interface ProgressCardProps {
    * Total number of steps for this pairing.
    */
   readonly totalSteps: number
-
-  /**
-   * Initial progress from server-side cookie reading.
-   * When provided, eliminates hydration flicker.
-   */
-  readonly initialProgress?:
-    | {
-        readonly completedSteps: readonly number[]
-        readonly currentStep: number
-      }
-    | undefined
 }
 
 /**
@@ -43,19 +57,25 @@ export interface ProgressCardProps {
  * <ProgressCard toolPair="jj-git" totalSteps={12} />
  * ```
  */
-export function ProgressCard({ toolPair, totalSteps, initialProgress }: ProgressCardProps) {
-  const { currentStep, completedCount, resetProgress, isLoading } = useStepProgress(
-    toolPair,
-    totalSteps,
-    { initialProgress },
-  )
+export function ProgressCard({ toolPair, totalSteps }: ProgressCardProps) {
+  const { currentStep, completedCount, resetProgress } = useStepProgress(toolPair, totalSteps)
+  const accent = TOOL_ACCENT[toolPair] ?? DEFAULT_ACCENT
+  const accentVars = {
+    "--progress-accent": accent.accent,
+    "--progress-accent-hover": accent.hover,
+  } as CSSProperties
+
   // Calculate time remaining (average 3 min per step)
   const remainingSteps = totalSteps - completedCount
   const avgTimePerStep = 3 // minutes
   const remainingMins = remainingSteps * avgTimePerStep
+  const hasStarted = completedCount > 0 || currentStep > 1
 
   return (
-    <div className="sticky top-8 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+    <div
+      className="sticky top-8 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-6"
+      style={accentVars}
+    >
       <h3 className="mb-4 text-sm font-mono font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
         Your Progress
       </h3>
@@ -70,7 +90,7 @@ export function ProgressCard({ toolPair, totalSteps, initialProgress }: Progress
         </div>
         <div className="h-2 w-full bg-[var(--color-bg)] rounded-full overflow-hidden">
           <div
-            className="h-full bg-[var(--color-accent)] transition-all duration-[var(--transition-normal)]"
+            className="h-full bg-[var(--progress-accent)] transition-all duration-[var(--transition-normal)]"
             style={{
               width: `${totalSteps > 0 ? (completedCount / totalSteps) * 100 : 0}%`,
             }}
@@ -79,29 +99,28 @@ export function ProgressCard({ toolPair, totalSteps, initialProgress }: Progress
       </div>
 
       {/* Time remaining estimate */}
-      {!isLoading && completedCount > 0 && completedCount < totalSteps && (
+      {hasStarted && completedCount < totalSteps && (
         <div className="mb-6 text-sm text-[var(--color-text-muted)]">
           ~{remainingMins} min remaining
         </div>
       )}
 
       {/* Continue button or Start button */}
-      {!isLoading &&
-        (completedCount > 0 ? (
-          <Link
-            href={`/${toolPair}/${currentStep}`}
-            className="block w-full text-center px-4 py-3 text-sm font-mono text-[var(--color-bg)] bg-[var(--color-accent)] rounded-md hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-all duration-[var(--transition-fast)]"
-          >
-            Continue Step {currentStep} →
-          </Link>
-        ) : (
-          <Link
-            href={`/${toolPair}/1`}
-            className="block w-full text-center px-4 py-3 text-sm font-mono text-[var(--color-bg)] bg-[var(--color-accent)] rounded-md hover:bg-[var(--color-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-all duration-[var(--transition-fast)]"
-          >
-            Start Learning →
-          </Link>
-        ))}
+      {hasStarted ? (
+        <Link
+          href={`/${toolPair}/${currentStep}`}
+          className="block w-full text-center px-4 py-3 text-sm font-mono text-[var(--color-bg)] bg-[var(--progress-accent)] rounded-md hover:bg-[var(--progress-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-all duration-[var(--transition-fast)]"
+        >
+          Continue Step {currentStep} →
+        </Link>
+      ) : (
+        <Link
+          href={`/${toolPair}/1`}
+          className="block w-full text-center px-4 py-3 text-sm font-mono text-[var(--color-bg)] bg-[var(--progress-accent)] rounded-md hover:bg-[var(--progress-accent-hover)] focus-visible:outline-none focus-visible:ring-[var(--focus-ring)] transition-all duration-[var(--transition-fast)]"
+        >
+          Start Learning →
+        </Link>
+      )}
 
       {/* Divider */}
       <div className="my-6 border-t border-[var(--color-border)]" />
