@@ -88,9 +88,7 @@ export default async function RateLimitsPage() {
  */
 async function fetchRateLimits(): Promise<RateLimitsResult> {
   try {
-    const response = await adminApiFetch("/rate-limits", {
-      cache: "no-store",
-    })
+    const response = await adminApiFetch("/rate-limits")
 
     if (!response.ok) {
       const statusText = response.statusText || "Unknown error"

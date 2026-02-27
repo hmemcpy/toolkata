@@ -81,6 +81,7 @@ export const stepFrontmatterSchema = z.object({
   jjCommands: z.array(z.string()).optional(),
   zioCommands: z.array(z.string()).optional(),
   commands: z.array(z.string()).optional(),
+  kataId: z.number().int().min(1).max(7).optional(),
   sandbox: sandboxConfigSchema,
   validation: validationConfigSchema,
 })

@@ -4,8 +4,6 @@
 
 import * as path from "node:path"
 import { Context, Effect, Layer } from "effect"
-import * as Option from "effect/Option"
-import { CacheService } from "./cache"
 import { ContentConfig } from "./config"
 import type { Content, ContentType } from "./content-type"
 import { ContentError } from "./errors"
@@ -72,29 +70,14 @@ function extractSlug(filePath: string, contentRoot: string): string {
 }
 
 /**
- * Generate a cache key for a content item.
- */
-function cacheKey(typeName: string, slug: string): string {
-  return `${typeName}:${slug}`
-}
-
-/**
  * Create the ContentService implementation.
  */
 const makeContentService = Effect.gen(function* () {
   const config = yield* ContentConfig
-  const cache = yield* CacheService
 
   const load = <T>(type: ContentType<T>, slug: string): Effect.Effect<Content<T>, ContentError> =>
     Effect.gen(function* () {
       const filePath = yield* resolveFilePath(type, slug, config.contentRoot)
-
-      if (config.cache.enabled) {
-        const cached = yield* cache.get<Content<T>>(cacheKey(type.name, slug))
-        if (Option.isSome(cached)) {
-          return cached.value
-        }
-      }
 
       const file = yield* loadFile(filePath)
       const parsed = yield* parseFrontmatter(file.raw)
@@ -111,10 +94,6 @@ const makeContentService = Effect.gen(function* () {
       const finalContent = type.transform
         ? type.transform(baseContent)
         : (baseContent as Content<T>)
-
-      if (config.cache.enabled) {
-        yield* cache.set(cacheKey(type.name, slug), finalContent, config.cache.ttl)
-      }
 
       return finalContent
     })

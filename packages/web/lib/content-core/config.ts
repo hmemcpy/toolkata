@@ -5,10 +5,6 @@ import { Context, Layer } from "effect"
  */
 export interface ContentConfigService {
   readonly contentRoot: string
-  readonly cache: {
-    readonly enabled: boolean
-    readonly ttl: number
-  }
 }
 
 /**
@@ -20,26 +16,13 @@ export class ContentConfig extends Context.Tag("ContentConfig")<
 >() {}
 
 /**
- * Default TTL for cache entries (5 minutes in milliseconds).
- */
-const DEFAULT_CACHE_TTL = 5 * 60 * 1000
-
-/**
  * Creates a live layer for ContentConfig.
  *
  * @param contentRoot - Root directory for content files (used for path resolution)
- * @param cacheEnabled - Whether in-memory caching is enabled
- * @param cacheTtl - Cache TTL in milliseconds (defaults to 5 minutes)
  */
 export const ContentConfigLive = (options: {
   readonly contentRoot: string
-  readonly cacheEnabled?: boolean
-  readonly cacheTtl?: number
 }): Layer.Layer<ContentConfig> =>
   Layer.succeed(ContentConfig, {
     contentRoot: options.contentRoot,
-    cache: {
-      enabled: options.cacheEnabled ?? false,
-      ttl: options.cacheTtl ?? DEFAULT_CACHE_TTL,
-    },
   })

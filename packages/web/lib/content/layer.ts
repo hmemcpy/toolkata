@@ -8,7 +8,6 @@
  */
 
 import {
-  CacheServiceLive,
   ContentConfigLive,
   ContentServiceLive,
 } from "../content-core"
@@ -18,16 +17,11 @@ import { Layer } from "effect"
  * Content layer for production use.
  *
  * Loads content from the local filesystem.
- * Caching is disabled (Next.js handles caching at the page level).
  */
 export const ContentLayer = ContentServiceLive.pipe(
   Layer.provide(
-    Layer.mergeAll(
-      ContentConfigLive({
-        contentRoot: process.cwd(),
-        cacheEnabled: false,
-      }),
-      CacheServiceLive,
-    ),
+    ContentConfigLive({
+      contentRoot: process.cwd(),
+    }),
   ),
 )

@@ -212,7 +212,7 @@ export interface InteractiveTerminalProps {
    * Optional callback when session ID changes.
    *
    * Called when a new session is created and the session ID is available.
-   * Used by KataSession to enable validation against the sandbox state.
+   * Used by ExerciseSection to enable validation against the sandbox state.
    *
    * @param sessionId - The session ID (null when session is destroyed)
    */

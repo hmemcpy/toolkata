@@ -4,7 +4,6 @@
  * Provides:
  * - Content type definition with Zod schema validation
  * - File loading with frontmatter parsing (gray-matter)
- * - In-memory caching with TTL support
  * - Composable services using Effect-TS layers
  * - Tool-pair configuration loading from config.yml
  */
@@ -23,9 +22,6 @@ export type { ContentServiceShape } from "./service"
 
 export { ContentConfig, ContentConfigLive } from "./config"
 export type { ContentConfigService } from "./config"
-
-export { CacheService, CacheServiceLive } from "./cache"
-export type { CacheServiceShape } from "./cache"
 
 // Tool-pair configuration
 export { loadToolConfig, DEFAULT_TOOL_CONFIG } from "./tool-config"
