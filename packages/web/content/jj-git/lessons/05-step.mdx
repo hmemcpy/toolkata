@@ -188,17 +188,17 @@ jj op log
 
 ## Try It Yourself
 
-<TryIt command="echo 'test' > test.txt && echo 'demo' > demo.txt" description="Make some changes" />
+<TryIt command="echo 'test' > test.txt && echo 'demo' > demo.txt" description="Make some changes" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'"]} />
 
-<TryIt command="jj diff" description="See what changed" />
+<TryIt command="jj diff" description="See what changed" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "echo 'test' > test.txt && echo 'demo' > demo.txt"]} />
 
-<TryIt command="jj describe -m 'Add files'" description="Name the commit" />
+<TryIt command="jj describe -m 'Add files'" description="Name the commit" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "echo 'test' > test.txt && echo 'demo' > demo.txt"]} />
 
-<TryIt command="jj new" description="Finalize the commit" />
+<TryIt command="jj new" description="Finalize the commit" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "echo 'test' > test.txt && echo 'demo' > demo.txt", "jj describe -m 'Add files'"]} />
 
-<TryIt command="jj show @-" description="View the previous commit" />
+<TryIt command="jj show @-" description="View the previous commit" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "echo 'test' > test.txt && echo 'demo' > demo.txt", "jj describe -m 'Add files'", "jj new"]} />
 
-<TryIt command="jj log" description="See history" />
+<TryIt command="jj log" description="See history" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "echo 'test' > test.txt && echo 'demo' > demo.txt", "jj describe -m 'Add files'", "jj new"]} />
 
 ## Key Takeaways
 

@@ -6,7 +6,8 @@ import { Header } from "../../../components/ui/Header"
 import { StepPageClientWrapper } from "../../../components/ui/StepPageClientWrapper"
 import { getEntry, isPairing, isValidEntrySlug } from "../../../content/pairings"
 import { mdxComponents } from "../../../components/mdx/MDXComponents"
-import { loadStep } from "../../../services/content"
+import { loadKata, loadStep } from "../../../services/content"
+import type { ExerciseData } from "../../../contexts/SandboxConfigContext"
 import { loadToolConfig } from "../../../lib/content-core"
 import { resolveSandboxConfig, type RawSandboxConfig } from "../../../lib/content/types"
 import type { SandboxConfig } from "../../../components/ui/InteractiveTerminal"
@@ -140,6 +141,19 @@ export default async function StepPage(props: {
   // Get auth token for sandbox API (server-side)
   const authToken = await getAuthToken()
 
+  // Load exercises from kata if this step has a kataId
+  const kataId = frontmatter.kataId as number | undefined
+  let exerciseData: ExerciseData | undefined
+  if (kataId !== undefined) {
+    const kata = await loadKata(toolPair, kataId)
+    if (kata) {
+      exerciseData = {
+        exercises: kata.frontmatter.exercises,
+        kataId: kataId.toString(),
+      }
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
       <Header />
@@ -156,6 +170,7 @@ export default async function StepPage(props: {
           stepCommands={stepCommands}
           sandboxConfig={sandboxConfig}
           authToken={authToken}
+          {...(exerciseData ? { exerciseData } : {})}
         >
           {/* MDX Content */}
           <article className="prose prose-invert max-w-none">

@@ -280,11 +280,11 @@ jj --parallel 4 operation
 
 ## Try It Yourself
 
-<TryIt command="jj log" description="View commit history and change IDs" />
+<TryIt command="jj log" description="View commit history and change IDs" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj describe -m 'Initial commit'", "jj new"]} />
 
-<TryIt command="jj describe -m 'Task A'" description="Create a task commit" />
+<TryIt command="jj describe -m 'Task A'" description="Create a task commit" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj describe -m 'Initial commit'", "jj new"]} />
 
-<TryIt command="jj new" description="Start a new working copy" />
+<TryIt command="jj new" description="Start a new working copy" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj describe -m 'Initial commit'", "jj new", "jj describe -m 'Task A'"]} />
 
 ## Key Takeaways
 

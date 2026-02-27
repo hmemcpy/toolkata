@@ -4,6 +4,7 @@ step: 3
 description: "Creating commits in jj without a staging area"
 gitCommands: ["git add", "git commit", "git commit --amend"]
 jjCommands: ["jj describe", "jj new", "jj status"]
+kataId: 1
 validation:
   setup:
     - "jj git init --colocate ."
@@ -204,17 +205,17 @@ jj new
 
 ## Try It Yourself
 
-<TryIt command="jj new" description="Create a new working copy commit" />
+<TryIt command="jj new" description="Create a new working copy commit" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'"]} />
 
-<TryIt command="echo 'test' > demo.txt" description="Create a demo file" />
+<TryIt command="echo 'test' > demo.txt" description="Create a demo file" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj new"]} />
 
-<TryIt command="jj describe -m 'Add demo file'" description="Name your commit" />
+<TryIt command="jj describe -m 'Add demo file'" description="Name your commit" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj new", "echo 'test' > demo.txt"]} />
 
-<TryIt command="jj show @" description="Check the current commit" />
+<TryIt command="jj show @" description="Check the current commit" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj new", "echo 'test' > demo.txt", "jj describe -m 'Add demo file'"]} />
 
-<TryIt command="jj new" description="Finalize and create new commit" />
+<TryIt command="jj new" description="Finalize and create new commit" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj new", "echo 'test' > demo.txt", "jj describe -m 'Add demo file'"]} />
 
-<TryIt command="jj log" description="Verify in history" />
+<TryIt command="jj log" description="Verify in history" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj new", "echo 'test' > demo.txt", "jj describe -m 'Add demo file'", "jj new"]} />
 
 ## Key Takeaways
 
@@ -226,3 +227,5 @@ jj new
 ## Next Steps
 
 Now that you can create commits, let's explore how jj handles branching differently from git.
+
+<Exercises />

@@ -12,8 +12,7 @@ import { ScalaComparisonBlock } from "../ui/ScalaComparisonBlock"
 import { ScastieEmbed } from "../ui/ScastieEmbed"
 import { Tab, Tabs } from "../ui/Tabs"
 import { TryIt } from "../ui/TryIt"
-import { KataCTA } from "../kata/KataCTA"
-import { TerminalMDX } from "../ui/TerminalMDX"
+import { ExercisesMDX } from "../ui/ExercisesMDX"
 
 /**
  * MDX component mappings.
@@ -32,8 +31,7 @@ export const mdxComponents = {
   Tabs,
   Tab,
   TryIt,
-  KataCTA,
-  Terminal: TerminalMDX,
+  Exercises: ExercisesMDX,
 }
 
 /**

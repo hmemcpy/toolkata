@@ -4,6 +4,7 @@ step: 7
 description: "Querying commits with revset syntax (more powerful than git rev-parse)"
 gitCommands: ["git log --grep", "git log --author", "git log --since", "git rev-list"]
 jjCommands: ["jj log -r", "revset queries"]
+kataId: 3
 validation:
   setup:
     - "jj git init --colocate ."
@@ -203,11 +204,11 @@ jj log -r 'visible_heads()'
 
 ## Try It Yourself
 
-<TryIt command="jj log -r @" description="Show the current working copy" />
+<TryIt command="jj log -r @" description="Show the current working copy" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj describe -m 'First commit'", "jj new", "jj describe -m 'Second commit'", "jj new"]} />
 
-<TryIt command="jj log -r '::@'" description="Show ancestry of current commit" />
+<TryIt command="jj log -r '::@'" description="Show ancestry of current commit" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj describe -m 'First commit'", "jj new", "jj describe -m 'Second commit'", "jj new"]} />
 
-<TryIt command="jj log -r 'heads()'" description="Show all branch heads" validate={false} />
+<TryIt command="jj log -r 'heads()'" description="Show all branch heads" validate={false} setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj describe -m 'First commit'", "jj new", "jj describe -m 'Second commit'", "jj new"]} />
 
 ## Key Takeaways
 
@@ -221,3 +222,5 @@ jj log -r 'visible_heads()'
 ## Next Steps
 
 Now let's explore jj's approach to rebasing and editing history.
+
+<Exercises />

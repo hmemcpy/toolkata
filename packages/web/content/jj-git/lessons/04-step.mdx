@@ -218,15 +218,15 @@ jj status
 
 ## Try It Yourself
 
-<TryIt command="jj branch create test-branch" description="Create a branch" />
+<TryIt command="jj branch create test-branch" description="Create a branch" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj describe -m 'Initial commit'"]} />
 
-<TryIt command="echo 'test' > test.txt" description="Make changes" />
+<TryIt command="echo 'test' > test.txt" description="Make changes" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj describe -m 'Initial commit'", "jj branch create test-branch"]} />
 
-<TryIt command="jj describe -m 'Test commit'" description="Name the commit" />
+<TryIt command="jj describe -m 'Test commit'" description="Name the commit" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj describe -m 'Initial commit'", "jj branch create test-branch", "echo 'test' > test.txt"]} />
 
-<TryIt command="jj branch set test-branch" description="Update branch to point here" />
+<TryIt command="jj branch set test-branch" description="Update branch to point here" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj describe -m 'Initial commit'", "jj branch create test-branch", "echo 'test' > test.txt", "jj describe -m 'Test commit'"]} />
 
-<TryIt command="jj branch list" description="Verify branches" />
+<TryIt command="jj branch list" description="Verify branches" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj describe -m 'Initial commit'", "jj branch create test-branch", "echo 'test' > test.txt", "jj describe -m 'Test commit'", "jj branch set test-branch"]} />
 
 ## Key Takeaways
 

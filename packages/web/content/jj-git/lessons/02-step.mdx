@@ -4,6 +4,7 @@ step: 2
 description: "Understanding jj's core concept - your working copy IS a commit"
 gitCommands: ["git status", "git add", "git commit"]
 jjCommands: ["jj status", "jj describe", "jj new"]
+kataId: 2
 validation:
   setup:
     - "jj git init --colocate ."
@@ -137,11 +138,11 @@ The `@` commit model enables several jj features:
 
 Explore the `@` commit:
 
-<TryIt command="jj show @" description="Show the current @ commit" />
+<TryIt command="jj show @" description="Show the current @ commit" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'"]} />
 
-<TryIt command="jj diff" description="Show changes in the working copy" />
+<TryIt command="jj diff" description="Show changes in the working copy" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'"]} />
 
-<TryIt command="jj log" description="See all commits including @" />
+<TryIt command="jj log" description="See all commits including @" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'"]} />
 
 ## Key Takeaways
 
@@ -153,3 +154,5 @@ Explore the `@` commit:
 ## Next Steps
 
 Now that you understand the mental model, let's look at creating your first commits in jj.
+
+<Exercises />

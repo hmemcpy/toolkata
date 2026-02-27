@@ -4,6 +4,7 @@ step: 8
 description: "Automatic descendant rebasing and editing old commits"
 gitCommands: ["git rebase", "git rebase -i", "git commit --amend"]
 jjCommands: ["jj rebase", "jj edit", "jj squash", "jj new"]
+kataId: 4
 validation:
   setup:
     - "jj git init --colocate ."
@@ -191,11 +192,11 @@ jj never loses data:
 
 ## Try It Yourself
 
-<TryIt command="jj log" description="View current history" />
+<TryIt command="jj log" description="View current history" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj describe -m 'First commit'", "jj new", "jj describe -m 'Second commit'", "jj new"]} />
 
-<TryIt command="jj op log" description="View operation log (for undo)" />
+<TryIt command="jj op log" description="View operation log (for undo)" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj describe -m 'First commit'", "jj new", "jj describe -m 'Second commit'", "jj new"]} />
 
-<TryIt command="jj op undo" description="Undo the last operation" validate={false} />
+<TryIt command="jj op undo" description="Undo the last operation" validate={false} setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj describe -m 'First commit'", "jj new", "jj describe -m 'Second commit'", "jj new"]} />
 
 ## Key Takeaways
 
@@ -209,3 +210,5 @@ jj never loses data:
 ## Next Steps
 
 Now let's explore jj's first-class conflict handling.
+
+<Exercises />

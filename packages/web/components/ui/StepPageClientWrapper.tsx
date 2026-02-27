@@ -1,12 +1,10 @@
 /**
  * StepPageClientWrapper - Client component wrapper for step pages with keyboard navigation.
  *
- * Wraps children with InlineTerminalProvider (step-scoped) and provides:
+ * Wraps children with SandboxConfigProvider and provides:
  * - Keyboard navigation (left/right for prev/next step, ? for help)
  * - Keyboard shortcuts modal
  * - Integration with progress tracking and navigation components
- * - Inline terminal auto-appended at bottom (unless MDX places <Terminal /> explicitly)
- * - Soft gate encouraging terminal use before navigating
  */
 
 "use client"
@@ -18,8 +16,7 @@ import { KeyboardShortcutsModal } from "./KeyboardShortcutsModal"
 import { NavigationWrapper } from "./NavigationWrapper"
 import { StepProgressWrapper } from "./StepProgressWrapper"
 import { ReportBugModal } from "./ReportBugModal"
-import { TerminalAutoAppend } from "./TerminalAutoAppend"
-import { InlineTerminalProvider } from "../../contexts/InlineTerminalContext"
+import { SandboxConfigProvider, type ExerciseData } from "../../contexts/SandboxConfigContext"
 import type { SandboxConfig } from "./InteractiveTerminal"
 
 export interface StepPageClientWrapperProps {
@@ -34,6 +31,7 @@ export interface StepPageClientWrapperProps {
   readonly stepCommands: readonly string[]
   readonly sandboxConfig?: SandboxConfig
   readonly authToken?: string | null
+  readonly exerciseData?: ExerciseData
 }
 
 export function StepPageClientWrapper({
@@ -48,6 +46,7 @@ export function StepPageClientWrapper({
   stepCommands: _stepCommands,
   sandboxConfig,
   authToken,
+  exerciseData,
 }: StepPageClientWrapperProps) {
   const router = useRouter()
   const { isOpen, onClose, showModal } = useKeyboardShortcutsModal()
@@ -78,10 +77,11 @@ export function StepPageClientWrapper({
   })
 
   return (
-    <InlineTerminalProvider
+    <SandboxConfigProvider
       toolPair={toolPair}
       sandboxConfig={sandboxConfig}
       authToken={authToken ?? null}
+      exerciseData={exerciseData}
     >
       {/* Step Progress Header */}
       <StepProgressWrapper
@@ -100,10 +100,7 @@ export function StepPageClientWrapper({
         {children}
       </article>
 
-      {/* Auto-appended terminal (if MDX doesn't include <Terminal />) */}
-      <TerminalAutoAppend toolPair={toolPair} />
-
-      {/* Navigation Footer with soft gate */}
+      {/* Navigation Footer */}
       <NavigationWrapper toolPair={toolPair} currentStep={currentStep} totalSteps={totalSteps} />
 
       {/* Keyboard Shortcuts Modal */}
@@ -118,6 +115,6 @@ export function StepPageClientWrapper({
           step: title,
         }}
       />
-    </InlineTerminalProvider>
+    </SandboxConfigProvider>
   )
 }

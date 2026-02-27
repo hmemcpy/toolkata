@@ -4,6 +4,7 @@ step: 6
 description: "Working with remotes and pushing/pulling changes"
 gitCommands: ["git fetch", "git pull", "git push", "git clone"]
 jjCommands: ["jj git fetch", "jj git push", "jj git clone", "jj git remote"]
+kataId: 6
 ---
 
 # Remote Operations
@@ -175,9 +176,9 @@ You get jj's UX with git's compatibility.
 
 In the sandbox, you can explore the basic commands (remote operations require a connected repository):
 
-<TryIt command="jj git remote list" description="List configured remotes" />
+<TryIt command="jj git remote list" description="List configured remotes" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'"]} />
 
-<TryIt command="jj log" description="View current history" />
+<TryIt command="jj log" description="View current history" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'"]} />
 
 ## Key Takeaways
 
@@ -190,3 +191,5 @@ In the sandbox, you can explore the basic commands (remote operations require a 
 ## Next Steps
 
 Now let's learn about jj's powerful revset syntax for querying commits.
+
+<Exercises />

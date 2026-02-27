@@ -4,6 +4,7 @@ step: 12
 description: "Summary of jj concepts and resources for continued learning"
 gitCommands: []
 jjCommands: []
+kataId: 7
 ---
 
 # Review and Next Steps
@@ -179,17 +180,17 @@ Keep the [glossary](/jj-git/glossary) handy as you transition. It's normal to re
 
 ## Keep Exploring
 
-<TryIt command="jj log" description="View your commit history" />
+<TryIt command="jj log" description="View your commit history" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj describe -m 'First commit'", "jj new", "jj describe -m 'Second commit'"]} />
 
-<TryIt command="jj status" description="Check current state" />
+<TryIt command="jj status" description="Check current state" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'"]} />
 
-<TryIt command="jj op log" description="View operation history" />
+<TryIt command="jj op log" description="View operation history" setup={["jj git init --colocate .", "git config user.email 'test@toolkata.com'", "git config user.name 'Test User'", "jj describe -m 'First commit'", "jj new", "jj describe -m 'Second commit'"]} />
 
 ## Congratulations
 
 You've completed the jj for git users tutorial. Welcome to safer, more intuitive version control.
 
-<KataCTA toolPair="jj-git" totalSteps={12} />
+<Exercises />
 
 ---
 
