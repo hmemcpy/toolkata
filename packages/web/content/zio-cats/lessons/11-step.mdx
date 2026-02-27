@@ -1,0 +1,308 @@
+---
+title: "Software Transactional Memory"
+step: 11
+description: "Compose atomic operations with STM"
+zioCommands: ["TRef.make", "STM.succeed", "STM.retry", ".commit"]
+ceCommands: ["TRef.of", "STM.pure", "STM.retry", "commit"]
+---
+
+# Software Transactional Memory
+
+Software Transactional Memory (STM) allows composing individual operations atomically as a single transaction. ZIO includes STM built-in, while Cats Effect requires the separate cats-stm library.
+
+## The Problem: Composing Atomic Operations
+
+With regular `Ref`, individual operations are atomic but don't compose:
+
+<ScalaComparisonBlock
+  zioCode={`
+    |import zio._
+    |
+    |// BUG: Not atomic across two Refs!
+    |def transferUnsafe(
+    |  from: Ref[Int],
+    |  to: Ref[Int],
+    |  amount: Int
+    |): Task[Unit] =
+    |  for {
+    |    balance <- from.get
+    |    _ <- if (amount > balance)
+    |           ZIO.fail(new Throwable("insufficient funds"))
+    |         else from.update(_ - amount) *> to.update(_ + amount)
+    |  } yield ()
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import cats.effect.std._
+    |
+    |// BUG: Not atomic across two Refs!
+    |def transferUnsafe(
+    |  from: Ref[IO, Int],
+    |  to: Ref[IO, Int],
+    |  amount: Int
+    |): IO[Unit] =
+    |  for {
+    |    balance <- from.get
+    |    _ <- if (amount > balance)
+    |           IO.raiseError(new Throwable("insufficient funds"))
+    |         else from.update(_ - amount) *> to.update(_ + amount)
+    |  } yield ()
+  `}
+  zioComment="Ref operations don't compose atomically"
+  catsEffectComment="Same problem with Cats Effect Ref"
+/>
+
+Between `from.get` and the updates, another fiber could transfer funds, causing incorrect balances.
+
+## STM Transactions
+
+STM solves this with `TRef` — transactional references whose operations compose:
+
+{/* Uses external library coop (cats-stm) not in sandbox */}
+<ScalaComparisonBlock
+  validate={false}
+  zioCode={`
+    |import zio._
+    |import zio.stm._
+    |
+    |// Atomic transfer using STM
+    |def transfer(
+    |  from: TRef[Int],
+    |  to: TRef[Int],
+    |  amount: Int
+    |): STM[Throwable, Unit] =
+    |  for {
+    |    balance <- from.get
+    |    _ <- if (amount > balance)
+    |           STM.fail(new Throwable("insufficient funds"))
+    |         else from.update(_ - amount) *> to.update(_ + amount)
+    |  } yield ()
+    |
+    |// Commit to run the transaction
+    |val program: Task[Unit] =
+    |  for {
+    |    from <- TRef.make(100).commit
+    |    to   <- TRef.make(0).commit
+    |    _    <- transfer(from, to, 50).commit
+    |  } yield ()
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import cats.effect.std._
+    |import coop._
+    |
+    |// Atomic transfer using cats-stm
+    |def transfer(
+    |  from: TRef[IO, Int],
+    |  to: TRef[IO, Int],
+    |  amount: Int
+    |): STM[IO, Either[Throwable, Unit]] =
+    |  for {
+    |    balance <- from.get
+    |    _ <- if (amount > balance)
+    |           STM.raiseError(new Throwable("insufficient funds"))
+    |         else from.update(_ - amount) *> to.update(_ + amount)
+    |  } yield ()
+    |
+    |// Commit to run the transaction
+    |val program: IO[Unit] =
+    |  for {
+    |    from <- TRef[IO].of(100)
+    |    to   <- TRef[IO].of(0)
+    |    _    <- transfer(from, to, 50).commit
+  `}
+  zioComment="TRef operations compose atomically"
+  catsEffectComment="cats-stm requires separate library"
+/>
+
+The entire `for` comprehension runs atomically. If conflicting changes occur, STM automatically retries.
+
+<Callout variant="tip">
+ZIO includes STM built-in. Cats Effect requires the `coop-cats` library for STM support.
+</Callout>
+
+## STM Retry for Optimization
+
+`STM.retry` suspends the transaction until a `TRef` changes — useful for waiting on conditions:
+
+{/* Uses external library coop (cats-stm) not in sandbox */}
+<ScalaComparisonBlock
+  validate={false}
+  zioCode={`
+    |import zio._
+    |import zio.stm._
+    |
+    |// Wait until sufficient funds
+    |def autoDebit(
+    |  account: TRef[Int],
+    |  amount: Int
+    |): STM[Nothing, Unit] =
+    |  account.get.flatMap { balance =>
+    |    if (balance >= amount)
+    |      account.update(_ - amount)
+    |    else
+    |      STM.retry // Retry when account changes
+    |  }
+    |
+    |// Retries efficiently (not a busy loop)
+    |val program =
+    |  for {
+    |    account <- TRef.make(0).commit
+    |    fiber   <- autoDebit(account, 100).commit.fork
+    |    _       <- account.update(_ + 100).commit
+    |    _       <- fiber.await
+    |  } yield ()
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import cats.effect.std._
+    |import coop._
+    |
+    |// Wait until sufficient funds
+    |def autoDebit(
+    |  account: TRef[IO, Int],
+    |  amount: Int
+    |): STM[IO, Either[Throwable, Unit]] =
+    |  account.get.flatMap { balance =>
+    |    if (balance >= amount)
+    |      account.update(_ - amount)
+    |    else
+    |      STM.retry // Retry when account changes
+    |  }
+    |
+    |// Retries efficiently (not a busy loop)
+    |val program: IO[Unit] =
+    |  for {
+    |    account <- TRef[IO].of(0)
+    |    fiber   <- autoDebit(account, 100).commit.start
+    |    _       <- account.update(_ + 100)
+    |    _       <- fiber.join
+    |  } yield ()
+  `}
+  zioComment="Retries only when TRef changes"
+  catsEffectComment="Same retry semantics"
+/>
+
+`STM.retry` is efficient — the transaction only retries when one of its `TRef` values actually changes.
+
+## STM Data Structures
+
+ZIO STM includes transactional data structures: `TMap`, `TQueue`, `TSet`, `TPriorityQueue`, `TArray`:
+
+{/* Uses external library coop (cats-stm) not in sandbox */}
+<ScalaComparisonBlock
+  validate={false}
+  zioCode={`
+    |import zio._
+    |import zio.stm._
+    |
+    |// TMap: Transactional hash map
+    |val stmMap =
+    |  for {
+    |    map <- TMap.empty[String, Int].commit
+    |    _   <- map.put("key1", 42).commit
+    |    _   <- map.put("key2", 100).commit
+    |    v1  <- map.get("key1").commit
+    |  } yield v1
+    |
+    |// TQueue: Transactional queue
+    |val stmQueue =
+    |  for {
+    |    queue <- TQueue.unbounded[Int].commit
+    |    _     <- queue.offer(1).commit
+    |    _     <- queue.offer(2).commit
+    |    v     <- queue.take.commit
+    |  } yield v
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import cats.effect.std._
+    |import coop._
+    |
+    |// TMap: Transactional hash map
+    |val stmMap: IO[Option[Int]] =
+    |  for {
+    |    map <- TMap.empty[String, Int].commit
+    |    _   <- map.put("key1", 42).commit
+    |    _   <- map.put("key2", 100).commit
+    |    v1  <- map.get("key1").commit
+    |  } yield v1
+    |
+    |// TQueue: Transactional queue
+    |val stmQueue: IO[Int] =
+    |  for {
+    |    queue <- TQueue.unbounded[IO, Int].commit
+    |    _     <- queue.offer(1).commit
+    |    _     <- queue.offer(2).commit
+    |    v     <- queue.take.commit
+    |  } yield v
+  `}
+  zioComment="Built-in STM collections"
+  catsEffectComment="STM collections from coop-cats"
+/>
+
+## STM Limitations
+
+**No arbitrary effects inside transactions:**
+- Can't print, launch fibers, or perform side effects
+- STM transactions may retry multiple times
+- Side effects would execute multiple times
+
+{/* Uses external library coop (cats-stm) not in sandbox */}
+<ScalaComparisonBlock
+  validate={false}
+  zioCode={`
+    |import zio._
+    |import zio.stm._
+    |
+    |// OK: Pure computation
+    |val good = STM.succeed(42).map(_ * 2)
+    |
+    |// BAD: Side effect in STM
+    |val bad =
+    |  STM.suspend {
+    |    println("This may print multiple times!")
+    |    STM.succeed(42)
+    |  }
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import coop._
+    |
+    |// OK: Pure computation
+    |val good: STM[IO, Int] = STM.pure(42).map(_ * 2)
+    |
+    |// BAD: Side effect in STM
+    |val bad: STM[IO, Int] =
+    |  STM.suspend {
+    |    println("This may print multiple times!")
+    |    STM.pure(42)
+    |  }
+  `}
+  zioComment="STM retries violate side-effect expectations"
+  catsEffectComment="Same limitation"
+/>
+
+**High contention can cause retries:**
+- STM is optimistic — assumes no conflicts
+- If many fibers modify the same TRefs, performance may degrade
+- For high contention, consider `Queue` or `Semaphore`
+
+## Key Differences
+
+| Feature | ZIO STM | cats-stm |
+|---------|---------|----------|
+| **Dependency** | Built-in | Separate `coop-cats` library |
+| **API** | `ZSTM[R, E, A]` | `STM[F, A]` (no error channel) |
+| **Commit** | `.commit` returns `ZIO[R, E, A]` | `.commit[F]` returns `F[A]` |
+| **Data structures** | TMap, TQueue, TSet, TArray, TPriorityQueue | Same set of structures |
+
+<Callout variant="tip">
+Return `STM` from functions to let callers compose transactions atomically. Use `.commit` only at the outermost layer.
+</Callout>
+
+## Next Steps
+
+You've learned STM for composing atomic operations. Next: concurrent structures for coordination.
+
+[Next: Concurrent Structures →](/zio-cats/12)

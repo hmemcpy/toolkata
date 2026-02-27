@@ -27,7 +27,7 @@
 "use client"
 
 import type { JSX } from "react"
-import { useTerminalContext } from "../../contexts/TerminalContext"
+import { useGitToggle } from "../../hooks/useGitToggle"
 import { useDirection } from "@/hooks/useDirection"
 
 interface SideBySideProps {
@@ -94,14 +94,8 @@ export function SideBySide({
   // Use prop override if provided, otherwise read from context
   showGit: showGitProp,
 }: SideBySideProps): JSX.Element {
-  // Read showGitEquivalents from context (defaults to false if not in provider)
-  let contextShowGit = false
-  try {
-    const { showGitEquivalents } = useTerminalContext()
-    contextShowGit = showGitEquivalents
-  } catch {
-    // Not in TerminalProvider, use default (false)
-  }
+  // Read showGitEquivalents from standalone hook (localStorage-backed)
+  const { showGitEquivalents: contextShowGit } = useGitToggle()
 
   // Prop override takes precedence over context
   const showGit = showGitProp ?? contextShowGit

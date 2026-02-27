@@ -1,0 +1,274 @@
+---
+title: "Creating Effects"
+step: 2
+description: "Creating effects from pure values and side effects"
+zioCommands: ["ZIO.succeed", "ZIO.attempt", "ZIO.fail", "ZIO.unit", "ZIO.never", "ZIO.fromTry", "ZIO.async", "ZIO.fromOption", "ZIO.fromEither"]
+ceCommands: ["IO.pure", "IO.delay", "IO.raiseError", "IO.unit", "IO.canceled", "IO.fromEither", "IO.fromOption", "IO.async_", "IO.fromFuture"]
+---
+
+# Creating Effects
+
+Both libraries provide similar constructors for creating effects from pure values and side effects.
+
+## Pure Values
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect.IO
+    |
+    |// Lift a pure value into IO
+    |val pure: IO[Int] = IO.pure(42)
+    |
+    |// Also works with any type
+    |val pureString: IO[String] = IO.pure("hello")
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |// Lift a pure value into ZIO
+    |val pure: UIO[Int] = ZIO.succeed(42)
+    |
+    |// With explicit types
+    |val pureExplicit: ZIO[Any, Nothing, Int] =
+    |  ZIO.succeed(42)
+  `}
+  catsEffectComment="IO.pure - lift pure value"
+  zioComment="ZIO.succeed - lift pure value"
+/>
+
+## Side Effects (May Throw)
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect.IO
+    |import scala.io.Source
+    |
+    |// Suspend a side effect that may throw
+    |val readFile: IO[String] = IO.delay {
+    |  Source.fromFile("data.txt").mkString
+    |}
+    |
+    |// IO.blocking for blocking operations
+    |val blocking: IO[String] = IO.blocking {
+    |  Source.fromFile("data.txt").mkString
+    |}
+  `}
+  zioCode={`
+    |import zio._
+    |import scala.io.Source
+    |
+    |// Suspend a side effect that may throw
+    |val readFile: Task[String] = ZIO.attempt {
+    |  Source.fromFile("data.txt").mkString
+    |}
+    |
+    |// ZIO.attemptBlocking for blocking I/O
+    |val blocking: Task[String] = ZIO.attemptBlocking {
+    |  Source.fromFile("data.txt").mkString
+    |}
+  `}
+  catsEffectComment="IO.delay / IO.blocking - suspend side effects"
+  zioComment="ZIO.attempt / ZIO.attemptBlocking - suspend side effects"
+/>
+
+## Failures
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect.IO
+    |
+    |// Raise an error (must be Throwable)
+    |val fail: IO[Int] =
+    |  IO.raiseError(new Exception("Something went wrong"))
+    |
+    |// From a string (wrap in Exception)
+    |val failStr: IO[Int] =
+    |  IO.raiseError(new RuntimeException("oops"))
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |// Fail with any error type
+    |val fail: IO[String, Int] =
+    |  ZIO.fail("Something went wrong")
+    |
+    |// Fail with Throwable
+    |val failThrowable: Task[Int] =
+    |  ZIO.fail(new Exception("oops"))
+  `}
+  catsEffectComment="IO.raiseError - error must be Throwable"
+  zioComment="ZIO.fail - error can be any type"
+/>
+
+<Callout variant="warning">
+Cats Effect requires errors to be `Throwable`. ZIO allows any error type via the `E` parameter.
+</Callout>
+
+## Unit Value
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect.IO
+    |
+    |// Unit value for chaining effects
+    |val unit: IO[Unit] = IO.unit
+    |
+    |// Often implicit in comprehensions
+    |val program =
+    |  for {
+    |    _ <- IO.println("First")
+    |    _ <- IO.println("Second")
+    |  } yield ()
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |// Unit value for chaining effects
+    |val unit: UIO[Unit] = ZIO.unit
+    |
+    |// Often implicit in comprehensions
+    |val program =
+    |  for {
+    |    _ <- ZIO.attempt(println("First"))
+    |    _ <- ZIO.attempt(println("Second"))
+    |  } yield ()
+  `}
+  catsEffectComment="IO.unit - succeeds with Unit"
+  zioComment="ZIO.unit - succeeds with Unit"
+/>
+
+## Never-Completing Effect
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect.IO
+    |
+    |// Effect that never completes
+    |val never: IO[Nothing] = IO.never
+    |
+    |// Useful for servers that run indefinitely
+    |val runForever =
+    |  IO.never
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |// Effect that never completes
+    |val never: ZIO[Any, Nothing, Nothing] = ZIO.never
+    |
+    |// Useful for servers that run indefinitely
+    |val runForever = ZIO.never
+  `}
+  catsEffectComment="IO.never - never completes"
+  zioComment="ZIO.never - never completes"
+/>
+
+<Callout variant="tip">
+<code>ZIO.never</code> / <code>IO.never</code> are useful for keeping servers running indefinitely: <code>server.useForever</code> or <code>ZIO.scoped(server *> ZIO.never)</code>.
+</Callout>
+
+## From Scala Try
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect.IO
+    |import scala.util.{Try, Success, Failure}
+    |
+    |// From Try (Success/Failure)
+    |val fromTry: IO[Int] =
+    |  IO.fromTry(Try(42))
+    |
+    |// Try encapsulates Throwable
+    |val fromTryFailure: IO[Int] =
+    |  IO.fromTry(Failure(new Exception("oops")))
+  `}
+  zioCode={`
+    |import zio._
+    |import scala.util.{Try, Success, Failure}
+    |
+    |// From Try (Success/Failure)
+    |val fromTry: Task[Int] =
+    |  ZIO.fromTry(Try(42))
+    |
+    |// Try encapsulates Throwable
+    |val fromTryFailure: Task[Int] =
+    |  ZIO.fromTry(Failure(new Exception("oops")))
+  `}
+  catsEffectComment="IO.fromTry - from Scala Try"
+  zioComment="ZIO.fromTry - from Scala Try"
+/>
+
+<Callout variant="tip">
+<code>ZIO.fromTry</code> converts Scala <code>Try[A]</code> to <code>Task[A]</code>. Since <code>Try</code> can only fail with <code>Throwable</code>, the error type is fixed to <code>Throwable</code>.
+</Callout>
+
+## From Option/Either
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect.IO
+    |
+    |// From Option (None becomes error)
+    |val fromOpt: IO[Int] =
+    |  IO.fromOption(Some(42))(
+    |    new NoSuchElementException("empty")
+    |  )
+    |
+    |// From Either
+    |val fromEither: IO[Int] =
+    |  IO.fromEither(Right(42))
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |// From Option (None becomes Option[Nothing] error)
+    |val fromOpt: IO[Option[Nothing], Int] =
+    |  ZIO.fromOption(Some(42))
+    |
+    |// From Either
+    |val fromEither: IO[String, Int] =
+    |  ZIO.fromEither(Right(42))
+  `}
+  catsEffectComment="IO.fromOption / IO.fromEither"
+  zioComment="ZIO.fromOption / ZIO.fromEither"
+/>
+
+## Async Effects
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect.IO
+    |import scala.concurrent.Future
+    |import scala.concurrent.ExecutionContext.Implicits.global
+    |
+    |// From Future
+    |val fromFuture: IO[Int] =
+    |  IO.fromFuture(IO(Future.successful(42)))
+    |
+    |// Async callback
+    |val async: IO[Int] = IO.async_ { cb =>
+    |  cb(Right(42))
+    |}
+  `}
+  zioCode={`
+    |import zio._
+    |import scala.concurrent.Future
+    |
+    |// From Future
+    |val fromFuture: Task[Int] =
+    |  ZIO.fromFuture(_ => Future.successful(42))
+    |
+    |// Async callback
+    |val async: Task[Int] = ZIO.async { cb =>
+    |  cb(ZIO.succeed(42))
+    |}
+  `}
+  catsEffectComment="IO.fromFuture / IO.async_"
+  zioComment="ZIO.fromFuture / ZIO.async"
+/>
+
+## Next Steps
+
+With effect creation covered, let's look at error handling patterns.
+
+[Next: Error Handling →](/zio-cats/3)

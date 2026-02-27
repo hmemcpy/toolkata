@@ -1,0 +1,138 @@
+---
+title: "The Full Flow Challenge"
+kata: 7
+duration: "20 min"
+focus: "Complete workflow combining all jj techniques"
+exercises:
+  - id: "7.1"
+    title: "Initialize repository and make initial commits"
+    validation:
+      type: "count"
+      command: "jj log"
+      minCount: 3
+  - id: "7.2"
+    title: "Create a bookmark and start a feature"
+    validation:
+      type: "regex"
+      command: "jj bookmark list"
+      expectedPattern: "feature"
+  - id: "7.3"
+    title: "Edit history and resolve conflicts"
+    validation:
+      type: "command"
+      command: "jj status"
+  - id: "7.4"
+    title: "Rebase feature and complete workflow"
+    validation:
+      type: "count"
+      command: "jj log"
+      minCount: 6
+---
+
+# The Full Flow Challenge
+
+A complete scenario combining all the jj techniques you've learned: commits, bookmarks, conflicts, history editing, and rebasing.
+
+## Scenario
+
+You're implementing a new feature for a project. You'll start from scratch, create a feature branch, make commits, encounter and resolve a conflict, edit history, and rebase onto main.
+
+## Exercise 1: Initialize repository and make initial commits
+
+Set up a new repository with base commits.
+
+<TryIt command="jj git init" description="Initialize a new jj repo" />
+
+<TryIt command="echo '# My Project' > README.md" description="Create README" />
+
+<TryIt command="jj describe -m 'Add README'" description="Name commit" />
+
+<TryIt command="jj new" description="Commit" />
+
+<TryIt command={`echo 'console.log("hello")' > app.js`} description="Create app file" />
+
+<TryIt command="jj describe -m 'Add app'" description="Name commit" />
+
+<TryIt command="jj new" description="Commit" />
+
+<TryIt command="echo 'export const PORT = 3000' > config.js" description="Create config" />
+
+<TryIt command="jj describe -m 'Add config'" description="Name commit" />
+
+<TryIt command="jj new" description="Commit" />
+
+<TryIt command="jj log" description="Verify 3 commits exist" />
+
+## Exercise 2: Create a bookmark and start a feature
+
+Create a feature bookmark and start working on a new feature.
+
+<TryIt command="jj bookmark create main" description="Create main bookmark" />
+
+<TryIt command="jj bookmark create feature" description="Create feature bookmark" />
+
+<TryIt command={`echo 'export function hello() { return "hi" }' > utils.js`} description="Add utility function" />
+
+<TryIt command="jj describe -m 'Add hello utility'" description="Name commit" />
+
+<TryIt command="jj new" description="Commit" />
+
+<TryIt command="echo 'export const PORT = 8080' > config.js" description="Change config port" />
+
+<TryIt command="jj describe -m 'Update port'" description="Name commit" />
+
+<TryIt command="jj new" description="Commit" />
+
+<TryIt command="jj bookmark list" description="Verify feature bookmark exists" />
+
+## Exercise 3: Edit history and resolve conflicts
+
+Modify earlier commits and handle any conflicts that arise.
+
+<TryIt command="jj edit @-" description="Move to parent commit" />
+
+<TryIt command={`echo 'export const HOST = "localhost"' >> config.js`} description="Add host config" />
+
+<TryIt command="jj describe -m 'Add host config'" description="Name edited commit" />
+
+<TryIt command="jj new" description="Create new @ commit" />
+
+<TryIt command="echo '// TODO: add error handling' >> utils.js" description="Add comment" />
+
+<TryIt command="jj describe -m 'Add TODO comment'" description="Name commit" />
+
+<TryIt command="jj new" description="Commit" />
+
+<TryIt command="jj status" description="Verify clean working copy" />
+
+## Exercise 4: Rebase feature and complete workflow
+
+Rebase your feature onto main and finalize.
+
+<TryIt command="jj rebase -d main --source feature-" description="Rebase feature onto main" />
+
+<TryIt command="jj log" description="Verify rebased history (6+ commits)" />
+
+<TryIt command="jj status" description="Check final state" />
+
+<TryIt command="jj bookmark list" description="Verify bookmarks are correct" />
+
+## Key Points
+
+- `jj git init` creates a new repository
+- Bookmarks track branch points
+- `jj edit @` lets you modify past commits
+- `jj rebase -d` moves commits to new parents
+- History is mutable and always correctable
+
+## Completion Checklist
+
+- [ ] Initialized repository with 3+ base commits
+- [ ] Created and verified feature bookmark
+- [ ] Edited commit history and resolved conflicts
+- [ ] Rebased feature onto main (6+ commits total)
+- [ ] Verified clean working copy state
+
+---
+
+Congratulations on completing all 7 Katas! You now have hands-on practice with the core jj workflows. From here, try using jj in your real projects—the `jj git` commands make it easy to work alongside existing git repositories.

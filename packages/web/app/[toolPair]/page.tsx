@@ -5,7 +5,6 @@ import { Header } from "../../components/ui/Header"
 import type { SandboxConfig } from "../../components/ui/InteractiveTerminal"
 import { OverviewPageClientWrapper } from "../../components/ui/OverviewPageClientWrapper"
 import { ProgressCard } from "../../components/ui/ProgressCard"
-import { ShrinkingLayout } from "../../components/ui/ShrinkingLayout"
 import { getEntry, isPairing, isValidEntrySlug } from "../../content/pairings"
 import { getServerProgressForPairAsync } from "../../core/progress-server"
 import { loadToolConfig } from "../../lib/content-core"
@@ -391,8 +390,7 @@ export default async function ComparisonOverviewPage(props: {
     <div className="min-h-screen bg-[var(--color-bg)]">
       <Header />
 
-      <ShrinkingLayout>
-        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           {/* Breadcrumb / Back link and Quick Links */}
           <div className="mb-8 flex items-center justify-between">
             <Link
@@ -590,8 +588,7 @@ export default async function ComparisonOverviewPage(props: {
           </div>
         </main>
 
-        <Footer />
-      </ShrinkingLayout>
+      <Footer />
     </div>
   )
 }

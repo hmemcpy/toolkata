@@ -1,0 +1,364 @@
+---
+title: "Session Management & Scripting"
+step: 8
+description: "Manage multiple sessions and automate session layouts"
+commands: ["tmux new-session", "tmux send-keys", "tmux attach-session"]
+---
+
+# Session Management & Scripting
+
+At this point, you know the fundamentals: sessions, windows, panes, copy mode, and configuration. Now let's cover advanced workflows for managing multiple projects and automating layouts.
+
+<Callout type="tip">
+This step covers session management for long-term workflows. For quick one-offs, the basics from Steps 1-4 are sufficient.
+</Callout>
+
+## Multiple session workflows
+
+### Project-based sessions
+
+Create a session per project:
+
+```bash
+# Web development
+tmux new -s webdev -n editor
+# Split: tests on right
+tmux split-window -h -t webdev:0
+# Split: logs on bottom
+tmux split-window -v -t webdev:0
+
+# Server work
+tmux new -s production -n server
+# Attach to production server
+tmux send-keys -t production:0.0 "ssh prod-server" Enter
+```
+
+### Team-based sessions
+
+Share session naming conventions with your team:
+
+```bash
+# Naming: <environment>-<service>
+tmux new -s prod-api
+tmux new -s staging-db
+tmux new -s dev-frontend
+```
+
+## Switching between sessions
+
+Inside tmux:
+
+<TryIt command="Ctrl-b s" />
+
+Interactive list shows all sessions. Arrow to select, Enter to attach.
+
+Command mode:
+
+<TryIt command="Ctrl-b :" />
+
+Type: `switch-client -t sessionname`
+
+## Session groups
+
+Attach to multiple sessions simultaneously:
+
+<TryIt command="tmux attach -t sessionname -E" />
+
+The `-E` flag prevents closing the client if the session is already attached elsewhere.
+
+## Scripting session layouts
+
+Create a script to automate session setup:
+
+```bash
+#!/usr/bin/env bash
+# ~/scripts/dev-session.sh
+
+SESSION="dev"
+
+# Check if session exists
+if tmux has-session -t $SESSION 2>/dev/null; then
+  echo "Session $SESSION already exists. Attaching..."
+  tmux attach -t $SESSION
+  exit 0
+fi
+
+# Create session
+tmux new-session -d -s $SESSION -n "editor"
+
+# Window 0: Editor (default)
+tmux send-keys -t $SESSION:editor "cd ~/projects/myapp" Enter
+tmux send-keys -t $SESSION:editor "vim" Enter
+
+# Window 1: Server
+tmux new-window -t $SESSION -n "server"
+tmux send-keys -t $SESSION:server "cd ~/projects/myapp" Enter
+tmux send-keys -t $SESSION:server "npm run dev" Enter
+
+# Window 2: Tests
+tmux new-window -t $SESSION -n "tests"
+tmux send-keys -t $SESSION:tests "cd ~/projects/myapp" Enter
+tmux send-keys -t $SESSION:tests "npm test --watch" Enter
+
+# Window 3: Logs (split pane)
+tmux new-window -t $SESSION -n "logs"
+tmux send-keys -t $SESSION:logs "cd ~/projects/myapp" Enter
+tmux send-keys -t $SESSION:logs.0 "tail -f logs/server.log" Enter
+tmux split-window -h -t $SESSION:logs
+tmux send-keys -t $SESSION:logs.1 "tail -f logs/app.log" Enter
+
+# Attach to session
+tmux select-window -t $SESSION:editor
+tmux attach -t $SESSION
+```
+
+<Callout type="tip">
+Make the script executable: `chmod +x ~/scripts/dev-session.sh`. Run it anytime to start your dev environment.
+</Callout>
+
+## Tmuxinator for complex layouts
+
+For more complex layouts, use **tmuxinator**:
+
+```bash
+# Install
+gem install tmuxinator
+
+# Create project
+tmuxinator new myproject
+
+# Edit ~/.tmuxinator/myproject.yml
+```
+
+Example tmuxinator config:
+
+```yaml
+# ~/.tmuxinator/myproject.yml
+name: myproject
+root: ~/projects/myproject
+
+windows:
+  - editor:
+      layout: main-vertical
+      panes:
+        - vim
+        - npm test --watch
+  - server:
+      layout: even-horizontal
+      panes:
+        - npm run dev
+        - npm run storybook
+  - logs:
+      layout: even-horizontal
+      panes:
+        - tail -f logs/server.log
+        - tail -f logs/app.log
+```
+
+Start session:
+
+<TryIt command="tmuxinator start myproject" />
+
+<Callout type="warning">
+tmuxinator requires Ruby. If you prefer pure shell, stick with shell scripts.
+</Callout>
+
+## Session persistence
+
+By default, sessions end when:
+- The server restarts
+- You explicitly kill the session
+- The last pane exits
+
+For true persistence across reboots, use **tmux-resurrect**:
+
+```bash
+# Clone
+git clone https://github.com/tmux-plugins/tmux-resurrect ~/.tmux/plugins/tmux-resurrect
+
+# Add to ~/.tmux.conf
+run-shell ~/.tmux/plugins/tmux-resurrect/resurrect.tmux
+```
+
+Save session: `Ctrl-b Ctrl-s`
+
+Restore session: `Ctrl-b Ctrl-r`
+
+<Callout type="tip">
+For automatic restore on tmux start, use **tmux-continuum** from the same plugin suite.
+</Callout>
+
+## Environment-specific sessions
+
+### Development
+
+```bash
+tmux new -s dev -n editor \; \
+  split-window -h -t dev:editor \; \
+  new-window -n server \; \
+  send-keys -t dev:server "npm run dev" Enter \; \
+  attach -t dev
+```
+
+### Production monitoring
+
+```bash
+tmux new -s prod-mon -n servers \; \
+  send-keys -t prod-mon:servers.0 "ssh prod-1" Enter \; \
+  split-window -h -t prod-mon:servers \; \
+  send-keys -t prod-mon:servers.1 "ssh prod-2" Enter \; \
+  split-window -h -t prod-mon:servers \; \
+  send-keys -t prod-mon:servers.2 "ssh prod-3" Enter \; \
+  attach -t prod-mon
+```
+
+## Send-keys automation
+
+Automate commands across panes:
+
+```bash
+# Update all servers in parallel
+for i in {0..2}; do
+  tmux send-keys -t prod-mon:servers.$i "sudo apt update && sudo apt upgrade -y" Enter
+done
+```
+
+## Session hooks
+
+Run commands when events occur:
+
+```conf
+# In ~/.tmux.conf
+# Run when session is created
+set-hook -g after-new-session 'send-keys "cd ~/projects" Enter'
+
+# Run when window is created
+set-hook -g after-new-window 'send-keys "clear" Enter'
+```
+
+## Monitoring sessions
+
+Check session status:
+
+```bash
+# List all sessions
+tmux ls
+
+# Show session details
+tmux display-message -p '#S: #W (#P)'
+
+# Show pane info
+tmux display-message -p '#{pane_pid} #{pane_current_command}'
+```
+
+## Practical workflows
+
+### Morning routine
+
+```bash
+# 1. Start dev environment
+~/scripts/dev-session.sh
+
+# 2. Start monitoring session
+~/scripts/prod-monitor.sh
+
+# 3. Check sessions
+tmux ls
+
+# 4. Attach to what you need
+tmux attach -t dev
+```
+
+### Context switching
+
+```bash
+# Working on backend
+tmux attach -t backend-api
+
+# Need to check frontend
+tmux detach
+tmux attach -t frontend
+
+# Production issue
+tmux detach
+tmux attach -t prod-mon
+```
+
+### End of day
+
+```bash
+# Detach from all
+tmux detach -a
+
+# Kill dev sessions (keep prod monitoring)
+tmux kill-session -t dev
+tmux kill-session -t frontend
+
+# Leave prod-mon running overnight
+```
+
+## Session backup
+
+Save session layout to file:
+
+```bash
+tmux list-windows -t dev -F "#{window_index}: #{window_name} #{window_layout}"
+```
+
+Restore from saved layout (requires manual implementation or tmux-resurrect).
+
+## Troubleshooting
+
+**Session won't attach:**
+```bash
+# Force detach elsewhere
+tmux attach -d -t sessionname
+```
+
+**Zombie sessions:**
+```bash
+# Kill all sessions
+tmux kill-server
+
+# Or kill specific
+tmux kill-session -t sessionname
+```
+
+**Lost session (detached but not in list):**
+```bash
+# Check server status
+tmux server-info
+
+# Restart server
+tmux kill-server
+tmux start-server
+```
+
+## Key bindings summary
+
+| Key | Action |
+|-----|--------|
+| `Ctrl-b s` | List/choose sessions |
+| `Ctrl-b (` | Previous session |
+| `Ctrl-b )` | Next session |
+| `Ctrl-b $` | Rename session |
+| `Ctrl-b d` | Detach from session |
+
+## You're done!
+
+You've learned:
+- Sessions, windows, panes
+- Key bindings and copy mode
+- Configuration and customization
+- Scripting and automation
+
+From here, explore:
+- **tmux plugins**: tmux-resurrect, tmux-continuum, tmux-yank
+- **Status line customization**: CPU, battery, weather widgets
+- **Nested tmux**: Local and remote sessions simultaneously
+
+<Callout type="tip">
+The tmux man page is comprehensive: `man tmux`. Keep it handy!
+</Callout>
+
+Happy multiplexing!

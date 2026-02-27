@@ -1,0 +1,612 @@
+---
+title: "HTTP Clients and Servers"
+step: 14
+description: "Build HTTP clients and servers with ZIO HTTP and http4s"
+zioCommands: ["Http.route", "Http.collect", "Client.request", "Server.port"]
+ceCommands: ["HttpRoutes.of", "BlazeServerBuilder", "Client.expect"]
+---
+
+# HTTP Clients and Servers
+
+Production applications need HTTP for APIs, webhooks, and microservices. ZIO provides a dedicated HTTP library, while Cats Effect uses the http4s ecosystem.
+
+## The HTTP Problem
+
+We need:
+1. **Type-safe routing** — Catch path/query parameter errors at compile time
+2. **Streaming support** — Handle large responses without memory issues
+3. **Concurrent requests** — Make multiple HTTP calls efficiently
+4. **Middleware** — Add auth, logging, CORS consistently
+
+## HTTP Servers: Basic Routes
+
+Both libraries use pattern matching for route definitions.
+
+{/* Uses external HTTP libraries (zio-http, http4s) not in sandbox */}
+<ScalaComparisonBlock
+  validate={false}
+  zioCode={`
+    |import zio.http._
+    |import zio._
+    |
+    |object App extends ZIOAppDefault {
+    |  val app: HttpApp[Any] = Http.collect[Request] {
+    |    case Method.GET -> Root / "hello" / name =>
+    |      Response.text(s"Hello, \$name!")
+    |
+    |    case Method.POST -> Root / "users" =>
+    |      Response.text("Created")
+    |
+    |    case _ =>
+    |      Response.status(Status.NotFound)
+    |  }
+    |
+    |  def run =
+    |    Server.serve(app)
+    |}
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import org.http4s._
+    |import org.http4s.dsl._
+    |import org.http4s.implicits._
+    |import org.http4s.server.blaze.BlazeServerBuilder
+    |
+    |object App extends IOApp.Simple {
+    |  val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    |    case GET -> Root / "hello" / name =>
+    |      Ok(s"Hello, \$name!")
+    |
+    |    case POST -> Root / "users" =>
+    |      Created("Created")
+    |  }
+    |
+    |  val run: IO[Unit] =
+    |    BlazeServerBuilder[IO]
+    |      .bindHttp(8080)
+    |      .withHttpApp(routes.orNotFound)
+    |      .resource
+    |      .use(_ => IO.never)
+    |}
+  `}
+  zioComment="Http.collect with pattern matching"
+  catsEffectComment="HttpRoutes.of with pattern matching"
+/>
+
+<Callout variant="tip">
+ZIO HTTP uses `HttpApp[Any]` for a complete application. http4s uses `HttpRoutes[IO]` (partial) combined with `.orNotFound` to become a full `HttpApp[IO]`.
+</Callout>
+
+## Path and Query Parameters
+
+Both libraries extract path segments and query parameters with type safety.
+
+{/* Uses external HTTP libraries (zio-http, http4s) not in sandbox */}
+<ScalaComparisonBlock
+  validate={false}
+  zioCode={`
+    |import zio.http._
+    |import zio._
+    |
+    |val app: HttpApp[Any] = Http.collect[Request] {
+    |  // Path parameter: /users/123
+    |  case Method.GET -> Root / "users" / id(userId) =>
+    |    Response.text(s"User ID: \$userId")
+    |
+    |  // Query parameter: /search?q=zio
+    |  case Method.GET -> Root / "search" =>
+    |    val query = "zio" // Would come from request.url.queryParams
+    |    Response.text(s"Search: \$query")
+    |
+    |  // Multiple path params: /posts/123/comments/456
+    |  case Method.GET -> Root / "posts" / postId / "comments" / commentId =>
+    |    Response.text(s"Post \$postId, Comment \$commentId")
+    |}
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import org.http4s._
+    |import org.http4s.dsl._
+    |import org.http4s.implicits._
+    |
+    |val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    |  // Path variable: /users/123
+    |  case GET -> Root / "users" / IntVar(userId) =>
+    |    Ok(s"User ID: \$userId")
+    |
+    |  // Query params: /search?q=zio&limit=10
+    |  case GET -> Root / "search" :? Q(q, limit) =>
+    |    Ok(s"Search: \$q, Limit: \$limit")
+    |
+    |  // String path var: /posts/foo/comments/bar
+    |  case GET -> Root / "posts" / postId / "comments" / commentId =>
+    |    Ok(s"Post \$postId, Comment \$commentId")
+    |}
+    |
+    |object Q {
+    |  def unapply(params: Map[String, Seq[String]]): Option[(String, Int)] =
+    |    for {
+    |      q <- params.get("q").flatMap(_.headOption)
+    |      limit <- params.get("limit").flatMap(_.headOption.flatMap(_.toIntOption))
+    |    } yield (q, limit)
+    |}
+  `}
+  zioComment="id(path) extracts typed values"
+  catsEffectComment="IntVar, LongVar for typed extraction"
+/>
+
+## Request Bodies
+
+Handle JSON, form data, and raw request bodies.
+
+{/* Uses external HTTP libraries (zio-http, http4s) not in sandbox */}
+<ScalaComparisonBlock
+  validate={false}
+  zioCode={`
+    |import zio.http._
+    |import zio.json._
+    |import zio._
+    |
+    |case class User(name: String, email: String)
+    |
+    |object User {
+    |  implicit val codec: JsonCodec[User] =
+    |    DeriveJsonCodec.gen[User]
+    |}
+    |
+    |val app: HttpApp[Any] = Http.collect[Request] {
+    |  case req @ Method.POST -> Root / "users" =>
+    |    for {
+    |      body <- req.body.asJson[User]
+    |      response = Response.json(body)
+    |    } yield response
+    |
+    |  case req @ Method.POST -> Root / "plain" =>
+    |    for {
+    |      text <- req.body.asString
+    |      response = Response.text(text)
+    |    } yield response
+    |}
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import org.http4s._
+    |import org.http4s.dsl._
+    |import org.http4s.circe._
+    |import io.circe.generic.auto._
+    |
+    |case class User(name: String, email: String)
+    |
+    |val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    |  case req @ POST -> Root / "users" =>
+    |    for {
+    |      user <- req.as[User]
+    |      response <- Ok(user)
+    |    } yield response
+    |
+    |  case req @ POST -> Root / "plain" =>
+    |    for {
+    |      text <- req.as[String]
+    |      response <- Ok(text)
+    |    } yield response
+    |}
+  `}
+  zioComment="zio-http includes zio-json integration"
+  catsEffectComment="http4s-circe for JSON handling"
+/>
+
+<Callout variant="tip">
+ZIO HTTP includes zio-json codecs. http4s requires separate modules: `http4s-circe` for JSON, `http4s-jawn` as fallback.
+</Callout>
+
+## HTTP Clients
+
+Make outgoing HTTP requests to external APIs.
+
+{/* Uses external HTTP libraries (zio-http, http4s) not in sandbox */}
+<ScalaComparisonBlock
+  validate={false}
+  zioCode={`
+    |import zio.http._
+    |import zio._
+    |
+    |object ClientApp extends ZIOAppDefault {
+    |  val url = "https://api.github.com/repos/zio/zio"
+    |
+    |  def run =
+    |    for {
+    |      response <- Client.request(url)
+    |      data <- response.body.asString
+    |      _ <- Console.printLine(s"Stars: \$data")
+    |    } yield ()
+    |}
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import org.http4s._
+    |import org.http4s.client.blaze.BlazeClient
+    |import org.http4s.implicits._
+    |
+    |object ClientApp extends IOApp.Simple {
+    |  val uri = uri"https://api.github.com/repos/zio/zio"
+    |
+    |  val run: IO[Unit] =
+    |    BlazeClient[IO].use { client =>
+    |      for {
+    |        response <- client.expect[String](uri)
+    |        _ <- IO.println(s"Response: \$response")
+    |      } yield ()
+    |    }
+    |}
+  `}
+  zioComment="Client.request returns ZIO"
+  catsEffectComment="expect[T] decodes response"
+/>
+
+## Request Configuration
+
+Configure headers, timeouts, and authentication.
+
+{/* Uses external HTTP libraries (zio-http, http4s) not in sandbox */}
+<ScalaComparisonBlock
+  validate={false}
+  zioCode={`
+    |import zio.http._
+    |import zio._
+    |
+    |val request: Request =
+    |  Request.get(
+    |    url = "https://api.example.com/data",
+    |    headers = Headers(
+    |      Header.Authorization("Bearer token"),
+    |      Header.Accept("application/json")
+    |    )
+    |  )
+    |
+    |// Or with builder
+    |val customRequest =
+    |  Request
+    |    .get("https://api.example.com/data")
+    |    .addHeader(Header.UserAgent("MyApp/1.0"))
+    |
+    |def run =
+    |  for {
+    |    response <- Client.request(request)
+    |    body <- response.body.asString
+    |  } yield body
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import org.http4s._
+    |import org.http4s.client._
+    |import org.http4s.implicits._
+    |
+    |val request: Request[IO] =
+    |  Request[IO](
+    |    method = Method.GET,
+    |    uri = uri"https://api.example.com/data"
+    |  ).putHeaders(
+    |    Header("Authorization", "Bearer token"),
+    |    Header.Accept("application/json")
+    |  )
+    |
+    |val run: IO[String] =
+    |    BlazeClient[IO].use { client =>
+    |      for {
+    |        response <- client.fetch[String](request) { resp =>
+    |          resp.as[String]
+    |        }
+    |      } yield response
+    |    }
+  `}
+  zioComment="Request builder pattern"
+  catsEffectComment="Request() with putHeaders"
+/>
+
+## Error Handling
+
+Handle network failures, timeouts, and HTTP errors.
+
+{/* Uses external HTTP libraries (zio-http, http4s) not in sandbox */}
+<ScalaComparisonBlock
+  validate={false}
+  zioCode={`
+    |import zio.http._
+    |import zio._
+    |
+    |val request = Client
+    |  .request("https://api.example.com/data")
+    |  .timeout(5.seconds)
+    |  .catchSome {
+    |    case _: TimeoutException =>
+    |      ZIO.debug("Request timed out").as(
+    |        Response.status(Status.GatewayTimeout)
+    |      )
+    |
+    |    case _: IOException =>
+    |      ZIO.debug("Network error").as(
+    |        Response.status(Status.BadGateway)
+    |      )
+    |  }
+    |
+    |// Check HTTP status
+    |val checked =
+    |  for {
+    |    response <- Client.request(url)
+    |    _ <- ZIO.cond(
+    |      response.status.isSuccess,
+    |      (),
+    |      "HTTP error: " + response.status
+    |    )
+    |    body <- response.body.asString
+    |  } yield body
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import org.http4s._
+    |import org.http4s.client._
+    |import scala.concurrent.duration._
+    |
+    |val request =
+    |  BlazeClient[IO].use { client =>
+    |    client
+    |      .expect[String](uri"https://api.example.com/data")
+    |      .timeout(5.seconds)
+    |      .handleErrorWith {
+    |        case _: java.util.concurrent.TimeoutException =>
+    |          IO.pure("Request timed out")
+    |
+    |        case _: IOException =>
+    |          IO.pure("Network error")
+    |      }
+    |  }
+    |
+    |// Use expectOr to handle HTTP errors
+    |val checked =
+    |  BlazeClient[IO].use { client =>
+    |    client.expectOr[String](uri"https://api.example.com/data") {
+    |      case response =>
+    |        IO.raiseError(
+    |          new Exception(s"HTTP \${response.status.code}")
+    |        )
+    |    }
+    |  }
+  `}
+  zioComment="ZIO.catchSome for error recovery"
+  catsEffectComment="expectOr for error handling"
+/>
+
+<Callout variant="warning">
+HTTP clients can fail for many reasons: network errors, timeouts, DNS failures. Always handle these cases explicitly in production code.
+</Callout>
+
+## Middleware
+
+Add cross-cutting concerns: auth, logging, CORS.
+
+{/* Uses external HTTP libraries (zio-http, http4s) not in sandbox */}
+<ScalaComparisonBlock
+  validate={false}
+  zioCode={`
+    |import zio.http._
+    |import zio._
+    |
+    |// Logging middleware
+    |val logging: HttpMiddleware[Any] =
+    |  Handler.fromFunctionZIO[Request] { request =>
+    |    for {
+    |      _ <- ZIO.debug(s"\${request.method} \${request.url}")
+    |      response <- Handler.identity
+    |    } yield response
+    |  }
+    |
+    |// Auth middleware
+    |val auth: HttpMiddleware[Any] =
+    |  Handler.fromFunctionZIO[Request] { request =>
+    |    val token = request.headers.getHeader("Authorization")
+    |    token match {
+    |      case Some(_) =>
+    |        Handler.identity
+    |      case None =>
+    |        Handler.response(Response.unauthorized("Missing token"))
+    |    }
+    |  }
+    |
+    |// Apply middleware
+    |val app: HttpApp[Any] =
+    |  Http.collect[Request] {
+    |    case Method.GET -> Root / "admin" =>
+    |      Response.text("Admin panel")
+    |  } @@ logging @@ auth
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import org.http4s._
+    |import org.http4s.server.middleware._
+    |import org.http4s.server.middleware.authentication._
+    |
+    |// Logging middleware
+    |val withLogging =
+    |  Logger.httpApp(logHeaders = true, logBody = false)(routes)
+    |
+    |// CORS middleware
+    |val withCors =
+    |  CORS(routes.withHttpExecutionContext(ec))
+    |
+    |// Auth middleware
+    |val withAuth =
+    |  AuthedRoutes[Long, IO] {
+    |    case GET -> Root / "admin" as userId =>
+    |      Ok(s"User \$userId")
+    |  }
+    |
+    |val app: HttpApp[IO] =
+    |  withLogging
+    |    .withCorsOrNotFound
+    |    .withBasicAuth("admin", "password")
+  `}
+  zioComment="@@ operator to chain middleware"
+  catsEffectComment="Middleware functions from org.http4s.server.middleware"
+/>
+
+## Streaming Responses
+
+Handle large responses without loading into memory.
+
+{/* Uses external HTTP libraries (zio-http, http4s) not in sandbox */}
+<ScalaComparisonBlock
+  validate={false}
+  zioCode={`
+    |import zio.http._
+    |import zio._
+    |import zio.stream._
+    |
+    |val app: HttpApp[Any] = Http.collect[Request] {
+    |  case Method.GET -> Root / "stream" =>
+    |    // Stream from a data source
+    |    val data: ZStream[Any, Nothing, Byte] =
+    |      ZStream.fromIterable(
+    |        List("line1\\n", "line2\\n", "line3\\n")
+    |      ).mapChunks(_.flatMap(_.getBytes))
+    |
+    |    Response(
+    |      status = Status.Ok,
+    |      body = Body.fromStream(data)
+    |    )
+    |
+    |  // Server-sent events
+    |  case Method.GET -> Root / "events" =>
+    |    val events =
+    |      ZStream
+    |        .tick(1.second)
+    |        .map(_ => s"data: ping\\n\\n")
+    |        .mapChunks(_.flatMap(_.getBytes))
+    |
+    |    Response(
+    |      status = Status.Ok,
+    |      headers = Headers(
+    |        Header.ContentType("text/event-stream")
+    |      ),
+    |      body = Body.fromStream(events)
+    |    )
+    |}
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import org.http4s._
+    |import org.http4s.dsl._
+    |import org.http4s.implicits._
+    |import fs2._
+    |
+    |val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    |  case GET -> Root / "stream" =>
+    |    // Stream from data source
+    |    val data: Stream[IO, Byte] =
+    |      Stream(
+    |        "line1\\n",
+    |        "line2\\n",
+    |        "line3\\n"
+    |      ).through(fs2.text.utf8.encode)
+    |
+    |    Ok(data)
+    |
+    |  // Server-sent events
+    |  case GET -> Root / "events" =>
+    |    val events =
+    |      Stream
+    |        .awakeEvery[IO](1.second)
+    |        .map(_ => s"data: ping\\n\\n")
+    |        .through(fs2.text.utf8.encode)
+    |
+    |    Ok(events)
+    |      .map(_.withContentType(
+    |        MediaType.text.eventstream
+    |      ))
+    |}
+  `}
+  zioComment="Body.fromStream for streaming"
+  catsEffectComment="fs2.Stream for responses"
+/>
+
+## Server Configuration
+
+Configure ports, threads, and server behavior.
+
+{/* Uses external HTTP libraries (zio-http, http4s) not in sandbox */}
+<ScalaComparisonBlock
+  validate={false}
+  zioCode={`
+    |import zio.http._
+    |import zio._
+    |
+    |object MainApp extends ZIOAppDefault {
+    |  val app: HttpApp[Any] = Http.collect[Request] {
+    |    case _ => Response.text("Hello!")
+    |  }
+    |
+    |  def run =
+    |    Server.serve(
+    |      app,
+    |      Server.Config.default.port(8080)
+    |    ).provide(
+    |      Server.live,
+    |      Scope.default
+    |    )
+    |
+    |  // Custom config
+    |  val customConfig =
+    |    Server.Config.default
+    |      .port(8443)
+    |      .ssl(
+    |        Server.SSLConfig
+    |          .FromCertFile(
+    |            certPath = "/path/to/cert.pem",
+    |            keyPath = "/path/to/key.pem"
+    |          )
+    |      )
+    |}
+  `}
+  catsEffectCode={`
+    |import cats.effect._
+    |import org.http4s.server.blaze.BlazeServerBuilder
+    |import org.http4s.implicits._
+    |import scala.concurrent.ExecutionContext.global
+    |
+    |object MainApp extends IOApp.Simple {
+    |  val run: IO[Unit] =
+    |    BlazeServerBuilder[IO](global)
+    |      .bindHttp(8080, "0.0.0.0")
+    |      .withHttpApp(routes.orNotFound)
+    |      .withoutBanner
+    |      .withIdleTimeout(60.seconds)
+    |      .withResponseHeaderTimeout(30.seconds)
+    |      .resource
+    |      .use(_ => IO.never)
+    |}
+  `}
+  zioComment="Server.serve with ZLayer configuration"
+  catsEffectComment="BlazeServerBuilder for configuration"
+/>
+
+## Key Differences
+
+| Feature | ZIO HTTP | http4s |
+|---------|----------|--------|
+| **Dependency** | `dev.zio:zio-http` | `org.http4s:http4s-blaze-server` |
+| **Server** | Built-in Netty | Blaze (default), Ember |
+| **Client** | Built-in | `http4s-blaze-client`, Ember |
+| **JSON** | zio-json (included) | http4s-circe (separate) |
+| **Streaming** | ZStream | fs2.Stream |
+| **Middleware** | `@@` operator | Middleware functions |
+| **Routes** | `Http.collect[Request]` | `HttpRoutes.of[IO]` |
+| **Status codes** | `Status.Ok`, `Status.NotFound` | `Ok`, `NotFound` (DSL) |
+
+<Callout variant="tip">
+ZIO HTTP is a batteries-included solution with server, client, and JSON. http4s is modular—pick your server backend (Blaze, Ember), JSON library (circe, jawn), and client separately.
+</Callout>
+
+## Next Steps
+
+You've learned HTTP clients and servers. Next: Database access.
+
+[Next: Database Access →](/zio-cats/15)

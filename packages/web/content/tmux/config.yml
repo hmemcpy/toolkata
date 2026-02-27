@@ -1,0 +1,32 @@
+# Default sandbox settings for tmux tutorial
+#
+# These defaults apply to all steps unless overridden in step frontmatter.
+#
+# Override in step frontmatter:
+# ---
+# sandbox:
+#   enabled: false
+#   environment: "bash"
+#   timeout: 120
+#   init: ["tmux -V"]
+# ---
+
+defaults:
+  sandbox:
+    enabled: true
+    environment: "tmux"
+    timeout: 120
+    init:
+      - "tmux -V"
+
+# Validation configuration for build-time snippet validation.
+#
+# The validation system extracts code snippets from MDX and executes them
+# against the sandbox to ensure all tutorial examples work correctly.
+#
+# tmux commands can be tested directly. The environment has tmux pre-installed.
+validation:
+  environment: "bash"
+  prelude:
+    setup:
+      - "tmux -V"

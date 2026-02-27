@@ -3,7 +3,6 @@ import { notFound } from "next/navigation"
 import remarkGfm from "remark-gfm"
 import { Footer } from "../../../components/ui/Footer"
 import { Header } from "../../../components/ui/Header"
-import { ShrinkingLayout } from "../../../components/ui/ShrinkingLayout"
 import { StepPageClientWrapper } from "../../../components/ui/StepPageClientWrapper"
 import { getEntry, isPairing, isValidEntrySlug } from "../../../content/pairings"
 import { mdxComponents } from "../../../components/mdx/MDXComponents"
@@ -11,6 +10,7 @@ import { loadStep } from "../../../services/content"
 import { loadToolConfig } from "../../../lib/content-core"
 import { resolveSandboxConfig, type RawSandboxConfig } from "../../../lib/content/types"
 import type { SandboxConfig } from "../../../components/ui/InteractiveTerminal"
+import { getAuthToken } from "../../../lib/get-auth-token"
 
 /**
  * Generate static params for all steps of all published tutorial entries.
@@ -108,7 +108,7 @@ export default async function StepPage(props: {
 
   // Generate GitHub edit link
   const stepFile = `${stepNum.toString().padStart(2, "0")}-step.mdx`
-  const editHref = `https://github.com/hmemcpy/toolkata-content/edit/main/${toolPair}/lessons/${stepFile}`
+  const editHref = `https://github.com/hmemcpy/toolkata/edit/main/packages/web/content/${toolPair}/lessons/${stepFile}`
 
   // Load tool-pair config and resolve sandbox configuration
   // Sandbox config is resolved from: step frontmatter → tool-pair config.yml → global defaults
@@ -137,40 +137,42 @@ export default async function StepPage(props: {
     []
   ) as readonly string[]
 
+  // Get auth token for sandbox API (server-side)
+  const authToken = await getAuthToken()
+
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
       <Header />
 
-      <ShrinkingLayout>
-        <main id="main-content" className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-          <StepPageClientWrapper
-            toolPair={toolPair}
-            currentStep={stepNum}
-            totalSteps={entry.steps}
-            title={frontmatter.title}
-            previousHref={stepNum > 1 ? `/${toolPair}/${stepNum - 1}` : `/${toolPair}`}
-            nextHref={stepNum < entry.steps ? `/${toolPair}/${stepNum + 1}` : null}
-            editHref={editHref}
-            stepCommands={stepCommands}
-            sandboxConfig={sandboxConfig}
-          >
-            {/* MDX Content */}
-            <article className="prose prose-invert max-w-none">
-              <MDXRemote
-                source={content}
-                components={mdxComponents}
-                options={{
-                  mdxOptions: {
-                    remarkPlugins: [remarkGfm],
-                  },
-                }}
-              />
-            </article>
-          </StepPageClientWrapper>
-        </main>
+      <main id="main-content" className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        <StepPageClientWrapper
+          toolPair={toolPair}
+          currentStep={stepNum}
+          totalSteps={entry.steps}
+          title={frontmatter.title}
+          previousHref={stepNum > 1 ? `/${toolPair}/${stepNum - 1}` : `/${toolPair}`}
+          nextHref={stepNum < entry.steps ? `/${toolPair}/${stepNum + 1}` : null}
+          editHref={editHref}
+          stepCommands={stepCommands}
+          sandboxConfig={sandboxConfig}
+          authToken={authToken}
+        >
+          {/* MDX Content */}
+          <article className="prose prose-invert max-w-none">
+            <MDXRemote
+              source={content}
+              components={mdxComponents}
+              options={{
+                mdxOptions: {
+                  remarkPlugins: [remarkGfm],
+                },
+              }}
+            />
+          </article>
+        </StepPageClientWrapper>
+      </main>
 
-        <Footer />
-      </ShrinkingLayout>
+      <Footer />
     </div>
   )
 }

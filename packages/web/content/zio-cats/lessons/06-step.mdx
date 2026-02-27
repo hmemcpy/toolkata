@@ -1,0 +1,389 @@
+---
+title: "Resource Management"
+step: 6
+description: "Resource safety and lifecycle management"
+zioCommands: ["ZIO.acquireRelease", "ZIO.scoped", "Scope.make", "ZIO.fromAutoCloseable"]
+ceCommands: ["Resource.make", "Resource.use", "Resource.fromAutoCloseable", "bracket"]
+---
+
+# Resource Management
+
+Both libraries provide robust resource management with guaranteed cleanup.
+
+## Basic Resource Pattern
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect._
+    |import java.io._
+    |
+    |// Resource.make(acquire)(release)
+    |val fileResource: Resource[IO, BufferedReader] =
+    |  Resource.make(
+    |    IO.blocking(new BufferedReader(new FileReader("data.txt")))
+    |  )(reader =>
+    |    IO.blocking(reader.close()).handleErrorWith(_ => IO.unit)
+    |  )
+    |
+    |// Use the resource
+    |val content: IO[String] =
+    |  fileResource.use { reader =>
+    |    IO.blocking(reader.readLine())
+    |  }
+  `}
+  zioCode={`
+    |import zio._
+    |import java.io._
+    |
+    |// ZIO.acquireRelease(acquire)(release)
+    |val fileScoped: ZIO[Scope, Throwable, BufferedReader] =
+    |  ZIO.acquireRelease(
+    |    ZIO.attemptBlocking(new BufferedReader(new FileReader("data.txt")))
+    |  )(reader =>
+    |    ZIO.succeed(reader.close())
+    |  )
+    |
+    |// Use with scoped
+    |val content: Task[String] = ZIO.scoped {
+    |  fileScoped.flatMap { reader =>
+    |    ZIO.attemptBlocking(reader.readLine())
+    |  }
+    |}
+  `}
+  catsEffectComment="Resource.make - acquire/release pattern"
+  zioComment="ZIO.acquireRelease with Scope"
+/>
+
+## Resource Composition
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect._
+    |
+    |val dbResource: Resource[IO, Database] = ???
+    |val cacheResource: Resource[IO, Cache] = ???
+    |
+    |// Compose with for-comprehension
+    |val appResource: Resource[IO, (Database, Cache)] =
+    |  for {
+    |    db <- dbResource
+    |    cache <- cacheResource
+    |  } yield (db, cache)
+    |
+    |// Both released in reverse order
+    |val program: IO[Unit] =
+    |  appResource.use { case (db, cache) =>
+    |    IO.println("Using both resources")
+    |  }
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |val dbScoped: ZIO[Scope, Throwable, Database] = ???
+    |val cacheScoped: ZIO[Scope, Throwable, Cache] = ???
+    |
+    |// Compose in for-comprehension
+    |val program: Task[Unit] = ZIO.scoped {
+    |  for {
+    |    db <- dbScoped
+    |    cache <- cacheScoped
+    |    _ <- ZIO.succeed(println("Using both resources"))
+    |  } yield ()
+    |}
+    |
+    |// Both released in reverse order
+  `}
+  catsEffectComment="Resource composition via flatMap"
+  zioComment="Scoped composition via flatMap"
+/>
+
+<Callout variant="tip">
+Both libraries guarantee cleanup runs in reverse order of acquisition,
+even if the program fails or is interrupted.
+</Callout>
+
+## Bracket Pattern
+
+<ScalaComparisonBlock
+  validate={false}
+  catsEffectCode={`
+    |import cats.effect.IO
+    |
+    |// bracket(acquire)(release)(use)
+    |val result: IO[String] =
+    |  IO.blocking(openConnection())
+    |    .bracket(conn => IO.blocking(conn.close())) { conn =>
+    |      IO.blocking(conn.fetch())
+    |    }
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |// ZIO.acquireReleaseWith(acquire)(release)(use)
+    |val result: Task[String] =
+    |  ZIO.acquireReleaseWith(
+    |    ZIO.attemptBlocking(openConnection())
+    |  )(conn =>
+    |    ZIO.succeed(conn.close())
+    |  )(conn =>
+    |    ZIO.attemptBlocking(conn.fetch())
+    |  )
+  `}
+  catsEffectComment="bracket - inline resource usage"
+  zioComment="acquireReleaseWith - inline resource usage"
+/>
+
+## fromAutoCloseable
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect._
+    |import java.io._
+    |
+    |// Automatically close AutoCloseable
+    |val reader: Resource[IO, BufferedReader] =
+    |  Resource.fromAutoCloseable(
+    |    IO.blocking(new BufferedReader(new FileReader("data.txt")))
+    |  )
+  `}
+  zioCode={`
+    |import zio._
+    |import java.io._
+    |
+    |// Automatically close AutoCloseable
+    |val reader: ZIO[Scope, Throwable, BufferedReader] =
+    |  ZIO.fromAutoCloseable(
+    |    ZIO.attemptBlocking(new BufferedReader(new FileReader("data.txt")))
+    |  )
+  `}
+  catsEffectComment="Resource.fromAutoCloseable"
+  zioComment="ZIO.fromAutoCloseable"
+/>
+
+## Finalizers
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect.IO
+    |
+    |// guarantee - always runs
+    |val withCleanup: IO[Int] =
+    |  IO.pure(42)
+    |    .guarantee(IO.println("Always runs"))
+    |
+    |// guaranteeCase - runs with outcome
+    |val withOutcome: IO[Int] =
+    |  IO.pure(42)
+    |    .guaranteeCase {
+    |      case Outcome.Succeeded(_) => IO.println("Success!")
+    |      case Outcome.Errored(e) => IO.println(s"Failed: $$e")
+    |      case Outcome.Canceled() => IO.println("Canceled!")
+    |    }
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |// ensuring - always runs
+    |val withCleanup: UIO[Int] =
+    |  ZIO.succeed(42)
+    |    .ensuring(ZIO.succeed(println("Always runs")))
+    |
+    |// onExit - runs with exit value
+    |val withOutcome: UIO[Int] =
+    |  ZIO.succeed(42)
+    |    .onExit {
+    |      case Exit.Success(_) => ZIO.succeed(println("Success!"))
+    |      case Exit.Failure(cause) => ZIO.succeed(println(s"Failed: $$cause"))
+    |    }
+  `}
+  catsEffectComment="guarantee / guaranteeCase"
+  zioComment="ensuring / onExit"
+/>
+
+## Resource Allocation
+
+{/* Pattern example - references undefined dbResource/dbScoped */}
+<ScalaComparisonBlock
+  validate={false}
+  catsEffectCode={`
+    |import cats.effect._
+    |
+    |// Allocate and get finalizer separately
+    |val allocated: IO[(Database, IO[Unit])] =
+    |  dbResource.allocated
+    |
+    |// Use then release manually
+    |val program: IO[Unit] = allocated.flatMap { case (db, release) =>
+    |  db.query *> release
+    |}
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |// Reserving a resource
+    |val reserved: UIO[Reservation[Any, Throwable, Database]] =
+    |  dbScoped.reserve
+    |
+    |// Manual acquire/release
+    |val program: Task[Unit] = reserved.flatMap { r =>
+    |  r.acquire.flatMap { db =>
+    |    db.query *> r.release(Exit.unit)
+    |  }
+    |}
+  `}
+  catsEffectComment="allocated - manual resource control"
+  zioComment="reserve - manual resource control"
+/>
+
+## The Scope Interface
+
+ZIO 2.x uses the `Scope` interface as a composable way to manage resource lifecycles. Understanding Scope is key to working with resources in ZIO.
+
+{/* Pattern example - shows Scope interface definition and Resource usage pattern */}
+<ScalaComparisonBlock
+  validate={false}
+  catsEffectCode={`
+    |import cats.effect._
+    |
+    |// Resource is a self-contained description
+    |// that carries its own finalization logic
+    |val fileResource: Resource[IO, BufferedReader] =
+    |  Resource.make(acquireFile)(releaseFile)
+    |
+    |// Use with .use - finalization is automatic
+    |val program: IO[String] = fileResource.use { reader =>
+    |  IO.blocking(reader.readLine())
+    |}
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |// Scope interface for resource management
+    |trait Scope {
+    |  // Add a finalizer that runs when scope closes
+    |  def addFinalizer(finalizer: UIO[Any]): UIO[Unit]
+    |
+    |  // Add finalizer that can inspect exit value
+    |  def addFinalizerExit(
+    |    finalizer: Exit[Any, Any] => UIO[Any]
+    |  ): UIO[Unit]
+    |}
+    |
+    |object Scope {
+    |  // Create a new closeable scope
+    |  def make: UIO[Scope.Closeable]
+    |
+    |  // Closeable extends Scope with close ability
+    |  trait Closeable extends Scope {
+    |    def close(exit: Exit[Any, Any]): UIO[Unit]
+    |  }
+    |
+    |  // Run a scoped effect
+    |  def scoped[R, E, A](
+    |   zio: ZIO[R with Scope, E, A]
+    |  ): ZIO[R, E, A]
+    |}
+  `}
+  catsEffectComment="Resource carries finalization with it"
+  zioComment="Scope manages finalizers centrally"
+/>
+
+<Callout variant="tip">
+The `Scope` interface separates adding finalizers from closing the scope. This allows you to pass a `Scope` to other code that can register finalizers without being able to prematurely close the scope.
+</Callout>
+
+### acquireRelease with Scope
+
+The `ZIO.acquireRelease` operator uses `Scope` under the hood:
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect._
+    |import java.io._
+    |
+    |// Resource.make is the primary constructor
+    |val fileResource: Resource[IO, BufferedReader] =
+    |  Resource.make(
+    |    IO.blocking(new BufferedReader(new FileReader("data.txt")))
+    |  )(reader =>
+    |    IO.blocking(reader.close()).handleErrorWith(_ => IO.unit)
+    |  )
+  `}
+  zioCode={`
+    |import zio._
+    |import java.io._
+    |
+    |// ZIO.acquireRelease requires Scope in environment
+    |val fileScoped: ZIO[Scope, Throwable, BufferedReader] =
+    |  ZIO.acquireRelease(
+    |    ZIO.attemptBlocking(new BufferedReader(new FileReader("data.txt")))
+    |  )(reader =>
+    |    ZIO.succeed(reader.close())
+    |  )
+    |
+    |// Use with ZIO.scoped
+    |val content: Task[String] = ZIO.scoped {
+    |  fileScoped.flatMap { reader =>
+    |    ZIO.attemptBlocking(reader.readLine())
+    |  }
+    |}
+  `}
+  catsEffectComment="Resource.make - self-contained"
+  zioComment="ZIO.acquireRelease - requires Scope"
+/>
+
+### Scope-Based Composition
+
+Multiple resources compose naturally with `Scope`:
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect._
+    |
+    |val dbResource: Resource[IO, Database] = ???
+    |val cacheResource: Resource[IO, Cache] = ???
+    |
+    |// Compose with for-comprehension
+    |val appResource: Resource[IO, (Database, Cache)] =
+    |  for {
+    |    db <- dbResource
+    |    cache <- cacheResource
+    |  } yield (db, cache)
+    |
+    |// Use - both released in reverse order
+    |val program: IO[Unit] =
+    |  appResource.use { case (db, cache) =>
+    |    db.query *> cache.get
+    |  }
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |val dbScoped: ZIO[Scope, Throwable, Database] = ???
+    |val cacheScoped: ZIO[Scope, Throwable, Cache] = ???
+    |
+    |// Compose in for-comprehension
+    |val program: Task[Unit] = ZIO.scoped {
+    |  for {
+    |    db <- dbScoped
+    |    cache <- cacheScoped
+    |    _ <- db.query
+    |    _ <- cache.get
+    |  } yield ()
+    |}
+    |
+    |// Both released in reverse order when scope closes
+  `}
+  catsEffectComment="Resource composition via flatMap"
+  zioComment="Scoped composition via flatMap"
+/>
+
+<Callout variant="note">
+Cats Effect `Resource` is a self-contained data structure that carries its finalization logic. ZIO `Scope` is an environment service that manages finalizers centrally. Both approaches guarantee cleanup runs in reverse order of acquisition.
+</Callout>
+
+## Next Steps
+
+Resource management is similar in both libraries. Now let's explore fiber supervision.
+
+[Next: Fiber Supervision →](/zio-cats/7)

@@ -1,0 +1,181 @@
+---
+title: "Creating Effects"
+step: 2
+description: "Effect constructors compared to ZIO"
+estimatedTime: "~5 min"
+---
+
+# Creating Effects
+
+Both ZIO and Effect provide constructors for creating effects from values, errors, and side-effecting code.
+
+## Succeed and Fail
+
+<CrossLanguageBlock
+  zioCode={`
+    |// ZIO constructors
+    |val succeed: ZIO[Any, Nothing, Int] =
+    |  ZIO.succeed(42)
+    |
+    |val fail: ZIO[Any, String, Nothing] =
+    |  ZIO.fail("Something went wrong")
+    |
+    |val unit: ZIO[Any, Nothing, Unit] =
+    |  ZIO.unit
+  `}
+  effectCode={`
+    |// Effect constructors
+    |const succeed = Effect.succeed(42)
+    |// Effect<number, never, never>
+    |
+    |const fail = Effect.fail("Something went wrong")
+    |// Effect<never, string, never>
+    |
+    |const unit = Effect.void
+    |// Effect<void, never, never>
+  `}
+  zioComment="ZIO.succeed, ZIO.fail, ZIO.unit"
+  effectComment="Effect.succeed, Effect.fail, Effect.void"
+/>
+
+## Synchronous Side Effects
+
+Use `Effect.sync` (like `ZIO.succeed` with a thunk) or `Effect.try` for operations that may throw.
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: wrapping side effects
+    |val now: ZIO[Any, Nothing, Long] =
+    |  ZIO.succeed(System.currentTimeMillis())
+    |
+    |// ZIO.attempt: may throw
+    |val parse: ZIO[Any, Throwable, Int] =
+    |  ZIO.attempt("42".toInt)
+    |
+    |// ZIO.attemptBlocking: blocking I/O
+    |val read: ZIO[Any, IOException, String] =
+    |  ZIO.attemptBlockingIO(
+    |    scala.io.Source.fromFile("data.txt").mkString
+    |  )
+  `}
+  effectCode={`
+    |// Effect: sync for thunks
+    |const now = Effect.sync(() => Date.now())
+    |// Effect<number, never, never>
+    |
+    |// Effect.try: may throw
+    |const parse = Effect.try(() => parseInt("42", 10))
+    |// Effect<number, unknown, never>
+    |
+    |// Effect.try: file reading
+    |const read = Effect.try(() =>
+    |  Deno.readTextFileSync("data.txt")
+    |)
+    |// Effect<string, unknown, never>
+  `}
+  zioComment="ZIO.succeed thunk, ZIO.attempt, ZIO.attemptBlockingIO"
+  effectComment="Effect.sync, Effect.try"
+/>
+
+<Callout variant="tip">
+`Effect.sync` defers execution (like a function). `Effect.succeed` eagerly evaluates its argument. Use `sync(() => ...)` when you need to capture a value that changes.
+</Callout>
+
+## Async Effects
+
+Both provide constructors for callback-based async operations.
+
+<CrossLanguageBlock
+  zioCode={`
+    |// ZIO.async: callback-based
+    |val fetch: ZIO[Any, Throwable, String] =
+    |  ZIO.async { cb =>
+    |    fetchData(url, (result, error) =>
+    |      if (error != null) cb(ZIO.fail(error))
+    |      else cb(ZIO.succeed(result))
+    |    )
+    |  }
+  `}
+  effectCode={`
+    |// Effect.async: resume-based
+    |const fetch: Effect<string, Error, never> =
+    |  Effect.async((resume) => {
+    |    fetchData(url, (result, error) => {
+    |      if (error) resume(Effect.fail(error))
+    |      else resume(Effect.succeed(result))
+    |    })
+    |    // Return cleanup if needed
+    |    return Effect.void
+    |  })
+  `}
+  zioComment="ZIO.async with callback (ZIO.fail/ZIO.succeed)"
+  effectComment="Effect.async with resume (Effect.fail/Effect.succeed)"
+/>
+
+## Promises
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO.fromPromise*
+    |val fromPromise: ZIO[Any, Throwable, String] =
+    |  ZIO.fromPromiseScala(
+    |    scala.concurrent.Future.successful("Hello")
+    |  )
+  `}
+  effectCode={`
+    |// Effect.tryPromise
+    |const fromPromise: Effect<string, unknown, never> =
+    |  Effect.tryPromise(() =>
+    |    Promise.resolve("Hello")
+    |  )
+  `}
+  zioComment="ZIO.fromPromiseScala for Scala Future"
+  effectComment="Effect.tryPromise for native Promise"
+/>
+
+## Suspending Effects
+
+Delay effect creation until runtime (lazy initialization).
+
+<CrossLanguageBlock
+  zioCode={`
+    |// ZIO.suspendSucceed: defer effect creation
+    |val lazyEffect: ZIO[Any, Nothing, Int] =
+    |  ZIO.suspendSucceed {
+    |    ZIO.succeed(42)
+    |  }
+  `}
+  effectCode={`
+    |// Effect.suspend: defer effect creation
+    |const lazyEffect: Effect<number, never, never> =
+    |  Effect.suspend(() => {
+    |      console.log("Creating effect...")
+    |      return Effect.succeed(42)
+    |    }
+    |  )
+  `}
+  zioComment="ZIO.suspendSucceed for lazy effect creation"
+  effectComment="Effect.suspend for lazy effect creation"
+/>
+
+## Constructor Quick Reference
+
+| ZIO | Effect | Purpose |
+|-----|--------|---------|
+| `ZIO.succeed(x)` | `Effect.succeed(x)` | Successful value |
+| `ZIO.fail(e)` | `Effect.fail(e)` | Typed error |
+| `ZIO.succeed(f())` | `Effect.sync(f)` | Thunk (side effects) |
+| `ZIO.attempt(f)` | `Effect.try(f)` | Thunk that may throw |
+| `ZIO.fromPromise*` | `Effect.tryPromise` | From Promise |
+| `ZIO.async` | `Effect.async` | Callback-based |
+| `ZIO.suspend` | `Effect.suspend` | Lazy creation |
+| `ZIO.unit` | `Effect.void` | Unit value |
+| `ZIO.die(defect)` | `Effect.die(defect)` | Fatal defect |
+
+<Callout variant="warning">
+`Effect.sync` is equivalent to `ZIO.suspend` + `ZIO.succeed`. Use it for operations that must run each time the effect is executed (like `Date.now()`).
+</Callout>
+
+[Next: Error Handling →](/effect-zio/3)

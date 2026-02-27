@@ -1,0 +1,50 @@
+---
+title: "Why jj over git?"
+description: "Learn why jj (Jujutsu) is a safer, more intuitive version control system for git users"
+estimatedTime: "~40 min"
+---
+
+# Why jj over git?
+
+**jj (Jujutsu)** is a version control system that treats your working copy as a commit. No staging area. Automatic rebasing. First-class conflicts.
+
+## Key Differences from git
+
+### Working Copy IS a Commit
+
+In git, you have working copy changes, staged changes, and commits. In jj, your working copy **is** a commit (the `@` commit). Changes are auto-tracked.
+
+### No Staging Area
+
+Forget `git add` and `git commit`. In jj, you just `jj describe` to name your current commit, then `jj new` to start the next one.
+
+### Change IDs Survive Rebases
+
+Every commit gets a stable change ID that survives rebases. This makes collaboration safer—your commits remain the same logical changes even as history is rewritten.
+
+### Conflicts Are First-Class
+
+Conflicts are stored in commits, not blocking errors. You can continue working, view conflicts, and resolve them when ready.
+
+### Automatic Descendant Rebasing
+
+When you edit an old commit, all descendants automatically rebase. No more `git rebase --update-refs` or manual branch updates.
+
+## Compatible with git
+
+jj works with existing git repositories. Use `jj git init` to colocate, or `jj git clone` to start fresh. Push and pull with git remotes using `jj git push` and `jj git fetch`.
+
+You can even use both tools on the same repository—git and jj understand each other's commits.
+
+## Who Should Use jj?
+
+- **git users who want safer workflows**—jj never loses data
+- **Teams that rebase often**—automatic descendant rebasing
+- **Developers who fear merge conflicts**—first-class conflict handling
+- **Anyone who wants a simpler mental model**—working copy as a commit
+
+## Ready to Learn?
+
+This tutorial covers 12 steps from basic installation to advanced revsets. Each step includes hands-on practice in an interactive sandbox.
+
+[Start Learning →](/jj-git/1)

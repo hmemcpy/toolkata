@@ -1,0 +1,47 @@
+---
+title: "tmux Tutorial"
+description: "Learn terminal multiplexing with tmux"
+step: 0
+---
+
+# Learn tmux
+
+tmux is a terminal multiplexer that lets you create and manage multiple terminal sessions from a single window. It's essential for remote servers, long-running processes, and organized development workflows.
+
+## What you'll learn
+
+This 8-step tutorial covers:
+
+- **Sessions**: Create, detach, and reattach to persistent terminal sessions
+- **Windows**: Manage multiple terminal windows within a session
+- **Panes**: Split windows vertically and horizontally for parallel workflows
+- **Navigation**: Move efficiently between sessions, windows, and panes
+- **Copy Mode**: Scroll through output and copy text without a mouse
+- **Configuration**: Customize tmux behavior with `.tmux.conf`
+- **Scripting**: Automate session layouts and manage multiple projects
+
+## Prerequisites
+
+- Basic terminal familiarity (cd, ls, running commands)
+- A Unix-like system (Linux, macOS, WSL)
+
+## Why tmux?
+
+tmux solves real problems that developers encounter daily:
+
+- **Remote work**: Keep processes running after you disconnect from a server
+- **Organization**: Group related work into named sessions (projects, servers, tasks)
+- **Efficiency**: Navigate between contexts without leaving the keyboard
+- **Resilience**: Network drops don't kill your work — just reattach to the session
+
+## Getting started
+
+tmux uses a **prefix key** (`Ctrl-b` by default) to distinguish its commands from shell commands. Press `Ctrl-b`, release, then press the command key.
+
+For example: `Ctrl-b c` creates a new window.
+
+<Callout type="tip">
+The prefix key can be changed. Many users remap to `Ctrl-a` (screen's default) or `Ctrl-space` to avoid conflicts with shell readline shortcuts. We'll cover this in Step 7.
+</Callout>
+
+Let's begin with **Step 1**.

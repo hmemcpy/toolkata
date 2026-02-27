@@ -1,0 +1,283 @@
+---
+title: "Concurrent Combinators"
+step: 9
+description: "Parallel execution with Effect.all, Effect.race, and concurrency options"
+estimatedTime: "~5 min"
+---
+
+# Concurrent Combinators
+
+Both Effect and ZIO provide combinators for parallel execution. Effect's `Effect.all` has flexible concurrency options.
+
+## Parallel Execution
+
+<CrossLanguageBlock
+  zioCode={`
+    |// ZIO: ZIO.collectAllPar for parallel execution
+    |val results: ZIO[Any, Nothing, List[Int]] =
+    |  ZIO.collectAllPar(
+    |    List(
+    |      ZIO.succeed(1),
+    |      ZIO.succeed(2),
+    |      ZIO.succeed(3)
+    |    )
+    |  )
+    |
+    |// ZIO.zipPar, ZIO.foreachPar
+    |val summed: ZIO[Any, Nothing, Int] =
+    |  ZIO.foreachPar(List(1, 2, 3))(n =>
+    |    ZIO.succeed(n * 2)
+    |  ).map(_.sum)
+  `}
+  effectCode={`
+    |// Effect: Effect.all with concurrency option
+    |const results: Effect<
+    |  Array<number>,
+    |  never,
+    |  never
+    |> = Effect.all(
+    |    [
+    |      Effect.succeed(1),
+    |      Effect.succeed(2),
+    |      Effect.succeed(3)
+    |    ],
+    |    { concurrency: "unbounded" }
+    |  )
+    |
+    |// Effect.forEach with concurrency
+    |const summed: Effect<number, never, never> =
+    |  Effect.forEach(
+    |    [1, 2, 3],
+    |    (n) => Effect.succeed(n * 2),
+    |    { concurrency: "unbounded" }
+    |  ).pipe(
+    |    Effect.map((numbers) =>
+    |      numbers.reduce((a, b) => a + b, 0)
+    |    )
+    |  )
+  `}
+  zioComment="ZIO.collectAllPar, ZIO.foreachPar"
+  effectComment="Effect.all with concurrency, Effect.forEach"
+/>
+
+## Concurrency Options
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: parallelism with ZIO.foreachParN
+    |val limited: ZIO[Any, Nothing, List[Int]] =
+    |  ZIO.foreachParN(5)(List(1, 2, 3, 4, 5, 6))(
+    |    n => ZIO.succeed(n * 2)
+    |  )
+    |
+    |// ZIO.collectAllParSuccesses
+    |val successes: ZIO[Any, Nothing, List[Int]] =
+    |  ZIO.collectAllParSuccesses(
+    |    List(
+    |      ZIO.succeed(1),
+    |      ZIO.fail("error"),
+    |      ZIO.succeed(3)
+    |    )
+    |  )
+  `}
+  effectCode={`
+    |// Effect: concurrency options
+    |const limited: Effect<
+    |  Array<number>,
+    |  never,
+    |  never
+    |> = Effect.forEach(
+    |    [1, 2, 3, 4, 5, 6],
+    |    (n) => Effect.succeed(n * 2),
+    |    { concurrency: 5 } // max 5 concurrent
+    |  )
+    |
+    |// Effect.all with discard mode
+    |const successes: Effect<
+    |  Array<number>,
+    |  never,
+    |  never
+    |> = Effect.all(
+    |    [
+    |      Effect.succeed(1),
+    |      Effect.fail("error"),
+    |      Effect.succeed(3)
+    |    ],
+    |    {
+    |      concurrency: "unbounded",
+    |      discard: true // keep successes, ignore errors
+    |    }
+    |  )
+  `}
+  zioComment="ZIO.foreachParN for bounded parallelism"
+  effectComment="Effect.forEach with concurrency: N"
+/>
+
+## Race
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: ZIO.race, ZIO.raceBoth
+    |val winner: ZIO[Any, Nothing, Int] =
+    |  ZIO.race(
+    |    ZIO.sleep(1.second) *> ZIO.succeed(1),
+    |    ZIO.sleep(2.seconds) *> ZIO.succeed(2)
+    |  )
+    |// Result: 1
+    |
+    |// raceBoth: get Exit of winner
+    |val exit: ZIO[Any, Nothing, Exit[Nothing, Int]] =
+    |  ZIO.raceBoth(
+    |    ZIO.succeed(1),
+    |    ZIO.succeed(2)
+    |  )((a, b) => b) // resolve tie
+  `}
+  effectCode={`
+    |// Effect: Effect.race, Effect.raceAll
+    |const winner: Effect<number, never, never> =
+    |  Effect.race(
+    |      Effect.zipRight(
+    |        Effect.sleep("1 second"),
+    |        Effect.succeed(1)
+    |      ),
+    |      Effect.zipRight(
+    |        Effect.sleep("2 seconds"),
+    |        Effect.succeed(2)
+    |      )
+    |    )
+    |// Result: 1
+    |
+    |// raceFirst: race with fallback
+    |const first: Effect<number, never, never> =
+    |  Effect.raceFirst(
+    |    Effect.fail("error"),
+    |    Effect.succeed(42)
+    |  )
+    |// Result: 42 (first succeeds)
+  `}
+  zioComment="ZIO.race, ZIO.raceBoth"
+  effectComment="Effect.race, Effect.raceFirst"
+/>
+
+## Timeout
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: timeout, timeoutTo
+    |val result: ZIO[Any, Nothing, Option[Int]] =
+    |  ZIO.succeed(42).timeout(5.seconds)
+    |// Result: Some(42)
+    |
+    |val fallback: ZIO[Any, Nothing, Int] =
+    |  ZIO.sleep(10.seconds)
+    |    .timeoutTo(
+    |      5.seconds,
+    |      ZIO.succeed(-1) // timeout fallback
+    |    )
+    |// Result: -1
+  `}
+  effectCode={`
+    |// Effect: Effect.timeout
+    |const result: Effect<
+    |  Option<number>,
+    |  never,
+    |  never
+    |> = Effect.timeout(
+    |    Effect.succeed(42),
+    |    "5 seconds"
+    |  )
+    |// Result: Option.some(42)
+    |
+    |const fallback: Effect<number, never, never> =
+    |  Effect.timeout(
+    |    Effect.sleep("10 seconds"),
+    |    "5 seconds"
+    |  ).pipe(
+    |    Effect.getOrElse(() => Effect.succeed(-1))
+    |  )
+    |// Result: -1
+  `}
+  zioComment="timeout returns Option[A], timeoutTo with fallback"
+  effectComment="Effect.timeout returns Option<A>, use getOrElse for fallback"
+/>
+
+## Zip Variants
+
+<CrossLanguageBlock
+  zioCode={`
+    |// ZIO: zip, zipLeft, zipRight, zipPar
+    |val zipped: ZIO[Any, Nothing, (Int, String)] =
+    |  ZIO.succeed(1).zip(ZIO.succeed("a"))
+    |// Result: (1, "a")
+    |
+    |val left: ZIO[Any, Nothing, Int] =
+    |  ZIO.succeed(1).zipLeft(ZIO.succeed("a"))
+    |// Result: 1
+    |
+    |val right: ZIO[Any, Nothing, String] =
+    |  ZIO.succeed(1).zipRight(ZIO.succeed("a"))
+    |// Result: "a"
+    |
+    |val parallel: ZIO[Any, Nothing, (Int, String)] =
+    |  ZIO.succeed(1).zipPar(ZIO.succeed("a"))
+    |// Run in parallel
+  `}
+  effectCode={`
+    |// Effect: Effect.zip, zipLeft, zipRight
+    |const zipped: Effect<
+    |  readonly [number, string],
+    |  never,
+    |  never
+    |> = Effect.zip(
+    |    Effect.succeed(1),
+    |    Effect.succeed("a")
+    |  )
+    |// Result: [1, "a"] (tuple)
+    |
+    |const left: Effect<number, never, never> =
+    |  Effect.zipLeft(
+    |    Effect.succeed(1),
+    |    Effect.succeed("a")
+    |  )
+    |// Result: 1
+    |
+    |const right: Effect<string, never, never> =
+    |  Effect.zipRight(
+    |    Effect.succeed(1),
+    |    Effect.succeed("a")
+    |  )
+    |// Result: "a"
+    |
+    |// Use Effect.all for parallel zip
+    |const parallel: Effect<
+    |  readonly [number, string],
+    |  never,
+    |  never
+    |> = Effect.all(
+    |    [Effect.succeed(1), Effect.succeed("a")],
+    |    { concurrency: "unbounded" }
+    |  )
+  `}
+  zioComment="zip, zipLeft, zipRight, zipPar for parallel"
+  effectComment="Effect.zip, zipLeft, zipRight; use Effect.all for parallel"
+/>
+
+## Concurrency Quick Reference
+
+| ZIO | Effect | Purpose |
+|-----|--------|---------|
+| `ZIO.collectAllPar(effects)` | `Effect.all(effects, { concurrency: "unbounded" })` | Parallel execution |
+| `ZIO.foreachPar(items)(f)` | `Effect.forEach(items, f, { concurrency: "unbounded" })` | Parallel map |
+| `ZIO.foreachParN(n)(items)(f)` | `Effect.forEach(items, f, { concurrency: n })` | Bounded parallel |
+| `ZIO.race(fa, fb)` | `Effect.race(fa, fb)` | First to succeed |
+| `fa.timeout(d)` | `Effect.timeout(fa, d)` | Time-limited execution |
+| `fa.zipPar(fb)` | `Effect.all([fa, fb], { concurrency: 2 })` | Parallel tuple |
+
+<Callout variant="warning">
+Use `concurrency: "unbounded"` carefully — it can create unlimited concurrent operations. For large collections, use a fixed number like `{ concurrency: 10 }` or `{ concurrency: "inherit" }`.
+</Callout>
+
+[Next: Ref and Concurrent State →](/effect-zio/10)

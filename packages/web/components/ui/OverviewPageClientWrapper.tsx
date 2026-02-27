@@ -1,10 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect } from "react"
 import { useStepProgress } from "../../hooks/useStepProgress"
 import { useKataProgress } from "../../contexts/KataProgressContext"
-import { useTerminalContext } from "../../contexts/TerminalContext"
 import type { StepMeta } from "../../services/content"
 import type { SandboxConfig } from "./InteractiveTerminal"
 import { StepList } from "./StepList"
@@ -75,18 +73,12 @@ export function OverviewPageClientWrapper({
   steps,
   estimatedTimes,
   initialProgress,
-  sandboxConfig,
+  sandboxConfig: _sandboxConfig,
 }: OverviewPageClientWrapperProps) {
   const { currentStep, isStepComplete, isLoading } = useStepProgress(toolPair, totalSteps, {
     initialProgress,
   })
   const { completedKatas } = useKataProgress()
-  const { setSandboxConfig } = useTerminalContext()
-
-  // Register sandbox config in context on mount
-  useEffect(() => {
-    setSandboxConfig(sandboxConfig)
-  }, [sandboxConfig, setSandboxConfig])
 
   // Create Set of completed steps for StepList
   const completedSteps = new Set<number>(

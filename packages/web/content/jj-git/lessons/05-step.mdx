@@ -1,0 +1,213 @@
+---
+title: "Viewing History and Diffs"
+step: 5
+description: "Exploring commit history and comparing changes"
+gitCommands: ["git log", "git diff", "git show"]
+jjCommands: ["jj log", "jj diff", "jj show"]
+validation:
+  setup:
+    - "jj git init --colocate ."
+    - "git config user.email 'test@toolkata.com'"
+    - "git config user.name 'Test User'"
+    - "echo 'initial' > file.txt"
+    - "jj describe -m 'Initial commit'"
+    - "jj new"
+    - "echo 'second' > file.txt && jj describe -m 'Second commit' && jj new"
+    - "echo 'third' > file.txt && jj describe -m 'Third commit' && jj new"
+    - "echo 'app content' > app.js && jj describe -m 'Add app' && jj new"
+    - "jj branch create branch1"
+    - "jj edit @- && echo 'modified' > app.js && jj describe -m 'Modify app' && jj new"
+    - "jj branch create branch2"
+    - "jj git export"
+---
+
+# Viewing History and Diffs
+
+jj provides powerful tools for exploring history and comparing changes.
+
+## Viewing History
+
+<SideBySide
+  fromCommands={[
+    "git log",
+  ]}
+  toCommands={[
+    "jj log",
+  ]}
+/>
+
+## Log Options
+
+<SideBySide
+  fromCommands={[
+    "git log --oneline",
+    "git log -n 10",
+    "git log --graph --oneline",
+  ]}
+  toCommands={[
+    "jj log -l 10",
+  ]}
+/>
+
+## Understanding the Log Output
+
+In jj's log:
+- `@` = Your working copy commit
+- `◉` = Regular commits
+- `◌` = Abandoned commits
+- `@` appears in the log as the latest commit
+
+```bash
+$ jj log
+@  xyzkpznx test 123
+◉  prklqyso test foo
+◉  roqmyuqs test bar
+◉  yostqsxx qux
+```
+
+## Viewing Commit Details
+
+<SideBySide
+  fromCommands={[
+    "git show HEAD",
+  ]}
+  toCommands={[
+    "jj show @",
+  ]}
+/>
+
+## Viewing Diffs
+
+<SideBySide
+  fromCommands={[
+    "git diff",
+    "git diff app.js",
+    "git diff HEAD~1 HEAD",
+  ]}
+  toCommands={[
+    "jj diff",
+    "jj diff app.js",
+    "jj diff --from @- --to @",
+  ]}
+/>
+
+## Diff Syntax
+
+jj uses `--from` and `--to` for precise diff control:
+
+```bash
+# Compare @ with parent
+jj diff --from @- --to @
+
+# Compare two commits
+jj diff --from abc --to def
+
+# Compare with main
+jj diff --from main --to @
+
+# See what changed since main
+jj diff --from main
+```
+
+## Common Diff Patterns
+
+**What changed in my working copy?**
+```bash
+jj diff
+```
+
+**What's different between two branches?**
+```bash
+jj diff --from main --to feature
+```
+
+**Show me the changes in this commit:**
+```bash
+jj show abc
+# or
+jj diff --from abc^- --to abc
+```
+
+**What files are modified?**
+```bash
+jj status
+```
+
+## The Status Command
+
+<SideBySide
+  fromCommands={[
+    "git status",
+  ]}
+  toCommands={[
+    "jj status",
+  ]}
+/>
+
+## Interactive History
+
+jj's log is more than just text—it's an interactive history:
+
+```bash
+# View log with more details
+jj log -v
+
+# Show change IDs
+jj log --change-id
+
+# Show commit timestamps
+jj log --timestamps
+```
+
+## Comparing Files
+
+<SideBySide
+  fromCommands={[
+    "git diff HEAD app.js",
+    "git diff branch1 branch2 app.js",
+  ]}
+  toCommands={[
+    "jj diff app.js",
+    "jj diff --from branch1 --to branch2 app.js",
+  ]}
+/>
+
+## Operations Log
+
+jj maintains an operation log—useful for undoing:
+
+```bash
+# Show operation history
+jj op log
+
+# Output:
+# 0123 minutes ago: checkout
+# 0456 minutes ago: new
+# 0789 minutes ago: describe
+```
+
+## Try It Yourself
+
+<TryIt command="echo 'test' > test.txt && echo 'demo' > demo.txt" description="Make some changes" />
+
+<TryIt command="jj diff" description="See what changed" />
+
+<TryIt command="jj describe -m 'Add files'" description="Name the commit" />
+
+<TryIt command="jj new" description="Finalize the commit" />
+
+<TryIt command="jj show @-" description="View the previous commit" />
+
+<TryIt command="jj log" description="See history" />
+
+## Key Takeaways
+
+- `jj log` shows commit history with `@` marking working copy
+- `jj diff` shows @ vs parent (use `--from/--to` for more)
+- `jj show` displays full commit details
+- `jj status` shows pending changes
+- `jj op log` shows operation history for undo
+
+## Next Steps
+
+Now let's explore how jj handles remote operations differently from git.

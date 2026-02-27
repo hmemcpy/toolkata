@@ -1,0 +1,243 @@
+---
+title: "Key Bindings"
+step: 5
+description: "Understanding the prefix key, listing bindings, and command mode"
+commands: ["tmux list-keys", "tmux bind-key", "tmux send-prefix"]
+---
+
+# Key Bindings
+
+tmux key bindings follow a simple pattern: **prefix + command**.
+
+The prefix key (default `Ctrl-b`) tells tmux "the next key is for tmux, not the shell". After pressing prefix, you have about 1 second to press the command key.
+
+<Callout type="tip">
+Think of prefix like `Alt` or `Ctrl` in other apps — it modifies the meaning of the next keypress.
+</Callout>
+
+## The prefix key
+
+Default: `Ctrl-b`
+
+1. Press and hold `Ctrl`
+2. Press `b`
+3. Release both
+4. Press the command key
+
+Example: `Ctrl-b d` (detach)
+
+<Callout type="warning">
+`Ctrl-b` is awkward for many — it requires reaching. We'll remap it in Step 7.
+</Callout>
+
+## Why Ctrl-b?
+
+GNU screen (tmux's predecessor) uses `Ctrl-a`. tmux chose `Ctrl-b` because:
+
+- `Ctrl-a` is commonly used for "beginning of line" in shell readline
+- `Ctrl-b` is "backward one character" (less common)
+
+Many users remap to `Ctrl-a` anyway (or `Ctrl-space`, `Ctrl-q`).
+
+## Listing all key bindings
+
+Show every key binding:
+
+<TryIt command="Ctrl-b ?" />
+
+This opens a scrollable list. Use arrow keys or page up/down to browse.
+
+<Callout type="tip">
+Press `q` or `Esc` to exit the help list.
+</Callout>
+
+## From command line
+
+List all bindings:
+
+<TryIt command="tmux list-keys" />
+
+List bindings containing a specific key:
+
+<TryIt command="tmux list-keys | grep -i split" />
+
+## Command mode
+
+Enter command mode:
+
+<TryIt command="Ctrl-b :" />
+
+You can type any tmux command by name. Tab-completion works!
+
+Examples:
+- `new-session -s mysession`
+- `split-window -v`
+- `rename-window tests`
+
+<Callout type="tip">
+Command mode is powerful. If there's no key binding for something, there's probably a command for it.
+</Callout>
+
+## Common prefix commands
+
+| Key | Action |
+|-----|--------|
+| `d` | Detach from session |
+| `?` | List key bindings |
+| `:` | Command prompt |
+| `[` | Enter copy mode (scroll) |
+| `]` | Paste from buffer |
+| `=` | Choose buffer to paste |
+| `~` | Show paste buffers |
+
+## Session commands
+
+| Key | Action |
+|-----|--------|
+| `s` | List sessions |
+| `$` | Rename session |
+| `(` | Switch to previous session |
+| `)` | Switch to next session |
+| `L` | Switch to last session |
+
+## Window commands
+
+| Key | Action |
+|-----|--------|
+| `c` | Create new window |
+| `w` | Choose window |
+| `n` | Next window |
+| `p` | Previous window |
+| `0-9` | Jump to window number |
+| `,` | Rename window |
+| `&` | Kill window |
+| `f` | Find window |
+| `F` | Find window by name |
+
+## Pane commands
+
+| Key | Action |
+|-----|--------|
+| `%` | Split vertical (left/right) |
+| `"` | Split horizontal (top/bottom) |
+| `o` | Cycle panes |
+| `q` | Show pane numbers |
+| `x` | Kill pane |
+| `z` | Zoom pane |
+| `!` | Break pane to window |
+| `{` | Swap pane with previous |
+| `}` | Swap pane with next |
+| `;` | Last active pane |
+| `o` | Rotate panes forward |
+
+## Copy mode commands
+
+Enter copy mode with `Ctrl-b [`, then:
+
+| Key | Action |
+|-----|--------|
+| `↑↓` | Scroll line by line |
+| `Ctrl-b` / `Ctrl-f` | Scroll page up/down |
+| `g` | Go to top |
+| `G` | Go to bottom |
+| `/` | Search forward |
+| `?` | Search backward |
+| `Space` | Start selection |
+| `Enter` | Copy selection |
+| `q` / `Esc` | Exit copy mode |
+
+<Callout type="tip">
+Copy mode uses vi keys by default. Emacs mode is available (we'll cover in Step 7).
+</Callout>
+
+## Nested tmux
+
+When you attach to a tmux inside tmux (common with SSH), you need to send prefix to the inner session:
+
+<TryIt command="Ctrl-b Ctrl-b" />
+
+This sends `Ctrl-b` to the inner tmux.
+
+<Callout type="warning">
+Nested tmux can be confusing. Consider using `Ctrl-a` for local, `Ctrl-b` for remote.
+</Callout>
+
+## Key binding modes
+
+tmux has two modes for key bindings:
+- **emacs** (default): emacs-style movement
+- **vi**: vi-style movement
+
+Check current mode:
+
+<TryIt command="tmux show-options -g | grep status-keys" />
+
+## Listing options
+
+Show all options:
+
+<TryIt command="tmux show-options -g" />
+
+Show specific option:
+
+<TryIt command="tmux show-options -g | grep prefix" />
+
+## Key binding table
+
+Key bindings are organized into **key tables**:
+- **root**: Default prefix bindings
+- **copy-mode**: Bindings in copy mode
+- **choice-mode**: Interactive selection bindings
+- **edit-mode**: Command line editing
+
+View bindings in a specific table:
+
+<TryIt command="tmux list-keys -T copy-mode" />
+
+## Custom key bindings
+
+Create temporary binding:
+
+<TryIt command="Ctrl-b :" />
+
+Type: `bind-key X kill-session`
+
+Now `Ctrl-b X` kills the current session.
+
+<Callout type="warning">
+Temporary bindings are lost when tmux exits. For permanent bindings, use `.tmux.conf` (Step 7).
+</Callout>
+
+## Unbinding keys
+
+Remove a key binding:
+
+<TryIt command="Ctrl-b :" />
+
+Type: `unbind-key %`
+
+Now `Ctrl-b %` (split vertical) does nothing.
+
+## Viewing bound command
+
+Find what a key does:
+
+<TryIt command="tmux list-keys | grep 'prefix %'" />
+
+Output: `bind-key -T root % split-window -h`
+
+## Next steps
+
+Now that you understand key bindings, you can customize them. In **Step 7**, we'll create a `.tmux.conf` file to:
+- Remap prefix to `Ctrl-a`
+- Add sensible key bindings
+- Enable vi mode
+- Customize the status bar
+
+<Callout type="tip">
+Memorize 5-10 key bindings you use daily. Look up the rest as needed.
+</Callout>
+
+---
+
+**Next:** [Step 6 → Copy Mode](../6) — Scroll, search, and copy without a mouse

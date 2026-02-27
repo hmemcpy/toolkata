@@ -1,0 +1,227 @@
+---
+title: "Fibers and Forking"
+step: 8
+description: "Concurrent execution with fibers in Effect vs ZIO"
+estimatedTime: "~6 min"
+---
+
+# Fibers and Forking
+
+Both Effect and ZIO use **fibers** for lightweight concurrent execution. The concepts are identical; the APIs differ slightly.
+
+## Forking Effects
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: fork to run concurrently
+    |val fiber: ZIO[Any, Nothing, Fiber[Nothing, Int]] =
+    |  ZIO.succeed(42).fork
+    |
+    |// Fork multiple effects
+    |val program: ZIO[Any, Nothing, Unit] =
+    |  for {
+    |    fiber1 <- ZIO.succeed(1).fork
+    |    fiber2 <- ZIO.succeed(2).fork
+    |    _      <- fiber1.join
+    |    _      <- fiber2.join
+    |  } yield ()
+  `}
+  effectCode={`
+    |// Effect: Effect.fork to run concurrently
+    |const fiber: Effect<Fiber<never, number>, never, never> =
+    |  Effect.fork(Effect.succeed(42))
+    |
+    |// Fork multiple effects
+    |const program: Effect<void, never, never> =
+    |  Effect.gen(function* () {
+    |    const fiber1 = yield* Effect.fork(
+    |      Effect.succeed(1)
+    |    )
+    |    const fiber2 = yield* Effect.fork(
+    |      Effect.succeed(2)
+    |    )
+    |    yield* Fiber.join(fiber1)
+    |    yield* Fiber.join(fiber2)
+    |  })
+  `}
+  zioComment="ZIO.fork returns ZIO[..., Fiber[...]]"
+  effectComment="Effect.fork returns Effect<Fiber<...>>"
+/>
+
+## Joining Fibers
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: fiber.join, fiber.await
+    |val program: ZIO[Any, Nothing, Int] =
+    |  for {
+    |    fiber <- ZIO.succeed(42).fork
+    |    // join: wait for result
+    |    result <- fiber.join
+    |  } yield result
+    |
+    |// await: get Exit value
+    |val program2: ZIO[Any, Nothing, Exit[Nothing, Int]] =
+    |  for {
+    |    fiber <- ZIO.succeed(42).fork
+    |    exit   <- fiber.await
+    |  } yield exit
+  `}
+  effectCode={`
+    |// Effect: Fiber.join, Fiber.await
+    |const program: Effect<number, never, never> =
+    |  Effect.gen(function* () {
+    |    const fiber = yield* Effect.fork(
+    |      Effect.succeed(42)
+    |    )
+    |    // Fiber.join: wait for result
+    |    const result = yield* Fiber.join(fiber)
+    |    return result
+    |  })
+    |
+    |// Fiber.await: get Exit value
+    |const program2: Effect<
+    |  Exit<never, number>,
+    |  never,
+    |  never
+    |> = Effect.gen(function* () {
+    |    const fiber = yield* Effect.fork(
+    |      Effect.succeed(42)
+    |    )
+    |    const exit = yield* Fiber.await(fiber)
+    |    return exit
+    |  })
+  `}
+  zioComment="fiber.join: ZIO[..., A], fiber.await: ZIO[..., Exit[E, A]]"
+  effectComment="Fiber.join: Effect<A>, Fiber.await: Effect<Exit<E, A>>"
+/>
+
+## Interrupting Fibers
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: fiber.interrupt
+    |val program: ZIO[Any, Nothing, Unit] =
+    |  for {
+    |    fiber <- ZIO.sleep(10.seconds).fork
+    |    _      <- fiber.interrupt
+    |  } yield ()
+    |
+    |// Handle interruption
+    |val withInterruption: ZIO[Any, Nothing, Unit] =
+    |  ZIO.sleep(10.seconds)
+    |    .onInterrupt(
+    |      ZIO.succeed(println("Interrupted!"))
+    |    )
+    |    .fork
+    |    .flatMap(_.interrupt)
+  `}
+  effectCode={`
+    |// Effect: Fiber.interrupt
+    |const program: Effect<void, never, never> =
+    |  Effect.gen(function* () {
+    |    const fiber = yield* Effect.fork(
+    |      Effect.sleep("10 seconds")
+    |    )
+    |    yield* Fiber.interrupt(fiber)
+    |  })
+    |
+    |// Handle interruption
+    |const withInterruption: Effect<void, never, never> =
+    |  Effect.fork(
+    |    Effect.onInterrupt(
+    |      Effect.sleep("10 seconds"),
+    |      () =>
+    |        Effect.sync(() =>
+    |          console.log("Interrupted!")
+    |        )
+    |    )
+    |  ).pipe(
+    |    Effect.flatMap(Fiber.interrupt)
+    |  )
+  `}
+  zioComment="fiber.interrupt: ZIO[..., Exit[Nothing, Unit]]"
+  effectComment="Fiber.interrupt(fiber): Effect<Exit<never, void>>"
+/>
+
+## Daemon Fibers
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: forkDaemon for background fibers
+    |val program: ZIO[Any, Nothing, Int] =
+    |  for {
+    |    _ <- ZIO.sleep(1.second).forkDaemon
+    |    _ <- ZIO.sleep(2.seconds)
+    |  } yield 42
+    |// Daemon fiber auto-canceled when parent ends
+  `}
+  effectCode={`
+    |// Effect: Effect.forkDaemon
+    |const program: Effect<number, never, never> =
+    |  Effect.gen(function* () {
+    |    yield* Effect.forkDaemon(
+    |      Effect.sleep("1 second")
+    |    )
+    |    yield* Effect.sleep("2 seconds")
+    |    return 42
+    |  })
+    |// Daemon fiber auto-canceled when parent ends
+  `}
+  zioComment="forkDaemon: auto-cancel on parent completion"
+  effectComment="Effect.forkDaemon: auto-cancel on parent completion"
+/>
+
+## Fiber API
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: Fiber operations
+    |val program: ZIO[Any, Nothing, Unit] =
+    |  for {
+    |    fiber <- ZIO.succeed(42).fork
+    |    id     = fiber.id
+    |    status <- fiber.status
+    |    _      <- fiber.interruptFork
+    |    _      <- fiber.join
+    |  } yield ()
+  `}
+  effectCode={`
+    |// Effect: Fiber operations
+    |const program: Effect<void, never, never> =
+    |  Effect.gen(function* () {
+    |    const fiber = yield* Effect.fork(
+    |      Effect.succeed(42)
+    |    )
+    |    const id = fiber.id()
+    |    const status = yield* Fiber.status(fiber)
+    |    yield* Fiber.interruptFork(fiber)
+    |    yield* Fiber.join(fiber)
+    |  })
+  `}
+  zioComment="fiber.id, fiber.status, fiber.interruptFork"
+  effectComment="fiber.id(), Fiber.status(fiber), Fiber.interruptFork(fiber)"
+/>
+
+## Concurrency Quick Reference
+
+| ZIO | Effect | Purpose |
+|-----|--------|---------|
+| `fa.fork` | `Effect.fork(fa)` | Run concurrently |
+| `fa.forkDaemon` | `Effect.forkDaemon(fa)` | Run as daemon |
+| `fiber.join` | `Fiber.join(fiber)` | Wait for result |
+| `fiber.await` | `Fiber.await(fiber)` | Get Exit value |
+| `fiber.interrupt` | `Fiber.interrupt(fiber)` | Cancel fiber |
+| `fiber.status` | `Fiber.status(fiber)` | Get status |
+| `fa.onInterrupt(f)` | `Effect.onInterrupt(fa, f)` | Handle interruption |
+
+<Callout variant="tip">
+Fibers are lightweight — you can fork millions of them. Use `Effect.fork` for independent concurrent work and `Effect.all` with concurrency options for coordinating multiple effects.
+</Callout>
+
+[Next: Concurrent Combinators →](/effect-zio/9)

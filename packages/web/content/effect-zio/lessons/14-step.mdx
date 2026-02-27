@@ -1,0 +1,223 @@
+---
+title: "Platform & HTTP"
+step: 14
+description: "Cross-platform HTTP with @effect/platform vs ZIO HTTP"
+estimatedTime: "~6 min"
+---
+
+# Platform & HTTP
+
+Effect provides `@effect/platform` for cross-platform abstractions, similar to ZIO HTTP.
+
+## HttpClient Service
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO HTTP: Client.service
+    |import zio.http._
+    |
+    |val program: ZIO[Client, Throwable, Response] =
+    |  Client.request(
+    |    url = "https://api.example.com/users"
+    |  )
+    |
+    |// With method and body
+    |val post: ZIO[Client, Throwable, Response] =
+    |  Client.request(
+    |    url = "https://api.example.com/users",
+    |    method = Method.POST,
+    |    body = Body.fromJson("""{"name":"Alice"}""")
+    |  )
+  `}
+  effectCode={`
+    |// Effect: HttpClient service
+    |import { HttpClient } from "@effect/platform"
+    |import { Effect } from "effect"
+    |
+    |const program = Effect.flatMap(HttpClient, (client) =>
+    |  client.get("https://api.example.com/users")
+    |  )
+    |
+    |// With method and body
+    |const post = Effect.flatMap(HttpClient, (client) =>
+    |  client.post("https://api.example.com/users", {
+    |      body: JSON.stringify({ name: "Alice" })
+    |  })
+    |  )
+  `}
+  zioComment="Client.request(url), Client.request(url, method, body)"
+  effectComment="client.get(url), client.post(url, options)"
+/>
+
+## Response Handling
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO HTTP: Response handling
+    |val getUser: ZIO[Client, Throwable, User] =
+    |  for {
+    |    response <- Client.get("/users/1")
+    |    body     <- response.body.asString
+    |    user     <- ZIO.attempt(
+    |                  parseJson[User](body)
+    |                )
+    |  } yield user
+    |
+    |// Or use schema
+    |val getUserWithSchema: ZIO[Client & Schema[Any], Throwable, User] =
+    |  Client.get("/users/1").flatMap { response =>
+    |    response.body.to[User]
+    |  }
+  `}
+  effectCode={`
+    |// Effect: Response handling
+    |const getUser = Effect.gen(function* () {
+    |    const client = yield* HttpClient
+    |    const response = yield* client.get("/users/1")
+    |    const body = yield* response.json
+    |    return body as User
+    |  })
+    |
+    |// With schema validation
+    |const getUserWithSchema = Effect.gen(function* () {
+    |    const client = yield* HttpClient
+    |    const response = yield* client.get("/users/1")
+    |    const schema = { name: Schema.String }
+    |    const result = Schema.decodeUnknown(schema)(response.json)
+    |    return yield* result
+    |  })
+  `}
+  zioComment="response.body.asString, response.body.to[User]"
+  effectComment="response.json, Schema.decodeUnknown(schema)(response.json)"
+/>
+
+## Request Options
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO HTTP: Request options
+    |val request: ZIO[Client, Throwable, Response] =
+    |  Client.request(
+    |    url = "https://api.example.com/search",
+    |    method = Method.POST,
+    |    headers = Headers(
+    |      "Authorization" -> "Bearer token",
+    |      "Content-Type" -> "application/json"
+    |    ),
+    |    body = Body.fromJson("""{"query":"scala"}""")
+    |  )
+  `}
+  effectCode={`
+    |// Effect: Request options
+    |const request = Effect.flatMap(HttpClient, (client) =>
+    |    client.post("https://api.example.com/search", {
+    |      headers: {
+    |        Authorization: "Bearer token",
+    |        "Content-Type": "application/json"
+    |      },
+    |      body: JSON.stringify({ query: "scala" })
+    |    })
+    |  )
+  `}
+  zioComment="Client.request with method, headers, body parameters"
+  effectComment="client.post with options object, client.request(method: ...)"
+/>
+
+## HTTP Errors
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO HTTP: Error handling
+    |val safeRequest: ZIO[Client, Nothing, Either[String, Response]] =
+    |  Client.get("/users/1").either
+    |
+    |// Or catch specific errors
+    |val withFallback: ZIO[Client, Nothing, Response] =
+    |  Client.get("/users/1").catchSome {
+    |    case _: StatusCode.NotFound =>
+    |      ZIO.succeed(Response.notFound)
+    |  }
+  `}
+  effectCode={`
+    |// Effect: HTTP error handling
+    |const safeRequest = Effect.either(
+    |    Effect.flatMap(HttpClient, (client) =>
+    |      client.get("/users/1")
+    |    )
+    |  )
+    |
+    |// Or catch specific errors
+    |const withFallback = Effect.catchAll(
+    |    Effect.flatMap(HttpClient, (client) =>
+    |      client.get("/users/1")
+    |    ),
+    |    (error) =>
+    |      error._tag === "NoSuchFileSystemError"
+    |        ? Effect.succeed(new HttpResponse({ status: 404 }))
+    |        : Effect.fail(error)
+    |  )
+  `}
+  zioComment="Client.get(...).either, catchSome for specific errors"
+  effectComment="Effect.either around HTTP call, Effect.catchAll for fallback"
+/>
+
+## Cross-Platform Abstractions
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: Platform-specific often handled at ZLayer level
+    |// (Different implementations for JVM vs JS)
+    |
+    |// File system (ZIO NIO vs Node FS)
+    |val readFile: ZIO[Any, IOException, String] =
+    |  ZIO.readFile("data.txt")
+    |
+    |// Console (platform-agnostic)
+    |val print: ZIO[Any, Nothing, Unit] =
+    |  Console.printLine("Hello!")
+  `}
+  effectCode={`
+    |// Effect: Cross-platform abstractions in @effect/platform
+    |import { FileSystem, Path } from "@effect/platform"
+    |
+    |// File system (works in Node, browser, Deno)
+    |const readFile = Effect.flatMap(FileSystem, (fs) =>
+    |  fs.readFileString("data.txt")
+    |  )
+    |
+    |// Path manipulation (cross-platform)
+    |const joinPath = Effect.map(Path, (path) =>
+    |    path.join("foo", "bar", "baz.txt")
+    |  )
+    |
+    |// Terminal (cross-platform)
+    |const clear = Effect.flatMap(Terminal, (term) =>
+    |  term.clear()
+    |  )
+  `}
+  zioComment="ZIO provides platform-agnostic services like Console, ZIO.readFile"
+  effectComment="@effect/platform provides FileSystem, Path, Terminal, HttpClient"
+/>
+
+## HTTP Quick Reference
+
+| ZIO HTTP | Effect | Purpose |
+|----------|--------|---------|
+| `Client.get(url)` | `client.get(url)` | GET request |
+| `Client.post(url, body)` | `client.post(url, { body })` | POST with body |
+| `Client.request(url, method, ...)` | `client.request(url, { method, ... })` | Full options |
+| `response.body.asString` | `response.json` or `response.text` | Get body |
+| `response.body.to[User]` | `Schema.decodeUnknown(schema)(response.json)` | Parse with schema |
+| `ZIO.readFile(path)` | `fs.readFileString(path)` | Read file |
+| `Console.printLine(msg)` | `Terminal.println(msg)` | Console output |
+
+<Callout variant="tip">
+`@effect/platform` provides true cross-platform abstractions that work in Node.js, Deno, browsers, and even edge runtimes like Cloudflare Workers. The same code works everywhere with platform-specific implementations handled internally.
+</Callout>
+
+[Next: Database Access →](/effect-zio/15)

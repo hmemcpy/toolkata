@@ -1,0 +1,198 @@
+---
+title: "Review and Next Steps"
+step: 12
+description: "Summary of jj concepts and resources for continued learning"
+gitCommands: []
+jjCommands: []
+---
+
+# Review and Next Steps
+
+You've completed the jj to git transition tutorial. Let's review what you've learned.
+
+## Core Concepts Recap
+
+**1. Working Copy as a Commit**
+- Your `@` commit represents uncommitted changes
+- No staging area—all changes auto-tracked
+- `jj describe` names the commit, `jj new` finalizes it
+
+**2. Branches as Names**
+- Branches are stable names for commits
+- `@` is your working copy, independent of branches
+- `jj branch create/set/delete` for branch management
+
+**3. Change IDs**
+- Every commit has a stable change ID
+- Survives rebases and history edits
+- Use for tracking work across time
+
+**4. Automatic Descendant Rebasing**
+- Edit old commits without manual conflict resolution
+- All descendants automatically update
+- Makes history editing safe and routine
+
+**5. First-Class Conflicts**
+- Conflicts live in commits, not blocking errors
+- Continue working with unresolved conflicts
+- Resolve when ready, in batches
+
+**6. Operation Log**
+- Every action recorded and reversible
+- `jj op undo` to reverse mistakes
+- `jj op restore` for time travel
+
+## Command Quick Reference
+
+| Task | Git | jj |
+|------|-----|----|
+| Status | `git status` | `jj status` |
+| Log | `git log` | `jj log` |
+| Commit | `git add/commit` | `jj describe/new` |
+| Branch | `git branch` | `jj branch create` |
+| Checkout | `git checkout` | `jj checkout` |
+| Diff | `git diff` | `jj diff` |
+| Push | `git push` | `jj git push` |
+| Pull | `git pull` | `jj git fetch + rebase` |
+| Undo | `git reset` | `jj op undo` |
+| Edit old | `git rebase -i` | `jj edit` |
+
+## Common Workflows
+
+**Daily development:**
+```bash
+jj status
+jj describe -m "Work in progress"
+# ... more work ...
+jj describe -m "Ready for review"
+jj new
+```
+
+**Bug fix:**
+```bash
+jj describe -m "Fix bug"
+jj new
+jj git push
+```
+
+**Experiment:**
+```bash
+jj new
+# ... experimental changes ...
+jj describe -m "Experiment"
+jj new
+# Doesn't work out
+jj op undo
+```
+
+**History edit:**
+```bash
+jj edit --change abc123
+# ... make changes ...
+jj describe -m "Updated"
+jj new
+# Descendants auto-rebased
+```
+
+## When to Use jj
+
+**Ideal for:**
+- Teams that rebase frequently
+- Complex feature development
+- Codebases with long-lived branches
+- Developers who fear git's data loss
+- Projects with frequent merge conflicts
+
+**Less ideal for:**
+- Teams committed to git-only workflows
+- Environments requiring git GUI tools exclusively
+- Learning environments where git familiarity is the goal
+
+## Gradual Migration
+
+You can adopt jj gradually:
+
+1. **Week 1**: Use jj for local work, `jj git push/pull` for remotes
+2. **Week 2**: Explore `jj edit` for history editing
+3. **Week 3**: Use revsets for complex queries
+4. **Week 4**: Adopt advanced workflows (parallel work, etc.)
+
+## Resources
+
+**Official docs:**
+- [jj documentation](https://martinvonz.github.io/jj/)
+- [Revset syntax](https://martinvonz.github.io/jj/revsets.html)
+- [GitHub repository](https://github.com/jj-vcs/jj)
+
+**Community:**
+- [Discord server](https://discord.gg/athr2X8p7k)
+- [Discussions on GitHub](https://github.com/jj-vcs/jj/discussions)
+
+**Related tools:**
+- [lazyjj](https://github.com/Cretezy/lazyjj) - TUI for jj (like lazygit)
+- [VisualJJ](https://www.visualjj.com/) - VS Code extension
+- [jjk](https://github.com/keanemind/jjk) - VS Code extension
+
+## What You've Learned
+
+You now understand:
+- How jj's mental model differs from git
+- Creating and managing commits without staging
+- Branching and checkout in jj
+- Viewing history and diffs
+- Remote operations with git compatibility
+- Powerful revset queries
+- Safe history editing with auto-rebasing
+- First-class conflict handling
+- Time travel with operation log
+- Advanced workflows for power users
+
+## Continuing Your Journey
+
+**Practice:**
+1. Use jj for your next personal project
+2. Try editing old commit history
+3. Experiment with parallel work using change IDs
+4. Explore revset queries for complex selections
+
+**Deep dive:**
+1. Read the full jj documentation
+2. Explore `jj config` for customization
+3. Try jj's sparse checkout for large repos
+4. Contribute to the jj project
+
+**Share:**
+1. Teach your team about jj
+2. Write about your experience
+3. Report bugs or feature requests
+4. Help others learn jj
+
+## Final Thoughts
+
+jj rethinks version control with safety and usability as first principles. The `@` commit model, change IDs, and automatic rebasing address git's pain points directly.
+
+You now have the knowledge to use jj effectively. The best way to learn is by doing—start using jj for your daily work and discover the workflow patterns that suit you best.
+
+<Callout type="tip">
+Keep the [glossary](/jj-git/glossary) handy as you transition. It's normal to refer to it frequently until jj's commands become muscle memory.
+</Callout>
+
+## Keep Exploring
+
+<TryIt command="jj log" description="View your commit history" />
+
+<TryIt command="jj status" description="Check current state" />
+
+<TryIt command="jj op log" description="View operation history" />
+
+## Congratulations
+
+You've completed the jj for git users tutorial. Welcome to safer, more intuitive version control.
+
+<KataCTA toolPair="jj-git" totalSteps={12} />
+
+---
+
+<Callout type="tip">
+Keep the [glossary](/jj-git/glossary) handy as you transition. It's normal to refer to it frequently until jj's commands become muscle memory.
+</Callout>

@@ -1,0 +1,96 @@
+---
+title: "The @ Commit Dojo"
+kata: 2
+duration: "10 min"
+focus: "@ commit navigation and auto-rebasing"
+exercises:
+  - id: "2.1"
+    title: "View the @ commit"
+    validation:
+      type: "regex"
+      command: "jj log -r @"
+      expectedPattern: "feature-a"
+  - id: "2.2"
+    title: "Move @ to parent commit"
+    validation:
+      type: "regex"
+      command: "jj log -r @"
+      expectedPattern: "Initial commit"
+  - id: "2.3"
+    title: "Edit the @ commit message"
+    validation:
+      type: "regex"
+      command: "jj show @"
+      expectedPattern: "Updated description"
+  - id: "2.4"
+    title: "Create a new commit from @"
+    validation:
+      type: "count"
+      command: "jj log"
+      minCount: 5
+---
+
+# The @ Commit Dojo
+
+Practice navigating and manipulating the `@` commit—jj's representation of your working copy.
+
+## Scenario
+
+You have a repository with a few commits. You'll practice moving `@` around, editing commits, and understanding jj's automatic rebasing.
+
+## Exercise 1: View the @ commit
+
+Show the current working copy commit.
+
+<TryIt command="jj show @" description="Show the current @ commit" />
+
+The `@` commit is a real, mutable commit that represents your uncommitted changes. You can see its full contents including files, parent, and description.
+
+<TryIt command="jj log -r @" description="View @ in the log format" />
+
+## Exercise 2: Move @ to parent commit
+
+Move your working copy to point to the parent commit.
+
+<TryIt command="jj edit @" description="Move @ to its parent" />
+
+After running `jj edit @`, your working copy now points to what was previously the parent of `@`. This is different from git—jj doesn't have a detached HEAD state. The old `@` commit becomes immutable.
+
+<TryIt command="jj log" description="Verify @ moved to parent" />
+
+## Exercise 3: Edit the @ commit message
+
+Change the description of the current `@` commit.
+
+<TryIt command="jj describe -m 'Updated description'" description="Rename @ commit" />
+
+<TryIt command="jj show @" description="Verify the change" />
+
+The `jj describe` command modifies the `@` commit in-place. In git, this would require `git commit --amend`.
+
+## Exercise 4: Create a new commit from @
+
+Make changes and create a new commit.
+
+<TryIt command="echo 'new feature' > feature.txt" description="Create a new file" />
+
+<TryIt command="jj describe -m 'Add feature'" description="Name the working copy" />
+
+<TryIt command="jj new" description="Create new commit" />
+
+After `jj new`, the commit graph automatically rebases. Your new commit is a child of the `@` you were working on. This is different from git where you'd need explicit branching.
+
+## Key Points
+
+- `@` is a mutable commit representing your working copy
+- `jj edit @` moves `@` to the parent commit
+- `jj describe` modifies `@` in-place
+- `jj new` finalizes `@` and creates a new empty working copy
+- All operations auto-rebase descendants
+
+## Completion Checklist
+
+- [ ] Viewed the `@` commit with `jj show @`
+- [ ] Moved `@` to parent with `jj edit @`
+- [ ] Edited `@` description with `jj describe`
+- [ ] Created a new commit with `jj new` (5 commits total)

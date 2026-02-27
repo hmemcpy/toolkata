@@ -1,0 +1,253 @@
+---
+title: "Interop"
+step: 10
+description: "Converting between ZIO and Cats Effect"
+zioCommands: []
+ceCommands: []
+---
+
+# Interop
+
+ZIO and Cats Effect can interoperate using the `zio-interop-cats` library.
+
+## Adding the Dependency
+
+```scala
+// build.sbt
+libraryDependencies += "dev.zio" %% "zio-interop-cats" % "23.1.0.3"
+```
+
+## ZIO to Cats Effect
+
+<ScalaComparisonBlock
+  validate={false}
+  catsEffectCode={`
+    |import cats.effect.IO
+    |import zio._
+    |import zio.interop.catz._
+    |
+    |// Use ZIO in CE context
+    |val program: IO[Unit] = for {
+    |  _ <- IO.println("CE start")
+    |  // ZIO effect converted via interop
+    |  result <- ZIO.succeed(42).toEffect[IO]
+    |  _ <- IO.println(s"Got: \$result")
+    |} yield ()
+  `}
+  zioCode={`
+    |import zio._
+    |import zio.interop.catz._
+    |
+    |// ZIO can use Cats type classes
+    |// The Task type works with CE libraries
+    |
+    |val zioWithCats: Task[Int] =
+    |  ZIO.attempt(42)
+    |
+    |// Use in http4s, fs2, doobie, etc.
+  `}
+  catsEffectComment="ZIO effects can be converted to IO"
+  zioComment="Task works with Cats ecosystem"
+/>
+
+## Cats Type Classes for ZIO
+
+<ScalaComparisonBlock
+  validate={false}
+  catsEffectCode={`
+    |import cats.effect.IO
+    |import cats.syntax.all._
+    |
+    |// Native Cats syntax
+    |val traversed: IO[List[Int]] =
+    |  List(1, 2, 3).traverse(n => IO.pure(n * 2))
+    |
+    |val parMapped: IO[Int] =
+    |  (IO.pure(1), IO.pure(2)).parMapN(_ + _)
+  `}
+  zioCode={`
+    |import zio._
+    |import zio.interop.catz._
+    |import cats.syntax.all._
+    |
+    |// Cats syntax works with ZIO via interop
+    |val traversed: Task[List[Int]] =
+    |  List(1, 2, 3).traverse(n => ZIO.attempt(n * 2))
+    |
+    |val parMapped: Task[Int] =
+    |  (ZIO.attempt(1), ZIO.attempt(2)).parMapN(_ + _)
+  `}
+  catsEffectComment="Native Cats syntax"
+  zioComment="Cats syntax via zio-interop-cats"
+/>
+
+## Using fs2 with ZIO
+
+<ScalaComparisonBlock
+  validate={false}
+  catsEffectCode={`
+    |import cats.effect.IO
+    |import fs2.Stream
+    |
+    |// Native fs2 usage
+    |val stream: Stream[IO, Int] =
+    |  Stream(1, 2, 3).evalMap(n => IO.pure(n * 2))
+    |
+    |val result: IO[List[Int]] =
+    |  stream.compile.toList
+  `}
+  zioCode={`
+    |import zio._
+    |import zio.interop.catz._
+    |import fs2.Stream
+    |
+    |// fs2 works with ZIO Task
+    |val stream: Stream[Task, Int] =
+    |  Stream(1, 2, 3).evalMap(n => ZIO.attempt(n * 2))
+    |
+    |val result: Task[List[Int]] =
+    |  stream.compile.toList
+  `}
+  catsEffectComment="Native fs2 with IO"
+  zioComment="fs2 with ZIO Task via interop"
+/>
+
+## Using http4s with ZIO
+
+<ScalaComparisonBlock
+  validate={false}
+  catsEffectCode={`
+    |import cats.effect.IO
+    |import org.http4s._
+    |import org.http4s.dsl.io._
+    |
+    |// Native http4s routes
+    |val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    |  case GET -> Root / "hello" =>
+    |    Ok("Hello, World!")
+    |}
+  `}
+  zioCode={`
+    |import zio._
+    |import zio.interop.catz._
+    |import org.http4s._
+    |import org.http4s.dsl.Http4sDsl
+    |
+    |// http4s with ZIO Task
+    |object MyDsl extends Http4sDsl[Task]
+    |import MyDsl._
+    |
+    |val routes: HttpRoutes[Task] = HttpRoutes.of[Task] {
+    |  case GET -> Root / "hello" =>
+    |    Ok("Hello, World!")
+    |}
+  `}
+  catsEffectComment="Native http4s with IO"
+  zioComment="http4s with ZIO via interop"
+/>
+
+<Callout variant="tip">
+The `zio-interop-cats` library provides instances of Cats type classes
+(Monad, Sync, Async, etc.) for ZIO's Task type, enabling use of the entire
+Cats ecosystem.
+</Callout>
+
+## Cats Data Types
+
+<ScalaComparisonBlock
+  validate={false}
+  catsEffectCode={`
+    |import cats.effect.IO
+    |import cats.data._
+    |
+    |// Kleisli with IO
+    |val kleisli: Kleisli[IO, String, Int] =
+    |  Kleisli(s => IO.pure(s.length))
+    |
+    |// EitherT with IO
+    |val eitherT: EitherT[IO, String, Int] =
+    |  EitherT.rightT[IO, String](42)
+  `}
+  zioCode={`
+    |import zio._
+    |import zio.interop.catz._
+    |import cats.data._
+    |
+    |// Kleisli with Task
+    |val kleisli: Kleisli[Task, String, Int] =
+    |  Kleisli(s => ZIO.attempt(s.length))
+    |
+    |// EitherT with Task
+    |val eitherT: EitherT[Task, String, Int] =
+    |  EitherT.rightT[Task, String](42)
+  `}
+  catsEffectComment="Cats data types with IO"
+  zioComment="Cats data types with Task via interop"
+/>
+
+## Resource Interop
+
+<ScalaComparisonBlock
+  validate={false}
+  catsEffectCode={`
+    |import cats.effect._
+    |
+    |// Native Resource
+    |val resource: Resource[IO, String] =
+    |  Resource.make(
+    |    IO.println("acquire") *> IO.pure("resource")
+    |  )(_ => IO.println("release"))
+    |
+    |val used: IO[Unit] =
+    |  resource.use(r => IO.println(s"Using \$r"))
+  `}
+  zioCode={`
+    |import zio._
+    |import zio.interop.catz._
+    |import cats.effect.Resource
+    |
+    |// Use CE Resource with ZIO
+    |val resource: Resource[Task, String] =
+    |  Resource.make(
+    |    ZIO.attempt(println("acquire")).as("resource")
+    |  )(_ => ZIO.attempt(println("release")))
+    |
+    |val used: Task[Unit] =
+    |  resource.use(r => ZIO.attempt(println(s"Using \$r")))
+  `}
+  catsEffectComment="Native Resource usage"
+  zioComment="CE Resource with ZIO Task"
+/>
+
+## When to Use Interop
+
+**Use Interop When:**
+- Integrating with http4s, fs2, doobie, or other Cats libraries
+- Gradually migrating between effect systems
+- Working in a mixed codebase
+
+**Consider Native Alternatives:**
+- ZIO HTTP instead of http4s
+- ZStream instead of fs2
+- ZIO JDBC instead of doobie
+
+## Congratulations!
+
+You've completed the ZIO for Cats Effect Developers tutorial. You now understand:
+
+- Type signatures: `IO[A]` vs `ZIO[R, E, A]`
+- Effect creation and error handling
+- Resource management patterns
+- Fiber-based concurrency
+- Streaming with fs2 and ZStream
+- Application structure
+- Interoperability options
+
+## Further Learning
+
+- [ZIO Documentation](https://zio.dev)
+- [Cats Effect Documentation](https://typelevel.org/cats-effect/)
+- [zio-interop-cats](https://github.com/zio/interop-cats)
+- [fs2 Documentation](https://fs2.io/)
+
+[View Glossary →](/zio-cats/glossary)

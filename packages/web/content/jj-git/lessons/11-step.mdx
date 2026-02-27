@@ -1,0 +1,300 @@
+---
+title: "Advanced Workflows"
+step: 11
+description: "Patterns and workflows for power users"
+gitCommands: ["git worktree", "git stash", "git subtree"]
+jjCommands: ["jj new", "jj squash", "jj abandon"]
+---
+
+# Advanced Workflows
+
+Patterns and workflows that leverage jj's unique capabilities.
+
+## Parallel Work Without Branches
+
+In git, you'd use branches or stashes for parallel work. In jj, use the natural commit graph:
+
+```bash
+# Start working on feature A
+jj describe -m "Feature A part 1"
+jj new
+
+# Remember this commit's change ID: abc123
+
+# Start working on feature B
+jj describe -m "Feature B part 1"
+jj new
+
+# Continue on A by checking out its change ID
+jj checkout abc123
+jj describe -m "Feature A part 2"
+jj new
+
+# Switch back to B
+jj checkout def456
+jj describe -m "Feature B part 2"
+jj new
+```
+
+<Callout type="tip">
+Use change IDs as bookmarks for parallel work—no branch management needed.
+</Callout>
+
+## Stash-Like Workflow
+
+jj doesn't have `jj stash`. Instead:
+
+```bash
+# Working on something, need to switch context
+# Current @ has uncommitted work
+
+# Option 1: Just commit it
+jj describe -m "WIP - feature X"
+jj new
+
+# Do other work
+jj describe -m "Quick fix"
+jj new
+
+# Come back to WIP
+jj edit --change <feature-x-change-id>
+
+# Clean up WIP message
+jj describe -m "Feature X ready"
+jj new
+```
+
+Or use `jj new` to create a snapshot:
+
+```bash
+# Work in progress
+echo "partial" > file.js
+
+# Snapshot current state
+jj describe -m "Snapshot"
+jj new
+
+# Make temporary fix
+jj describe -m "Hotfix"
+jj new
+
+# Return to snapshot
+jj edit @-
+
+# Continue work
+jj describe -m "Complete feature"
+jj new
+
+# Abandon the hotfix branch
+jj abandon <hotfix-commit>
+```
+
+## Bisecting for Bugs
+
+jj makes git bisect easier with `jj op log`:
+
+```bash
+# Bug found at @
+# Find when it was introduced
+
+jj op log  # Find operation before bug
+jj op restore <good-operation-id>
+
+# Verify bug isn't there
+# Test the code...
+
+# Binary search through history
+jj op restore <midpoint-operation-id>
+# Test...
+
+# Continue until found
+jj log -r 'roots()..<bad-commit>'
+```
+
+## Code Review Workflow
+
+For solo developers or small teams:
+
+```bash
+# Create feature work
+jj describe -m "Feature: user auth"
+jj new
+
+# Immature code, want to test
+jj branch create wip-auth
+
+# Continue working
+jj describe -m "Add login form"
+jj new
+
+# Ready to review
+jj branch set auth-ready
+
+# Share the change ID with team
+# Team member:
+jj checkout abc123
+jj log
+jj show
+```
+
+## Integration with CI/CD
+
+Since jj uses git storage:
+
+```bash
+# Normal git workflow for CI
+jj git fetch
+jj rebase -d main@origin
+jj git push
+
+# CI/CD sees normal git commits
+# Uses normal git branches
+```
+
+Or use jj directly in CI:
+
+```bash
+# CI can use jj
+jj git clone $REPO
+cd repo
+
+# Run tests against specific commit
+jj checkout $COMMIT_ID
+npm test
+```
+
+## Working with Large Repos
+
+jj scales well:
+
+```bash
+# Clone only part of history
+jj git clone --sparse $REPO
+
+# Narrow working copy
+jj sparse include /src
+
+# Exclude large directories
+jj sparse exclude /node_modules
+```
+
+## Scripting with jj
+
+jj is scriptable:
+
+```bash
+# Find all commits by me in last day
+jj log -r 'author("me") & after("yesterday()")' --template '{commit} {description}\n'
+
+# Abandon all "WIP" commits
+jj abandon 'description("WIP")'
+
+# Show all merge conflicts
+jj log -r 'conflict()'
+
+# Rebase all commits from a user
+jj rebase -s 'author("former-employee")' -d archived
+```
+
+## Detached Working Copy
+
+In jj, you're always "detached" in git terms—`@` is your working copy:
+
+```bash
+# No need to worry about "detached HEAD" warnings
+# Just work and commit
+
+jj describe -m "Whatever"
+jj new
+
+# Create a branch if you want a name
+jj branch create my-work
+```
+
+## Interop with Git Tools
+
+Use jj alongside git GUI tools:
+
+```bash
+# Use GitHub Desktop for visualization
+# Use jj for command-line work
+
+# jj and git share the same .git directory
+jj status
+git status  # Shows same state
+
+# Use GitHub CLI
+gh pr create
+# Uses git branches that jj created
+```
+
+## Colocated Development
+
+```bash
+# Team uses git, you use jj
+cd shared-repo
+
+# Initialize jj for yourself
+jj git init --colocate
+
+# Work with jj
+jj describe -m "My changes"
+jj new
+
+# Push with git (or jj git push)
+git push
+
+# Team sees normal git commits
+# No one knows you used jj
+```
+
+## Custom Templates
+
+Format jj output:
+
+```bash
+# Custom log format
+jj log --template '
+  id: {commit}
+  author: {author}
+  message: {description}
+  files: {files}
+'
+
+# JSON output for scripts
+jj log --template json | jq '.[] | .description'
+```
+
+## Performance Tips
+
+```bash
+# Limit log for large repos
+jj log -l 50
+
+# Use revsets for efficiency
+jj log -r '::@'  # Faster than 'all()'
+
+# Parallel operations (experimental)
+jj --parallel 4 operation
+```
+
+## Try It Yourself
+
+<TryIt command="jj log" description="View commit history and change IDs" />
+
+<TryIt command="jj describe -m 'Task A'" description="Create a task commit" />
+
+<TryIt command="jj new" description="Start a new working copy" />
+
+## Key Takeaways
+
+- Use change IDs for parallel work tracking
+- No need for branches or stashes
+- `jj op log` for time-travel debugging
+- Works seamlessly with git tools and CI/CD
+- Scriptable with templates and revsets
+- Colocated mode for gradual adoption
+
+## Next Steps
+
+You've completed the jj tutorial! Let's review what you've learned and where to go from here.

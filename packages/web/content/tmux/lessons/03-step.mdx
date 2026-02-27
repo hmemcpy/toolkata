@@ -1,0 +1,210 @@
+---
+title: "Windows"
+step: 3
+description: "Create, navigate, rename, and manage multiple windows"
+commands: ["tmux new-window", "tmux list-windows", "tmux select-window"]
+---
+
+# Windows
+
+A tmux **window** is like a tab in your terminal browser. Windows live inside sessions and contain panes (which we'll cover next).
+
+Each window can run a different program or command — vim in one, a server in another, tests in a third.
+
+<Callout type="tip">
+Think of the hierarchy: **session → window → pane**. Sessions contain windows, windows contain panes.
+</Callout>
+
+## Creating windows
+
+Create a new window:
+
+<TryIt command="Ctrl-b c" />
+
+You're now in a fresh shell. The status line shows the new window:
+
+```
+[mysession] 0:bash  1:bash*
+```
+
+`1:bash*` is the new window (marked active with `*`).
+
+Create multiple windows: `Ctrl-b c`, `Ctrl-b c`, `Ctrl-b c`...
+
+<Callout type="tip">
+Windows are numbered starting at 0. Create a window for each task: editor, server, tests, logs, database.
+</Callout>
+
+## Navigating between windows
+
+Jump to a specific window by number:
+
+<TryIt command="Ctrl-b 0" />
+<TryIt command="Ctrl-b 1" />
+<TryIt command="Ctrl-b 2" />
+
+This is the fastest way to switch — memorize your window numbers.
+
+Cycle through windows:
+
+<TryIt command="Ctrl-b n" />  # next window
+<TryIt command="Ctrl-b p" />  # previous window
+
+<Callout type="tip">
+`n` = next, `p` = previous. These work even if you have many windows.
+</Callout>
+
+## Interactive window selection
+
+Show all windows and select:
+
+<TryIt command="Ctrl-b w" />
+
+Use arrow keys to navigate, Enter to select. This shows a preview of each window.
+
+## Finding windows
+
+Search for a window by name:
+
+<TryIt command="Ctrl-b f" />
+
+Type the window name (e.g., "server" or "tests"). tmux jumps to the first match.
+
+## Renaming windows
+
+By default, windows show the running program name (`bash`, `vim`, `node`). Give them meaningful names:
+
+<TryIt command="Ctrl-b ," />
+
+Type a name like `server` or `frontend-tests` and press Enter.
+
+<Callout type="warning">
+The comma binding is easy to forget. If it doesn't work, check that you're not in a nested tmux session (common when attaching to a remote tmux).
+</Callout>
+
+## Listing windows
+
+From command line (outside tmux):
+
+<TryIt command="tmux list-windows -t sessionname" />
+
+From inside tmux (command prompt):
+
+<TryIt command="Ctrl-b :" />
+Then type: `list-windows`
+
+## Closing windows
+
+Close the current window:
+
+<TryIt command="Ctrl-b &" />
+
+Confirm with `y` to close.
+
+Or just exit the shell:
+
+<TryIt command="exit" />
+
+<Callout type="tip">
+Closing a window closes all panes inside it. Make sure you don't have important work running!
+</Callout>
+
+## Window layouts
+
+Each window remembers its pane layout. When you switch away and back, the layout is preserved.
+
+We'll cover panes in the next step, but remember: windows are containers for panes.
+
+## Status line
+
+The status line shows all windows in the current session:
+
+```
+[session] 0:vim  1:server  2:logs*  3:tests
+```
+
+- `vim` — window 0 running vim
+- `server` — window 1 (unnamed, shows program)
+- `logs*` — window 2, currently active (marked with `*`)
+- `3` — window 3, number only
+
+## Key bindings summary
+
+| Key | Action |
+|-----|--------|
+| `Ctrl-b c` | Create new window |
+| `Ctrl-b 0-9` | Jump to window number |
+| `Ctrl-b n` | Next window |
+| `Ctrl-b p` | Previous window |
+| `Ctrl-b w` | Choose window interactively |
+| `Ctrl-b f` | Find window by name |
+| `Ctrl-b ,` | Rename window |
+| `Ctrl-b &` | Kill (close) window |
+
+## Command-line usage
+
+From outside tmux:
+
+```bash
+# Create new window in session
+tmux new-window -t sessionname -n "windowname"
+
+# Select window
+tmux select-window -t sessionname:2
+
+# Rename window
+tmux rename-window -t sessionname:1 "newname"
+
+# List windows
+tmux list-windows -t sessionname
+```
+
+<Callout type="tip">
+Window identifiers are `sessionname:windownumber`. For example: `mysession:2` means window 2 in mysession.
+</Callout>
+
+## Practical example
+
+Here's a typical development workflow:
+
+```bash
+# Start session
+tmux new -s webdev
+
+# Window 0: Editor (default)
+
+# Window 1: Server
+Ctrl-b c
+npm run dev
+Ctrl-b ,   # name it "server"
+
+# Window 2: Tests
+Ctrl-b c
+npm test
+Ctrl-b ,   # name it "tests"
+
+# Window 3: Logs
+Ctrl-b c
+tail -f logs/app.log
+Ctrl-b ,   # name it "logs"
+
+# Navigate between them
+Ctrl-b 0   # edit code
+Ctrl-b 1   # check server
+Ctrl-b 2   # run tests
+Ctrl-b 3   # view logs
+```
+
+## Window numbers
+
+When you close a window, the numbers don't shift. If you close window 1, windows 0, 2, 3 stay numbered that way.
+
+New windows get the next available number (4 in this example).
+
+<Callout type="warning">
+This can be confusing. You might have windows 0, 2, 3, 5. Use `Ctrl-b w` (interactive list) instead of memorizing numbers if your session is chaotic.
+</Callout>
+
+---
+
+**Next:** [Step 4 → Panes](../4) — Split windows into multiple panes

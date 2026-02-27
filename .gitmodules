@@ -1,3 +1,0 @@
-[submodule "packages/web/content"]
-	path = packages/web/content
-	url = https://github.com/hmemcpy/toolkata-content.git

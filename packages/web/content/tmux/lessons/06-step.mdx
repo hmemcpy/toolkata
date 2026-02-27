@@ -1,0 +1,274 @@
+---
+title: "Copy Mode"
+step: 6
+description: "Scroll through output, search text, and copy without a mouse"
+commands: ["tmux copy-mode", "tmux paste-buffer", "tmux list-buffers"]
+---
+
+# Copy Mode
+
+Copy mode lets you scroll through terminal output, search for text, and copy to a clipboard — all without a mouse.
+
+This is essential when:
+- You need to scroll back through long output
+- You want to copy error messages or commands
+- You're working on a remote server without mouse support
+
+<Callout type="tip">
+Copy mode is like `less` or `vim` for your terminal output.
+</Callout>
+
+## Entering copy mode
+
+Enter copy mode:
+
+<TryIt command="Ctrl-b [" />
+
+You can now scroll up from your current position.
+
+<Callout type="warning">
+Copy mode shows output that has scrolled off screen. You can't copy what's currently visible — for that, just select text in your terminal emulator.
+</Callout>
+
+## Scrolling
+
+**Line by line:**
+
+<TryIt command="↑" />
+<TryIt command="↓" />
+
+**Page by page:**
+
+<TryIt command="Ctrl-b" />  # page up
+<TryIt command="Ctrl-f" />  # page down
+<TryIt command="PageUp" />
+<TryIt command="PageDown" />
+
+**Jump to top/bottom:**
+
+<TryIt command="g" />  # go to top
+<TryIt command="G" />  # go to bottom
+
+## Searching
+
+Search forward:
+
+<TryIt command="/" />
+
+Type your search term, press Enter. Press `n` for next match, `N` for previous.
+
+Search backward:
+
+<TryIt command="?" />
+
+Same behavior, but searches upward.
+
+<Callout type="tip">
+Search supports regex. Use `\bword\b` for whole-word matches.
+</Callout>
+
+## Copying text
+
+1. Enter copy mode: `Ctrl-b [`
+2. Navigate to start position with arrow keys or search
+3. Start selection: `Space`
+4. Move to end position (text is highlighted)
+5. Copy selection: `Enter`
+
+The text is now in tmux's paste buffer.
+
+## Pasting
+
+Paste the last copied text:
+
+<TryIt command="Ctrl-b ]" />
+
+This works in any pane or window — paste is session-wide.
+
+## Vi mode vs Emacs mode
+
+Copy mode uses **vi keys** by default. If you prefer emacs:
+
+From command line:
+
+<TryIt command="tmux set-window-option mode-keys emacs" />
+
+<Callout type="tip">
+Vi mode is more powerful but requires learning vi. Emacs mode uses familiar arrow keys.
+</Callout>
+
+## Copy mode commands (vi mode)
+
+| Key | Action |
+|-----|--------|
+| `h` `j` `k` `l` | Left, down, up, right |
+| `w` `b` | Forward/backward by word |
+| `0` `$` | Start/end of line |
+| `g` `G` | Start/end of buffer |
+| `/` `?` | Search forward/backward |
+| `n` `N` | Next/previous search result |
+| `Space` | Start selection |
+| `Enter` | Copy selection and exit |
+| `q` `Esc` | Exit without copying |
+
+## Copy mode commands (emacs mode)
+
+| Key | Action |
+|-----|--------|
+| `↑` `↓` `←` `→` | Arrow keys |
+| `Ctrl-b` `Ctrl-f` | Page up/down |
+| `Ctrl-a` `Ctrl-e` | Start/end of line |
+| `Alt-<` `Alt->` | Start/end of buffer |
+| `Ctrl-s` `Ctrl-r` | Search forward/backward |
+| `Ctrl-Space` | Start selection |
+| `Ctrl-w` | Copy selection |
+| `Enter` | Copy selection |
+| `Esc` | Exit |
+
+## Paste buffers
+
+tmux keeps multiple paste buffers. List them:
+
+<TryIt command="Ctrl-b =" />
+
+Use arrow keys to select, Enter to paste.
+
+## Copying between sessions
+
+By default, paste buffers are per-session. To share across sessions:
+
+<TryIt command="Ctrl-b :" />
+
+Type: `set-buffer -b shared "text"`
+
+Then in another session:
+
+<TryIt command="Ctrl-b :" />
+
+Type: `paste-buffer -b shared`
+
+## Configuring scrollback
+
+Increase scrollback history:
+
+<TryIt command="Ctrl-b :" />
+
+Type: `set-option -g history-limit 10000`
+
+<Callout type="tip">
+Set this permanently in `.tmux.conf`: `set -g history-limit 10000`
+</Callout>
+
+## Clearing history
+
+Clear scrollback history:
+
+<TryIt command="Ctrl-b :" />
+
+Type: `clear-history`
+
+## Capturing pane
+
+Save entire pane contents to file:
+
+<TryIt command="tmux capture-pane -t session:window.pane -S - -E - > output.txt" />
+
+- `-S -`: Start from beginning
+- `-E -`: End at end
+- `> output.txt`: Redirect to file
+
+## Scrolling with mouse
+
+tmux supports mouse scrolling (requires configuration):
+
+<TryIt command="Ctrl-b :" />
+
+Type: `set-option -g mouse on`
+
+Now you can:
+- Scroll with mouse wheel
+- Click to position cursor
+- Select and copy with mouse
+
+<Callout type="tip">
+Mouse mode is convenient but slow. Keyboard-only is faster once learned.
+</Callout>
+
+## Practical examples
+
+**Copy error message:**
+
+```bash
+# Run failing command
+npm test
+
+# Enter copy mode
+Ctrl-b [
+
+# Search for "Error"
+/
+Error
+
+# Copy the error
+Space (select)
+Enter (copy)
+
+# Paste elsewhere
+Ctrl-b ]
+```
+
+**Copy command from earlier:**
+
+```bash
+# Scroll back
+Ctrl-b [
+k (up)
+
+# Select command line
+Space
+0 (start of line)
+$ (end of line)
+Enter (copy)
+
+# Paste to execute
+Ctrl-b ]
+```
+
+## Copy mode workflows
+
+**Reviewing build output:**
+1. Build runs, scrolls off screen
+2. Enter copy mode: `Ctrl-b [`
+3. Search for "error" or "warning": `/error`
+4. Review each match with `n`
+5. Copy specific error to report
+
+**Extracting data:**
+1. Run command with table output
+2. Enter copy mode, navigate to table
+3. Copy rows with `Space` ... `Enter`
+4. Paste into file or spreadsheet
+
+**Documenting commands:**
+1. Run successful command sequence
+2. Enter copy mode
+3. Copy each command with `0 $ Enter`
+4. Paste into documentation
+
+## Key bindings summary
+
+| Key | Action |
+|-----|--------|
+| `Ctrl-b [` | Enter copy mode |
+| `Ctrl-b ]` | Paste buffer |
+| `Ctrl-b =` | Choose buffer |
+| `Space` | Start selection |
+| `Enter` | Copy selection |
+| `q` | Exit copy mode |
+| `/` | Search forward |
+| `?` | Search backward |
+| `n` `N` | Next/previous match |
+
+---
+
+**Next:** [Step 7 → Configuration](../7) — Customize tmux with .tmux.conf

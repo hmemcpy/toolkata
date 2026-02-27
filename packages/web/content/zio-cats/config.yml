@@ -1,0 +1,40 @@
+# Default sandbox settings for zio-cats comparison
+#
+# The zio-cats tutorial uses Scastie embeds for Scala code examples,
+# not a terminal sandbox. Terminal functionality is disabled.
+#
+# Override in step frontmatter:
+# ---
+# sandbox:
+#   enabled: true
+#   environment: "scala"
+#   timeout: 120
+#   init: []
+# ---
+
+# Build-time validation configuration for Scala code snippets
+validation:
+  environment: scala
+  prelude:
+    imports:
+      - "import zio._"
+      - "import zio.Console._"
+      - "import zio.stream._"
+      - "import zio.stm._"
+      - "import cats.effect._"
+      - "import cats.effect.std._"
+      - "import cats.effect.unsafe.implicits.global"
+      - "import fs2._"
+    wrapper: |
+      // Common types used across tutorials
+      case class User(id: Int, name: String)
+      case class AppError(message: String) extends Throwable(message)
+
+      ${code}
+
+defaults:
+  sandbox:
+    enabled: false
+    environment: "scala"
+    timeout: 60
+    init: []

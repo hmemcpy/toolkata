@@ -1,9 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, type JSX } from "react"
+import { type JSX } from "react"
 import { useKataProgress } from "../../contexts/KataProgressContext"
-import { useTerminalContext } from "../../contexts/TerminalContext"
 import type { KataFrontmatter } from "../../lib/content/schemas"
 import type { SandboxConfig } from "../ui/InteractiveTerminal"
 
@@ -294,15 +293,9 @@ export function KataLanding({
   toolPair,
   katas,
   lockedRedirect,
-  sandboxConfig,
+  sandboxConfig: _sandboxConfig,
 }: KataLandingProps): JSX.Element {
   const { completedKatas, kataStats, isKataUnlocked } = useKataProgress()
-  const { setSandboxConfig } = useTerminalContext()
-
-  // Register sandbox config in context on mount
-  useEffect(() => {
-    setSandboxConfig(sandboxConfig)
-  }, [sandboxConfig, setSandboxConfig])
 
   // Get status for each Kata
   const getKataStatus = (kataId: string): KataStatus => {

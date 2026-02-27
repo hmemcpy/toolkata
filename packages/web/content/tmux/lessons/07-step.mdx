@@ -1,0 +1,327 @@
+---
+title: "Configuration"
+step: 7
+description: "Customize tmux behavior with .tmux.conf"
+commands: ["tmux source-file", "tmux show-options"]
+---
+
+# Configuration
+
+tmux reads configuration from `~/.tmux.conf` at startup. This file lets you customize:
+- The prefix key
+- Key bindings
+- Status bar appearance
+- Default behaviors
+
+<Callout type="tip">
+Configuration changes require reloading. Use `tmux source-file ~/.tmux.conf` or press `Ctrl-b :` and type `source-file ~/.tmux.conf`.
+</Callout>
+
+## Location
+
+Create or edit `~/.tmux.conf`:
+
+<TryIt command="cat ~/.tmux.conf" />
+
+If it doesn't exist, create it. We'll build one step by step.
+
+## Remapping prefix
+
+The default `Ctrl-b` is awkward. Remap to `Ctrl-a` (GNU screen's default):
+
+```conf
+# ~/.tmux.conf
+unbind C-b
+set-option -g prefix C-a
+bind C-a send-prefix
+```
+
+Now `Ctrl-a` is your prefix. `Ctrl-a Ctrl-a` sends literal `Ctrl-a` (useful in emacs).
+
+<Callout type="warning">
+`Ctrl-a` conflicts with "beginning of line" in shell readline. If this bothers you, try `Ctrl-space` instead.
+</Callout>
+
+## Alternative prefix: Ctrl-space
+
+```conf
+unbind C-b
+set-option -g prefix C-Space
+bind C-Space send-prefix
+```
+
+<Callout type="tip">
+`Ctrl-space` rarely conflicts with anything. It's ergonomically friendly too.
+</Callout>
+
+## Sensible key bindings
+
+```conf
+# Split panes with | and -
+bind | split-window -h  # vertical split
+bind - split-window -v  # horizontal split
+
+# Navigate panes with Alt-arrow
+bind -n M-Left select-pane -L
+bind -n M-Right select-pane -R
+bind -n M-Up select-pane -U
+bind -n M-Down select-pane -D
+
+# Resize panes with Ctrl-Shift-arrow
+bind -n C-S-Left resize-pane -L 5
+bind -n C-S-Right resize-pane -R 5
+bind -n C-S-Up resize-pane -U 5
+bind -n C-S-Down resize-pane -D 5
+
+# Reload config
+bind r source-file ~/.tmux.conf \; display-message "Config reloaded"
+
+# Kill session/window/pane with confirmation
+bind X confirm-before -p "kill session #S? (y/n)" "kill-session"
+bind K confirm-before -p "kill window #W? (y/n)" "kill-window"
+bind x confirm-before -p "kill pane #P? (y/n)" "kill-pane"
+```
+
+## Vi mode for copy mode
+
+```conf
+# Vi mode
+set-window-option -g mode-keys vi
+
+# Vi-style copy mode
+bind -T copy-mode-vi v send-keys -X begin-selection
+bind -T copy-mode-vi y send-keys -X copy-selection-and-cancel
+```
+
+Now use vi keys in copy mode: `v` to select, `y` to yank.
+
+## Status bar customization
+
+```conf
+# Status bar position (bottom/top)
+set-option -g status-position bottom
+
+# Status bar colors
+set-option -g status-style bg=#1a1a1a,fg=#ffffff
+
+# Left side: session name
+set-option -g status-left-length 40
+set-option -g status-left "#[fg=green,bold]#S #[fg=default]"
+
+# Right side: date time
+set-option -g status-right-length 60
+set-option -g status-right "#{?pane_synchronized,#[fg=red]SYNC #[default],}%H:%M %d-%b-%y"
+
+# Window list
+set-window-option -g window-status-format "#[fg=#666666]#I:#W "
+set-window-option -g window-status-current-format "#[fg=green,bold]#I:#W* "
+
+# Window status alignment
+set-option -g status-justify centre
+```
+
+<Callout type="tip">
+Status bar uses format strings. `#S` = session, `#I` = window index, `#W` = window name.
+</Callout>
+
+## Pane borders
+
+```conf
+# Pane border colors
+set-option -g pane-border-style fg=#333333
+set-option -g pane-active-border-style fg=green
+
+# Pane indicators (show pane number briefly)
+set-option -g display-panes-colour blue
+set-option -g display-panes-active-colour green
+```
+
+## Increase scrollback
+
+```conf
+# Increase scrollback history
+set-option -g history-limit 10000
+```
+
+## Enable mouse mode
+
+```conf
+# Mouse support
+set-option -g mouse on
+```
+
+Now you can:
+- Scroll with mouse wheel
+- Click to position cursor
+- Drag to select text
+- Click windows/panes to switch
+
+<Callout type="warning">
+Mouse mode is convenient but slower than keyboard-only once learned.
+</Callout>
+
+## Session management
+
+```conf
+# Auto-renumber windows
+set-option -g renumber-windows on
+
+# Start window numbers at 1
+set-option -g base-index 1
+set-window-option -g pane-base-index 1
+
+# Don't rename windows automatically
+set-option -g allow-rename off
+```
+
+## Display messages
+
+```conf
+# Longer display time
+set-option -g display-time 2000
+
+# Activity monitoring
+set-window-option -g monitor-activity on
+set-option -g visual-activity on
+
+# Bell
+set-window-option -g monitor-bell on
+set-option -g visual-bell on
+```
+
+## New window/pane defaults
+
+```conf
+# Open new window/pane in current directory
+bind c new-window -c "#{pane_current_path}"
+bind | split-window -h -c "#{pane_current_path}"
+bind - split-window -v -c "#{pane_current_path}"
+```
+
+## Synchronize panes
+
+```conf
+# Toggle synchronize panes
+bind * set-window-option synchronize-panes
+```
+
+Press `Ctrl-a *` (or your prefix) to toggle typing into all panes.
+
+## Example complete config
+
+```conf
+# ~/.tmux.conf - sensible defaults
+
+# Prefix
+unbind C-b
+set-option -g prefix C-Space
+bind C-Space send-prefix
+
+# Split panes
+bind | split-window -h -c "#{pane_current_path}"
+bind - split-window -v -c "#{pane_current_path}"
+
+# Navigate panes
+bind -n M-Left select-pane -L
+bind -n M-Right select-pane -R
+bind -n M-Up select-pane -U
+bind -n M-Down select-pane -D
+
+# Reload config
+bind r source-file ~/.tmux.conf \; display-message "Config reloaded!"
+
+# Vi mode
+set-window-option -g mode-keys vi
+bind -T copy-mode-vi v send-keys -X begin-selection
+bind -T copy-mode-vi y send-keys -X copy-selection-and-cancel
+
+# Status bar
+set-option -g status-position bottom
+set-option -g status-style bg=#1a1a1a,fg=#ffffff
+set-option -g status-left-length 40
+set-option -g status-left "#[fg=green,bold]#S "
+set-option -g status-right "%H:%M %d-%b-%y"
+set-window-option -g window-status-format "#[fg=#666666]#I:#W "
+set-window-option -g window-status-current-format "#[fg=green,bold]#I:#W* "
+
+# Panes
+set-option -g pane-border-style fg=#333333
+set-option -g pane-active-border-style fg=green
+
+# History
+set-option -g history-limit 10000
+
+# Indexing
+set-option -g base-index 1
+set-window-option -g pane-base-index 1
+set-option -g renumber-windows on
+
+# New window/pane in current directory
+bind c new-window -c "#{pane_current_path}"
+
+# Mouse
+set-option -g mouse on
+```
+
+<Callout type="warning">
+The config above uses `C-Space` (Ctrl+Space) as prefix. If you prefer `C-a` (Ctrl+a), change the prefix section.
+</Callout>
+
+## Reloading configuration
+
+After editing `~/.tmux.conf`, reload:
+
+<TryIt command="tmux source-file ~/.tmux.conf" />
+
+Or in tmux:
+
+<TryIt command="Ctrl-b :" />
+
+Then type: `source-file ~/.tmux.conf`
+
+<Callout type="tip">
+Add a key binding for reloading: `bind r source-file ~/.tmux.conf \; display-message "Config reloaded!"`
+</Callout>
+
+## Checking current settings
+
+Show all options:
+
+<TryIt command="tmux show-options -g" />
+
+Show specific option:
+
+<TryIt command="tmux show-options -g | grep prefix" />
+
+## Platform-specific config
+
+For macOS vs Linux:
+
+```conf
+# macOS: use pbcopy/pbpaste for clipboard
+if-shell "uname | grep -q Darwin" \
+  'bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "pbcopy"'
+
+# Linux: use xclip
+if-shell "uname | grep -q Linux" \
+  'bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "xclip -selection clipboard"'
+```
+
+## Troubleshooting
+
+**Config not loading?**
+- Check syntax: `tmux -V` (version 2.1+)
+- Reload manually: `tmux source-file ~/.tmux.conf`
+- Check for errors: `tmux start-server \; show-options -g`
+
+**Key bindings not working?**
+- Check for conflicts: `tmux list-keys | grep 'prefix KEY'`
+- Verify prefix: `tmux show-options -g | grep prefix`
+
+<Callout type="tip">
+Use `validate={false}` on config examples in this step — they reference files and commands not available in sandbox.
+</Callout>
+
+---
+
+**Next:** [Step 8 → Session Management & Scripting](../8) — Advanced workflows

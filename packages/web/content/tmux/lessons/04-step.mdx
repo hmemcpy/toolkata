@@ -1,0 +1,255 @@
+---
+title: "Panes"
+step: 4
+description: "Split windows vertically and horizontally for parallel workflows"
+commands: ["tmux split-window", "tmux split-window -h", "tmux select-pane"]
+---
+
+# Panes
+
+Panes are where tmux becomes powerful. A **pane** is a split section of a window — multiple shell sessions visible at once.
+
+This is perfect for:
+- Side-by-side code comparison
+- Watching logs while editing code
+- Running tests while developing
+- SSH into multiple servers simultaneously
+
+<Callout type="tip">
+Panes are independent. Each has its own shell, working directory, and running programs.
+</Callout>
+
+## Splitting vertically
+
+Split the current pane horizontally (top/bottom):
+
+<TryIt command="Ctrl-b %" />
+
+The `%` key is `Shift-5` on most keyboards. The window splits into two panes stacked vertically.
+
+## Splitting horizontally
+
+Split the current pane vertically (left/right):
+
+<TryIt command='Ctrl-b "' />
+
+The `"` key is `Shift-'`. The window splits into two panes side by side.
+
+<Callout type="warning">
+`"` requires Shift. A common mistake is pressing just the quote key.
+</Callout>
+
+## Navigating between panes
+
+Move to the next pane:
+
+<TryIt command="Ctrl-b o" />
+
+This cycles through all panes in the current window.
+
+Jump to a specific pane using arrow keys:
+
+<TryIt command="Ctrl-b ↑" />
+<TryIt command="Ctrl-b ↓" />
+<TryIt command="Ctrl-b ←" />
+<TryIt command="Ctrl-b →" />
+
+<Callout type="tip">
+Arrow key navigation requires tmux 2.1+ (most modern systems). Older versions use `Ctrl-b q` then numbers.
+</Callout>
+
+## Quick pane selection
+
+Show pane numbers:
+
+<TryIt command="Ctrl-b q" />
+
+Each pane displays a number briefly. Press the number to jump to that pane.
+
+This is faster than arrow keys when you have many panes.
+
+## Resizing panes
+
+Resize the current pane:
+
+<TryIt command="Ctrl-b Ctrl-↑" />
+<TryIt command="Ctrl-b Ctrl-↓" />
+<TryIt command="Ctrl-b Ctrl-←" />
+<TryIt command="Ctrl-b Ctrl-→" />
+
+Hold `Ctrl-b` and `Ctrl` together, then press arrow keys.
+
+<Callout type="tip">
+For finer control, use `Ctrl-b :` and type: `resize-pane -U 5` (up 5 lines), `-D 5` (down), `-L 5` (left), `-R 5` (right).
+</Callout>
+
+## Zooming panes
+
+Temporarily maximize a pane:
+
+<TryIt command="Ctrl-b z" />
+
+The pane expands to fill the window. Press again to restore the original layout.
+
+<Callout type="tip">
+Use zoom for temporary fullscreen editing. `vim` in one pane, zoom to focus, then zoom out to see other panes.
+</Callout>
+
+## Closing panes
+
+Close the current pane:
+
+<TryIt command="exit" />
+
+Or kill it:
+
+<TryIt command="Ctrl-b x" />
+
+Confirm with `y`.
+
+<Callout type="warning">
+Closing the last pane in a window closes the window. Be careful not to lose work!
+</Callout>
+
+## Pane layouts
+
+tmux has predefined layouts that rearrange panes evenly:
+
+<TryIt command="Ctrl-b Space" />
+
+Cycle through layouts:
+- **even-horizontal**: Panes stacked vertically (same width)
+- **even-vertical**: Panes side by side (same height)
+- **main-horizontal**: One large pane on top, others below
+- **main-vertical**: One large pane on left, others on right
+- **tiled**: All panes same size, arranged in grid
+
+<Callout type="tip">
+`main-vertical` is perfect for: main pane (vim/editor), side panes (tests, logs).
+</Callout>
+
+## Practical layouts
+
+**Code + tests:**
+```
+┌─────────────┬─────────────┐
+│  vim main   │  vim test   │
+└─────────────┴─────────────┘
+```
+Create: `Ctrl-b %` (vertical split)
+
+**Editor + logs:**
+```
+┌─────────────┐
+│    vim      │
+├─────────────┤
+│  tail -f    │
+└─────────────┘
+```
+Create: `Ctrl-b "` (horizontal split)
+
+**Main + side panes:**
+```
+┌─────────┬───┬───┐
+│         │   │   │
+│   vim   │ t │ l │
+│         │ e │ o │
+│         │ s │ g │
+│         │ t │ s │
+└─────────┴───┴───┘
+```
+Create: `Ctrl-b "` then `Ctrl-b %` twice, use `main-vertical` layout
+
+## Breaking panes into windows
+
+Move a pane to its own window:
+
+<TryIt command="Ctrl-b !" />
+
+The pane becomes a new window.
+
+## Joining panes
+
+Move a pane from another window into the current one:
+
+<TryIt command="Ctrl-b :" />
+
+Then type: `join-pane -s sessionname:windowname.pane`
+
+<Callout type="warning">
+Pane joining syntax is verbose. Most users just close and recreate panes.
+</Callout>
+
+## Synchronizing panes
+
+Type into all panes simultaneously:
+
+<TryIt command="Ctrl-b :" />
+
+Then type: `set-window-option synchronize-panes`
+
+This is useful for running the same command on multiple servers.
+
+<Callout type="tip">
+Create a key binding for this in your `.tmux.conf`: `bind * set-window-option synchronize-panes`
+</Callout>
+
+## Key bindings summary
+
+| Key | Action |
+|-----|--------|
+| `Ctrl-b %` | Split vertically (left/right) |
+| `Ctrl-b "` | Split horizontally (top/bottom) |
+| `Ctrl-b o` | Cycle to next pane |
+| `Ctrl-b ↑↓←→` | Navigate with arrow keys |
+| `Ctrl-b q` | Show pane numbers |
+| `Ctrl-b Ctrl-↑↓←→` | Resize pane |
+| `Ctrl-b z` | Zoom/unzoom pane |
+| `Ctrl-b Space` | Cycle layouts |
+| `Ctrl-b !` | Break pane to window |
+| `Ctrl-b x` | Kill pane |
+
+## Command-line usage
+
+```bash
+# Split current window
+tmux split-window -v    # vertical split (top/bottom)
+tmux split-window -h    # horizontal split (left/right)
+
+# Select pane by index
+tmux select-pane -t 0
+
+# Resize pane
+tmux resize-pane -U 5   # up 5 lines
+tmux resize-pane -D 10  # down 10 lines
+
+# Send keys to pane
+tmux send-keys -t sessionname:windowname.pane "ls -la" Enter
+```
+
+## Common workflows
+
+**Watching logs while coding:**
+1. Split: `Ctrl-b "`
+2. Bottom pane: `tail -f logs/app.log`
+3. Top pane: edit code
+4. Changes appear in logs as you work
+
+**Side-by-side comparison:**
+1. Split: `Ctrl-b %`
+2. Left pane: `vim file1.ts`
+3. Right pane: `vim file2.ts`
+4. Compare implementations
+
+**Testing workflow:**
+1. Main pane: vim editor
+2. Side pane: `npm test --watch`
+3. See test results while editing
+
+<Callout type="tip">
+Panes + `zoom` (`Ctrl-b z`) give you focus when you need it, then context when you don't.
+</Callout>
+
+---
+
+**Next:** [Step 5 → Key Bindings](../5) — Mastering the prefix key and command mode

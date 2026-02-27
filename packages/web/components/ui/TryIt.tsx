@@ -14,7 +14,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { useTerminalContext } from "../../contexts/TerminalContext"
+import { useInlineTerminal } from "../../contexts/InlineTerminalContext"
 
 /**
  * Props for the TryIt component.
@@ -66,7 +66,7 @@ export function TryIt({
   // setup is only used by the validation system
   setup: _setup,
 }: TryItProps): React.JSX.Element {
-  const { executeCommand } = useTerminalContext()
+  const { executeCommand } = useInlineTerminal()
   const [buttonState, setButtonState] = useState<ButtonState>("idle")
   const [editedCommand, setEditedCommand] = useState(command)
   const feedbackTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)

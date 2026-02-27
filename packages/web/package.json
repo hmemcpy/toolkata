@@ -3,9 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "CONTENT_SOURCE=github next dev --turbopack",
-    "dev:local": "next dev --turbopack",
-    "content:clone": "git submodule update --init --recursive",
+    "dev": "next dev --turbopack",
     "validate:snippets": "bun run scripts/validate-snippets.ts",
     "build": "next build",
     "start": "next start",

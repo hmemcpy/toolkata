@@ -1,0 +1,242 @@
+---
+title: "Branching and Checkout"
+step: 4
+description: "How jj handles branches differently from git"
+gitCommands: ["git branch", "git checkout", "git checkout -b"]
+jjCommands: ["jj branch", "jj edit", "jj new"]
+validation:
+  setup:
+    - "jj git init --colocate ."
+    - "git config user.email 'test@toolkata.com'"
+    - "git config user.name 'Test User'"
+    - "echo 'initial' > file.txt"
+    - "jj describe -m 'Initial'"
+    - "jj new"
+    - "jj branch create main"
+    - "jj new"
+    - "jj branch create old-feature"
+    - "jj git export"
+---
+
+# Branching and Checkout
+
+Branches in jj work differently than in git—they're just names for commits, not moving pointers.
+
+## Git's Branch Model
+
+In git, a branch is a **moving pointer** that advances when you commit.
+
+```bash
+git checkout main  # Move HEAD to main
+git commit         # main pointer advances
+```
+
+## jj's Branch Model
+
+In jj, a branch is a **name** pointing to a specific commit. The `@` commit is what matters, not which branch you're "on".
+
+```bash
+# Create a branch pointing to current @
+jj branch create my-feature
+
+# @ doesn't change—just created a name
+jj status
+```
+
+## Creating Branches
+
+<SideBySide
+  fromCommands={[
+    "git branch feature",
+    "git checkout -b feature",
+  ]}
+  toCommands={[
+    "jj branch create feature",
+  ]}
+/>
+
+## Switching Branches
+
+<SideBySide
+  fromCommands={[
+    "git checkout main",
+  ]}
+  toCommands={[
+    "jj edit main",
+  ]}
+/>
+
+<Callout type="note">
+In jj, `jj edit` creates a new working copy (`@`) from the target commit. It doesn't "move" anything—commits are immutable.
+</Callout>
+
+## Listing Branches
+
+<SideBySide
+  fromCommands={[
+    "git branch",
+  ]}
+  toCommands={[
+    "jj branch list",
+  ]}
+/>
+
+## The `@` vs Branches
+
+The key insight: **`@` is your working copy**, regardless of branches.
+
+```bash
+# Current state
+jj status
+Working copy: @
+Parent commit: xyzk
+
+# Create branch pointing to @
+jj branch create my-work
+my-work: xyzk
+
+# @ hasn't changed
+jj status
+Working copy: @
+Parent commit: xyzk
+```
+
+## Practical Example
+
+Let's create a feature branch and work on it:
+
+```bash
+# 1. Start on main
+jj edit main
+
+# 2. Create a branch for your work
+jj branch create feature-auth
+
+# 3. Make changes (these go into @)
+echo "auth code" > auth.js
+
+# 4. Name the @ commit
+jj describe -m "Add auth"
+
+# 5. Move branch to point to @
+jj branch set feature-auth
+
+# 6. Create new @ for next work
+jj new
+```
+
+## Updating Branches
+
+When you want a branch to point to your current `@` commit:
+
+```bash
+# Make changes
+jj describe -m "New feature"
+
+# Move branch to @
+jj branch set my-branch
+
+# Verify
+jj branch list
+my-branch: xyzk  # Now points to @
+```
+
+## Deleting Branches
+
+<SideBySide
+  fromCommands={[
+    "git branch -D old-feature",
+  ]}
+  toCommands={[
+    "jj branch delete old-feature",
+  ]}
+/>
+
+## Branch vs Commit
+
+In jj, you don't need branches to track work. You can work directly with commits:
+
+```bash
+# Create a commit and remember its change ID
+jj describe -m "Experiment"
+jj new
+# Change ID: abc123
+
+# Later, come back to it
+jj edit abc123
+
+# Create new work from there
+jj describe -m "Continuing experiment"
+jj new
+```
+
+<Callout type="tip">
+In jj, **change IDs** are more stable than branch names. They survive rebases and can be used to track work across history rewrites.
+</Callout>
+
+## Workflow Comparison
+
+**Feature branch workflow:**
+
+<SideBySide
+  validate={false}
+  fromCommands={[
+    "git checkout main",
+    "git checkout -b feature",
+    "vim app.js",
+    "git add app.js",
+    "git commit -m \"Add feature\"",
+    "git checkout main",
+    "git merge feature",
+  ]}
+  toCommands={[
+    "jj edit main",
+    "jj new",
+    "vim app.js",
+    "jj describe -m \"Add feature\"",
+    "jj branch create feature",
+    "jj edit main",
+    "jj new",
+  ]}
+/>
+
+## Abandoning Work
+
+Instead of deleting branches, in jj you abandon commits:
+
+```bash
+# Made a mistake on @
+jj describe -m "Bad idea"
+
+# Change your mind
+jj abandon
+# @ is removed, parent becomes @
+
+jj status
+# @ now points to previous commit
+```
+
+## Try It Yourself
+
+<TryIt command="jj branch create test-branch" description="Create a branch" />
+
+<TryIt command="echo 'test' > test.txt" description="Make changes" />
+
+<TryIt command="jj describe -m 'Test commit'" description="Name the commit" />
+
+<TryIt command="jj branch set test-branch" description="Update branch to point here" />
+
+<TryIt command="jj branch list" description="Verify branches" />
+
+## Key Takeaways
+
+- Branches are names for commits, not moving pointers
+- `@` is your working copy, independent of branches
+- `jj branch create` creates a name for current @
+- `jj branch set` moves a branch to point to current @
+- `jj edit` creates a new @ from target commit
+- Change IDs are more stable than branch names
+
+## Next Steps
+
+Now let's look at how jj handles viewing history and diffs.

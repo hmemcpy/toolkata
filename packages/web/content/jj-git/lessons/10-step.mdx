@@ -1,0 +1,242 @@
+---
+title: "Undo and Time Travel"
+step: 10
+description: "Using jj's operation log to undo and restore any state"
+gitCommands: ["git reflog", "git reset", "git revert"]
+jjCommands: ["jj op log", "jj op undo", "jj op restore"]
+validation:
+  setup:
+    - "jj git init --colocate ."
+    - "git config user.email 'test@toolkata.com'"
+    - "git config user.name 'Test User'"
+    - "echo '1' > file.txt && jj describe -m 'Commit 1' && jj new"
+    - "echo '2' > file.txt && jj describe -m 'Commit 2' && jj new"
+    - "jj git export"
+---
+
+# Undo and Time Travel
+
+jj's operation log makes it impossible to lose work—every action is recorded and reversible.
+
+## The Operation Log
+
+Every jj command is recorded in the operation log:
+
+```bash
+$ jj op log
+d5f3b08fe3ea5  2 minutes ago  checkout
+1c8e94a3f2c1b  4 minutes ago  new
+e7d3a0b5d4c2e  6 minutes ago  describe
+a2b5c8d9e0f1a  8 minutes ago  checkout
+```
+
+Compare to git's reflog:
+
+<SideBySide
+  fromCommands={[
+    "git reflog",
+  ]}
+  toCommands={[
+    "jj op log",
+  ]}
+/>
+
+## Undoing Operations
+
+<SideBySide
+  validate={false}
+  fromCommands={[
+    "git reset --hard HEAD@{1}",
+  ]}
+  toCommands={[
+    "jj op undo",
+  ]}
+/>
+
+## Multiple Undos
+
+```bash
+# Undo last 3 operations
+jj op undo --count 3
+```
+
+## Restoring Specific States
+
+<SideBySide
+  validate={false}
+  fromCommands={[
+    "git reset --hard HEAD@{5}",
+  ]}
+  toCommands={[
+    "jj op restore abc123",
+  ]}
+/>
+
+## Viewing Past States
+
+You can view the repository as it was at any operation:
+
+```bash
+# Show log at past operation
+jj op log -at <operation-id>
+
+# Show status at past operation
+jj op show <operation-id>
+```
+
+## Common Undo Scenarios
+
+**Accidentally abandoned work:**
+```bash
+# Oops, abandoned wrong commit
+jj abandon @-
+
+# Undo it
+jj op undo
+
+# Commit is back
+jj log
+```
+
+**Bad rebase:**
+```bash
+# Rebase went wrong
+jj rebase -d bad-base
+
+# Undo entire rebase
+jj op undo
+```
+
+**Mistaken merge:**
+```bash
+# Merged wrong branch
+jj merge wrong-branch
+
+# Undo
+jj op undo
+```
+
+## Time Travel Debugging
+
+The operation log is like a time machine:
+
+```bash
+# Something broke, when did it happen?
+jj op log
+
+# Jump back to before it broke
+jj op restore <good-operation-id>
+
+# Verify bug isn't there
+jj log
+jj show @
+
+# Come back to present
+jj op restore <latest-operation-id>
+```
+
+## Comparing States
+
+```bash
+# Compare current state with past
+jj diff --from <past-operation>
+
+# See what changed between two operations
+jj diff --from <op1> --to <op2>
+```
+
+## Operation IDs vs Commit IDs
+
+- **Operation ID**: Identifies a command in the operation log
+- **Commit ID**: Identifies a specific commit
+- **Change ID**: Stable identifier for a logical change
+
+```bash
+# Undo an operation (sequence of commits)
+jj op undo <operation-id>
+
+# View a specific commit
+jj show <commit-id>
+
+# Track a change across rebases
+jj log -r change(<change-id>)
+```
+
+## Immutable Operations
+
+Some operations can't be undone (for safety):
+
+```bash
+jj git push  # Pushed to remote—can't undo
+jj git fetch # Fetched from remote—can't undo
+```
+
+But you can undo their local effects:
+
+```bash
+# After a problematic fetch
+jj git fetch
+jj op undo  # Undoes the local ref updates
+```
+
+## Practical Workflow
+
+```bash
+# Experiment freely
+jj new
+echo "radical change" > core.js
+jj describe -m "Experiment"
+jj new
+
+# Doesn't work out
+jj op undo
+
+# Try different approach
+jj new
+echo "conservative change" > core.js
+jj describe -m "Safe refactor"
+jj new
+```
+
+## Operation Log Size
+
+The operation log grows but jj handles it efficiently:
+
+```bash
+# Operations are cheap
+# Thousands of operations = still fast
+
+# Clean old operations if needed
+jj op log --limit 100
+```
+
+## Git Comparison Summary
+
+| Task | Git | jj |
+|------|-----|----|
+| Undo last action | `git reset --hard HEAD@{1}` | `jj op undo` |
+| View history | `git reflog` | `jj op log` |
+| Restore state | `git reset --hard <ref>` | `jj op restore <id>` |
+| Undo multiple | Complex git dancing | `jj op undo --count N` |
+| Time limit | 90 days default | Never expires |
+
+## Try It Yourself
+
+<TryIt command="jj op log" description="View the operation log" />
+
+<TryIt command="jj op undo" description="Undo the last operation" validate={false} />
+
+<TryIt command="jj log" description="Verify the state after undo" />
+
+## Key Takeaways
+
+- Every jj operation is recorded
+- `jj op undo` reverses the last operation
+- `jj op restore` jumps to any past state
+- Operation log never expires
+- Safe experimentation—always can undo
+- More reliable than git reflog
+
+## Next Steps
+
+You've now mastered the core jj concepts. Let's look at some advanced workflows.

@@ -5,13 +5,11 @@
  * - Left Arrow (←) - Previous step
  * - Right Arrow (→) - Next step
  * - Question Mark (?) - Show keyboard shortcuts modal
- * - T - Toggle terminal sidebar
  *
  * Note: Escape (Esc) is NOT handled by this hook to avoid conflicts.
  * Each component (modals, terminal) handles its own Escape behavior:
  * - KeyboardShortcutsModal: Closes modal
  * - InteractiveTerminal: Blurs terminal (exits focus trap)
- * - TerminalSidebar: Closes sidebar
  *
  * @example
  * ```tsx
@@ -70,11 +68,6 @@ export interface KeyboardNavigationOptions {
    * Callback when user presses help key (?).
    */
   readonly onShowHelp?: () => void
-
-  /**
-   * Callback when user presses terminal toggle key (t).
-   */
-  readonly onToggleTerminal?: () => void
 
   /**
    * Whether shortcuts are enabled (default: true).
@@ -139,7 +132,6 @@ export function useKeyboardShortcutsModal(): KeyboardShortcutsModalOptions & {
  * Adds keyboard shortcuts for:
  * - Arrow navigation (←/→ for prev/next step)
  * - Help modal (?)
- * - Terminal toggle (t)
  *
  * Escape key is NOT handled here - individual components handle it.
  */
@@ -150,7 +142,6 @@ export function useKeyboardNavigation({
   onNextStep,
   onPreviousStep,
   onShowHelp,
-  onToggleTerminal,
   enabled = true,
 }: KeyboardNavigationOptions): void {
   useEffect(() => {
@@ -188,12 +179,6 @@ export function useKeyboardNavigation({
           event.preventDefault()
           onShowHelp()
         }
-      } else if (event.key === "t" && onToggleTerminal) {
-        // Toggle terminal sidebar (only if not combined with modifier keys)
-        if (!event.ctrlKey && !event.metaKey && !event.altKey) {
-          event.preventDefault()
-          onToggleTerminal()
-        }
       }
       // Note: Escape key is intentionally NOT handled here to avoid conflicts
       // Each component (modals, terminal) handles its own Escape behavior
@@ -204,5 +189,5 @@ export function useKeyboardNavigation({
     return () => {
       document.removeEventListener("keydown", handleKeyDown)
     }
-  }, [currentStep, totalSteps, onNextStep, onPreviousStep, onShowHelp, onToggleTerminal, enabled])
+  }, [currentStep, totalSteps, onNextStep, onPreviousStep, onShowHelp, enabled])
 }

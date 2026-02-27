@@ -4,7 +4,6 @@ import type { SandboxConfig } from "../../../components/ui/InteractiveTerminal"
 import { Footer } from "../../../components/ui/Footer"
 import { Header } from "../../../components/ui/Header"
 import { KataLanding } from "../../../components/kata/KataLanding"
-import { ShrinkingLayout } from "../../../components/ui/ShrinkingLayout"
 import { getPairing, isValidPairingSlug } from "../../../content/pairings"
 // import { getServerProgressForPairAsync } from "../../../core/progress-server"
 import { loadToolConfig } from "../../../lib/content-core"
@@ -110,8 +109,7 @@ export default async function KataLandingPage(props: {
     <div className="min-h-screen bg-[var(--color-bg)]">
       <Header />
 
-      <ShrinkingLayout>
-        <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
           {/* Breadcrumb / Back link */}
           <div className="mb-8">
             <Link
@@ -166,8 +164,7 @@ export default async function KataLandingPage(props: {
           )}
         </main>
 
-        <Footer />
-      </ShrinkingLayout>
+      <Footer />
     </div>
   )
 }

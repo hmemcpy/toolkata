@@ -1,0 +1,188 @@
+---
+title: "Sessions"
+step: 2
+description: "Create, list, attach, detach, and manage multiple sessions"
+commands: ["tmux new", "tmux ls", "tmux attach", "tmux kill-session"]
+---
+
+# Sessions
+
+A tmux **session** is a container for windows and panes. Sessions are independent — each has its own set of windows and can be detached/attached separately.
+
+Sessions are perfect for organizing work by project, server, or task.
+
+## Creating sessions
+
+Start a new session with a name:
+
+<TryIt command="tmux new -s project-a" />
+
+If you don't provide a name, tmux uses a number (0, 1, 2...).
+
+<Callout type="tip">
+Use descriptive names: `frontend`, `backend`, `prod-server`, `database-migration`.
+</Callout>
+
+## Listing sessions
+
+From outside tmux:
+
+<TryIt command="tmux ls" />
+
+Output shows all sessions:
+
+```
+project-a: 1 windows (created Tue Feb  4 10:30:15 2025)
+frontend: 2 windows (created Tue Feb  4 09:15:00 2025)
+backend: 3 windows (created Tue Feb  4 08:45:30 2025) (attached)
+```
+
+Inside tmux, use the command mode:
+
+<TryIt command="tmux list-sessions" />
+
+Or press `Ctrl-b s` to switch to an interactive session list.
+
+## Attaching to sessions
+
+Attach to the most recent session:
+
+<TryIt command="tmux attach" />
+
+Attach to a specific session:
+
+<TryIt command="tmux attach -t project-a" />
+
+<Callout type="warning">
+Only one session can be attached at a time in a single terminal. If `project-a` is already attached elsewhere, you'll need to detach it first or use `tmux attach -d -t project-a` to force detach elsewhere.
+</Callout>
+
+## Detaching from sessions
+
+From inside tmux:
+
+<TryIt command="Ctrl-b d" />
+
+This is the **detach** key binding. The session keeps running in the background.
+
+<Callout type="tip">
+Think of detach as "minimize" — the session is still there, just not visible.
+</Callout>
+
+## Switching between sessions
+
+While inside tmux, switch to another session:
+
+<TryIt command="Ctrl-b s" />
+
+This shows an interactive list. Use arrow keys to select, then press Enter.
+
+Or switch directly:
+
+<TryIt command="Ctrl-b ($)" />
+
+This prompts for a session name.
+
+## Renaming sessions
+
+Rename the current session:
+
+<TryIt command="Ctrl-b $" />
+
+Or from command line:
+
+<TryIt command="tmux rename-session -t project-a new-name" />
+
+## Killing sessions
+
+Close and delete a session from outside:
+
+<TryIt command="tmux kill-session -t project-a" />
+
+Kill all sessions:
+
+<TryIt command="tmux kill-server" />
+
+<Callout type="warning">
+`kill-server` closes everything — all sessions, windows, panes. Use carefully.
+</Callout>
+
+## Practical workflow
+
+Here's a common development workflow:
+
+```bash
+# Morning: start project session
+tmux new -s project
+
+# Do some work... (run tests, servers, etc.)
+
+# Detach and go to lunch
+Ctrl-b d
+
+# Afternoon: reattach to where you left off
+tmux attach -t project
+
+# Everything is still running — servers, tests, vim sessions!
+```
+
+## Multiple session organization
+
+Organize your work by creating separate sessions:
+
+```bash
+# Web development
+tmux new -s frontend
+tmux new -s backend
+
+# Server work
+tmux new -s prod-server
+tmux new -s staging-db
+
+# Learning/experimentation
+tmux new -s experiments
+```
+
+Each session maintains its own state, windows, and layout.
+
+## Session persistence
+
+Sessions survive:
+
+- Network disconnects (SSH drops)
+- Closing your terminal window
+- Logging out of a remote server
+- Your computer going to sleep
+
+This is why tmux is essential for remote work and long-running processes.
+
+## Key bindings summary
+
+| Key | Action |
+|-----|--------|
+| `Ctrl-b d` | Detach from session |
+| `Ctrl-b s` | Choose session interactively |
+| `Ctrl-b $` | Rename session |
+| `Ctrl-b (` | Switch to previous session |
+| `Ctrl-b )` | Switch to next session |
+
+## Command-line summary
+
+| Command | Description |
+|---------|-------------|
+| `tmux new -s name` | Create new session |
+| `tmux ls` | List sessions |
+| `tmux attach` | Attach to most recent |
+| `tmux attach -t name` | Attach to specific session |
+| `tmux detach` | Detach (works inside tmux) |
+| `tmux rename-session -t old new` | Rename session |
+| `tmux kill-session -t name` | Kill a session |
+| `tmux kill-server` | Kill all sessions |
+
+<Callout type="tip">
+Press `Ctrl-b :` to open command prompt, then type commands like `new-session`, `list-sessions`, `rename-session`. Tab-completion works here!
+</Callout>
+
+---
+
+**Next:** [Step 3 → Windows](../3) — Managing multiple windows within a session

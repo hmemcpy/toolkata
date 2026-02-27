@@ -1,0 +1,72 @@
+---
+title: "ZIO for Cats Effect Developers"
+description: "Learn ZIO 2 if you already know Cats Effect 3"
+estimatedTime: "~70 min"
+---
+
+# ZIO ← Cats Effect
+
+**ZIO 2** for developers who know **Cats Effect 3**.
+
+## Why Learn ZIO?
+
+ZIO is a powerful effect system with built-in dependency injection and typed errors. While ZIO and Cats Effect share the same core principles, they differ in implementation details and API design.
+
+### Key Differences
+
+- **Environment:** ZIO has `ZIO[R, E, A]` with environment parameter for DI
+- **Dependency Injection:** Uses `ZLayer` instead of Tagless Final
+- **Error Handling:** Typed error channel with accumulation support
+- **Streaming:** ZStream for high-performance push-based streaming
+- **STM:** Built-in Software Transactional Memory (no separate library)
+
+## What You'll Learn
+
+┌─ Fundamentals ──────────────────────────────────────┐
+│                                                      │
+│  →  1. R/E/A Signature                     ~4 min   │
+│  ○  2. Creating Effects                     ~5 min   │
+│  ○  3. Error Handling                       ~5 min   │
+│  ○  4. Map/FlatMap Purity                   ~3 min   │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+
+┌─ Application Architecture ───────────────────────────┐
+│                                                      │
+│  ○  5. ZLayers vs Tagless Final            ~6 min   │
+│  ○  6. Resource Management                 ~5 min   │
+│  ○  7. Fiber Supervision                   ~5 min   │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+
+┌─ Advanced Topics ─────────────────────────────────────┐
+│                                                      │
+│  ○  8. Streaming (ZStream vs fs2)           ~6 min   │
+│  ○  9. Application Structure               ~4 min   │
+│  ○  10. Interop                            ~4 min   │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+
+┌─ Enterprise Integration ─────────────────────────────┐
+│                                                      │
+│  ○  11. STM (Software Transactional Memory)  ~5 min   │
+│  ○  12. Concurrent Structures               ~6 min   │
+│  ○  13. Configuration                       ~5 min   │
+│  ○  14. HTTP Clients and Servers            ~6 min   │
+│  ○  15. Database Access                     ~6 min   │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+
+<Callout variant="tip">
+Both ZIO and Cats Effect are purely functional effect systems with
+identical core concepts. The main differences are API design and
+ecosystem integration.
+</Callout>
+
+## Prerequisites
+
+- Scala 3 or Scala 2.13
+- Basic familiarity with functional programming concepts
+- Experience with Cats Effect 3
+
+[Start Learning →](/zio-cats/1)

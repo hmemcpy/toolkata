@@ -1,0 +1,249 @@
+---
+title: "Services and Context.Tag"
+step: 5
+description: "Dependency injection with Context.Tag vs ZIO.service"
+estimatedTime: "~6 min"
+---
+
+# Services and Context.Tag
+
+Effect uses `Context.Tag` classes for dependency injection, while ZIO uses `ZIO.service[T]` with implicit type tags.
+
+## Defining Services
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: Service with ZLayer-based DI
+    |import zio._
+    |
+    |trait Logging {
+    |  def info(msg: String): UIO[Unit]
+    |  def error(msg: String): UIO[Unit]
+    |}
+    |
+    |object Logging {
+    |  // Accessor methods
+    |  def info(msg: String): ZIO[Logging, Nothing, Unit] =
+    |    ZIO.serviceWithZIO(_.info(msg))
+    |
+    |  def error(msg: String): ZIO[Logging, Nothing, Unit] =
+    |    ZIO.serviceWithZIO(_.error(msg))
+    |}
+  `}
+  effectCode={`
+    |// Effect: Service with Context.Tag
+    |import { Context } from "effect"
+    |
+    |// Service interface
+    |interface Logging {
+    |  readonly info: (msg: string) => Effect<void>
+    |  readonly error: (msg: string) => Effect<void>
+    |}
+    |
+    |// Create Context.Tag for the service
+    |class Logging extends Context.Tag("Logging")<
+    |  Logging,
+    |  {
+    |    readonly info: (msg: string) => Effect<void>
+    |    readonly error: (msg: string) => Effect<void>
+    |  }
+    |>() {}
+    |
+    |// Access via Tag
+    |const info = (msg: string) =>
+    |  Effect.flatMap(Logging, (logging) => logging.info(msg))
+    |
+    |const error = (msg: string) =>
+    |  Effect.flatMap(Logging, (logging) => logging.error(msg))
+  `}
+  zioComment="ZIO: trait with ZIO.service accessor methods"
+  effectComment="Effect: interface with Context.Tag class"
+/>
+
+## Accessing Services
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: ZIO.service[T] to access
+    |val program: ZIO[Logging, Nothing, Unit] =
+    |  for {
+    |    logging <- ZIO.service[Logging]
+    |    _        <- logging.info("Starting...")
+    |  } yield ()
+    |
+    |// Or use accessor methods
+    |val program2: ZIO[Logging, Nothing, Unit] =
+    |  for {
+    |    _ <- Logging.info("Starting...")
+    |  } yield ()
+  `}
+  effectCode={`
+    |// Effect: yield* Tag to access
+    |const program: Effect<void, never, Logging> =
+    |  Effect.gen(function* () {
+    |    const logging = yield* Logging
+    |    yield* logging.info("Starting...")
+    |  })
+    |
+    |// Or use accessor functions
+    |const program2: Effect<void, never, Logging> =
+    |  Effect.gen(function* () {
+    |    yield* info("Starting...")
+    |  })
+  `}
+  zioComment="ZIO.service[Logging] or accessor methods"
+  effectComment="yield* Logging or accessor functions"
+/>
+
+<Callout variant="tip">
+In `Effect.gen`, you can access services directly with `yield* Tag`. The compiler infers the service type from the Tag class.
+</Callout>
+
+## Multiple Services
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: Multiple services in environment
+    |type AppEnv = Logging & Database & Config
+    |
+    |val program: ZIO[AppEnv, IOException, Unit] =
+    |  for {
+    |    config   <- ZIO.service[Config]
+    |    logging  <- ZIO.service[Logging]
+    |    database <- ZIO.service[Database]
+    |    _        <- logging.info("Starting...")
+    |    conn     <- database.connect(config.dbUrl)
+    |  } yield ()
+  `}
+  effectCode={`
+    |// Effect: Multiple services
+    |const program: Effect<
+    |  void,
+    |  IOException,
+    |  Logging | Database | Config
+    |> = Effect.gen(function* () {
+    |    const config = yield* Config
+    |    const logging = yield* Logging
+    |    const database = yield* Database
+    |    yield* logging.info("Starting...")
+    |    yield* database.connect(config.dbUrl)
+    |  })
+  `}
+  zioComment="ZIO: & to combine environments"
+  effectComment="Effect: | to combine services"
+/>
+
+## Service Implementation
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: Implementation with ZLayer
+    |object LoggingLive {
+    |  val layer: ZLayer[Any, Nothing, Logging] =
+    |    ZLayer.succeed(new Logging {
+    |      def info(msg: String): UIO[Unit] =
+    |        ZIO.succeed(println(s"[INFO] $msg"))
+    |      def error(msg: String): UIO[Unit] =
+    |        ZIO.succeed(println(s"[ERROR] $msg"))
+    |    })
+    |}
+  `}
+  effectCode={`
+    |// Effect: Implementation with Layer.succeed
+    |const LoggingLive = Layer.succeed(
+    |  Logging,
+    |  {
+    |    info: (msg: string) =>
+    |      Effect.sync(() => console.log(\`[INFO] \${msg}\`)),
+    |    error: (msg: string) =>
+    |      Effect.sync(() => console.error(\`[ERROR] \${msg}\`))
+    |  }
+    |)
+  `}
+  zioComment="ZLayer.succeed with new instance"
+  effectComment="Layer.succeed(Tag, implementation)"
+/>
+
+## Why Explicit Tags?
+
+ZIO uses implicit type tags with `ZIO.service[T]`. Effect requires explicit `Context.Tag` classes.
+
+**Effect's approach:**
+- More explicit and easier to understand
+- Better TypeScript error messages
+- No implicit resolution needed
+- Tag classes serve as service identifiers
+
+<Callout variant="warning">
+Unlike ZIO's `ZIO.service[ServiceType]`, Effect's `Context.Tag` pattern requires creating a Tag class for each service. This is more verbose but provides better type inference and error messages.
+</Callout>
+
+## Service with Dependencies
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: Service with dependencies
+    |trait UserRepository {
+    |  def find(id: Long): ZIO[Database, IOException, User]
+    |}
+    |
+    |object UserRepositoryLive {
+    |  val layer: ZLayer[Database, Nothing, UserRepository] =
+    |    ZLayer {
+    |      for {
+    |        db <- ZIO.service[Database]
+    |      } yield new UserRepository {
+    |        def find(id: Long): ZIO[Database, IOException, User] =
+    |          db.query(s"SELECT * FROM users WHERE id = $id")
+    |      }
+    |    }
+    |}
+  `}
+  effectCode={`
+    |// Effect: Service with dependencies
+    |interface UserRepository {
+    |  readonly find: (id: number) => Effect<User, IOException, Database>
+    |}
+    |
+    |class UserRepository extends Context.Tag("UserRepository")<
+    |  UserRepository,
+    |  {
+    |    readonly find: (id: number) => Effect<User, IOException, Database>
+    |  }
+    |>() {}
+    |
+    |const UserRepositoryLive = Layer.effect(
+    |  UserRepository,
+    |  Effect.gen(function* () {
+    |    const db = yield* Database
+    |    return {
+    |      find: (id: number) =>
+    |        Effect.mapError(
+    |          db.query(\`SELECT * FROM users WHERE id = \${id}\`),
+    |          (e) => new IOException(e.message)
+    |        )
+    |    }
+    |  })
+    |)
+  `}
+  zioComment="ZLayer.fromEffect with ZIO.service"
+  effectComment="Layer.effect(Tag, Effect.gen with yield*)"
+/>
+
+## Dependency Injection Quick Reference
+
+| ZIO | Effect | Purpose |
+|-----|--------|---------|
+| `trait Service` | `interface Service` | Define service interface |
+| `ZIO.service[Service]` | `yield* ServiceTag` | Access service |
+| `ZLayer.succeed(impl)` | `Layer.succeed(Tag, impl)` | Create layer from value |
+| `ZLayer.fromFunction` | `Layer.effect(Tag, effect)` | Create layer from effect |
+| `ZLayer.scoped` | `Layer.scoped(Tag, effect)` | Create scoped layer |
+| `fa.provideLayer(layer)` | `Effect.provide(fa, layer)` | Provide layer to effect |
+
+[Next: Layers →](/effect-zio/6)

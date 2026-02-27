@@ -1,0 +1,268 @@
+---
+title: "Schema (Validation)"
+step: 13
+description: "Data validation and transformation with Effect Schema vs zio-schema"
+estimatedTime: "~6 min"
+---
+
+# Schema (Validation)
+
+Effect Schema provides runtime type validation and transformations, similar to zio-schema.
+
+## Schema Type
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// zio-schema: Schema[A]
+    |import zio.schema._
+    |
+    |val intSchema: Schema[Int] = Schema.primitive[Int]
+    |
+    |// Case class schema
+    |case class User(name: String, age: Int)
+    |val userSchema: Schema[User] = DeriveSchema.gen[User]
+  `}
+  effectCode={`
+    |// Effect Schema: Schema<A, I, R>
+    |// A: Output type (validated)
+    |// I: Input type (before validation), defaults to A
+    |// R: Requirements, defaults to never
+    |
+    |import { Schema } from "@effect/schema"
+    |
+    |const intSchema: Schema<number> =
+    |  Schema.Number
+    |
+    |// Struct schema
+    |interface User {
+    |  readonly name: string
+    |  readonly age: number
+    |}
+    |const userSchema: Schema<User> = Schema.Struct({
+    |  name: Schema.String,
+    |  age: Schema.Number
+    |})
+  `}
+  zioComment="Schema[A] for simple types, DeriveSchema.gen for case classes"
+  effectComment="Schema<A> for simple types, Schema.Struct for objects"
+/>
+
+## Decoding and Encoding
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// zio-schema: decode, encode
+    |val userSchema = DeriveSchema.gen[User]
+    |
+    |val decode: ZIO[Any, SchemaError, User] =
+    |  userSchema.decode(
+    |    data = """{"name":"Alice","age":30}"""
+    |  )
+    |
+    |val encode: String =
+    |  userSchema.encode(User("Alice", 30))
+  `}
+  effectCode={`
+    |// Effect Schema: decode, encode
+    |const userSchema: Schema<User> = Schema.Struct({
+    |  name: Schema.String,
+    |  age: Schema.Number
+    |})
+    |
+    |const decode: Effect<
+    |  User,
+    |  Schema.Decode.Unknown | Schema.Parse.Title,
+    |  never
+    |> = Schema.decodeUnknown(
+    |    userSchema
+    |  )({ name: "Alice", age: 30 })
+    |
+    |const encode = Schema.encodeSync(userSchema)({
+    |  name: "Alice",
+    |  age: 30
+    |})
+  `}
+  zioComment="schema.decode(data): ZIO[Any, SchemaError, A]"
+  effectComment="Schema.decodeUnknown(schema)(unknown): Effect<A, ParseError>"
+/>
+
+## Validation
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// zio-schema: Custom validation
+    |val ageSchema: Schema[Int] =
+    |  Schema.primitive[Int].validate(
+    |    Validation.gen { (age, _) =>
+    |      if (age >= 0) Validation.succeed(age)
+    |      else Validation.fail("Age must be positive")
+    |    }
+    |  )
+    |
+    |// Or use refinement
+    |val positiveInt: Schema[Int] =
+    |  Schema[Int].validate(
+    |    Validation.gen { (n, _) =>
+    |      if (n > 0) Validation.succeed(n)
+    |      else Validation.fail("Must be positive")
+    |    }
+    |  )
+  `}
+  effectCode={`
+    |// Effect Schema: Custom validation
+    |const ageSchema: Schema<number> = Schema.Number.pipe(
+    |  Schema.filter((n) => n >= 0, {
+    |    message: () => "Age must be non-negative"
+    |  })
+    |)
+    |
+    |// Or use refinement pattern
+    |const positiveInt: Schema<number> = Schema.Number.pipe(
+    |  Schema greaterThan(0, {
+    |    message: (n) => \`Must be positive, got " + n\`
+    |  })
+    |)
+    |
+    |// Multiple validations
+    |const adultAge: Schema<number> = Schema.Number.pipe(
+    |  Schema.greaterThanOrEqualTo(0),
+    |  Schema.lessThanOrEqualTo(150)
+    |)
+  `}
+  zioComment="validate with Validation.gen, or Schema.refine"
+  effectComment="Schema.filter, Schema.greaterThan, chain multiple validations"
+/>
+
+## Optional and Nullable
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// zio-schema: Optional fields
+    |case class Profile(
+    |  name: String,
+    |  bio: Option[String],
+    |  website: Option[String]
+    |)
+    |val profileSchema: Schema[Profile] =
+    |  DeriveSchema.gen[Profile]
+  `}
+  effectCode={`
+    |// Effect Schema: Optional fields
+    |interface Profile {
+    |  readonly name: string
+    |  readonly bio?: string | null
+    |  readonly website?: string
+    |}
+    |const profileSchema: Schema<Profile> = Schema.Struct({
+    |  name: Schema.String,
+    |  bio: Schema.optionalWith(
+    |    Schema.String,
+    |    { exact: true }
+    |  ),
+    |  website: Schema.optional(Schema.String)
+    |})
+  `}
+  zioComment="Option[T] for optional fields, auto-derived"
+  effectComment="Schema.optional for nullable fields, Schema.optionalWith for explicit option"
+/>
+
+## Schema Composition
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// zio-schema: Schema composition
+    |case class Address(city: String, zip: String)
+    |case class Person(name: String, address: Address)
+    |
+    |val personSchema: Schema[Person] = DeriveSchema.gen[Person]
+    |// Nested schemas auto-composed
+  `}
+  effectCode={`
+    |// Effect Schema: Schema composition
+    |interface Address {
+    |  readonly city: string
+    |  readonly zip: string
+    |}
+    |interface Person {
+    |  readonly name: string
+    |  readonly address: Address
+    |}
+    |
+    |const addressSchema: Schema<Address> = Schema.Struct({
+    |  city: Schema.String,
+    |  zip: Schema.String
+    |})
+    |
+    |const personSchema: Schema<Person> = Schema.Struct({
+    |  name: Schema.String,
+    |  address: addressSchema // Compose by reference
+    |})
+  `}
+  zioComment="DeriveSchema.gen handles nested composition"
+  effectComment="Compose by referencing other Schema values"
+/>
+
+## Common Schemas
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// zio-schema: Common schemas
+    |Schema[Int]              // Primitive
+    |Schema[String]           // Primitive
+    |Schema[LocalDate]        // java.time types
+    |Schema.chunk(Schema[Int]) // Collections
+    |
+    |// Enum-like
+    |sealed trait Status
+    |case object Active extends Status
+    |case object Inactive extends Status
+    |val statusSchema: Schema[Status] =
+    |  DeriveSchema.gen[Status]
+  `}
+  effectCode={`
+    |// Effect Schema: Common schemas
+    |Schema.Number            // number
+    |Schema.String            // string
+    |Schema.Boolean           // boolean
+    |Schema.DateFromSelf      // Date
+    |Schema.Array(Schema.Number) // Array<number>
+    |
+    |// Literal (enum-like)
+    |type Status = "Active" | "Inactive"
+    |const statusSchema: Schema<Status> =
+    |  Schema.Literal("Active", "Inactive")
+    |
+    |// Union
+    |const valueSchema: Schema<
+    |  string | number
+    |> = Schema.Union(
+    |    Schema.String,
+    |    Schema.Number
+    |  )
+  `}
+  zioComment="Schema[T] for primitives, DeriveSchema.gen for enums"
+  effectComment="Schema.Number/String/Boolean, Schema.Literal for enums, Schema.Union"
+/>
+
+## Schema Quick Reference
+
+| zio-schema | Effect Schema | Purpose |
+|-----------|--------------|---------|
+| `Schema[A]` | `Schema<A>` | Type schema |
+| `schema.decode(data)` | `Schema.decodeUnknown(schema)(data)` | Parse/validate |
+| `schema.encode(value)` | `Schema.encodeSync(schema)(value)` | Serialize |
+| `Schema[T].validate(...)` | `Schema.filter(...)` | Add validation |
+| `Option[T]` | `Schema.optional(...)` | Optional field |
+| `DeriveSchema.gen[T]` | Manual `Schema.Struct` | Derive from type |
+
+<Callout variant="tip">
+Effect Schema integrates with Effect services. Use `Schema.parseResult` for `Effect`-returning parsing that handles errors in the error channel, or `Schema.decodeUnknown` for direct `Effect` return values.
+</Callout>
+
+[Next: Platform & HTTP →](/effect-zio/14)

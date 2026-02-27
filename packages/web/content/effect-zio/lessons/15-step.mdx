@@ -1,0 +1,253 @@
+---
+title: "Database Access"
+step: 15
+description: "SQL with @effect/sql vs ZIO JDBC/Quill"
+estimatedTime: "~6 min"
+---
+
+# Database Access
+
+Effect provides `@effect/sql` for database operations, similar to ZIO's JDBC/Quill integrations.
+
+## SqlClient Service
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO JDBC: JdbcService
+    |import zio.jdbc._
+    |
+    |val getUser: ZIO[JdbcService, Throwable, User] =
+    |  ZIO.serviceWithZIO[JdbcService] { jdbc =>
+    |    jdbc.query(
+    |      sql"SELECT * FROM users WHERE id = $id"
+    |    ).map { rs =>
+    |      User(
+    |        rs.string("name"),
+    |        rs.int("age")
+    |      )
+    |    }.runCollect
+    |      .map(_.head)
+    |  }
+  `}
+  effectCode={`
+    |// Effect: SqlClient service
+    |import { SqlClient } from "@effect/sql"
+    |import { Effect } from "effect"
+    |
+    |const getUser = Effect.flatMap(SqlClient, (sql) =>
+    |  sql.sql("SELECT * FROM users WHERE id = " + id)
+    |).pipe(
+    |  Effect.map((rows) => rows[0] as User)
+    |  )
+  `}
+  zioComment="jdbc.query with sql string interpolation"
+  effectComment="sql.sql() for queries, automatic parameterization"
+/>
+
+## Connection Pooling
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO JDBC: Connection pool with ZLayer
+    |val poolLayer: ZLayer[Any, Throwable, JdbcService] =
+    |  ZLayer.fromZIO(
+    |    ZIO.attempt(
+    |      HikariDataSource(
+    |        HikariConfig(
+    |          jdbcUrl = "jdbc:postgresql://localhost:5432/db",
+    |          username = "user",
+    |          password = "pass"
+    |        )
+    |      )
+    |    )
+    |  ).flatMap { ds =>
+    |    ZLayer.scoped(
+    |      JdbcService.live(ds)
+    |    )
+    |  }
+  `}
+  effectCode={`
+    |// Effect: Connection pool with Layer
+    |import { PgClient } from "@effect/sql-pg"
+    |import { Layer } from "effect"
+    |
+    |const poolLayer = Layer.scoped(PgClient, Effect.gen(function* () {
+    |  const config = {
+    |    host: "localhost",
+    |    port: 5432,
+    |    database: "mydb",
+    |    username: "user",
+    |    password: "pass"
+    |  }
+    |  return yield* PgClient.make(config)
+    |  }))
+    |
+    |// Or use simplified config
+    |const poolLayer2 = PgClient.layer({
+    |  host: "localhost",
+    |  port: 5432,
+    |  database: "mydb",
+    |  username: "user",
+    |  password: "pass"
+    |  })
+  `}
+  zioComment="ZLayer.scoped with JdbcService.live from DataSource"
+  effectComment="Layer.scoped(PgClient, PgClient.make(config)) or PgClient.layer(config)"
+/>
+
+## Transactions
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO JDBC: Transactions
+    |val transfer: ZIO[JdbcService, Throwable, Unit] =
+    |  for {
+    |    jdbc <- ZIO.service[JdbcService]
+    |    _    <- jdbc.transaction {
+    |              for {
+    |                _ <- jdbc.update(
+    |                       sql"UPDATE accounts SET balance = balance - 100 WHERE id = 1"
+    |                     )
+    |                _ <- jdbc.update(
+    |                       sql"UPDATE accounts SET balance = balance + 100 WHERE id = 2"
+    |                     )
+    |              } yield ()
+    |            }
+    |  } yield ()
+  `}
+  effectCode={`
+    |// Effect: Transactions with SqlClient
+    |const transfer = Effect.gen(function* () {
+    |  const sql = yield* SqlClient
+    |  yield* SqlClient.transaction(
+    |    Effect.gen(function* () {
+    |      yield* sql.sql("UPDATE accounts SET balance = balance - 100 WHERE id = 1")
+    |      yield* sql.sql("UPDATE accounts SET balance = balance + 100 WHERE id = 2")
+    |    })
+    |  )
+    |})
+  `}
+  zioComment="jdbc.transaction { ... }"
+  effectComment="SqlClient.transaction(Effect.gen(...))"
+/>
+
+## Insert and Update
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO JDBC: Insert/Update
+    |val insertUser: ZIO[JdbcService, Throwable, Long] =
+    |  ZIO.serviceWithZIO { jdbc =>
+    |    jdbc.update(
+    |      sql"INSERT INTO users (name, age) VALUES (" + user.name + ", " + user.age + ")"
+    |    )
+    |  }
+    |
+    |val updateUser: ZIO[JdbcService, Throwable, Long] =
+    |  ZIO.serviceWithZIO { jdbc =>
+    |    jdbc.update(
+    |      sql"UPDATE users SET age = " + newAge + " WHERE id = " + userId
+    |    )
+    |  }
+  `}
+  effectCode={`
+    |// Effect: Insert/Update
+    |const insertUser = Effect.flatMap(SqlClient, (sql) =>
+    |  sql.sql("INSERT INTO users (name, age) VALUES (" + "user" + ", " + "30" + ")")
+    |)
+    |
+    |const updateUser = Effect.flatMap(SqlClient, (sql) =>
+    |  sql.sql("UPDATE users SET age = " + "31" + " WHERE id = " + "1")
+    |)
+  `}
+  zioComment="jdbc.update returns rows affected (Long)"
+  effectComment="sql.sql() returns Effect<void>"
+/>
+
+## Schema Integration
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: Manual row mapping
+    |case class User(id: Long, name: String, age: Int)
+    |
+    |val getUsers: ZIO[JdbcService, Throwable, List[User]] =
+    |  ZIO.serviceWithZIO { jdbc =>
+    |    jdbc.query(
+    |      sql"SELECT * FROM users"
+    |    ).map { rs =>
+    |      User(
+    |        rs.long("id"),
+    |        rs.string("name"),
+    |        rs.int("age")
+    |      )
+    |    }.runCollect
+    |  }
+    `}
+  effectCode={`
+    |// Effect: Schema integration for row mapping
+    |import { Schema } from "@effect/schema"
+    |
+    |interface User {
+    |  readonly id: number
+    |  readonly name: string
+    |  readonly age: number
+    |}
+    |const userSchema = Schema.Struct({
+    |  id: Schema.Number,
+    |  name: Schema.String,
+    |  age: Schema.Number
+    |})
+    |
+    |const getUsers = Effect.flatMap(SqlClient, (sql) =>
+    |  sql.sql("SELECT * FROM users")
+    |).pipe(
+    |  Effect.map((rows) =>
+    |    rows.map((row) =>
+    |      Schema.decodeUnknownSync(userSchema)(row)
+    |    )
+    |  )
+    |  )
+  `}
+  zioComment="Manual row parser with rs.long/int/string"
+  effectComment="Schema.decodeUnknown for type-safe row mapping"
+/>
+
+## Database Quick Reference
+
+| ZIO JDBC | Effect | Purpose |
+|----------|--------|---------|
+| `jdbc.query(sql"...")` | `sql.sql("...")` | Execute query |
+| `jdbc.update(sql"...")` | `sql.sql("INSERT/UPDATE ...")` | Execute update |
+| `jdbc.transaction { ... }` | `SqlClient.transaction(...)` | Transaction |
+| `HikariDataSource` | `PgClient.make(config)` | Connection pool |
+| `rs.string("col")` | `row["col"]` or Schema decode | Access column |
+| `runCollect` | Default (returns array) | Get all rows |
+
+<Callout variant="tip">
+Use SqlClient for SQL queries in Effect. The library handles parameterization automatically, preventing SQL injection. The template variables become bound parameters.
+</Callout>
+
+## What's Next?
+
+You've completed the Effect ← ZIO tutorial! You now understand:
+
+- **Type system**: `Effect<A, E, R>` vs `ZIO[-R, +E, +A]`
+- **Core concepts**: Effects, generators, error handling
+- **Architecture**: Services, Layers, resource management
+- **Concurrency**: Fibers, parallel combinators, Ref
+- **Advanced**: STM, Streaming
+- **Ecosystem**: Schema validation, HTTP/Platform, SQL databases
+
+To continue learning Effect:
+
+- [Effect Documentation](https://effect.website/docs)
+- [Effect Examples](https://effect.website/docs/guides)
+- [Effect GitHub](https://github.com/Effect-TS/effect)
+
+**Happy coding with Effect!**

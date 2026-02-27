@@ -21,8 +21,8 @@ export type { ContentErrorCause } from "./errors"
 export { ContentService, ContentServiceLive } from "./service"
 export type { ContentServiceShape } from "./service"
 
-export { ContentConfig, ContentConfigLive, githubSource, localSource } from "./config"
-export type { ContentConfigService, ContentSource } from "./config"
+export { ContentConfig, ContentConfigLive } from "./config"
+export type { ContentConfigService } from "./config"
 
 export { CacheService, CacheServiceLive } from "./cache"
 export type { CacheServiceShape } from "./cache"

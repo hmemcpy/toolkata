@@ -1,0 +1,52 @@
+# Default sandbox settings for effect-zio comparison
+#
+# The effect-zio tutorial uses code comparisons between ZIO (Scala) and Effect (TypeScript).
+# Terminal functionality is disabled as this is a conceptual comparison tutorial.
+#
+# Override in step frontmatter:
+# ---
+# sandbox:
+#   enabled: true
+#   environment: "typescript"
+#   timeout: 120
+#   init: []
+# ---
+
+defaults:
+  sandbox:
+    enabled: false
+    environment: "typescript"
+    timeout: 60
+    init: []
+
+# Validation settings for snippet testing
+validation:
+  # Primary environment for Effect (TypeScript) snippets
+  environment: typescript
+  prelude:
+    imports:
+      - "import { Effect } from \"effect\""
+      - "import { Console } from \"effect\""
+
+  # Secondary environment for ZIO (Scala) snippets in CrossLanguageBlock
+  secondary:
+    environment: scala
+    prelude:
+      imports:
+        - "import zio._"
+        - "import zio.Console._"
+        - "import java.io.IOException"
+      wrapper: |
+        import java.io.FileNotFoundException
+
+        // Minimal stub types - only for snippets that don't define their own
+        case class Response(status: Int, body: String)
+        class HikariDataSource(url: String, user: String, pass: String)
+
+        // Stub functions for teaching examples
+        def fetchData(url: String, callback: (String, Throwable) => Unit): Unit = ()
+        def readFile: ZIO[Any, IOException, String] = ZIO.succeed("content")
+        val url: String = "http://example.com"
+        implicit class SqlInterpolator(val sc: StringContext) { def sql(args: Any*): String = sc.parts.mkString }
+
+        ${code}

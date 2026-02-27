@@ -1,0 +1,34 @@
+# Default sandbox settings for jj-git comparison
+#
+# These defaults apply to all steps unless overridden in step frontmatter.
+#
+# Override in step frontmatter:
+# ---
+# sandbox:
+#   enabled: false
+#   environment: "node"
+#   timeout: 120
+#   init: ["npm install"]
+# ---
+
+defaults:
+  sandbox:
+    enabled: true
+    environment: "bash"
+    timeout: 60
+    init: []
+
+# Validation configuration for build-time snippet validation.
+#
+# The validation system extracts code snippets from MDX and executes them
+# against the sandbox to ensure all tutorial examples work correctly.
+#
+# Setup commands run before each snippet is validated (in isolated workspace).
+# Order matters: init repo first, then set local git config.
+validation:
+  environment: "bash"
+  prelude:
+    setup:
+      - "jj git init --colocate ."
+      - "git config user.email 'test@toolkata.com'"
+      - "git config user.name 'Test User'"

@@ -1,0 +1,128 @@
+---
+title: "What is tmux?"
+step: 1
+description: "Install tmux and start your first session"
+commands: ["tmux", "tmux new", "tmux ls"]
+---
+
+# What is tmux?
+
+tmux is a **terminal multiplexer** — it creates and manages multiple terminal sessions from a single window. Think of it as a window manager for your terminal.
+
+<Callout type="info">
+The name comes from "terminal multiplexer" or "tmux" for short. It's pronounced "tee-mucks" but many developers just say "tmux".
+</Callout>
+
+## Why use tmux?
+
+Before tmux, you needed multiple terminal windows or SSH connections to work on different things. tmux gives you:
+
+- **Persistent sessions**: Programs keep running after you disconnect
+- **Organization**: Group related work into sessions, windows, and panes
+- **Efficiency**: Navigate between contexts without touching the mouse
+- **Remote work**: Start something on a server, detach, and reattach later
+
+## Installation
+
+<TryIt command="tmux -V" />
+
+If tmux is installed, you'll see the version number. If not, install it:
+
+- **macOS**: `brew install tmux`
+- **Ubuntu/Debian**: `sudo apt install tmux`
+- **Fedora**: `sudo dnf install tmux`
+- **Arch**: `sudo pacman -S tmux`
+
+## Your first session
+
+Start tmux with a named session:
+
+<TryIt command="tmux new -s mysession" />
+
+You're now inside a tmux session. The bottom status line shows:
+
+```
+[mysession] 0:bash*
+```
+
+- `[mysession]` is the session name
+- `0:bash` is window index and name
+- `*` marks the active window
+
+You're in a normal shell — run commands like `ls`, `vim`, or any program. Everything runs inside tmux.
+
+## Detach and reattach
+
+The magic happens when you **detach** — leave tmux without closing programs:
+
+<TryIt command="tmux detach" />
+
+You're back at your normal terminal prompt. Any programs running in the session continue.
+
+List your sessions:
+
+<TryIt command="tmux ls" />
+
+Reattach to pick up where you left off:
+
+<TryIt command="tmux attach -t mysession" />
+
+<Callout type="tip">
+This is why tmux is indispensable for remote servers. Start a long-running process (builds, tests, servers), detach, go home, and reattach later.
+</Callout>
+
+## Prefix key
+
+tmux uses a **prefix key** to distinguish tmux commands from shell commands. The default is `Ctrl-b`.
+
+Press `Ctrl-b`, release both keys, then press the command key.
+
+For example: `Ctrl-b d` detaches from the session.
+
+<Callout type="warning">
+Many users remap the prefix key. `Ctrl-b` is awkward (especially on keyboards where Ctrl requires reaching). Common alternatives: `Ctrl-a` (GNU screen's default) or `Ctrl-space`. We'll cover this in Step 7.
+</Callout>
+
+## Common commands
+
+| Action | Command | Description |
+|--------|---------|-------------|
+| Start session | `tmux new -s name` | Create new named session |
+| Detach | `tmux detach` or `Ctrl-b d` | Leave session running |
+| List sessions | `tmux ls` | Show all sessions |
+| Attach | `tmux attach -t name` | Reattach to session |
+| Kill session | `tmux kill-session -t name` | Close session |
+
+## Key bindings (prefix = Ctrl-b)
+
+| Key | Action |
+|-----|--------|
+| `d` | Detach from session |
+| `?` | List all key bindings |
+| `:` | Command prompt (enter commands by name) |
+
+## Try it
+
+1. Create a session: `tmux new -s test`
+2. Run a long command: `sleep 300`
+3. Detach: `Ctrl-b d`
+4. List: `tmux ls` (you'll see `test` is still there)
+5. Reattach: `tmux attach -t test` (your `sleep` is still running!)
+
+<Callout type="tip">
+Press `Ctrl-b ?` to see all key bindings. Press `q` or `Esc` to exit the help list.
+</Callout>
+
+## Clean up
+
+When done, exit the session:
+
+<TryIt command="exit" />
+
+Or kill it from outside:
+
+<TryIt command="tmux kill-session -t mysession" />
+
+---
+
+**Next:** [Step 2 → Sessions](../2) — Managing multiple sessions

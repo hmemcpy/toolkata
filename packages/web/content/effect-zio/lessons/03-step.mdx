@@ -1,0 +1,220 @@
+---
+title: "Error Handling"
+step: 3
+description: "Typed errors and defects in Effect vs ZIO"
+estimatedTime: "~5 min"
+---
+
+# Error Handling
+
+Both ZIO and Effect distinguish between **expected errors** (typed error channel) and **unexpected defects** (fatal errors).
+
+## Typed Errors vs Defects
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: E channel for expected errors
+    |val readFile: ZIO[Any, IOException, String] =
+    |  ZIO.attemptBlockingIO(
+    |    scala.io.Source.fromFile("data.txt").mkString
+    |  )
+    |
+    |// ZIO.die: unexpected defects
+    |val crash: ZIO[Any, Nothing, Nothing] =
+    |  ZIO.die(new RuntimeException("Unexpected!"))
+  `}
+  effectCode={`
+    |// Effect: E channel for expected errors
+    |const readFile: Effect<string, IOException, never> =
+    |  Effect.try(() =>
+    |    Deno.readTextFileSync("data.txt")
+    |    // Effect.try captures thrown errors as E
+    |  )
+    |
+    |// Effect.die: unexpected defects
+    |const crash: Effect<never, never, never> =
+    |  Effect.die(new Error("Unexpected!"))
+  `}
+  zioComment="E channel for expected errors, ZIO.die for defects"
+  effectComment="E channel for expected errors, Effect.die for defects"
+/>
+
+## Recovering from Errors
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: catchAll, catchSome
+    |val handled: ZIO[Any, Nothing, String] =
+    |  readFile.catchAll { error =>
+    |    error match {
+    |      case _: FileNotFoundException =>
+    |        ZIO.succeed("default content")
+    |      case _ =>
+    |        ZIO.fail("other error")
+    |    }
+    |  }
+    |
+    |// catchSome for partial handling
+    |val partial: ZIO[Any, Nothing, String] =
+    |  readFile.catchSome {
+    |      case _: FileNotFoundException =>
+    |        Some(ZIO.succeed("default"))
+    |      case _ => None
+    |    }
+  `}
+  effectCode={`
+    |// Effect: catchAll, catchSome
+    |const handled: Effect<string, never, never> =
+    |  Effect.catchAll(readFile, (error) =>
+    |    error instanceof FileNotFoundError
+    |      ? Effect.succeed("default content")
+    |      : Effect.fail("other error")
+    |  )
+    |
+    |// catchSome for partial handling
+    |const partial: Effect<string, IOException, never> =
+    |  Effect.catchSome(readFile, (error) =>
+    |    error instanceof FileNotFoundError
+    |      ? Option.some(Effect.succeed("default"))
+    |      : Option.none()
+    |  )
+  `}
+  zioComment="catchAll, catchSome for recovery"
+  effectComment="catchAll, catchSome for recovery"
+/>
+
+## Transforming Errors
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: mapError
+    |val mapped: ZIO[Any, String, String] =
+    |  readFile.mapError(_ => "Read failed")
+    |
+    |// ZIO: orElse (fallback effect)
+    |val fallback: ZIO[Any, IOException, String] =
+    |  readFile.orElse(ZIO.succeed("fallback"))
+    |
+    |// ZIO: orElseEither (preserve both errors)
+    |val either: ZIO[Any, Either[IOException, String], String] =
+    |  readFile.orElseEither(ZIO.succeed("fallback"))
+  `}
+  effectCode={`
+    |// Effect: mapError
+    |const mapped: Effect<string, string, never> =
+    |  Effect.mapError(readFile, () => "Read failed")
+    |
+    |// Effect: orElse (fallback effect)
+    |const fallback: Effect<string, never, never> =
+    |  Effect.orElse(readFile, () =>
+    |    Effect.succeed("fallback")
+    |  )
+    |
+    |// Effect: orElse (with callback)
+    |const fallback2: Effect<string, never, never> =
+    |  Effect.orElse(readFile, () =>
+    |      Effect.succeed("fallback")
+    |    )
+    |  )
+  `}
+  zioComment="mapError, orElse for error transformation"
+  effectComment="mapError, orElse for error transformation"
+/>
+
+## Converting to Either
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO.either: E | A => Either[E, A]
+    |val either: ZIO[Any, Nothing, Either[IOException, String]] =
+    |  readFile.either
+    |
+    |// Pattern match on result
+    |val result: ZIO[Any, Nothing, String] =
+    |  either.map {
+    |    case Left(error) => s"Error: $error"
+    |    case Right(content) => content
+    |  }
+  `}
+  effectCode={`
+    |// Effect.either: E | A => Either<E, A>
+    |const either: Effect<Either<IOException, string>, never, never> =
+    |  Effect.either(readFile)
+    |
+    |// Pattern match on result
+    |const result: Effect<string, never, never> =
+    |  Effect.map(either, (either) =>
+    |    Either.match(either, {
+    |      onLeft: (error) => "Error: " + error,
+    |      onRight: (content) => content
+    |    })
+    |  )
+  `}
+  zioComment="ZIO.either converts to Either[E, A]"
+  effectComment="Effect.either converts to Either<E, A>"
+/>
+
+## Fatal Defects
+
+Use `Effect.die` for errors that should never be caught (like assertion failures).
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: die, dieMessage
+    |val assert: ZIO[Any, Nothing, Int] =
+    |  ZIO.dieMessage("Assertion failed: x > 0")
+    |
+    |// ZIO.sandbox: catch all errors (including defects)
+    |val safe: ZIO[Any, Cause[Nothing], Int] =
+    |  assert.sandbox
+    |
+    |// ZIO.unsandbox: convert back
+    |val unsafe: ZIO[Any, Nothing, Int] =
+    |  safe.unsandbox
+  `}
+  effectCode={`
+    |// Effect: die, dieMessage
+    |const assert: Effect<never, never, never> =
+    |  Effect.dieMessage("Assertion failed: x > 0")
+    |
+    |// Effect.sandbox: catch all errors (including defects)
+    |const safe: Effect<number, never, never> =
+    |  Effect.catchAllCause(
+    |    assert,
+    |    (cause) => Effect.succeed(0)
+    |  )
+    |
+    |// Use Cause for detailed error inspection
+    |const inspected: Effect<number, never, never> =
+    |  Effect.catchAllCause(assert, (cause) =>
+    |    Effect.succeed(
+    |      Cause.isEmpty(cause) ? 0 : -1
+    |    )
+    |  )
+  `}
+  zioComment="die, sandbox for fatal error handling"
+  effectComment="die, catchAllCause for fatal error handling"
+/>
+
+## Error Handling Quick Reference
+
+| ZIO | Effect | Purpose |
+|-----|--------|---------|
+| `fa.catchAll(f)` | `Effect.catchAll(fa, f)` | Handle all errors |
+| `fa.catchSome(pf)` | `Effect.catchSome(fa, pf)` | Handle some errors |
+| `fa.mapError(f)` | `Effect.mapError(fa, f)` | Transform error |
+| `fa.orElse(fb)` | `Effect.orElse(fa, () => fb)` | Fallback effect |
+| `fa.either` | `Effect.either(fa)` | Convert to Either |
+| `ZIO.die(e)` | `Effect.die(e)` | Fatal defect |
+| `fa.sandbox` | `Effect.catchAllCause(fa, f)` | Catch all (including defects) |
+
+<Callout variant="tip">
+Effect's `catchAll` and `catchSome` return the handler effect directly, unlike ZIO which wraps them. Notice the callback signature: `(error: E) => Effect<B, never, R>` vs ZIO's `E => ZIO[R1, E1, B]`.
+</Callout>
+
+[Next: Composition with Generators →](/effect-zio/4)

@@ -1,0 +1,209 @@
+---
+title: "Composition with Generators"
+step: 4
+description: "Effect.gen vs for-comprehensions for composing effects"
+estimatedTime: "~4 min"
+---
+
+# Composition with Generators
+
+ZIO uses Scala's `for`-comprehensions. Effect uses JavaScript generators with `Effect.gen`.
+
+## For-Comprehension vs Effect.gen
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: for-comprehension
+    |val program: ZIO[Console, IOException, Unit] =
+    |  for {
+    |    name <- ZIO.service[Console].flatMap(_.readLine)
+    |    _    <- Console.printLine(s"Hello, $name!")
+    |  } yield ()
+  `}
+  effectCode={`
+    |// Effect: Effect.gen
+    |const program: Effect<void, IOException, Console> =
+    |  Effect.gen(function* () {
+    |    const console = yield* Console
+    |    const name = yield* console.readLine
+    |    yield* console.printLine(\`Hello, \${name}!\`)
+    |  })
+  `}
+  zioComment="for { ... } yield ... comprehension"
+  effectComment="Effect.gen(function* () { ... }) generator"
+/>
+
+## yield* Syntax
+
+In `Effect.gen`, `yield*` unwraps effects (like `<-` in Scala's for-comprehension).
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: <- binds effects
+    |val result: ZIO[Any, Nothing, Int] =
+    |  for {
+    |    x <- ZIO.succeed(10)
+    |    y <- ZIO.succeed(20)
+    |    _ <- Console.printLine(s"Sum: \${x + y}")
+    |  } yield x + y
+  `}
+  effectCode={`
+    |// Effect: yield* binds effects
+    |const result: Effect<number, never, never> =
+    |  Effect.gen(function* () {
+    |    const x = yield* Effect.succeed(10)
+    |    const y = yield* Effect.succeed(20)
+    |    yield* Console.printLine(\`Sum: \${x + y}\`)
+    |    return x + y
+    |  })
+  `}
+  zioComment="<- binds each effect sequentially"
+  effectComment="yield* binds each effect sequentially"
+/>
+
+## Control Flow
+
+JavaScript control flow works naturally inside generators.
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: if/else, for, pattern matching
+    |val process: ZIO[Any, Nothing, Int] =
+    |  for {
+    |    items <- ZIO.succeed(List(1, 2, 3, 4, 5))
+    |    sum <- ZIO.succeed(
+    |      items.filter(_ % 2 == 0).sum
+    |    )
+    |  } yield sum
+  `}
+  effectCode={`
+    |// Effect: if/else, for, loops work naturally
+    |const process: Effect<number, never, never> =
+    |  Effect.gen(function* () {
+    |    const items = yield* Effect.succeed([1, 2, 3, 4, 5])
+    |    let sum = 0
+    |    for (const item of items) {
+    |      if (item % 2 === 0) {
+    |        sum += item
+    |      }
+    |    }
+    |    return sum
+    |  })
+  `}
+  zioComment="Scala collections with filter/map"
+  effectComment="JavaScript control flow works directly"
+/>
+
+## Error Handling in Generators
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: errors short-circuit for-comprehension
+    |val result: ZIO[Any, String, Int] =
+    |  for {
+    |    x <- ZIO.fail("error1")
+    |    y <- ZIO.succeed(42)  // never runs
+    |  } yield y
+    |// Result: ZIO.fail("error1")
+  `}
+  effectCode={`
+    |// Effect: errors short-circuit Effect.gen
+    |const result: Effect<number, string, never> =
+    |  Effect.gen(function* () {
+    |    const x = yield* Effect.fail("error1")
+    |    // never runs
+    |    const y = yield* Effect.succeed(42)
+    |    return y
+    |  })
+    |// Result: Effect.fail("error1")
+  `}
+  zioComment="First error fails the entire comprehension"
+  effectComment="First error fails the entire generator"
+/>
+
+## Accessing Services
+
+`Effect.gen` provides direct access to services via `yield*`.
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: ZIO.service[T] in for-comprehension
+    |val program: ZIO[Console & Logging, IOException, Unit] =
+    |  for {
+    |    console <- ZIO.service[Console]
+    |    logging <- ZIO.service[Logging]
+    |    _       <- console.printLine("Starting...")
+    |    _       <- logging.info("Initialized")
+    |  } yield ()
+  `}
+  effectCode={`
+    |// Effect: yield* Tag directly
+    |const program: Effect<
+    |  void,
+    |  IOException,
+    |  Console | Logging
+    |> = Effect.gen(function* () {
+    |    const console = yield* Console
+    |    const logging = yield* Logging
+    |    yield* console.printLine("Starting...")
+    |    yield* logging.info("Initialized")
+    |  })
+  `}
+  zioComment="ZIO.service[T] to access services"
+  effectComment="yield* Tag to access services"
+/>
+
+## Pipe Alternative
+
+Effect also supports pipe-based composition (like ZIO's `map`, `flatMap` directly).
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: direct map/flatMap
+    |val result: ZIO[Any, Nothing, Int] =
+    |  ZIO.succeed(10)
+    |    .map(_ * 2)
+    |    .flatMap(x => ZIO.succeed(x + 5))
+  `}
+  effectCode={`
+    |// Effect: pipe with Effect.map/Effect.flatMap
+    |const result: Effect<number, never, never> =
+    |  Effect.succeed(10).pipe(
+    |    Effect.map((x) => x * 2),
+    |    Effect.flatMap((x) => Effect.succeed(x + 5))
+    |  )
+    |
+    |// Or use functions directly
+    |const result2: Effect<number, never, never> =
+    |  Effect.flatMap(
+    |    Effect.map(Effect.succeed(10), (x) => x * 2),
+    |    (x) => Effect.succeed(x + 5)
+    |  )
+  `}
+  zioComment="map/flatMap methods on ZIO"
+  effectComment="pipe with Effect.map/Effect.flatMap"
+/>
+
+## Composition Quick Reference
+
+| ZIO | Effect | Purpose |
+|-----|--------|---------|
+| `for { a <- fa } yield a` | `Effect.gen(function* () { const a = yield* fa })` | Sequential composition |
+| `fa.map(f)` | `Effect.map(fa, f)` or `fa.pipe(Effect.map(f))` | Transform success |
+| `fa.flatMap(f)` | `Effect.flatMap(fa, f)` or `fa.pipe(Effect.flatMap(f))` | Chain effects |
+| `fa *> fb` | `Effect.zipRight(fa, fb)` | Sequence, keep right |
+| `fa <* fb` | `Effect.zipLeft(fa, fb)` | Sequence, keep left |
+| `fa.zip(fb)` | `Effect.zip(fa, fb)` | Tuple both results |
+| `ZIO.service[T]` | `yield* Tag` | Access service |
+
+<Callout variant="tip">
+`Effect.gen` is preferred for complex control flow. Use pipe syntax for simple transformations. Both are equivalent — `Effect.gen` compiles to the same underlying operations as pipe-based code.
+</Callout>
+
+[Next: Services and Context.Tag →](/effect-zio/5)

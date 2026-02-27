@@ -1,0 +1,362 @@
+---
+title: "Application Structure"
+step: 9
+description: "ZIOApp vs IOApp for main entry points"
+zioCommands: ["ZIOAppDefault", "Runtime.setConfigProvider", "ZIO.config", "ZIO.serviceWithZIO", "ZIO.logInfo"]
+ceCommands: ["IOApp", "Resource", "IO.pure"]
+---
+
+# Application Structure
+
+Both libraries provide application templates for running complete programs.
+
+## Main Entry Point
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect._
+    |
+    |// Simple app (no args)
+    |object Main extends IOApp.Simple {
+    |  def run: IO[Unit] = for {
+    |    _ <- IO.println("Hello, World!")
+    |    _ <- IO.println("Application complete")
+    |  } yield ()
+    |}
+    |
+    |// With command-line args
+    |object MainArgs extends IOApp {
+    |  def run(args: List[String]): IO[ExitCode] = for {
+    |    name <- IO.pure(args.headOption.getOrElse("World"))
+    |    _ <- IO.println(s"Hello, $name!")
+    |  } yield ExitCode.Success
+    |}
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |// Simple app
+    |object Main extends ZIOAppDefault {
+    |  def run: ZIO[Any, Any, Any] = for {
+    |    _ <- Console.printLine("Hello, World!")
+    |    _ <- Console.printLine("Application complete")
+    |  } yield ()
+    |}
+    |
+    |// With custom bootstrap
+    |object MainCustom extends ZIOAppDefault {
+    |  override val bootstrap: ZLayer[ZIOAppArgs, Any, Any] =
+    |    Runtime.removeDefaultLoggers
+    |
+    |  def run: ZIO[Any, Any, Any] =
+    |    Console.printLine("Custom runtime!")
+    |}
+  `}
+  catsEffectComment="IOApp.Simple / IOApp"
+  zioComment="ZIOAppDefault / ZIOApp"
+/>
+
+## Exit Codes
+
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect._
+    |
+    |object MainExit extends IOApp {
+    |  def run(args: List[String]): IO[ExitCode] =
+    |    IO.pure(ExitCode.Success)
+    |
+    |  // Or with error
+    |  def runWithError(args: List[String]): IO[ExitCode] =
+    |    IO.raiseError[Unit](new Exception("fail"))
+    |      .as(ExitCode.Success)
+    |      .handleError(_ => ExitCode.Error)
+    |}
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |object MainExit extends ZIOAppDefault {
+    |  // Return value determines exit code
+    |  def run: ZIO[Any, Any, Any] =
+    |    ZIO.succeed(())  // Exit code 0
+    |
+    |  // Or explicit exit
+    |  def runExplicit: ZIO[Any, Nothing, ExitCode] =
+    |    ZIO.succeed(ExitCode.success)
+    |}
+  `}
+  catsEffectComment="ExitCode.Success / ExitCode.Error"
+  zioComment="Return type determines exit code"
+/>
+
+## Bootstrap Configuration
+
+{/* External libraries: zio-config-magnolia, ciris - not in sandbox */}
+<ScalaComparisonBlock
+  validate={false}
+  catsEffectCode={`
+    |import cats.effect._
+    |import ciris._
+    |import ciris.env._
+    |
+    |case class Config(host: String, port: Int)
+    |
+    |object MainConfig extends IOApp.Simple {
+    |  def run: IO[Unit] = for {
+    |    // Load config at startup (Ciris library)
+    |    config <- (
+    |      env("HOST").as[String].default("localhost"),
+    |      env("PORT").as[Int].default(8080)
+    |    ).parMapN(Config.apply)
+    |    host <- IO.pure(config.host)
+    |    port <- IO.pure(config.port)
+    |    _ <- IO.println(s"Server: $host:$port")
+    |  } yield ()
+    |}
+  `}
+  zioCode={`
+    |import zio._
+    |import zio.config.magnolia._
+    |import zio.config.typesafe.TypesafeConfigProvider._
+    |
+    |case class AppConfig(host: String, port: Int)
+    |object AppConfig {
+    |  implicit val config: zio.config.Config[AppConfig] =
+    |    deriveConfig[AppConfig]
+    |}
+    |
+    |object MainConfig extends ZIOAppDefault {
+    |  // Bootstrap: Configure runtime before app starts
+    |  override val bootstrap: ZLayer[ZIOAppArgs, Any, Any] =
+    |    Runtime.setConfigProvider(fromHoconFilePath("config.conf")) ++
+    |      Runtime.removeDefaultLoggers
+    |
+    |  def run: ZIO[Any, Any, Any] =
+    |    for {
+    |      config <- ZIO.config[AppConfig]
+    |      host   <- ZIO.succeed(config.host)
+    |      port   <- ZIO.succeed(config.port)
+    |      _      <- ZIO.logInfo(s"Server: $host:$port")
+    |    } yield ()
+    |}
+  `}
+  catsEffectComment="Load config with Ciris library"
+  zioComment="Bootstrap + ZIO.config"
+/>
+
+<Callout variant="tip">
+**Bootstrap pattern**: Override `bootstrap` in ZIOAppDefault to configure the runtime globally before your app runs. Common uses: set config provider, remove default loggers, add custom services.
+</Callout>
+
+## Structured Logging
+
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect._
+    |// Using log4cats (external library)
+    |// import org.typelevel.log4cats.slf4j.Slf4jLogger
+    |
+    |object MainLog extends IOApp.Simple {
+    |  def run: IO[Unit] = for {
+    |    // Console logging (built-in)
+    |    _ <- IO.println("[INFO] Application started")
+    |    _ <- IO.println("[DEBUG] Processing...")
+    |    _ <- IO.println("[INFO] Application complete")
+    |  } yield ()
+    |
+    |  // With log4cats:
+    |  // for {
+    |  //   logger <- Slf4jLogger.create[IO]
+    |  //   _ <- logger.info("Application started")
+    |  // } yield ()
+    |}
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |object MainLog extends ZIOAppDefault {
+    |  def run: ZIO[Any, Any, Any] = for {
+    |    // Built-in structured logging
+    |    _ <- ZIO.logInfo("Application started")
+    |    _ <- ZIO.logDebug("Processing...")
+    |    _ <- ZIO.logWarning("Potential issue")
+    |    _ <- ZIO.logError("Something went wrong")
+    |  } yield ()
+    |}
+  `}
+  catsEffectComment="Console or log4cats (external)"
+  zioComment="ZIO.log* - built-in logging"
+/>
+
+<Callout variant="tip">
+**ZIO logging is built-in**: No external library needed. `ZIO.logInfo`, `ZIO.logDebug`, `ZIO.logWarning`, and `ZIO.logError` provide structured logging with log levels and correlation IDs out of the box.
+</Callout>
+
+## Resource Lifecycle in Apps
+
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect._
+    |
+    |object MainResource extends IOApp.Simple {
+    |  def run: IO[Unit] = {
+    |    val dbResource = Resource.make(
+    |      IO.println("Opening DB") *> IO.pure("db-connection")
+    |    )(_ => IO.println("Closing DB"))
+    |
+    |    dbResource.use { db =>
+    |      IO.println(s"Using $db")
+    |    }
+    |  }
+    |}
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |object MainResource extends ZIOAppDefault {
+    |  def run: ZIO[Any, Any, Any] = ZIO.scoped {
+    |    for {
+    |      db <- ZIO.acquireRelease(
+    |        Console.printLine("Opening DB").as("db-connection")
+    |      )(_ => Console.printLine("Closing DB").orDie)
+    |      _ <- Console.printLine(s"Using $db")
+    |    } yield ()
+    |  }
+    |}
+  `}
+  catsEffectComment="Resource.use in IOApp"
+  zioComment="ZIO.scoped with acquireRelease"
+/>
+
+## Service Access Patterns
+
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect._
+    |
+    |trait Database {
+    |  def query: IO[Int]
+    |}
+    |trait Cache {
+    |  def get: IO[Option[Int]]
+    |}
+    |
+    |object MainServices extends IOApp.Simple {
+    |  def run: IO[Unit] = {
+    |    // Services passed as constructor parameters
+    |    def program(db: Database, cache: Cache): IO[Unit] =
+    |      for {
+    |        cached <- cache.get
+    |        result <- cached.fold(db.query)(IO.pure)
+    |        _ <- IO.println(s"Result: $result")
+    |      } yield ()
+    |
+    |    // Create services manually
+    |    val db: Database = new Database {
+    |      def query = IO.pure(42)
+    |    }
+    |    val cache: Cache = new Cache {
+    |      def get = IO.pure(Some(42))
+    |    }
+    |
+    |    program(db, cache)
+    |  }
+    |}
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |trait Database {
+    |  def query: UIO[Int]
+    |}
+    |trait Cache {
+    |  def get: UIO[Option[Int]]
+    |}
+    |
+    |object MainServices extends ZIOAppDefault {
+    |  val dbLayer: ULayer[Database] = ZLayer.succeed(
+    |    new Database { def query = ZIO.succeed(42) }
+    |  )
+    |  val cacheLayer: ULayer[Cache] = ZLayer.succeed(
+    |    new Cache { def get = ZIO.succeed(Some(42)) }
+    |  )
+    |
+    |  def run: ZIO[Any, Any, Any] = {
+    |    val program: ZIO[Database & Cache, Nothing, Unit] = for {
+    |      // Service access: ZIO.serviceWithZIO
+    |      cached <- ZIO.serviceWithZIO[Cache](_.get)
+    |      result <- cached.fold(
+    |        ZIO.serviceWithZIO[Database](_.query)
+    |      )(ZIO.succeed(_))
+    |      _ <- Console.printLine(s"Result: $result").orDie
+    |    } yield ()
+    |
+    |    program.provide(dbLayer, cacheLayer)
+    |  }
+    |}
+  `}
+  catsEffectComment="Constructor parameter injection"
+  zioComment="Service access with ZIO.serviceWithZIO"
+/>
+
+<Callout variant="tip">
+**Service access operators**:
+- `ZIO.service[A]` - Get the service (equivalent to constructor parameter)
+- `ZIO.serviceWithZIO[A](f)` - Access service and run a ZIO operation (most common)
+- `ZIO.serviceWith[A](f)` - Access service for pure transformation
+</Callout>
+
+## Bootstrap Layer Composition
+
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect._
+    |
+    |// Resource composition happens at runtime
+    |object MainResources extends IOApp.Simple {
+    |  def run: IO[Unit] = {
+    |    // Each resource must be manually composed with nested use
+    |    Resource.make(IO.pure("db"))(_ => IO.unit).use { db =>
+    |      Resource.make(IO.pure("cache"))(_ => IO.unit).use { cache =>
+    |        IO.println(s"Using $db and $cache")
+    |      }
+    |    }
+    |  }
+    |}
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |object MainBootstrap extends ZIOAppDefault {
+    |  // Bootstrap: Configure runtime before app starts
+    |  override val bootstrap: ZLayer[ZIOAppArgs, Any, Any] =
+    |    Runtime.setConfigProvider(
+    |      ConfigProvider.envProvider
+    |    ) ++
+    |      Runtime.removeDefaultLoggers
+    |
+    |  def run: ZIO[Any, Any, Any] = for {
+    |    _ <- ZIO.logInfo("App starting with custom bootstrap")
+    |    _ <- ZIO.logDebug("Debug logging enabled")
+    |  } yield ()
+    |}
+  `}
+  catsEffectComment="Manual resource composition at runtime"
+  zioComment="Bootstrap layer composition (global)"
+/>
+
+<Callout variant="warning">
+**Bootstrap runs before your app**: The `bootstrap` layer initializes services globally for the entire application. Use it for services that should live for the full app lifetime (config, logging, database pools).
+</Callout>
+
+## Next Steps
+
+Application structure differs but both provide robust runtimes. Let's explore interop.
+
+[Next: Interop →](/zio-cats/10)

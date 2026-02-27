@@ -3,11 +3,10 @@
 import { useEffect, useState, type JSX } from "react"
 import { useRouter } from "next/navigation"
 import { useKataProgress } from "../../contexts/KataProgressContext"
-import { useTerminalContext } from "../../contexts/TerminalContext"
 import type { KataFrontmatter } from "../../lib/content/schemas"
 import { validateExercise, ValidationError } from "../../services/kata-validation"
-import { ShrinkingLayout } from "../ui/ShrinkingLayout"
 import type { SandboxConfig } from "../ui/InteractiveTerminal"
+import { InlineTerminalProvider } from "../../contexts/InlineTerminalContext"
 import { ValidationFeedback, type ValidationState } from "./ValidationFeedback"
 
 /**
@@ -92,15 +91,16 @@ export function KataSession({
   kataId,
   frontmatter,
   children,
-  sandboxConfig,
+  sandboxConfig: _sandboxConfig,
 }: KataSessionProps): JSX.Element {
   const router = useRouter()
-  const { sessionId, resetTerminal, setSandboxConfig } = useTerminalContext()
 
-  // Register sandbox config in context on mount
-  useEffect(() => {
-    setSandboxConfig(sandboxConfig)
-  }, [sandboxConfig, setSandboxConfig])
+  // Note: Kata session pages no longer have sidebar terminal.
+  // Session ID and reset are managed locally until katas are merged into lesson steps.
+  const sessionId: string | null = null
+  const resetTerminal = () => {
+    // No-op: terminal is inline per step now
+  }
 
   // Kata progress context
   const { isKataUnlocked, kataStats, startKata, recordAttempt, completeExercise, completeKata } =
@@ -272,6 +272,7 @@ export function KataSession({
   const kataNum = Number.parseInt(kataId, 10)
 
   return (
+    <InlineTerminalProvider toolPair={toolPair} sandboxConfig={_sandboxConfig} authToken={null}>
     <div className="min-h-screen bg-[var(--color-bg)]">
       {/* Kata Header */}
       <header className="border-b border-[var(--color-border)] sticky top-0 bg-[var(--color-bg)] z-10">
@@ -331,7 +332,7 @@ export function KataSession({
       </header>
 
       {/* Main Content */}
-      <ShrinkingLayout>
+      <div>
         <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Left: Exercise list */}
@@ -490,7 +491,8 @@ export function KataSession({
             </div>
           </div>
         </main>
-      </ShrinkingLayout>
+      </div>
     </div>
+    </InlineTerminalProvider>
   )
 }

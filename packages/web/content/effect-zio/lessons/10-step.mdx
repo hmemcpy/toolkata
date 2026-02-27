@@ -1,0 +1,239 @@
+---
+title: "Ref and Concurrent State"
+step: 10
+description: "Atomic mutable state with Ref in Effect vs ZIO"
+estimatedTime: "~5 min"
+---
+
+# Ref and Concurrent State
+
+Both Effect and ZIO provide `Ref` for atomic mutable state. The APIs are nearly identical.
+
+## Creating Refs
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: Ref.make
+    |val program: ZIO[Any, Nothing, Ref[Int]] =
+    |  Ref.make(0)
+    |
+    |// Ref.make of more complex types
+    |case class Counter(value: Int, name: String)
+    |val complex: ZIO[Any, Nothing, Ref[Counter]] =
+    |  Ref.make(Counter(0, "my-counter"))
+  `}
+  effectCode={`
+    |// Effect: Ref.make
+    |const program: Effect<Ref<number>, never, never> =
+    |  Ref.make(0)
+    |
+    |// Ref.make of complex types
+    |interface Counter {
+    |  readonly value: number
+    |  readonly name: string
+    |    }
+    |const complex: Effect<
+    |  Ref<Counter>,
+    |  never,
+    |  never
+    |> = Ref.make({ value: 0, name: "my-counter" })
+  `}
+  zioComment="Ref.make(0) creates ZIO[..., Ref[Int]]"
+  effectComment="Ref.make(0) returns Effect<Ref<number>>"
+/>
+
+## Reading and Writing
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: get, set, update
+    |val program: ZIO[Any, Nothing, Int] =
+    |  for {
+    |    ref   <- Ref.make(0)
+    |    value <- ref.get        // Read
+    |    _     <- ref.set(10)    // Write
+    |    _     <- ref.update(_ + 1) // Modify
+    |    result <- ref.get
+    |  } yield result
+    |  // Result: 11
+  `}
+  effectCode={`
+    |// Effect: Ref.get, Ref.set, Ref.update
+    |const program: Effect<number, never, never> =
+    |  Effect.gen(function* () {
+    |    const ref = yield* Ref.make(0)
+    |    const value = yield* Ref.get(ref)  // Read
+    |    yield* Ref.set(ref, 10)           // Write
+    |    yield* Ref.update(ref, (n) => n + 1) // Modify
+    |    return yield* Ref.get(ref)
+    |  })
+    |  // Result: 11
+  `}
+  zioComment="ref.get, ref.set, ref.update methods on Ref"
+  effectComment="Ref.get(ref), Ref.set(ref, v), Ref.update(ref, f) functions"
+/>
+
+## Modify
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: modify for read-modify-write
+    |val program: ZIO[Any, Nothing, String] =
+    |  for {
+    |    ref    <- Ref.make(0)
+    |    result <- ref.modify(n =>
+    |              (n * 2, s"doubled to " + (n * 2).toString)
+    |            )
+    |  } yield result
+    |// ref is now 2, result is "doubled to 2"
+  `}
+  effectCode={`
+    |// Effect: Ref.modify
+    |const program: Effect<string, never, never> =
+    |  Effect.gen(function* () {
+    |    const ref = yield* Ref.make(0)
+    |    const result = yield* Ref.modify(ref, (n) => [
+    |      n * 2, // new state
+    |      "doubled to " + (n * 2).toString() // return value
+    |    ])
+    |    return result
+    |  })
+    |// ref is now 2, result is "doubled to 2"
+  `}
+  zioComment="ref.modify(f) where f returns (newState, returnValue)"
+  effectComment="Ref.modify(ref, f) where f returns [newState, returnValue]"
+/>
+
+## Atomic Operations
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: Atomic updates are safe
+    |val program: ZIO[Any, Nothing, Unit] =
+    |  for {
+    |    ref <- Ref.make(0)
+    |    _   <- ZIO.foreachPar(List.fill(100)(()))(_ =>
+    |              ref.update(_ + 1)
+    |            )
+    |    result <- ref.get
+    |  } yield result
+    |// Result: 100 (safe from race conditions)
+  `}
+  effectCode={`
+    |// Effect: Atomic updates are safe
+    |const program: Effect<void, never, never> =
+    |  Effect.gen(function* () {
+    |    const ref = yield* Ref.make(0)
+    |    yield* Effect.forEach(
+    |      Array.from({ length: 100 }),
+    |      () => Ref.update(ref, (n) => n + 1),
+    |      { concurrency: "unbounded" }
+    |    )
+    |    return yield* Ref.get(ref)
+    |  })
+    |// Result: 100 (safe from race conditions)
+  `}
+  zioComment="Ref operations are atomic"
+  effectComment="Ref operations are atomic"
+/>
+
+## SynchronizedRef
+
+For effectful updates, use `SynchronizedRef` (like ZIO).
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: ZIO.synchronized for effectful updates
+    |val program: ZIO[Any, Nothing, Unit] =
+    |  for {
+    |    ref <- ZIO.synchronized(Ref.make(0))
+    |    _   <- ref.updateZIO(n =>
+    |              ZIO.succeed(println(s"Updating: $n")) *>
+    |              ZIO.succeed(n + 1)
+    |            )
+    |  } yield ()
+  `}
+  effectCode={`
+    |// Effect: SynchronizedRef for effectful updates
+    |const program: Effect<void, never, never> =
+    |  Effect.gen(function* () {
+    |    const ref = yield* SynchronizedRef.make(0)
+    |    yield* Ref.update(ref, (n) =>
+    |      Effect.gen(function* () {
+    |        yield* Effect.sync(() =>
+    |          console.log("Updating: " + n)
+    |        )
+    |        return n + 1
+    |      })
+    |    )
+    |  })
+  `}
+  zioComment="ZIO.synchronized for effectful updates"
+  effectComment="SynchronizedRef for effectful updates"
+/>
+
+## Derived Refs
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: Derived refs with projections
+    |case class Config(host: String, port: Int)
+    |
+    |val program: ZIO[Any, Nothing, Unit] =
+    |  for {
+    |    configRef <- Ref.make(Config("localhost", 8080))
+    |    // Derived ref for just the port
+    |    portRef = configRef.map(_.port)
+    |    _        <- portRef.update(_ + 1)
+    |  } yield ()
+  `}
+  effectCode={`
+    |// Effect: Derived Refs aren't built-in
+    |// Use a helper to create derived refs
+    |interface Config {
+    |  readonly host: string
+    |  readonly port: number
+    |}
+    |
+    |const program: Effect<void, never, never> =
+    |  Effect.gen(function* () {
+    |    const configRef = yield* Ref.make({
+    |      host: "localhost",
+    |      port: 8080
+    |    })
+    |    // Derived ref helper
+    |    const getPort = Ref.map(configRef, (c) => c.port)
+    |    const port = yield* getPort
+    |    // Update requires full value
+    |    yield* Ref.update(configRef, (c) => ({
+    |      ...c,
+    |      port: port + 1
+    |    }))
+    |  })
+  `}
+  zioComment="ref.map for derived refs"
+  effectComment="Use Ref.map for derived getters, update full value"
+/>
+
+## Ref Quick Reference
+
+| ZIO | Effect | Purpose |
+|-----|--------|---------|
+| `Ref.make(initial)` | `Ref.make(initial)` | Create ref |
+| `ref.get` | `Ref.get(ref)` | Read value |
+| `ref.set(value)` | `Ref.set(ref, value)` | Write value |
+| `ref.update(f)` | `Ref.update(ref, f)` | Modify with function |
+| `ref.modify(f)` | `Ref.modify(ref, f)` | Read-modify-write |
+| `ZIO.synchronized(Ref.make(...))` | `SynchronizedRef.make(...)` | Effectful updates |
+
+<Callout variant="tip">
+For complex state management, consider using `SynchronizedRef` or a proper state management solution like Effect's `STM` (Software Transactional Memory) for compositional atomic operations.
+</Callout>
+
+[Next: STM →](/effect-zio/11)

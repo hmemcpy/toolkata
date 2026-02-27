@@ -1,0 +1,255 @@
+---
+title: "STM (Software Transactional Memory)"
+step: 11
+description: "Composable atomic transactions with STM in Effect vs ZIO"
+estimatedTime: "~6 min"
+---
+
+# STM (Software Transactional Memory)
+
+Both Effect and ZIO provide Software Transactional Memory for composable atomic operations.
+
+## TRef Basics
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: TRef for transactional references
+    |val program: ZIO[Any, Nothing, Unit] =
+    |  for {
+    |    ref1 <- TRef.make(100)
+    |    ref2 <- TRef.make(0)
+    |    // Atomic transfer
+    |    _ <- STM.atomically {
+    |           for {
+    |             balance <- ref1.get
+    |             _       <- ref1.set(0)
+    |             _       <- ref2.set(balance)
+    |           } yield ()
+    |         }
+    |  } yield ()
+  `}
+  effectCode={`
+    |// Effect: TRef for transactional references
+    |const program: Effect<void, never, never> =
+    |  Effect.gen(function* () {
+    |    const ref1 = yield* TRef.make(100)
+    |    const ref2 = yield* TRef.make(0)
+    |    // Atomic transfer
+    |    yield* STM.commit(
+    |      Effect.gen(function* () {
+    |        const balance = yield* TRef.get(ref1)
+    |        yield* TRef.set(ref1, 0)
+    |        yield* TRef.set(ref2, balance)
+    |      })
+    |    )
+    |  })
+  `}
+  zioComment="STM.atomically { ... }"
+  effectComment="STM.commit(Effect.gen(...))"
+/>
+
+## Transactional Operations
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: STM combinators
+    |val program: ZIO[Any, Nothing, Unit] =
+    |  for {
+    |    ref <- TRef.make(0)
+    |    _   <- STM.atomically {
+    |             for {
+    |               _ <- ref.update(_ + 10)
+    |               _ <- ref.modify(n =>
+    |                      (n * 2, s"doubled to " + (n * 2).toString)
+    |                    )
+    |               _ <- ref.getAndSet(100)
+    |             } yield ()
+    |           }
+    |  } yield ()
+  `}
+  effectCode={`
+    |// Effect: STM combinators
+    |const program: Effect<void, never, never> =
+    |  Effect.gen(function* () {
+    |    const ref = yield* TRef.make(0)
+    |    yield* STM.commit(
+    |      Effect.gen(function* () {
+    |        yield* TRef.update(ref, (n) => n + 10)
+    |        yield* TRef.modify(ref, (n) => [
+    |          n * 2,
+    |          "doubled to " + (n * 2).toString()
+    |        ])
+    |        yield* TRef.getAndUpdate(ref, () => 100)
+    |      })
+    |    )
+    |  })
+  `}
+  zioComment="STM.update, STM.modify, STM.getAndSet in STM.atomically"
+  effectComment="TRef.update, TRef.modify, TRef.getAndUpdate in STM.commit"
+/>
+
+## Composing Transactions
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: Transaction composition is composable
+    |def transfer(
+    |  from: TRef[Int],
+    |  to: TRef[Int],
+    |  amount: Int
+    |): STM[Nothing, Unit] =
+    |  for {
+    |    balance <- from.get
+    |    _       <- if (balance >= amount)
+    |                  from.set(balance - amount) *>
+    |                  to.modify(toBalance =>
+    |                    (toBalance + amount, ())
+    |                  )
+    |                else STM.die("Insufficient funds")
+    |  } yield ()
+    |
+    |val program: ZIO[Any, Nothing, Unit] =
+    |  for {
+    |    ref1 <- TRef.make(100)
+    |    ref2 <- TRef.make(0)
+    |    _    <- STM.atomically(transfer(ref1, ref2, 50))
+    |  } yield ()
+  `}
+  effectCode={`
+    |// Effect: Transaction composition
+    |const transfer = (
+    |  from: TRef<number>,
+    |  to: TRef<number>,
+    |  amount: number
+    |): Effect<void> =>
+    |  Effect.gen(function* () {
+    |    const balance = yield* TRef.get(from)
+    |    if (balance >= amount) {
+    |      yield* TRef.set(from, balance - amount)
+    |      const toBalance = yield* TRef.get(to)
+    |      yield* TRef.set(to, toBalance + amount)
+    |    } else {
+    |      yield* STM.die("Insufficient funds")
+    |    }
+    |  })
+    |
+    |const program: Effect<void, never, never> =
+    |  Effect.gen(function* () {
+    |    const ref1 = yield* TRef.make(100)
+    |    const ref2 = yield* TRef.make(0)
+    |    yield* STM.commit(
+    |      transfer(ref1, ref2, 50)
+    |    )
+    |  })
+  `}
+  zioComment="STM returns composable transaction, run with STM.atomically"
+  effectComment="Effect returns composable transaction, run with STM.commit"
+/>
+
+## STM Retry
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: STM.retry for blocking transactions
+    |val program: ZIO[Any, Nothing, Unit] =
+    |  for {
+    |    ref <- TRef.make(0)
+    |    // Wait until ref > 0
+    |    _ <- STM.atomically {
+    |           for {
+    |             value <- ref.get
+    |             _     <- STM.check(value > 0) *> STM.succeed(())
+    |                        // or: STM.retryIf(value <= 0)
+    |           } yield ()
+    |         }.forkDaemon
+    |    _ <- ref.set(1)
+    |  } yield ()
+  `}
+  effectCode={`
+    |// Effect: STM.retry for blocking transactions
+    |const program: Effect<void, never, never> =
+    |  Effect.gen(function* () {
+    |    const ref = yield* TRef.make(0)
+    |    // Wait until ref > 0
+    |    yield* Effect.fork(
+    |      STM.commit(
+    |        Effect.gen(function* () {
+    |          const value = yield* TRef.get(ref)
+    |          if (value > 0) {
+    |            return yield* Effect.void
+    |          } else {
+    |            return yield* STM.retry
+    |          }
+    |        })
+    |      )
+    |    )
+    |    yield* TRef.set(ref, 1)
+    |  })
+  `}
+  zioComment="STM.retry, STM.check for conditional retry"
+  effectComment="STM.retry for blocking until condition is met"
+/>
+
+## STM Either
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: STM.either for falling back
+    |val program: ZIO[Any, Nothing, Either[String, Int]] =
+    |  for {
+    |    ref <- TRef.make(0)
+    |    result <- STM.atomically {
+    |                for {
+    |                  value <- ref.get
+    |                  _     <- STM.check(value > 0)
+    |                                   .orDie
+    |                } yield value
+    |              }.either
+    |  } yield result
+    |// Result: Left("Cause: ...") because check failed
+  `}
+  effectCode={`
+    |// Effect: Use Effect.either around STM.commit
+    |const program: Effect<
+    |  Either<unknown, number>,
+    |  never,
+    |  never
+    |> = Effect.gen(function* () {
+    |    const ref = yield* TRef.make(0)
+    |    const result = yield* Effect.either(
+    |      STM.commit(
+    |        Effect.gen(function* () {
+    |          const value = yield* TRef.get(ref)
+    |          if (value > 0) return value
+    |          yield* STM.die("Value must be positive")
+    |        })
+    |      )
+    |    )
+    |    return result
+    |  })
+  `}
+  zioComment="STM.atomically(...).either"
+  effectComment="Effect.either(STM.commit(...))"
+/>
+
+## STM Quick Reference
+
+| ZIO | Effect | Purpose |
+|-----|--------|---------|
+| `TRef.make(initial)` | `TRef.make(initial)` | Create transactional ref |
+| `STM.atomically(txn)` | `STM.commit(txn)` | Run transaction |
+| `STM.retry` | `STM.retry` | Retry transaction (block) |
+| `STM.check(cond)` | `if (cond) ... else STM.retry` | Conditional retry |
+| `STM.die(reason)` | `STM.die(reason)` | Fail transaction |
+| `ref.get/set/update` | `TRef.get/set/update` | In-transaction ops |
+
+<Callout variant="tip">
+STM provides composable atomic operations without locks. Use it when multiple TRefs need to be updated atomically. The retry mechanism automatically waits until conditions are met.
+</Callout>
+
+[Next: Streaming →](/effect-zio/12)

@@ -1,0 +1,116 @@
+---
+title: "R/E/A Signature"
+step: 1
+description: "Understanding the effect type signatures"
+zioCommands: ["ZIO", "IO", "Task", "RIO", "UIO", "URIO"]
+ceCommands: ["IO"]
+---
+
+# R/E/A Signature
+
+The fundamental difference between ZIO and Cats Effect starts with the type signature.
+
+## The Type Signatures
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect.IO
+    |
+    |// IO has ONE type parameter
+    |// Error is always Throwable
+    |val ceEffect: IO[Int] = IO.pure(42)
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |// ZIO has THREE type parameters with variance:
+    |// ZIO[-R, +E, +A] = Environment, Error, Success
+    |//   -R  : Contravariant environment (requires)
+    |//   +E  : Covariant error (can fail with)
+    |//   +A  : Covariant success (can produce)
+    |val zioEffect: ZIO[Any, Nothing, Int] =
+    |  ZIO.succeed(42)
+  `}
+  catsEffectComment="IO[A] - Success type only"
+  zioComment="ZIO[-R, +E, +A] - Variance annotations improve type inference"
+/>
+
+## The Parameters
+
+| Parameter | ZIO | Cats Effect | Purpose |
+|-----------|-----|-------------|---------|
+| **R** | `ZIO[-R, E, A]` | N/A | Environment/Dependencies |
+| **E** | `ZIO[R, +E, A]` | Always `Throwable` | Error type |
+| **A** | `ZIO[R, E, +A]` | `IO[A]` | Success type |
+
+## Mental Model
+
+<Callout variant="tip">
+<strong>Mental model:</strong> `ZIO[R, E, A]` is like `R => Either[E, A]` — a function that requires an environment `R` and produces either an error `E` or a success `A`.
+</Callout>
+
+## Key Insight
+
+**ZIO** has an explicit environment parameter `R` for dependency injection, and a typed error channel `E` with variance annotations for better type inference.
+
+**Cats Effect** uses `Throwable` for all errors. Dependencies are handled via `Kleisli`, `Reader`, or passed as parameters.
+
+<Callout variant="tip">
+Cats Effect's `IO[A]` is roughly equivalent to ZIO's `ZIO[Any, Throwable, A]` (also known as `Task[A]`).
+</Callout>
+
+## Common Type Aliases
+
+<ScalaComparisonBlock
+  catsEffectCode={`
+    |import cats.effect.IO
+    |
+    |// IO[A] is the only effect type
+    |// Error handling uses MonadError[IO, Throwable]
+    |val program: IO[Int] = IO.pure(42)
+    |
+    |// For "can't fail" semantics, use types
+    |// but IO still allows Throwable internally
+    |val safe: IO[Int] = IO.pure(42)
+  `}
+  zioCode={`
+    |import zio._
+    |
+    |// UIO[A] = ZIO[Any, Nothing, A] (can't fail)
+    |val uio: UIO[Int] = ZIO.succeed(42)
+    |
+    |// Task[A] = ZIO[Any, Throwable, A]
+    |val task: Task[String] = ZIO.attempt {
+    |  scala.io.Source.fromFile("f").mkString
+    |}
+    |
+    |// IO[E, A] = ZIO[Any, E, A] (custom error)
+    |val io: IO[String, Int] = ZIO.fail("oops")
+    |
+    |// RIO[R, A] = ZIO[R, Throwable, A]
+    |// Has environment, can fail with Throwable
+    |trait Database
+    |val rio: RIO[Database, Int] = ZIO.service[Database].as(1)
+    |
+    |// URIO[R, A] = ZIO[R, Nothing, A]
+    |// Has environment, cannot fail
+    |val urio: URIO[Database, Int] = ZIO.service[Database].as(1)
+  `}
+  catsEffectComment="IO[A] - single effect type"
+  zioComment="UIO, Task, IO, RIO, URIO - type aliases for common patterns"
+/>
+
+<Callout variant="tip">
+<strong>Type alias reference:</strong>
+- <code>IO[+E, +A]</code> = <code>ZIO[Any, E, A]</code> — No environment, custom error
+- <code>Task[+A]</code> = <code>ZIO[Any, Throwable, A]</code> — No environment, Throwable error
+- <code>RIO[-R, +A]</code> = <code>ZIO[R, Throwable, A]</code> — Has environment, Throwable error
+- <code>UIO[+A]</code> = <code>ZIO[Any, Nothing, A]</code> — No environment, cannot fail
+- <code>URIO[-R, +A]</code> = <code>ZIO[R, Nothing, A]</code> — Has environment, cannot fail
+</Callout>
+
+## Next Steps
+
+Now that you understand the signature difference, let's look at creating effects in both libraries.
+
+[Next: Creating Effects →](/zio-cats/2)

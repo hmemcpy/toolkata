@@ -1,0 +1,155 @@
+---
+title: "Mental Model: Working Copy as a Commit"
+step: 2
+description: "Understanding jj's core concept - your working copy IS a commit"
+gitCommands: ["git status", "git add", "git commit"]
+jjCommands: ["jj status", "jj describe", "jj new"]
+validation:
+  setup:
+    - "jj git init --colocate ."
+    - "git config user.email 'test@toolkata.com'"
+    - "git config user.name 'Test User'"
+    - "mkdir -p src"
+    - "echo 'original' > src/app.ts"
+    - "echo 'code' > app.ts"
+    - "echo 'test' > test.ts"
+    - "git add ."
+    - "git commit -m 'Initial commit'"
+    - "jj describe -m 'Initial'"
+    - "jj new"
+    - "jj git export"
+---
+
+# Mental Model: Working Copy as a Commit
+
+The biggest difference between git and jj is how they think about your working copy.
+
+## In git: Three States
+
+Git has three separate states for your code:
+
+1. **Working copy** - Your actual files on disk
+2. **Staging area** - Changes ready to commit
+3. **Repository** - Committed snapshots
+
+```bash
+# git workflow
+git status      # Check working copy
+git add file    # Move to staging
+git commit      # Move to repository
+```
+
+## In jj: Two States
+
+jj combines the working copy and the repository. Your working copy **is** a commit.
+
+1. **Working copy** - Represented by the `@` commit
+2. **Repository** - All other commits
+
+```bash
+# jj workflow
+jj status      # Check the @ commit
+jj describe    # Name the @ commit
+jj new         # Create a new @ commit
+```
+
+## The `@` Commit
+
+In jj, your uncommitted changes are represented by the `@` commit. It's a real commit that exists in the repository.
+
+<SideBySide
+  fromCommands={[
+    "git status",
+    "git diff src/app.ts",
+  ]}
+  toCommands={[
+    "jj status",
+    "jj show @",
+  ]}
+/>
+
+## No Staging Area
+
+Since your working copy is already a commit, there's no staging area.
+
+<SideBySide
+  validate={false}
+  fromCommands={[
+    "vim app.ts",
+    "git add app.ts",
+    "git commit -m \"Fix bug\"",
+  ]}
+  toCommands={[
+    "jj describe -m \"Fix bug\"",
+    "jj new",
+  ]}
+/>
+
+<Callout type="tip">
+In jj, all file changes are automatically tracked. There's no need to `jj add` files—your changes are already part of the `@` commit.
+</Callout>
+
+## Practical Example
+
+Let's say you're working on a feature and want to commit your changes.
+
+<SideBySide
+  validate={false}
+  fromCommands={[
+    "vim src/app.ts",
+    "git status",
+    "git add src/app.ts",
+    "git commit -m \"Add feature\"",
+  ]}
+  toCommands={[
+    "vim src/app.ts",
+    "jj status",
+    "jj describe -m \"Add feature\"",
+    "jj new",
+  ]}
+  fromLabel="Git workflow"
+  toLabel="jj workflow"
+/>
+
+## Why This Matters
+
+The `@` commit model enables several jj features:
+
+- **Instant undo** - `jj op undo` reverses any operation
+- **Edit old commits** - No separate "staging" to conflict with
+- **Automatic rebasing** - Clear lineage between commits
+- **First-class conflicts** - Conflicts live in commits, not separate files
+
+## Visualization
+
+<SideBySide
+  fromCommands={[
+    "[Working Copy] → [Staging] → [Repository]",
+  ]}
+  toCommands={[
+    "[@ Commit] → [Repository]",
+  ]}
+  fromLabel="Git state"
+  toLabel="jj state"
+/>
+
+## Try It Yourself
+
+Explore the `@` commit:
+
+<TryIt command="jj show @" description="Show the current @ commit" />
+
+<TryIt command="jj diff" description="Show changes in the working copy" />
+
+<TryIt command="jj log" description="See all commits including @" />
+
+## Key Takeaways
+
+- Your working copy in jj is the `@` commit
+- No staging area—all changes are auto-tracked
+- `jj describe` names the `@` commit
+- `jj new` finalizes `@` and creates a new one
+
+## Next Steps
+
+Now that you understand the mental model, let's look at creating your first commits in jj.

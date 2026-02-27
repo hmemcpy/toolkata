@@ -1,0 +1,192 @@
+---
+title: "Remote Operations"
+step: 6
+description: "Working with remotes and pushing/pulling changes"
+gitCommands: ["git fetch", "git pull", "git push", "git clone"]
+jjCommands: ["jj git fetch", "jj git push", "jj git clone", "jj git remote"]
+---
+
+# Remote Operations
+
+jj works with git remotes but handles them differently.
+
+## Fetching Changes
+
+<SideBySide
+  validate={false}
+  fromCommands={[
+    "git fetch origin",
+    "git log origin/main",
+  ]}
+  toCommands={[
+    "jj git fetch",
+    "jj log",
+  ]}
+/>
+
+## Pulling and Rebasing
+
+jj doesn't have `jj git pull`. Instead, you fetch then rebase:
+
+<SideBySide
+  validate={false}
+  fromCommands={[
+    "git pull origin main",
+    "git fetch origin",
+    "git rebase origin/main",
+  ]}
+  toCommands={[
+    "jj git fetch",
+    "jj rebase -d main@origin",
+  ]}
+/>
+
+<Callout type="note">
+The `@origin` suffix denotes the remote-tracking branch. `main@origin` is the remote's version of `main`.
+</Callout>
+
+## Pushing Changes
+
+<SideBySide
+  validate={false}
+  fromCommands={[
+    "git push origin main",
+  ]}
+  toCommands={[
+    "jj git push",
+  ]}
+/>
+
+## Setting Up Remotes
+
+<SideBySide
+  validate={false}
+  fromCommands={[
+    "git remote add origin https://github.com/user/repo.git",
+    "git remote -v",
+  ]}
+  toCommands={[
+    "jj git remote add origin https://github.com/user/repo.git",
+    "jj git remote list",
+  ]}
+/>
+
+## Cloning Repositories
+
+<SideBySide
+  validate={false}
+  fromCommands={[
+    "git clone https://github.com/user/repo.git",
+    "cd repo",
+  ]}
+  toCommands={[
+    "jj git clone https://github.com/user/repo.git",
+    "cd repo",
+  ]}
+/>
+
+Both create a git repository. To use jj:
+
+```bash
+cd repo
+jj git init --colocate
+```
+
+## Typical Remote Workflow
+
+```bash
+# 1. Fetch latest changes
+jj git fetch
+
+# 2. Rebase your work on top of remote
+jj rebase -d main@origin
+
+# 3. Make your changes
+jj describe -m "New feature"
+jj new
+
+# 4. Push to remote
+jj git push
+```
+
+## Colocated Workflow
+
+Since jj and git share the same `.git` directory:
+
+```bash
+# Use jj for daily work
+jj status
+jj log
+jj describe -m "Work"
+jj new
+
+# Use git for remotes if needed
+git push
+git fetch
+```
+
+But it's better to use jj's git commands:
+
+```bash
+jj git fetch
+jj git push
+```
+
+## Handling Divergence
+
+If your local and remote have diverged:
+
+<SideBySide
+  validate={false}
+  fromCommands={[
+    "git pull --rebase",
+  ]}
+  toCommands={[
+    "jj git fetch",
+    "jj rebase -d main@origin",
+  ]}
+/>
+
+## Multiple Remotes
+
+<SideBySide
+  validate={false}
+  fromCommands={[
+    "git remote add upstream https://github.com/original/repo.git",
+    "git fetch upstream",
+  ]}
+  toCommands={[
+    "jj git remote add upstream https://github.com/original/repo.git",
+    "jj git fetch --remote upstream",
+  ]}
+/>
+
+## Git Compatibility
+
+Since jj uses git's storage:
+
+- Use git GUI tools (GitHub Desktop, SourceTree, etc.)
+- CI/CD systems work unchanged
+- Host services (GitHub, GitLab) just see git
+
+You get jj's UX with git's compatibility.
+
+## Try It Yourself
+
+In the sandbox, you can explore the basic commands (remote operations require a connected repository):
+
+<TryIt command="jj git remote list" description="List configured remotes" />
+
+<TryIt command="jj log" description="View current history" />
+
+## Key Takeaways
+
+- `jj git fetch` downloads remote changes
+- `jj git push` uploads local changes
+- `jj rebase -d branch@origin` pulls changes
+- Use `@origin` suffix for remote-tracking branches
+- jj and git can work on the same repo
+
+## Next Steps
+
+Now let's learn about jj's powerful revset syntax for querying commits.

@@ -1,0 +1,122 @@
+---
+title: "Effect<A, E, R> vs ZIO[-R, +E, +A]"
+step: 1
+description: "The critical difference in type parameter order between ZIO and Effect"
+estimatedTime: "~5 min"
+---
+
+# Type Parameter Order
+
+The most important difference between ZIO and Effect is the **type parameter order**.
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: Environment first
+    |type ZIO[-R, +E, +A]
+    |
+    |// R: Requirements (environment)
+    |// E: Error (can fail with)
+    |// A: Success (produces)
+    |
+    |val example: ZIO[Console, IOException, String] =
+    |  ZIO.succeed("Hello")
+  `}
+  effectCode={`
+    |// Effect: Success first
+    |type Effect<A, E, R>
+    |
+    |// A: Success (produces)
+    |// E: Error (can fail with)
+    |// R: Requirements (context)
+    |
+    |const example: Effect<string, IOException, Console> =
+    |  Effect.succeed("Hello")
+  `}
+  zioComment="ZIO puts Environment (R) first"
+  effectComment="Effect puts Success (A) first"
+/>
+
+## Why This Difference?
+
+**ZIO's order** (`R, E, A`) groups the input (`R`) separately from outputs (`E, A`).
+
+**Effect's order** (`A, E, R`) prioritizes the most common variation — the success type.
+
+In practice, you write the success type most often. Effect's order makes partial type application feel more natural.
+
+## Mental Model
+
+Think of `Effect<A, E, R>` as a function that **requires** context `R` and **produces** either `E` (error) or `A` (success):
+
+```typescript
+// Conceptually
+type Effect<A, E, R> = (context: Context<R>) => Promise<E | A>
+```
+
+## Type Aliases
+
+ZIO provides type aliases for common cases. Effect uses **explicit type parameters** instead.
+
+<CrossLanguageBlock
+  zioCode={`
+    |// ZIO type aliases
+    |type UIO[A] = ZIO[Any, Nothing, A]
+    |type IO[E, A] = ZIO[Any, E, A]
+    |type Task[A] = ZIO[Any, Throwable, A]
+    |type RIO[R, A] = ZIO[R, Throwable, A]
+    |
+    |val program: Task[String] =
+    |  ZIO.succeed("Hello")
+  `}
+  effectCode={`
+    |// Effect: explicit parameters
+    |// No type aliases needed
+    |
+    |const program: Effect<
+    |  string,      // A
+    |  Throwable,  // E
+    |  never       // R
+    |> = Effect.succeed("Hello")
+  `}
+  zioComment="ZIO: UIO, IO, Task, RIO aliases"
+  effectComment="Effect: explicit parameters only"
+/>
+
+## Reading Type Signatures
+
+When reading Effect types, remember: **A, E, R** (Success, Error, Requirements).
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO[-R, +E, +A]
+    |def readFile(path: String): ZIO[Any, IOException, String] =
+    |  ZIO.attemptBlockingIO(scala.io.Source.fromFile(path).mkString)
+  `}
+  effectCode={`
+    |// Effect<A, E, R>
+    |const readFile = (path: string): Effect<
+    |  string,        // A: file contents
+    |  IOException,   // E: read error
+    |  never          // R: no requirements
+    |> =>
+    |  Effect.try(() =>
+    |    Deno.readTextFileSync(path)
+    |  ).pipe(
+    |    Effect.mapError((e) => new IOException(e.message))
+    |  )
+  `}
+  zioComment="Returns ZIO[Any, IOException, String]"
+  effectComment="Returns Effect<string, IOException, never>"
+/>
+
+## Variance
+
+ZIO uses variance annotations (`-R, +E, +A`). TypeScript doesn't have variance annotations, so Effect types are invariant.
+
+<Callout variant="warning">
+The different parameter order is the biggest source of confusion for ZIO developers moving to Effect. Remember: **A, E, R** — Success, Error, Requirements.
+</Callout>
+
+[Next: Creating Effects →](/effect-zio/2)

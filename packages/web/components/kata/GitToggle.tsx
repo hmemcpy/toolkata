@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback } from "react"
-import { useTerminalContext } from "../../contexts/TerminalContext"
+import { useGitToggle } from "../../hooks/useGitToggle"
 
 /**
  * GitToggle component - Toggle button for showing/hiding git equivalent commands.
@@ -14,7 +14,7 @@ import { useTerminalContext } from "../../contexts/TerminalContext"
  * Follows the terminal aesthetic: minimal, monospace, high contrast.
  */
 export function GitToggle() {
-  const { showGitEquivalents, setShowGitEquivalents } = useTerminalContext()
+  const { showGitEquivalents, setShowGitEquivalents } = useGitToggle()
 
   const toggle = useCallback(() => {
     setShowGitEquivalents(!showGitEquivalents)

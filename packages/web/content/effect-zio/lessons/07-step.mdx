@@ -1,0 +1,264 @@
+---
+title: "Resource Management"
+step: 7
+description: "Scope, acquireRelease, and resource safety in Effect vs ZIO"
+estimatedTime: "~5 min"
+---
+
+# Resource Management
+
+Both Effect and ZIO provide robust resource management through `acquireRelease` and `Scope`.
+
+## acquireRelease Pattern
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: ZIO.acquireRelease
+    |val readFile: ZIO[Any, IOException, String] =
+    |  ZIO.acquireRelease(
+    |    acquire = ZIO.attempt(
+    |      new java.io.FileInputStream("data.txt")
+    |    ),
+    |    release = (stream: java.io.FileInputStream) =>
+    |      ZIO.succeed(stream.close())
+    |  ) { stream =>
+    |    ZIO.attempt(
+    |      new java.util.Scanner(stream).useDelimiter("\\Z").next()
+    |    )
+    |  }
+  `}
+  effectCode={`
+    |// Effect: Effect.acquireRelease
+    |const readFile: Effect<string, IOException, never> =
+    |  Effect.acquireRelease(
+    |    // acquire
+    |    Effect.try(() =>
+    |      Deno.open("data.txt")
+    |    ),
+    |    // release
+    |    (file) =>
+    |      Effect.sync(() => file.close())
+    |  ).pipe(
+    |    // use
+    |    Effect.flatMap((file) =>
+    |      Effect.try(() =>
+    |        new TextDecoder("utf-8").decode(file.readSync())
+    |      )
+    |    )
+    |  )
+  `}
+  zioComment="ZIO.acquireRelease(acquire, release) { use }"
+  effectComment="Effect.acquireRelease(acquire, release).pipe(Effect.flatMap(use))"
+/>
+
+## Scoped Effects
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: ZIO.scoped
+    |val withFile: ZIO[Any, IOException, String] =
+    |  ZIO.scoped {
+    |    ZIO.acquireRelease(
+    |      acquire = ZIO.attempt(
+    |        java.nio.file.Files.newStringPath("data.txt")
+    |      ),
+    |      release = (path) => ZIO.succeed(path.close())
+    |    ) { path =>
+    |      ZIO.attempt(path.readString())
+    |    }
+    |  }
+  `}
+  effectCode={`
+    |// Effect: Effect.scoped
+    |const withFile: Effect<string, IOException, never> =
+    |  Effect.scoped(
+    |    Effect.acquireRelease(
+    |      Effect.try(() => Deno.open("data.txt")),
+    |      (file) => Effect.sync(() => file.close())
+    |    ).pipe(
+    |      Effect.flatMap((file) =>
+    |        Effect.try(() =>
+    |          new TextDecoder("utf-8").decode(
+    |            file.readSync()
+    |          )
+    |        )
+    |      )
+    |    )
+    |  )
+  `}
+  zioComment="ZIO.scoped { ... }"
+  effectComment="Effect.scoped(Effect.acquireRelease(...))"
+/>
+
+## Scope Service
+
+Both Effect and ZIO provide a `Scope` service for managing resource lifetimes.
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: Using Scope service
+    |val withScope: ZIO[Scope, IOException, String] =
+    |  for {
+    |    scope <- ZIO.scope[Scope]
+    |    result <- scope.extend(
+    |                ZIO.acquireRelease(
+    |                  acquire = ZIO.attempt(openResource()),
+    |                  release = (r) => ZIO.succeed(r.close())
+    |                ) { resource =>
+    |                  ZIO.succeed(resource.read())
+    |                }
+    |              )
+    |  } yield result
+  `}
+  effectCode={`
+    |// Effect: Using Scope service
+    |const withScope: Effect<string, IOException, Scope> =
+    |  Effect.gen(function* () {
+    |    const scope = yield* Scope
+    |    return yield* Scope.extend(
+    |      Effect.acquireRelease(
+    |        Effect.try(() => openResource()),
+    |        (r) => Effect.sync(() => r.close())
+    |      ).pipe(
+    |        Effect.flatMap((resource) =>
+    |          Effect.succeed(resource.read())
+    |        )
+    |      ),
+    |      scope
+    |    )
+    |  })
+  `}
+  zioComment="ZIO.scope for explicit scope management"
+  effectComment="Scope service for explicit scope management"
+/>
+
+## Resources with Layers
+
+Layers can provide scoped resources that are automatically managed.
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: ZLayer.scoped for resource management
+    |val databaseLayer: ZLayer[Any, IOException, Database] =
+    |  ZLayer.scoped {
+    |    ZIO.acquireRelease(
+    |      acquire = ZIO.attempt(connectToDatabase()),
+    |      release = (conn) => ZIO.succeed(conn.close())
+    |    ) { conn =>
+    |      ZIO.succeed(new Database {
+    |        def query(sql: String) = conn.query(sql)
+    |      })
+    |    }
+    |  }
+    |
+    |// Usage: resource automatically closed when effect ends
+    |val program: ZIO[Any, IOException, Unit] =
+    |  ZIO.scoped {
+    |    for {
+    |      db <- ZIO.service[Database]
+    |      _  <- db.query("SELECT * FROM users")
+    |    } yield ()
+    |  }.provideLayer(databaseLayer)
+  `}
+  effectCode={`
+    |// Effect: Layer.scoped for resource management
+    |const databaseLayer = Layer.scoped(
+    |  Database,
+    |  Effect.acquireRelease(
+    |      Effect.try(() => connectToDatabase()),
+    |      (conn) => Effect.sync(() => conn.close())
+    |    ).pipe(
+    |      Effect.flatMap((conn) =>
+    |        Effect.succeed({
+    |          query: (sql: string) => conn.query(sql)
+    |        })
+    |      )
+    |    )
+    |  )
+    |
+    |// Usage: resource automatically closed when effect ends
+    |const program: Effect<
+    |  void,
+    |  IOException,
+    |  never
+    |> = Effect.scoped(
+    |    Effect.gen(function* () {
+    |      const db = yield* Database
+    |      yield* db.query("SELECT * FROM users")
+    |    })
+    |  ).pipe(
+    |    Effect.provide(databaseLayer)
+    |  )
+  `}
+  zioComment="ZLayer.scoped for managed resources"
+  effectComment="Layer.scoped for managed resources"
+/>
+
+## Finalizers
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: ZIO.addFinalizer, ZIO.onExit
+    |val withFinalizer: ZIO[Any, Nothing, Unit] =
+    |  ZIO.acquireRelease(
+    |    acquire = ZIO.succeed(42),
+    |    release = (_) => ZIO.succeed(println("Cleaned up!"))
+    |  ) { value =>
+    |    ZIO.succeed(println(s"Using: $value"))
+    |  }
+    |
+    |// Add finalizer to any effect
+    |val withCleanup: ZIO[Any, Nothing, Int] =
+    |  ZIO.succeed(42).tap(
+    |    ZIO.addFinalizer(
+    |      exit => ZIO.succeed(println(s"Done: $exit"))
+    |    )
+    |  )
+  `}
+  effectCode={`
+    |// Effect: Effect.addFinalizer, Scope.addFinalizer
+    |const withFinalizer: Effect<void, never, never> =
+    |  Effect.acquireRelease(
+    |    Effect.succeed(42),
+    |    (_) => Effect.sync(() => console.log("Cleaned up!"))
+    |  ).pipe(
+    |    Effect.flatMap((value) =>
+    |      Effect.sync(() => console.log(\`Using: \${value}\`))
+    |    )
+    |  )
+    |
+    |// Add finalizer in scoped context
+    |const withCleanup: Effect<number, never, Scope> =
+    |  Effect.gen(function* () {
+    |    const scope = yield* Scope
+    |    yield* Scope.addFinalizer(scope, () =>
+    |      Effect.sync(() => console.log("Done!"))
+    |    )
+    |    return 42
+    |  })
+  `}
+  zioComment="ZIO.addFinalizer, ZIO.onExit"
+  effectComment="Effect.addFinalizer, Scope.addFinalizer"
+/>
+
+## Resource Management Quick Reference
+
+| ZIO | Effect | Purpose |
+|-----|--------|---------|
+| `ZIO.acquireRelease(acq, rel) { use }` | `Effect.acquireRelease(acq, rel).flatMap(use)` | Acquire/release |
+| `ZIO.scoped { ... }` | `Effect.scoped(...)` | Scoped effect |
+| `ZIO.scope` | `Scope` service | Get current scope |
+| `scope.extend(effect)` | `Scope.extend(effect, scope)` | Extend scope |
+| `ZLayer.scoped(...)` | `Layer.scoped(Tag, ...)` | Scoped layer |
+| `ZIO.addFinalizer(f)` | `Scope.addFinalizer(scope, f)` | Add cleanup |
+
+<Callout variant="warning">
+Always use `Effect.scoped` when working with resources that need cleanup. The scoped pattern ensures resources are released even if the effect fails or is interrupted.
+</Callout>
+
+[Next: Fibers and Forking →](/effect-zio/8)

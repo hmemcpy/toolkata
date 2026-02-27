@@ -1,0 +1,248 @@
+---
+title: "Layers"
+step: 6
+description: "Layer composition and dependency injection in Effect vs ZLayer"
+estimatedTime: "~5 min"
+---
+
+# Layers
+
+Both Effect and ZIO use layers for dependency injection. Effect's `Layer` has slightly different composition operators.
+
+## Creating Layers
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: ZLayer creation
+    |import zio._
+    |
+    |// From value
+    |val configLayer: ZLayer[Any, Nothing, Config] =
+    |  ZLayer.succeed(Config("localhost", 5432))
+    |
+    |// From effect
+    |val dbLayer: ZLayer[Config, IOException, Database] =
+    |  ZLayer.scoped {
+    |    for {
+    |      config <- ZIO.service[Config]
+    |      conn    <- ZIO.acquireRelease(
+    |                   ZIO.attempt(createConnection(config)),
+    |                   conn => ZIO.succeed(conn.close())
+    |                 )
+    |    } yield new Database { /* ... */ }
+    |  }
+    |
+    |// From function
+    |val repoLayer: ZLayer[Database, Nothing, UserRepository] =
+    |  ZLayer.fromFunction(db =>
+    |    new UserRepository {
+    |      def find(id: Long) = db.query(s"...")
+    |    }
+    |  )
+  `}
+  effectCode={`
+    |// Effect: Layer creation
+    |import { Layer, Effect } from "effect"
+    |
+    |// From value
+    |const configLayer = Layer.succeed(
+    |  Config,
+    |  { host: "localhost", port: 5432 }
+    |)
+    |
+    |// From effect
+    |const dbLayer = Layer.scoped(
+    |  Database,
+    |  Effect.acquireRelease(
+    |    Effect.gen(function* () {
+    |      const config = yield* Config
+    |      return createConnection(config)
+    |    }),
+    |    (conn) => Effect.sync(() => conn.close())
+    |  )
+    |)
+    |
+    |// From function (service map)
+    |const repoLayer = Layer.effect(
+    |  UserRepository,
+    |  Effect.map(Database, (db) => ({
+    |    find: (id: number) => db.query(\`...\`)
+    |  }))
+    |)
+  `}
+  zioComment="ZLayer.succeed, ZLayer.scoped, ZLayer.fromFunction"
+  effectComment="Layer.succeed, Layer.scoped, Layer.effect"
+/>
+
+## Layer Composition
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: >>> for horizontal composition
+    |val appLayer: ZLayer[Any, IOException, AppEnv] =
+    |  configLayer >>>
+    |    dbLayer >>>
+    |    repoLayer >>>
+    |    loggingLayer
+    |
+    |// ZIO: ++ for vertical composition (merge)
+    |val combined: ZLayer[Any, IOException, Logging | Database] =
+    |  loggingLayer ++ dbLayer
+  `}
+  effectCode={`
+    |// Effect: Layer.provide for horizontal composition
+    |const appLayer = Layer.mergeAll(
+    |  Layer.provide(repoLayer, dbLayer),
+    |  Layer.provide(dbLayer, configLayer),
+    |  loggingLayer
+    |  )
+    |
+    |// Or use pipe syntax
+    |const appLayer2 =
+    |  repoLayer.pipe(
+    |    Layer.provide(dbLayer),
+    |    Layer.provide(configLayer)
+    |  )
+    |
+    |// Layer.merge for combining independent layers
+    |const combined = Layer.merge(loggingLayer, dbLayer)
+  `}
+  zioComment=">>> for horizontal, ++ for vertical"
+  effectComment="Layer.provide for horizontal, Layer.merge for vertical"
+/>
+
+## Providing Layers to Effects
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: provideLayer, provide
+    |val program: ZIO[Any, IOException, Unit] =
+    |  myProgram.provideLayer(appLayer)
+    |
+    |// Provide single service
+    |val withConfig: ZIO[Any, Nothing, Unit] =
+    |  myProgram.provideSomeLayer[Config](configLayer)
+    |
+    |// Provide multiple layers
+    |val withMultiple: ZIO[Any, IOException, Unit] =
+    |  myProgram.provideSomeLayer[Database & Logging](
+    |    dbLayer ++ loggingLayer
+    |  )
+  `}
+  effectCode={`
+    |// Effect: Effect.provide
+    |const program: Effect<void, IOException, never> =
+    |  Effect.provide(myProgram, appLayer)
+    |
+    |// Provide single service directly
+    |const withConfig: Effect<void, never, never> =
+    |  Effect.provideService(
+    |    myProgram,
+    |      Config,
+    |      { host: "localhost", port: 5432 }
+    |    )
+    |
+    |// Provide multiple layers
+    |const withMultiple: Effect<
+    |  void,
+    |  IOException,
+    |  never
+    |> = Effect.provide(
+    |    myProgram,
+    |    Layer.merge(dbLayer, loggingLayer)
+    |  )
+  `}
+  zioComment="provideLayer, provideSomeLayer"
+  effectComment="Effect.provide, Effect.provideService"
+/>
+
+## Layer Dependencies
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: Layers can depend on other layers
+    |val repositoryLayer: ZLayer[Database, Nothing, UserRepository] =
+    |  ZLayer.fromFunction { db =>
+    |    new UserRepository {
+    |      def find(id: Long) = db.query(s"...")
+    |    }
+    |  }
+    |
+    |// Compose: dbLayer must come first
+    |val fullRepoLayer: ZLayer[Any, IOException, UserRepository] =
+    |  dbLayer >>> repositoryLayer
+  `}
+  effectCode={`
+    |// Effect: Layers can depend on other layers
+    |const repositoryLayer = Layer.effect(
+    |  UserRepository,
+    |  Effect.map(Database, (db) => ({
+    |    find: (id: number) => db.query(\`...\`)
+    |  }))
+    |)
+    |
+    |// Compose: provide dependency first
+    |const fullRepoLayer = Layer.provide(
+    |  repositoryLayer,
+    |  dbLayer
+    |  )
+  `}
+  zioComment="Use >>> to chain dependent layers"
+  effectComment="Use Layer.provide to chain dependent layers"
+/>
+
+## Fresh Layers
+
+<CrossLanguageBlock
+  validate={false}
+  zioCode={`
+    |// ZIO: ZLayer.fresh for new instances
+    |val freshRepo: ZLayer[Database, Nothing, UserRepository] =
+    |  repositoryLayer.fresh
+    |
+    |// Each use gets a new instance
+    |val program1 = useRepo.provideSomeLayer(freshRepo)
+    |val program2 = useRepo.provideSomeLayer(freshRepo)
+    |// program1 and program2 get different UserRepository instances
+  `}
+  effectCode={`
+    |// Effect: Layers create fresh instances by default
+    |// No special fresh() needed
+    |
+    |// Each use gets a new instance
+    |const program1 = Effect.provide(
+    |  useRepo,
+    |  repositoryLayer
+    |)
+    |const program2 = Effect.provide(
+    |  useRepo,
+    |  repositoryLayer
+    |)
+    |// program1 and program2 get different UserRepository instances
+  `}
+  zioComment="ZLayer.fresh for new instances each use"
+  effectComment="Layers create fresh instances by default"
+/>
+
+## Layer Quick Reference
+
+| ZIO | Effect | Purpose |
+|-----|--------|---------|
+| `ZLayer.succeed(v)` | `Layer.succeed(Tag, v)` | Layer from value |
+| `ZLayer.scoped(eff)` | `Layer.scoped(Tag, eff)` | Layer from scoped effect |
+| `ZLayer.fromFunction(f)` | `Layer.effect(Tag, eff)` | Layer from effect |
+| `layer1 >>> layer2` | `Layer.provide(layer2, layer1)` | Horizontal composition |
+| `layer1 ++ layer2` | `Layer.merge(layer1, layer2)` | Vertical composition |
+| `eff.provideLayer(layer)` | `Effect.provide(eff, layer)` | Provide layer |
+| `eff.provideSomeLayer[Tag](layer)` | `Effect.provideService(eff, Tag, v)` | Provide single service |
+| `layer.fresh` | (default behavior) | Fresh instances |
+
+<Callout variant="tip">
+Use `Layer.mergeAll` to combine multiple layers at once. It's more efficient than chaining multiple `Layer.provide` calls when layers don't depend on each other.
+</Callout>
+
+[Next: Resource Management →](/effect-zio/7)

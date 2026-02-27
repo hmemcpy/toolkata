@@ -1,0 +1,75 @@
+---
+title: "Installation & Setup"
+step: 1
+description: "Installing jj and setting up a colocated repository"
+gitCommands: ["git init", "git clone"]
+jjCommands: ["jj git init", "jj git clone"]
+---
+
+# Installation & Setup
+
+Get jj running on your system and initialize your first repository.
+
+## Installing jj
+
+<Tabs defaultTab="macos" persistKey="os">
+  <Tab id="macos" label="macOS">
+    ```bash
+    brew install jj
+    ```
+  </Tab>
+  <Tab id="linux" label="Linux">
+    ```bash
+    cargo install jj-cli
+    ```
+  </Tab>
+</Tabs>
+
+Or download a binary from [github.com/jj-vcs/jj/releases](https://github.com/jj-vcs/jj/releases).
+
+## Verify Installation
+
+```bash
+jj --version
+```
+
+You should see version output like `jj 0.20.1`.
+
+## Colocated Repositories
+
+jj can work **alongside git** in the same repository. This is called a "colocated" repository.
+
+**In an existing git repo:**
+```bash
+cd my-project
+jj git init --colocate
+```
+
+This creates `.jj/` directory alongside `.git/`. Your git history is preserved and can still be used with git commands.
+
+**Start fresh (new repo):**
+```bash
+mkdir new-project
+cd new-project
+jj git init
+```
+
+<TryIt command="jj git init --colocate" description="Initialize a colocated jj repository in the sandbox" setup={[]} />
+
+<Callout type="tip">
+jj stores all its data in the `.jj/` directory. You can always delete it to remove jj without affecting your git repository.
+</Callout>
+
+## Verify Setup
+
+```bash
+jj status
+```
+
+If successful, you'll see "No working copy changes" or similar status output.
+
+<TryIt command="jj status" description="Check the repository status" />
+
+## Next Steps
+
+With jj installed, let's explore the fundamental mental model difference between git and jj.

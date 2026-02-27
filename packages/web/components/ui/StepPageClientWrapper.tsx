@@ -1,102 +1,41 @@
 /**
  * StepPageClientWrapper - Client component wrapper for step pages with keyboard navigation.
  *
- * This wrapper provides:
- * - Keyboard navigation (←/→ for prev/next step, ? for help, Esc to close)
+ * Wraps children with InlineTerminalProvider (step-scoped) and provides:
+ * - Keyboard navigation (left/right for prev/next step, ? for help)
  * - Keyboard shortcuts modal
  * - Integration with progress tracking and navigation components
- *
- * @example
- * ```tsx
- * <StepPageClientWrapper
- *   toolPair="jj-git"
- *   currentStep={3}
- *   totalSteps={12}
- *   title="Your First Commits"
- *   nextHref="/jj-git/4"
- *   previousHref="/jj-git/2"
- * >
- *   <StepContent />
- * </StepPageClientWrapper>
- * ```
+ * - Inline terminal auto-appended at bottom (unless MDX places <Terminal /> explicitly)
+ * - Soft gate encouraging terminal use before navigating
  */
 
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useKeyboardNavigation, useKeyboardShortcutsModal } from "../../hooks/useKeyboardNavigation"
 import { KeyboardShortcutsModal } from "./KeyboardShortcutsModal"
 import { NavigationWrapper } from "./NavigationWrapper"
 import { StepProgressWrapper } from "./StepProgressWrapper"
 import { ReportBugModal } from "./ReportBugModal"
-import { useTerminalContext } from "../../contexts/TerminalContext"
+import { TerminalAutoAppend } from "./TerminalAutoAppend"
+import { InlineTerminalProvider } from "../../contexts/InlineTerminalContext"
 import type { SandboxConfig } from "./InteractiveTerminal"
 
 export interface StepPageClientWrapperProps {
-  /**
-   * The tool pairing slug (e.g., "jj-git").
-   */
   readonly toolPair: string
-
-  /**
-   * Current step number (1-indexed).
-   */
   readonly currentStep: number
-
-  /**
-   * Total number of steps.
-   */
   readonly totalSteps: number
-
-  /**
-   * Step title for display in progress header.
-   */
   readonly title: string
-
-  /**
-   * Link to previous step, or null if on first step.
-   */
   readonly previousHref: string | null
-
-  /**
-   * Link to next step, or null if on last step.
-   */
   readonly nextHref: string | null
-
-  /**
-   * Link to edit this page on GitHub.
-   */
   readonly editHref?: string
-
-  /**
-   * Child components (the actual step content).
-   */
   readonly children: React.ReactNode
-
-  /**
-   * Commands from the step's MDX frontmatter to show in the info panel.
-   */
   readonly stepCommands: readonly string[]
-
-  /**
-   * Sandbox configuration for this step.
-   */
   readonly sandboxConfig?: SandboxConfig
+  readonly authToken?: string | null
 }
 
-/**
- * StepPageClientWrapper component.
- *
- * Client component that wraps step content with:
- * - Keyboard navigation
- * - Keyboard shortcuts modal
- * - Progress tracking
- * - Navigation (prev/next buttons)
- *
- * Note: The terminal has been moved to a collapsible sidebar (TerminalProvider),
- * accessible via the FAB toggle button or TryIt components in MDX content.
- */
 export function StepPageClientWrapper({
   toolPair,
   currentStep,
@@ -106,32 +45,15 @@ export function StepPageClientWrapper({
   nextHref,
   editHref,
   children,
-  stepCommands,
+  stepCommands: _stepCommands,
   sandboxConfig,
+  authToken,
 }: StepPageClientWrapperProps) {
   const router = useRouter()
   const { isOpen, onClose, showModal } = useKeyboardShortcutsModal()
-  const { toggleSidebar, setContextCommands, setSandboxConfig } = useTerminalContext()
 
   // Bug report modal state
   const [isBugModalOpen, setIsBugModalOpen] = useState(false)
-
-  // Register step commands in context on mount and when step changes
-  useEffect(() => {
-    setContextCommands(stepCommands)
-
-    // Clear commands when leaving this step
-    return () => {
-      setContextCommands([])
-    }
-  }, [stepCommands, setContextCommands])
-
-  // Register sandbox config in context on mount and when step changes
-  useEffect(() => {
-    setSandboxConfig(sandboxConfig)
-
-    // No need to clear on unmount - next step will set its own config
-  }, [sandboxConfig, setSandboxConfig])
 
   const handleNextStep = () => {
     if (nextHref) {
@@ -145,7 +67,7 @@ export function StepPageClientWrapper({
     }
   }
 
-  // Set up keyboard navigation
+  // Set up keyboard navigation (no terminal toggle - T shortcut removed)
   useKeyboardNavigation({
     currentStep,
     totalSteps,
@@ -153,12 +75,15 @@ export function StepPageClientWrapper({
     onNextStep: handleNextStep,
     onPreviousStep: handlePreviousStep,
     onShowHelp: showModal,
-    onToggleTerminal: toggleSidebar,
   })
 
   return (
-    <>
-      {/* Step Progress Header with keyboard hints */}
+    <InlineTerminalProvider
+      toolPair={toolPair}
+      sandboxConfig={sandboxConfig}
+      authToken={authToken ?? null}
+    >
+      {/* Step Progress Header */}
       <StepProgressWrapper
         toolPair={toolPair}
         currentStep={currentStep}
@@ -175,7 +100,10 @@ export function StepPageClientWrapper({
         {children}
       </article>
 
-      {/* Navigation Footer */}
+      {/* Auto-appended terminal (if MDX doesn't include <Terminal />) */}
+      <TerminalAutoAppend toolPair={toolPair} />
+
+      {/* Navigation Footer with soft gate */}
       <NavigationWrapper toolPair={toolPair} currentStep={currentStep} totalSteps={totalSteps} />
 
       {/* Keyboard Shortcuts Modal */}
@@ -190,6 +118,6 @@ export function StepPageClientWrapper({
           step: title,
         }}
       />
-    </>
+    </InlineTerminalProvider>
   )
 }

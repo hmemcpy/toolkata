@@ -1,0 +1,223 @@
+---
+title: "Revsets: Powerful Commit Queries"
+step: 7
+description: "Querying commits with revset syntax (more powerful than git rev-parse)"
+gitCommands: ["git log --grep", "git log --author", "git log --since", "git rev-list"]
+jjCommands: ["jj log -r", "revset queries"]
+validation:
+  setup:
+    - "jj git init --colocate ."
+    - "git config user.email 'alice@test.dev'"
+    - "git config user.name 'Alice'"
+    - "echo 'fix' > file.txt && jj describe -m 'fix bug' && jj new"
+    - "echo 'feature' > file.txt && jj describe -m 'add feature' && jj new"
+    - "git config user.email 'bob@test.dev'"
+    - "git config user.name 'Bob'"
+    - "echo 'docs' > file.txt && jj describe -m 'update docs' && jj new"
+    - "jj git export"
+---
+
+# Revsets: Powerful Commit Queries
+
+Revsets (revision sets) are jj's query language for selecting commits—much more powerful than git's commit limiting.
+
+## Basic Revset Syntax
+
+<SideBySide
+  fromCommands={[
+    "git log -n 10",
+    "git log HEAD~1",
+  ]}
+  toCommands={[
+    "jj log -l 10",
+    "jj log -r @-",
+    "jj log -r @",
+  ]}
+/>
+
+## Common Revsets
+
+**Working copy and parents:**
+```bash
+jj log -r @           # Current working copy
+jj log -r @-          # Parent of @
+jj log -r @-          # Grandparent (keeps adding -)
+jj log -r @+          # Child of @
+```
+
+**Branches:**
+```bash
+jj log -r main                # Commits in main
+jj log -r main@origin         # Remote-tracking main
+jj log -r main..              # main and descendants
+```
+
+**Ancestry:**
+```bash
+jj log -r ::@           # Ancestors of @ (including @)
+jj log -r @::           # Descendants of @ (including @)
+jj log -r abc..def      # abc to def (ancestors of def, not abc)
+jj log -r abc:def       # Range abc to def (inclusive)
+```
+
+## Filtering by Description
+
+<SideBySide
+  fromCommands={[
+    "git log --grep=\"fix\"",
+  ]}
+  toCommands={[
+    "jj log -r 'description(\"fix\")'",
+  ]}
+/>
+
+## Filtering by Author
+
+<SideBySide
+  fromCommands={[
+    "git log --author=\"alice\"",
+  ]}
+  toCommands={[
+    "jj log -r 'author(\"alice\")'",
+  ]}
+/>
+
+## Filtering by Time
+
+<SideBySide
+  validate={false}
+  fromCommands={[
+    "git log --since=\"2024-01-01\"",
+    "git log --until=\"2024-02-01\"",
+  ]}
+  toCommands={[
+    "jj log -r 'recent()'",
+  ]}
+/>
+
+## Combining Filters
+
+Revsets support boolean logic:
+
+```bash
+# Commits by Alice OR Bob
+jj log -r 'author("alice") | author("bob")'
+
+# Commits by Alice AND contain "fix"
+jj log -r 'author("alice") & description("fix")'
+
+# Commits by Alice but NOT "wip"
+jj log -r 'author("alice") ~ description("wip")'
+
+# All commits except those by Bob
+jj log -r '~author("bob")'
+```
+
+## Practical Examples
+
+**Show my recent work:**
+```bash
+jj log -r 'author("me") & ::@'
+```
+
+**Show what I'll push:**
+```bash
+jj log -r 'main@origin..@'
+```
+
+**Show commits since last release:**
+```bash
+jj log -r 'tags("v1.0")..@'
+```
+
+**Show merge commits:**
+```bash
+jj log -r 'description("Merge")'
+```
+
+## Empty Revsets
+
+When a revset matches nothing:
+
+```bash
+$ jj log -r 'description("nonexistent")'
+"..." (no matches)
+```
+
+This is useful for scripts—if a revset is empty, nothing happens.
+
+## Using Revsets with Commands
+
+Revsets work with many jj commands:
+
+```bash
+# Show specific commits
+jj show 'description("fix")'
+
+# Diff between revsets
+jj diff --from 'main@origin' --to @
+
+# Rebase based on revset
+jj rebase -d 'description("baseline")'
+
+# Abandon multiple commits
+jj abandon 'description("wip")'
+```
+
+## Change IDs vs Commit IDs
+
+Revsets can query by change ID (stable across rebases) or commit ID (specific instance):
+
+```bash
+# By change ID (survives rebases)
+jj log -r 'change(abc)'
+
+# By commit ID (specific)
+jj log -r 'commit(xyz)'
+```
+
+## All Commits
+
+To see all commits including abandoned:
+
+```bash
+jj log --all
+# or
+jj log -r 'all()'
+```
+
+## DAG Operations
+
+Revsets understand the commit DAG:
+
+```bash
+# Heads of repository (branches without children)
+jj log -r 'heads()'
+
+# Roots (commits without parents)
+jj log -r 'roots()'
+
+# Visible commits (not hidden)
+jj log -r 'visible_heads()'
+```
+
+## Try It Yourself
+
+<TryIt command="jj log -r @" description="Show the current working copy" />
+
+<TryIt command="jj log -r '::@'" description="Show ancestry of current commit" />
+
+<TryIt command="jj log -r 'heads()'" description="Show all branch heads" validate={false} />
+
+## Key Takeaways
+
+- Revsets are a powerful query language
+- `-r` flag accepts revset expressions
+- `::` for ancestry, `..` for ranges
+- Boolean operators: `&`, `|`, `~`
+- Filter by author, description, time
+- Use change IDs for stable references
+
+## Next Steps
+
+Now let's explore jj's approach to rebasing and editing history.

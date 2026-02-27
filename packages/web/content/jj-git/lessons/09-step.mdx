@@ -1,0 +1,244 @@
+---
+title: "First-Class Conflict Handling"
+step: 9
+description: "How jj stores conflicts in commits rather than blocking work"
+gitCommands: ["git merge", "git status", "git checkout --ours/--theirs"]
+jjCommands: ["jj new", "jj status", "jj resolve"]
+validation:
+  setup:
+    - "jj git init --colocate ."
+    - "git config user.email 'test@toolkata.com'"
+    - "git config user.name 'Test User'"
+    - "echo 'original' > app.js"
+    - "jj describe -m 'Initial commit'"
+    - "jj new"
+    - "echo 'main change' > app.js"
+    - "jj describe -m 'Main branch work'"
+    - "jj new"
+    - "jj branch create main"
+    - "jj new @"
+    - "echo 'feature change' > app.js"
+    - "jj describe -m 'Feature work'"
+    - "jj branch create feature"
+---
+
+# First-Class Conflict Handling
+
+jj treats conflicts as first-class objects—stored in commits, not blocking errors that halt your workflow.
+
+## Git's Conflict Model
+
+In git, conflicts block everything:
+
+```bash
+git merge feature
+# CONFLICT: file.js
+
+# Can't commit until resolved
+git status
+# both modified: file.js
+
+# Must resolve before continuing
+vim file.js
+git add file.js
+git commit
+```
+
+## jj's Conflict Model
+
+In jj, conflicts live in commits. You can continue working, view them, and resolve when ready.
+
+```bash
+jj new @ feature
+# Conflict recorded in @
+
+# Can still work
+jj status
+# Shows conflicts
+
+# Can commit @ with conflicts
+jj describe -m "Merge with conflicts"
+jj new
+
+# Resolve later
+jj resolve
+```
+
+## Viewing Conflicts
+
+<SideBySide
+  fromCommands={[
+    "git status",
+  ]}
+  toCommands={[
+    "jj status",
+  ]}
+/>
+
+## Resolving Conflicts
+
+<SideBySide
+  validate={false}
+  fromCommands={[
+    "vim app.js",
+    "git add app.js",
+    "git commit",
+  ]}
+  toCommands={[
+    "vim app.js",
+    "jj resolve app.js",
+    "jj resolve app.js",
+  ]}
+/>
+
+## Continuing with Conflicts
+
+In jj, you can commit with conflicts and resolve later:
+
+```bash
+# Merge creates conflict
+jj new @ feature
+
+# Commit the conflict state
+jj describe -m "Merged with conflicts in app.js"
+jj new
+
+# Continue working on other files
+vim other.js
+jj describe -m "Work on other file"
+jj new
+
+# Come back to resolve later
+jj edit --change <commit-with-conflict>
+jj resolve
+```
+
+<Callout type="tip">
+This is powerful for complex merges—resolve conflicts in batches, not all at once.
+</Callout>
+
+## Conflict Materialization
+
+When you have conflicts, jj shows them in files:
+
+```bash
+# jj creates conflict markers
+$ cat app.js
+<<<<<<< Left
+const x = 1;
+=======
+const x = 2;
+>>>>>>> Right
+```
+
+But the conflict is also stored in commit metadata:
+
+```bash
+$ jj show @
+Conflict in app.js:
+  Left: abc (our change)
+  Right: def (their change)
+  Base: 123 (original)
+```
+
+## Multiple Conflicts
+
+<SideBySide
+  validate={false}
+  fromCommands={[
+    "git merge feature",
+  ]}
+  toCommands={[
+    "jj new @ feature",
+    "jj resolve file1",
+    "jj resolve",
+    "jj describe -m \"Partial merge\"",
+    "jj new",
+  ]}
+/>
+
+## Abandoning Merges
+
+<SideBySide
+  validate={false}
+  fromCommands={[
+    "git merge --abort",
+  ]}
+  toCommands={[
+    "jj abandon @",
+    "jj op undo",
+  ]}
+/>
+
+## Rebase Conflicts
+
+Even with jj's automatic rebasing, conflicts can occur:
+
+```bash
+jj rebase -d main@origin
+# Conflict in app.js
+
+# Resolve and continue
+jj resolve app.js
+jj rebase --continue
+```
+
+But since jj auto-rebases descendants, you only resolve once:
+
+<SideBySide
+  validate={false}
+  fromCommands={[
+    "git rebase -i HEAD~5",
+    "git add .",
+    "git rebase --continue",
+  ]}
+  toCommands={[
+    "jj rebase -d @-",
+    "jj resolve",
+  ]}
+/>
+
+## Conflict Resolution Tools
+
+<SideBySide
+  validate={false}
+  fromCommands={[
+    "git mergetool",
+  ]}
+  toCommands={[
+    "jj resolve --list",
+    "jj resolve file.js",
+  ]}
+/>
+
+## Visualizing Conflicts
+
+```bash
+# See which files have conflicts
+jj status
+
+# Show conflict details
+jj show @
+
+# Show just conflicts
+jj diff --conflict
+```
+
+## Try It Yourself
+
+<TryIt command="jj status" description="Check for any conflicts" />
+
+<TryIt command="jj log" description="View commit history" />
+
+## Key Takeaways
+
+- Conflicts are stored in commits, not blocking errors
+- `jj resolve` marks conflicts as resolved
+- Can commit with conflicts and resolve later
+- `jj resolve --list` shows all conflicts
+- Auto-rebasing means resolve conflicts once
+- `jj op undo` to abandon problematic merges
+
+## Next Steps
+
+Finally, let's look at advanced workflows and tips for jj power users.
