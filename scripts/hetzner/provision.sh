@@ -16,7 +16,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # ============================================================
 # CONFIGURATION
 # ============================================================
-SERVER_NAME="toolkata-sandbox"
+SERVER_NAME="crab-people"
 SERVER_TYPE="cax11"        # 4GB RAM, 2 vCPU ARM64, ~€3.79/mo
 IMAGE="ubuntu-24.04"
 LOCATION="nbg1"            # Nuremberg, Germany

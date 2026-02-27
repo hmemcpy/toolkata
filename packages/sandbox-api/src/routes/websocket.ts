@@ -437,6 +437,31 @@ export const createWebSocketServer = (
         if (banner) {
           ws.send(JSON.stringify({ type: "output", data: banner }))
         }
+
+        // Auto-execute init commands stored in the session (silent mode)
+        console.log(`[WebSocket] Session ${sessionId} has ${session.initCommands.length} init commands`)
+        if (session.initCommands.length > 0) {
+          console.log(
+            `[WebSocket] Auto-executing ${session.initCommands.length} init commands for ${sessionId}`,
+          )
+          const initResult = yield* Effect.either(
+            webSocketService.executeInitCommands(
+              connection,
+              session.initCommands,
+              session.initTimeout,
+              true, // silent
+            ),
+          )
+          if (initResult._tag === "Left") {
+            console.error("[WebSocket] Auto-init commands error:", initResult.left.message)
+          }
+        } else {
+          // No init commands - send initComplete immediately
+          yield* webSocketService.sendMessage(
+            connection,
+            JSON.stringify({ type: "initComplete", success: true }),
+          )
+        }
       })
 
       // Run the connection handler

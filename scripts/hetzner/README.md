@@ -6,7 +6,7 @@ Scripts for deploying the toolkata sandbox API to Hetzner Cloud.
 
 | Property | Value |
 |----------|-------|
-| IP | 46.224.239.222 |
+| Hostname | crab-people (Tailscale) |
 | Type | CAX11 (4GB RAM, 2 vCPU ARM64) |
 | Location | Nuremberg, Germany (nbg1) |
 | OS | Ubuntu 24.04 |
@@ -35,19 +35,21 @@ export GITHUB_REPO="content"
 ./scripts/hetzner/deploy.sh
 
 # SSH into server
-ssh root@46.224.239.222
+ssh root@crab-people
 
 # View logs
-ssh root@46.224.239.222 journalctl -u sandbox-api -f
+ssh root@crab-people journalctl -u sandbox-api -f
 ```
 
 ## DNS Setup
 
-Add an A record pointing your domain to the server IP:
+Add an A record pointing your domain to the server's public IP:
 
 ```
 sandbox.toolkata.com  A  46.224.239.222
 ```
+
+Note: Use the public IP (not the Tailscale hostname). Deploy access uses Tailscale, but public traffic goes through the public IP.
 
 Caddy will automatically provision SSL via Let's Encrypt.
 
@@ -60,13 +62,11 @@ Caddy will automatically provision SSL via Let's Encrypt.
 hcloud server list
 
 # Power off
-hcloud server poweroff toolkata-sandbox
+hcloud server poweroff crab-people
 
 # Power on
-hcloud server poweron toolkata-sandbox
+hcloud server poweron crab-people
 
-# Delete (careful!)
-hcloud server delete toolkata-sandbox
 ```
 
 ### SSH Commands
@@ -119,12 +119,6 @@ Each sandbox container runs with:
 - **Resource limits** - 128MB RAM, 0.5 CPU, 50 PIDs
 - **Dropped capabilities** - All Linux capabilities removed
 
-## Teardown
+## Note
 
-```bash
-# Delete the server
-hcloud server delete toolkata-sandbox
-
-# Delete SSH key (optional)
-hcloud ssh-key delete toolkata
-```
+This server (`crab-people`) is shared between multiple apps. Do not delete it.

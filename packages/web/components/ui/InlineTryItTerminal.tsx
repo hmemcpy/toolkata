@@ -130,7 +130,7 @@ export function InlineTryItTerminal({
 
         ws.onopen = () => {
           if (!mountedRef.current) return
-          // Setup commands are handled as init commands by the server
+          // Init commands are passed via createSession and executed server-side on connect
         }
 
         ws.onmessage = async (event: MessageEvent) => {
@@ -158,12 +158,16 @@ export function InlineTryItTerminal({
                 return
               }
               if (msg.type === "initComplete") {
-                // Setup done — switch to user-visible mode
-                setupPhaseRef.current = false
                 setStatus("ready")
 
-                // Initialize xterm.js now
+                // Initialize xterm.js (setupPhaseRef stays true to drop leftover init output)
                 await initXterm()
+
+                // Discard any buffered messages (leftover init output that arrived during await)
+                messageBufferRef.current = []
+
+                // Now allow new messages through
+                setupPhaseRef.current = false
 
                 // Auto-execute the initial command
                 if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -215,7 +219,13 @@ export function InlineTryItTerminal({
       } catch (err) {
         if (!mountedRef.current) return
         setStatus("error")
-        setErrorMessage(err instanceof Error ? err.message : "Failed to connect to sandbox")
+        const msg = err instanceof Error ? err.message : "Failed to connect to sandbox"
+        // "Failed to fetch" means the sandbox API is unreachable
+        setErrorMessage(
+          msg === "Failed to fetch"
+            ? "Sandbox unavailable. Make sure the sandbox API is running."
+            : msg,
+        )
       }
     }
 
